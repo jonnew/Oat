@@ -1,7 +1,6 @@
-/* Implementation */
 
 #include "CameraConfig.h"
-#include "FlyCapture2.h"
+#include <FlyCapture2.h>
 
 int main(int argc, char *argv[]) {
    

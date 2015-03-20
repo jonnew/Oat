@@ -1,10 +1,9 @@
-Simple Driver for Point Grey Cameras
+Simple soft real-time position tracker for Point Grey Cameras
 =======
 
-This software configures a point grey cameras such that digital pulses on a user selected GPIO line yield a single frame. Not yet sure what to do with the frame once its aquired.
+- Example applications using the flycapture SDK are available in /usr/src/flycapture/src
+-
+
 
 # TODO
-- [ ] Frame format?
-- [ ] Frame serialization?
-- [ ] Frame buffer?
-- [ ] Deposit frames in shared memory?
+- [ ] IPC with clients who use extracted positional information
