@@ -1,5 +1,17 @@
+# Ignore binary files and build artifacts
 bin/
+lib/
 *.o
 *.a
 *.so
 *.bin
+
+# Ignore CMake vomit
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# Ignore netbeans project info for now
+nbproject/
