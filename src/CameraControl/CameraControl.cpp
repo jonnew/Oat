@@ -1,22 +1,19 @@
 /* Camera configuration for rat-vision*/
 
-#include "stdafx.h"
-#include "FlyCapture2.h"
 #include "CameraControl.h"
+
 #include <stdlib.h> 
+#include <unistd.h> // Don't know how to include only if LINUX with cmake
+#include <stdint.h>
 #include <iostream>
 #include <sstream>
-#include <stdint.h>
-#include <unistd.h> // Don't know how to include only if LINUX with cmake
+
+#include "stdafx.h"
+#include "FlyCapture2.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 CameraControl::CameraControl(void) {
-
-    //Camera camera;
-    //CameraInfo cam_info;
-    //TriggerMode trig_mode;
-    //BusManager busMgr;
 
     // Start with 0 cameras on bus
     num_cameras = 0;
