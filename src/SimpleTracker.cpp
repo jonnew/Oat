@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     cc.set_camera_index(0);
     cc.connect_to_camera();
     cc.print_camera_info();
-    
+    cc.turn_camera_on();
     cc.setup_trigger(0, 1);
     
     // Start image aqusition
