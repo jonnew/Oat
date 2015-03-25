@@ -7,10 +7,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Version number
-set (Tutorial_VERSION_MAJOR 1)
-set (Tutorial_VERSION_MINOR 0)
+set (SimpleTracker_VERSION_MAJOR 1)
+set (SimpleTracker_VERSION_MINOR 0)
 
-# configure a header file to pass some of the CMake settings
+# Configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
   "${PROJECT_SOURCE_DIR}/SimpleTrackerConfig.h.in"
@@ -18,7 +18,7 @@ configure_file (
   )
 
 # Add the binary tree to the search path for include files
-# so that we will find TutorialConfig.h
+# so that we will find SimpleTrackerConfig.h
 include_directories("${PROJECT_BINARY_DIR}")
 
 include_directories ("/usr/include/flycapture")
