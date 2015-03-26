@@ -11,7 +11,6 @@
 
 #include "stdafx.h"
 #include "FlyCapture2.h"
-//#include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -91,8 +90,8 @@ int CameraControl::setup_stream_channels() {
         
         // TODO: Make a more reasoned choice for these parameters based on the
         // number of cameras on the system...
-        streamChannel.packetSize = 1500;
-        streamChannel.interPacketDelay = 255;
+        streamChannel.packetSize = 9000;
+        streamChannel.interPacketDelay = 1000;
 
         error = camera.SetGigEStreamChannelInfo(i, &streamChannel);
         if (error != PGRERROR_OK) {
@@ -125,9 +124,10 @@ int CameraControl::setup_image_format() {
     GigEImageSettings imageSettings;
     imageSettings.offsetX = 0;
     imageSettings.offsetY = 0;
-    imageSettings.height = imageSettingsInfo.maxHeight;
-    imageSettings.width = imageSettingsInfo.maxWidth;
-    imageSettings.pixelFormat = PIXEL_FORMAT_BGR;
+    imageSettings.height = frameSize.height;
+    imageSettings.width = frameSize.width;
+    imageSettings.pixelFormat = PIXEL_FORMAT_RAW12;
+    //imageSettings.pixelFormat = PIXEL_FORMAT_MONO8;
 
     cout << "Setting GigE image settings..." << endl;
 
@@ -233,27 +233,14 @@ int CameraControl::setup_trigger(int source, int polarity) {
         exit(EXIT_FAILURE);
     }
 
-//    // Get the camera configuration
-//    FC2Config config;
-//    error = camera.GetConfiguration(&config);
-//    if (error != PGRERROR_OK) {
-//        print_error(error);
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    // Set the grab timeout to 5 seconds
-//    config.grabTimeout = 5000;
-//
-//    // Set the camera configuration
-//    error = camera.SetConfiguration(&config);
-//    if (error != PGRERROR_OK) {
-//        print_error(error);
-//        exit(EXIT_FAILURE);
-//    }
-
     // Camera is ready, start capturing images
     error = camera.StartCapture();
-    if (error != PGRERROR_OK) {
+    if (error == PGRERROR_ISOCH_BANDWIDTH_EXCEEDED )
+    {
+        std::cout << "Bandwidth exceeded. Cannot start camera." << std::endl;     
+        exit(EXIT_FAILURE);
+    }
+    else if (error != PGRERROR_OK) {
         print_error(error);
         exit(EXIT_FAILURE);
     }
@@ -264,11 +251,11 @@ int CameraControl::setup_trigger(int source, int polarity) {
 
 }
 
-cv::Mat CameraControl::grab_image() {
+void CameraControl::grab_image(cv::Mat& image) {
 
     // Get the image
     if (!aquisitionStarted) {
-        cout << "Cannot grab image because aquisition has not been started." << endl;
+        cout << "Cannot grab image because acquisition has not been started." << endl;
         exit(EXIT_FAILURE);
     }
     
@@ -281,22 +268,18 @@ cv::Mat CameraControl::grab_image() {
     } 
     else if (error != PGRERROR_OK) {
         print_error(error);
-        cout << "capture error." << endl;
+        cout << "WARNING: capture error." << endl;
     }
 
     cout << "Grabbed image " << endl;
+    
+    // convert to rgb
+    rawImage.Convert(FlyCapture2::PIXEL_FORMAT_BGR, &rgbImage);
 
     // convert to OpenCV Mat
-    unsigned int rowBytes = (double) rawImage.GetReceivedDataSize() / (double) rawImage.GetRows();
-    cv::Mat image = cv::Mat(rawImage.GetRows(), rawImage.GetCols(), CV_8UC3, rawImage.GetData(), rowBytes);
-    
-    // TODO: Try saving image to a file.
-
-    //cv::imshow("image", image);
-    
-    //cv::waitKey(1);
-
-    return image;
+    unsigned int rowBytes = (double) rgbImage.GetReceivedDataSize() / (double) rgbImage.GetRows();
+    image = cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(), rowBytes);
+    //cout << " Image = " << endl << " " << image << endl << endl;
 
 }
 
