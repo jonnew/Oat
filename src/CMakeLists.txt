@@ -27,6 +27,9 @@ find_library(FLYCAPTURE2 flycapture)
 include_directories ("${PROJECT_SOURCE_DIR}/CameraControl")
 add_subdirectory (CameraControl) 
 
+include_directories ("${PROJECT_SOURCE_DIR}/Tracker")
+add_subdirectory (Tracker) 
+
 find_package (OpenCV REQUIRED)
 add_executable (SimpleTracker SimpleTracker.cpp )
-target_link_libraries (SimpleTracker CameraControl ${OpenCV_LIBS} ${FLYCAPTURE2})
+target_link_libraries (SimpleTracker CameraControl Tracker ${OpenCV_LIBS} ${FLYCAPTURE2})

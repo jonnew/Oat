@@ -2,66 +2,64 @@
 #define CameraControl_H
 
 #include "FlyCapture2.h"
-#include <opencv2/core/core.hpp>
+#include <opencv2/core/mat.hpp>
 #include "SimpleTrackerConfig.h"
 
-using namespace std;
-using namespace FlyCapture2;
-
-#define	FRAME_WIDTH = 0;
-#define	FRAME_H = 256;
-
 class CameraControl {
+    
 public:
     CameraControl(void);
 
     // For establishing connection
-    int set_camera_index(unsigned int requestedIdx);
-    int connect_to_camera(void);
+    int setCameraIndex(unsigned int requested_idx);
+    int connectToCamera(void);
 
     // Once connected
-    int setup_stream_channels(void);
-    int setup_image_format();
-    //int setup_image_format(int xOffset, int yOffset, int height, int width, PixelFormat format);
-    //int setup_image_binning(int xBinFactor, int yBinFactor);
-    int setup_trigger(int source, int polarity);
+    int setupStreamChannels(void);
+    //int setupShutterAndGain(int shutter_ms, float gain_db);
+    int setupImageFormat(void);
+    //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
+    //int setupImageBinning(int xBinFactor, int yBinFactor);
+    int setupTrigger(int source, int polarity);
 
     // Physical camera control
-    int turn_camera_on(void);
-    //void dummy_grab_image(void);
-    void grab_image(cv::Mat& image);
-    // int turn_camera_off(void);
-    //void get_camera_info(void);
+    int turnCameraOn(void);
+    //TODO: int turnCameraOff(void);
+    void grabImage(cv::Mat& image);
 
-    inline cv::Size get_frame_size(void) {return frameSize;}
-    
-
+    // Accessors
+    inline cv::Size get_frame_size(void) {
+        return frame_size;
+    }
 
 private:
-    
-    // Frame width/height (hard coded for now)
-    // max square image size with blackfly 09C
-    const cv::Size frameSize = cv::Size(728, 728);
 
-    bool aquisitionStarted;
-    unsigned int numCameras, index;
-    GigECamera camera;
+    // Size of the image to aquire
+    cv::Size frame_size;
+    
+    // TODO: Size of the offset box in lower right hand corner of sensory array 
+    // to move the ROI of frame_size around
+    //cv::Size frame_offset; 
+
+    bool aquisition_started;
+    unsigned int num_cameras, index;
+    FlyCapture2::GigECamera camera;
 
     // Camera and control state info
-    CameraInfo cameraInfo;
-    TriggerModeInfo triggerModeInfo;
-    GigEImageSettingsInfo imageSettingsInfo;
+    FlyCapture2::CameraInfo camera_info;
+    FlyCapture2::TriggerModeInfo trigger_mode_info;
+    FlyCapture2::GigEImageSettingsInfo image_settings_info;
 
     // The current, unbuffered frame
-    Image rawImage;
-    Image rgbImage;
+    FlyCapture2::Image raw_image;
+    FlyCapture2::Image rgb_image;
 
-    int find_num_cameras(void);
-    void print_error(Error error);
-    bool poll_for_trigger_ready(void);
-    int print_camera_info(void);
-    int print_bus_info(void);
-    void print_stream_channel_info(GigEStreamChannel *pStreamChannel);
+    int findNumCameras(void);
+    void printError(FlyCapture2::Error error);
+    bool pollForTriggerReady(void);
+    int printCameraInfo(void);
+    int printBusInfo(void);
+    void printStreamChannelInfo(FlyCapture2::GigEStreamChannel *stream_channel);
 };
 
 #endif //CameraConfig_H

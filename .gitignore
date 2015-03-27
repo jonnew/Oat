@@ -30,6 +30,7 @@
 
 # All bin directories
 bin/ 
+build/
 
 # Ignore CMake vomit
 CMakeCache.txt
@@ -40,3 +41,4 @@ install_manifest.txt
 
 # Ignore netbeans project info for now
 nbproject/
+/src/build/
