@@ -28,8 +28,10 @@ using cv::Size;
 using cv::erode;
 using cv::dilate;
 
-HSVFilter::HSVFilter() {
+HSVFilter::HSVFilter(std::string filter_name_in) {
 
+    filter_name = filter_name_in;
+    
     // Initial threshold values
     h_min = 0;
     h_max = 256;
@@ -39,7 +41,6 @@ HSVFilter::HSVFilter() {
     v_max = 256;
 
     // Tracks for adjusting HSV thresholds
-    trackbarWindowName = "HSV Thresholds";
     createTrackbars();
 
     // Set defaults for the erode and dilate blocks
@@ -47,7 +48,12 @@ HSVFilter::HSVFilter() {
     dilate_size = Size(10, 10);
 }
 
-HSVFilter::HSVFilter(int h_min_in, int h_max_in, int s_min_in, int s_max_in, int v_min_in, int v_max_in) {
+HSVFilter::HSVFilter(std::string filter_name_in,
+                     int h_min_in, int h_max_in, 
+                     int s_min_in, int s_max_in, 
+                     int v_min_in, int v_max_in) {
+    
+    filter_name = filter_name_in;
 
     // Initial threshold values
     h_min = h_min_in;
@@ -67,16 +73,16 @@ HSVFilter::~HSVFilter() {
 
 void HSVFilter::createTrackbars() {
 
-    //Create window for trackbars
-    namedWindow(trackbarWindowName, 0);
+    // Create window for trackbars
+    namedWindow(filter_name + "HSV slider", 0);
 
-    //Create trackbars and insert them into window
-    createTrackbar("H_MIN", trackbarWindowName, &h_min, h_max, 0);
-    createTrackbar("H_MAX", trackbarWindowName, &h_max, h_max, 0);
-    createTrackbar("S_MIN", trackbarWindowName, &s_min, s_max, 0);
-    createTrackbar("S_MAX", trackbarWindowName, &s_max, s_max, 0);
-    createTrackbar("V_MIN", trackbarWindowName, &v_min, v_max, 0);
-    createTrackbar("V_MAX", trackbarWindowName, &v_max, v_max, 0);
+    // Create trackbars and insert them into window
+    createTrackbar("H_MIN", filter_name, &h_min, h_max, 0);
+    createTrackbar("H_MAX", filter_name, &h_max, h_max, 0);
+    createTrackbar("S_MIN", filter_name, &s_min, s_max, 0);
+    createTrackbar("S_MAX", filter_name, &s_max, s_max, 0);
+    createTrackbar("V_MIN", filter_name, &v_min, v_max, 0);
+    createTrackbar("V_MAX", filter_name, &v_max, v_max, 0);
 
 }
 
@@ -111,5 +117,4 @@ void HSVFilter::clarifyObjects(Mat& threshold_img) {
 
     cv::dilate(threshold_img, threshold_img, dilate_element);
     cv::dilate(threshold_img, threshold_img, dilate_element);
-
 }

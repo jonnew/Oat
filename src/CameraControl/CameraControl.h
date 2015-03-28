@@ -16,7 +16,9 @@ public:
 
     // Once connected
     int setupStreamChannels(void);
-    //int setupShutterAndGain(int shutter_ms, float gain_db);
+    int setupShutter(float shutter_ms);
+    int setupGain(float gain_dB);
+    int setupExposure(float exposure_EV);
     int setupImageFormat(void);
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
     //int setupImageBinning(int xBinFactor, int yBinFactor);
@@ -28,7 +30,7 @@ public:
     void grabImage(cv::Mat& image);
 
     // Accessors
-    inline cv::Size get_frame_size(void) {
+    cv::Size get_frame_size(void) {
         return frame_size;
     }
 

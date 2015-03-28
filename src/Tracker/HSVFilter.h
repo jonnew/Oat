@@ -12,12 +12,17 @@
 #include <opencv2/core/mat.hpp>
 
 class HSVFilter {
-public:
-    // Manual tuning of HSV values
-    HSVFilter(void);
     
-    // HSV values known and static
-    HSVFilter(int h_min_in, int h_max_in, int s_min_in, int s_max_in, int v_min_in, int v_max_in);
+public:
+    
+    // Manual tuning of HSV values using graphical track bars
+    HSVFilter(std::string filter_name);
+    
+    // HSV values known
+    HSVFilter(std::string filter_name,
+              int h_min, int h_max, 
+              int s_min, int s_max,
+              int v_min, int v_max);
     
     virtual ~HSVFilter(void);
     
@@ -25,10 +30,15 @@ public:
     void applyFilter(const cv::Mat& rgb_img, cv::Mat& threshold_img);
 
     // TODO: These will need to be tuned to the actual application
-    inline void set_erode_size(cv::Size erode_size) { erode_size = erode_size;}
-    inline void set_dilate_size(cv::Size dilate_size) { dilate_size = dilate_size;}
+    void set_h_min(int h_min) { h_min = h_min;}
+    void set_h_max(int h_max) { h_max = h_max;}
+    void set_s_min(int s_min) { s_min = s_min;}
+    void set_s_max(int s_max) { s_max = s_max;}
+    void set_v_min(int v_min) { v_min = v_min;}
+    void set_v_max(int v_max) { v_max = v_max;}
+    void set_erode_size(cv::Size erode_size) { erode_size = erode_size;}
+    void set_dilate_size(cv::Size dilate_size) { dilate_size = dilate_size;}
 
-   
 private:
 
     // Internal data images
@@ -47,7 +57,7 @@ private:
     int v_max;
 
     // For manual manipulation of HSV filtering
-    std::string trackbarWindowName;
+    std::string filter_name;
     void createTrackbars(void);
     
     // HSV filter
@@ -58,7 +68,6 @@ private:
     
     // Erode/dilate objects to get rid of speckles
     void clarifyObjects(cv::Mat& threshold_img);
-
 
 };
 

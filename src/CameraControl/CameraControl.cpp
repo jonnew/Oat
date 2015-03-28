@@ -14,19 +14,10 @@
 #include "stdafx.h"
 #include "FlyCapture2.h"
 
-
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ostringstream;
-using std::hex;
-using std::setw;
-using std::setfill;
-using cv::Mat;
 using namespace FlyCapture2;
 
 CameraControl::CameraControl(void) {
-    
+
     // Initialize the frame size
     // TODO: Hardcoded for the max square image on blackfly 09C
     frame_size = cv::Size(728, 728);
@@ -49,7 +40,7 @@ int CameraControl::setCameraIndex(unsigned int requestedIdx) {
         index = requestedIdx;
 
     } else {
-        cerr << "No cameras were detected, so setting an index is not possible." << endl;
+        std::cerr << "No cameras were detected, so setting an index is not possible." << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -58,7 +49,7 @@ int CameraControl::setCameraIndex(unsigned int requestedIdx) {
 
 int CameraControl::connectToCamera(void) {
 
-    cout << "Connecting to camera: " << index << endl;
+    std::cout << "Connecting to camera: " << index << std::endl;
 
     BusManager busMgr;
     PGRGuid guid;
@@ -102,7 +93,7 @@ int CameraControl::setupStreamChannels() {
         streamChannel.destinationIpAddress.octets[1] = 0;
         streamChannel.destinationIpAddress.octets[2] = 0;
         streamChannel.destinationIpAddress.octets[3] = 1;
-        
+
         // TODO: Make a more reasoned choice for these parameters based on the
         // number of cameras on the system...
         streamChannel.packetSize = 9000;
@@ -114,25 +105,124 @@ int CameraControl::setupStreamChannels() {
             exit(EXIT_FAILURE);
         }
 
-        cout << "Printing stream channel information for channel " << i << endl;
+        std::cout << "Printing stream channel information for channel " << i << std::endl;
         printStreamChannelInfo(&streamChannel);
     }
 
     return 0;
 }
 
-//int CameraControl::setupShutterAndGain(int shutter_ms, float gain_db) {
-//    
-//    Property shutter = camera.GetProperty(&camera)
-//    shutter.autoManualMode = false;
-//    shutter.valueA = 1; // millisecond
-//    camera.SetProperty(&shutter);
-//    
-//    Property gain = camera.GetProperty(GAIN);
-//    gain.autoManualMode = false;
-//    gain.absValue = gain_db;
-//    camera.SetProperty(&gain);
-//}
+int CameraControl::setupShutter(float shutter_ms) {
+
+    std::cout << "Setting up shutter..." << std::endl; 
+    
+    Property prop;
+    prop.type = SHUTTER;
+    Error error = camera.GetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    prop.autoManualMode = false;
+    prop.absControl = true;
+    prop.absValue = shutter_ms;
+    
+    error = camera.SetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    std::cout << "Shutter time set to " << std::fixed << std::setprecision(2) << shutter_ms << " ms." << std::endl;
+    
+    return 0;
+}
+
+int CameraControl::setupGain(float gain_dB) {
+
+    std::cout << "Setting camera gain..." << std::endl; 
+    
+    Property prop;
+    prop.type = GAIN;
+    Error error = camera.GetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    prop.autoManualMode = false;
+    prop.absControl = true;
+    prop.absValue = gain_dB;
+    
+    error = camera.SetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    std::cout << "Gain set to " << std::fixed << std::setprecision(2) << gain_dB << " dB." << std::endl;
+    
+    return 0;
+}
+
+int CameraControl::setupExposure(float exposure_EV) {
+
+    std::cout << "Setting up exposure..." << std::endl; 
+    
+    Property prop;
+    prop.type = SHUTTER;
+    Error error = camera.GetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    prop.autoManualMode = true;
+    
+    error = camera.SetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    prop.type = GAIN;
+    error = camera.GetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    prop.autoManualMode = true;
+    
+    error = camera.SetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    prop.type = AUTO_EXPOSURE;
+    error = camera.GetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    prop.onOff = true;
+    prop.autoManualMode = false;
+    prop.absControl = true;
+    prop.absValue = exposure_EV;
+    
+    error = camera.SetProperty(&prop);
+    if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+    }
+    
+    std::cout << "Exposure set to " << std::fixed << std::setprecision(2) << exposure_EV << " EV." << std::endl;
+    
+    return 0;
+}
 
 /**
  * Default image setup. Image uses all available pixels and BRG pixel format. 
@@ -141,7 +231,7 @@ int CameraControl::setupStreamChannels() {
  */
 int CameraControl::setupImageFormat() {
 
-    cout << "Querying GigE image setting information..." << endl;
+    std::cout << "Querying GigE image setting information..." << std::endl;
 
     Error error = camera.GetGigEImageSettingsInfo(&image_settings_info);
     if (error != PGRERROR_OK) {
@@ -157,14 +247,14 @@ int CameraControl::setupImageFormat() {
     imageSettings.pixelFormat = PIXEL_FORMAT_RAW12;
     //imageSettings.pixelFormat = PIXEL_FORMAT_MONO8;
 
-    cout << "Setting GigE image settings..." << endl;
+    std::cout << "Setting GigE image settings..." << std::endl;
 
     error = camera.SetGigEImageSettings(&imageSettings);
     if (error != PGRERROR_OK) {
         printError(error);
         exit(EXIT_FAILURE);
     }
-    
+
     return 0;
 
 }
@@ -227,7 +317,7 @@ int CameraControl::setupTrigger(int source, int polarity) {
     }
 
     if (trigger_mode_info.present != true) {
-        cout << "Camera does not support external trigger. Exiting..." << endl;
+        std::cout << "Camera does not support external trigger. Exiting..." << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -256,25 +346,23 @@ int CameraControl::setupTrigger(int source, int polarity) {
     // Poll to ensure camera is ready
     bool retVal = pollForTriggerReady();
     if (!retVal) {
-        cout << endl;
-        cout << "Error polling for trigger ready. Exiting..." << endl;
+        std::cout << std::endl;
+        std::cout << "Error polling for trigger ready. Exiting..." << std::endl;
         exit(EXIT_FAILURE);
     }
 
     // Camera is ready, start capturing images
     error = camera.StartCapture();
-    if (error == PGRERROR_ISOCH_BANDWIDTH_EXCEEDED )
-    {
-        std::cout << "Bandwidth exceeded. Cannot start camera." << std::endl;     
+    if (error == PGRERROR_ISOCH_BANDWIDTH_EXCEEDED) {
+        std::cout << "Bandwidth exceeded. Cannot start camera." << std::endl;
         exit(EXIT_FAILURE);
-    }
-    else if (error != PGRERROR_OK) {
+    } else if (error != PGRERROR_OK) {
         printError(error);
         exit(EXIT_FAILURE);
     }
 
     aquisition_started = true;
-    cout << "Trigger the camera by sending a trigger pulse to GPIO_" << triggerMode.source << endl;
+    std::cout << "Trigger the camera by sending a trigger pulse to GPIO_" << triggerMode.source << std::endl;
     return 0;
 
 }
@@ -283,31 +371,31 @@ void CameraControl::grabImage(cv::Mat& image) {
 
     // Get the image
     if (!aquisition_started) {
-        cout << "Cannot grab image because acquisition has not been started." << endl;
+        std::cout << "Cannot grab image because acquisition has not been started." << std::endl;
         exit(EXIT_FAILURE);
     }
-    
+
     Error error = camera.RetrieveBuffer(&raw_image);
     if (error == PGRERROR_IMAGE_CONSISTENCY_ERROR) {
-        cout << "WARNING: torn image detected." << endl;
-        
+        std::cout << "WARNING: torn image detected." << std::endl;
+
         // TODO: implement onboard buffer and perform retry a RetrieveBuffer
         // A single time if a torn image is detected.
-    } 
+    }
     else if (error != PGRERROR_OK) {
         printError(error);
-        cout << "WARNING: capture error." << endl;
+        std::cout << "WARNING: capture error." << std::endl;
     }
 
-    cout << "Grabbed image " << endl;
-    
+    std::cout << "Grabbed image " << std::endl;
+
     // convert to rgb
     raw_image.Convert(FlyCapture2::PIXEL_FORMAT_BGR, &rgb_image);
 
-    // convert to OpenCV Mat
+    // convert to OpenCV cv::Mat
     unsigned int rowBytes = (double) rgb_image.GetReceivedDataSize() / (double) rgb_image.GetRows();
     image = cv::Mat(rgb_image.GetRows(), rgb_image.GetCols(), CV_8UC3, rgb_image.GetData(), rowBytes);
-    //cout << " Image = " << endl << " " << image << endl << endl;
+    //std::cout << " Image = " << std::endl << " " << image << std::endl << std::endl;
 
 }
 
@@ -330,7 +418,7 @@ int CameraControl::findNumCameras(void) {
 void CameraControl::printError(Error error) {
     error.PrintErrorTrace();
     if (!camera.IsConnected()) {
-        cerr << "Camera must be connected before getting its info." << endl;
+        std::cerr << "Camera must be connected before getting its info." << std::endl;
     }
 }
 
@@ -354,9 +442,9 @@ bool CameraControl::pollForTriggerReady() {
 
 int CameraControl::printBusInfo(void) {
 
-    cout << endl;
-    cout << "*** BUS INFORMATION ***" << endl;
-    cout << "No. cameras detected on bus: " << num_cameras << endl;
+    std::cout << std::endl;
+    std::cout << "*** BUS INFORMATION ***" << std::endl;
+    std::cout << "No. cameras detected on bus: " << num_cameras << std::endl;
     return 0;
 }
 
@@ -368,52 +456,52 @@ int CameraControl::printCameraInfo(void) {
         exit(EXIT_FAILURE);
     }
 
-    ostringstream macAddress;
-    macAddress << hex << setw(2) << setfill('0') << (unsigned int) camera_info.macAddress.octets[0] << ":" <<
-            hex << setw(2) << setfill('0') << (unsigned int) camera_info.macAddress.octets[1] << ":" <<
-            hex << setw(2) << setfill('0') << (unsigned int) camera_info.macAddress.octets[2] << ":" <<
-            hex << setw(2) << setfill('0') << (unsigned int) camera_info.macAddress.octets[3] << ":" <<
-            hex << setw(2) << setfill('0') << (unsigned int) camera_info.macAddress.octets[4] << ":" <<
-            hex << setw(2) << setfill('0') << (unsigned int) camera_info.macAddress.octets[5];
+    std::ostringstream macAddress;
+    macAddress << std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[0] << ":" <<
+            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[1] << ":" <<
+            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[2] << ":" <<
+            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[3] << ":" <<
+            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[4] << ":" <<
+            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[5];
 
 
-    ostringstream ipAddress;
+    std::ostringstream ipAddress;
     ipAddress << (unsigned int) camera_info.ipAddress.octets[0] << "." <<
             (unsigned int) camera_info.ipAddress.octets[1] << "." <<
             (unsigned int) camera_info.ipAddress.octets[2] << "." <<
             (unsigned int) camera_info.ipAddress.octets[3];
 
-    ostringstream subnetMask;
+    std::ostringstream subnetMask;
     subnetMask << (unsigned int) camera_info.subnetMask.octets[0] << "." <<
             (unsigned int) camera_info.subnetMask.octets[1] << "." <<
             (unsigned int) camera_info.subnetMask.octets[2] << "." <<
             (unsigned int) camera_info.subnetMask.octets[3];
 
-    ostringstream defaultGateway;
+    std::ostringstream defaultGateway;
     defaultGateway << (unsigned int) camera_info.defaultGateway.octets[0] << "." <<
             (unsigned int) camera_info.defaultGateway.octets[1] << "." <<
             (unsigned int) camera_info.defaultGateway.octets[2] << "." <<
             (unsigned int) camera_info.defaultGateway.octets[3];
 
-    cout << endl;
-    cout << "*** GENERAL CAMERA INFORMATION ***" << endl;
-    cout << "Serial number: " << camera_info.serialNumber << endl;
-    cout << "Camera model: " << camera_info.modelName << endl;
-    cout << "Camera vendor: " << camera_info.vendorName << endl;
-    cout << "Sensor: " << camera_info.sensorInfo << endl;
-    cout << "Resolution: " << camera_info.sensorResolution << endl;
-    cout << "Firmware version: " << camera_info.firmwareVersion << endl;
-    cout << "Firmware build time: " << camera_info.firmwareBuildTime << endl << endl;
+    std::cout << std::endl;
+    std::cout << "*** GENERAL CAMERA INFORMATION ***" << std::endl;
+    std::cout << "Serial number: " << camera_info.serialNumber << std::endl;
+    std::cout << "Camera model: " << camera_info.modelName << std::endl;
+    std::cout << "Camera vendor: " << camera_info.vendorName << std::endl;
+    std::cout << "Sensor: " << camera_info.sensorInfo << std::endl;
+    std::cout << "Resolution: " << camera_info.sensorResolution << std::endl;
+    std::cout << "Firmware version: " << camera_info.firmwareVersion << std::endl;
+    std::cout << "Firmware build time: " << camera_info.firmwareBuildTime << std::endl << std::endl;
 
-    cout << "*** CAMERA INTERFACE INFORMATION ***" << endl;
-    cout << "GigE version :" << camera_info.gigEMajorVersion << "." << camera_info.gigEMinorVersion << endl;
-    cout << "User defined name :" << camera_info.userDefinedName << endl;
-    cout << "XML URL 1: " << camera_info.xmlURL1 << endl;
-    cout << "XML URL 2: " << camera_info.xmlURL2 << endl;
-    cout << "MAC address: " << macAddress.str() << endl;
-    cout << "IP address: " << ipAddress.str() << endl;
-    cout << "Subnet mask: " << subnetMask.str() << endl;
-    cout << "Default gateway: " << defaultGateway.str() << endl << endl;
+    std::cout << "*** CAMERA INTERFACE INFORMATION ***" << std::endl;
+    std::cout << "GigE version :" << camera_info.gigEMajorVersion << "." << camera_info.gigEMinorVersion << std::endl;
+    std::cout << "User defined name :" << camera_info.userDefinedName << std::endl;
+    std::cout << "XML URL 1: " << camera_info.xmlURL1 << std::endl;
+    std::cout << "XML URL 2: " << camera_info.xmlURL2 << std::endl;
+    std::cout << "MAC address: " << macAddress.str() << std::endl;
+    std::cout << "IP address: " << ipAddress.str() << std::endl;
+    std::cout << "Subnet mask: " << subnetMask.str() << std::endl;
+    std::cout << "Default gateway: " << defaultGateway.str() << std::endl << std::endl;
 
 
     return 0;
@@ -421,18 +509,18 @@ int CameraControl::printCameraInfo(void) {
 
 void CameraControl::printStreamChannelInfo(GigEStreamChannel *pStreamChannel) {
     //char ipAddress[32];
-    ostringstream ipAddress;
+    std::ostringstream ipAddress;
     ipAddress << (unsigned int) pStreamChannel->destinationIpAddress.octets[0] << "." <<
             (unsigned int) pStreamChannel->destinationIpAddress.octets[1] << "." <<
             (unsigned int) pStreamChannel->destinationIpAddress.octets[2] << "." <<
             (unsigned int) pStreamChannel->destinationIpAddress.octets[3];
 
-    cout << "Network interface: " << pStreamChannel->networkInterfaceIndex << endl;
-    cout << "Host Port: " << pStreamChannel->hostPort << endl;
-    cout << "Do not fragment bit: " << (pStreamChannel->doNotFragment ? "Enabled" : "Disabled") << endl;
-    cout << "Packet size: " << pStreamChannel->packetSize << endl;
-    cout << "Inter packet delay: " << pStreamChannel->interPacketDelay << endl;
-    cout << "Destination IP address: " << ipAddress.str() << endl;
-    cout << "Source port (on camera): " << pStreamChannel->sourcePort << endl << endl;
+    std::cout << "Network interface: " << pStreamChannel->networkInterfaceIndex << std::endl;
+    std::cout << "Host Port: " << pStreamChannel->hostPort << std::endl;
+    std::cout << "Do not fragment bit: " << (pStreamChannel->doNotFragment ? "Enabled" : "Disabled") << std::endl;
+    std::cout << "Packet size: " << pStreamChannel->packetSize << std::endl;
+    std::cout << "Inter packet delay: " << pStreamChannel->interPacketDelay << std::endl;
+    std::cout << "Destination IP address: " << ipAddress.str() << std::endl;
+    std::cout << "Source port (on camera): " << pStreamChannel->sourcePort << std::endl << std::endl;
 
 }
