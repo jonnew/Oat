@@ -1,0 +1,81 @@
+# Example tracker configuration file.
+
+###
+[io] 				# File saving/streaming
+[io.save]
+auto_name = true 	# Automatically name files using timestamp
+subject = "3(3)"
+experiment = "test"
+data_format = "combined"
+
+[io.stream]
+client_ip = "100.100.100.100"
+format = "json"
+
+###
+[camera]  			# Camera configuration
+index = 0
+exposure = -0.5 	# EV, if specified, shutter and gain are ignored
+shutter = 3 		# ms
+gain = 0 			# dB
+whitebal = false 	# TODO...
+
+###
+[tracker] 			# Tracker configuration
+
+# Image registration sequence for transforming
+# pixels to mm
+[tracker.registration] 
+on = false
+method = "linear-interp"
+
+# Background subtraction
+[tracker.subtract-background]
+on = false
+show = false
+
+# Color detection. The number of detection tables
+# specified in this array dictate the number of tracked
+# objects available to the combiner
+[[tracker.detector]]
+name = "blue"
+show = false
+position = "anterior"
+
+[tracker.detector.hsv]
+h_thresholds = {h_min = 106, h_max = 126}
+s_thresholds = {s_min = 69, s_max = 256}
+v_thresholds = {v_min = 180, v_max = 256}
+ 
+[tracker.detector.erode]
+size = 2 			# pixels
+
+[tracker.detector.dilate]
+size = 8 			# pixels
+
+[[tracker.detector]]
+name = "orange"
+show = false
+position = "posterior"
+
+[tracker.detector.hsv]
+h_thresholds = {h_min = 0, h_max = 32}
+s_thresholds = {s_min = 32, s_max = 210}
+v_thresholds = {v_min = 164, v_max = 256}
+
+[tracker.detector.erode]
+size = 2 			# pixels
+
+[tracker.detector.dilate]
+size = 8 			# pixels
+
+# Combiner to combine the objects produced by the detectors
+# into unified position and heading estimate. The selected
+# method must be appropriate for the number of detectors 
+# specified.
+[tracker.combiner]
+method = "2-point-interp"
+target = "middle"
+show = true
+
+

@@ -13,7 +13,10 @@
 
 #include <opencv2/core/mat.hpp>
 
-
+//TODO: Rename this class as "Detector"
+//TODO: Move the tracker class to the parent directory and make tracker a friend
+// of the detector class so it can combine its internal data using a combiner. Or
+// maybe make the combiner a friend of the detector.
 class Tracker {
 public:
     
