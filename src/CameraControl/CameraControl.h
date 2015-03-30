@@ -3,10 +3,14 @@
 
 #include "FlyCapture2.h"
 #include <opencv2/core/mat.hpp>
-#include "SimpleTrackerConfig.h"
+//#include "../Tracker.h"
+
+class Tracker;
 
 class CameraControl {
     
+   friend Tracker;
+   
 public:
     CameraControl(void);
 
@@ -17,8 +21,11 @@ public:
     // Once connected
     int setupStreamChannels(void);
     int setupShutter(float shutter_ms);
+    int setupShutter(void);
     int setupGain(float gain_dB);
+    int setupGain(void);
     int setupExposure(float exposure_EV);
+    int setupExposure(void);
     int setupImageFormat(void);
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
     //int setupImageBinning(int xBinFactor, int yBinFactor);
@@ -45,6 +52,7 @@ private:
 
     bool aquisition_started;
     unsigned int num_cameras, index;
+    float gain_dB, shutter_ms, exposure_EV, white_bal;
     FlyCapture2::GigECamera camera;
 
     // Camera and control state info

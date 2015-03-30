@@ -11,7 +11,11 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
+class Tracker;
+
 class HSVFilter {
+    
+       friend Tracker;
     
 public:
     
@@ -29,7 +33,7 @@ public:
     // Apply the HSVTransform, thresholding, and erode/dilate operations
     void applyFilter(const cv::Mat& rgb_img, cv::Mat& threshold_img);
 
-    // TODO: These will need to be tuned to the actual application
+    // Accessors
     void set_h_min(int h_min) { h_min = h_min;}
     void set_h_max(int h_max) { h_max = h_max;}
     void set_s_min(int s_min) { s_min = s_min;}

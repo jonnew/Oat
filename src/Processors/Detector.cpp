@@ -5,7 +5,7 @@
  * Created on March 27, 2015, 1:40 PM
  */
 
-#include "Tracker.h"
+#include "Detector.h"
 
 #include <iostream>
 #include <limits>
@@ -14,15 +14,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 
-
-//using cv::Mat;
-//using cv::findContours;
-//using cv::Point;
-//using cv::Vec4i;
-//using cv::CV_RETR_CCOMP;
-//using cv::CV_CHAIN_APPROX_SIMPLE;
-
-Tracker::Tracker() {
+Detector::Detector() {
 
     // Initialize area parameters without constraint
     min_object_area = 0;
@@ -37,13 +29,11 @@ Tracker::Tracker() {
     xy_coord_px.y = 0;
 }
 
-Tracker::Tracker(const Tracker& orig) {
-}
+Detector::Detector(const Detector& orig) { }
 
-Tracker::~Tracker() {
-}
+Detector::~Detector() { }
 
-bool Tracker::findObjects(const cv::Mat& threshold_img) {
+bool Detector::findObjects(const cv::Mat& threshold_img) {
 
     cv::Mat thesh_cpy = threshold_img.clone();
     std::vector< std::vector < cv::Point > > contours;
@@ -89,7 +79,7 @@ bool Tracker::findObjects(const cv::Mat& threshold_img) {
     return object_found;
 }
 
-void Tracker::decorateFeed(cv::Mat& display_img, const cv::Scalar& color) {
+void Detector::decorateFeed(cv::Mat& display_img, const cv::Scalar& color) {
     
     // Add an image of the 
     if (object_found) {

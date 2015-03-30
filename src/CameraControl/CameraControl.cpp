@@ -20,11 +20,15 @@ CameraControl::CameraControl(void) {
 
     // Initialize the frame size
     // TODO: Hardcoded for the max square image on blackfly 09C
+    // Put in the configuration file
     frame_size = cv::Size(728, 728);
 
     // Start with 0 cameras on bus
     num_cameras = 0;
     index = 0;
+    shutter_ms = 0;
+    gain_dB = 0;
+    exposure_EV = 0;
     aquisition_started = false;
 }
 
@@ -112,7 +116,7 @@ int CameraControl::setupStreamChannels() {
     return 0;
 }
 
-int CameraControl::setupShutter(float shutter_ms) {
+int CameraControl::setupShutter() {
 
     std::cout << "Setting up shutter..." << std::endl; 
     
@@ -139,7 +143,13 @@ int CameraControl::setupShutter(float shutter_ms) {
     return 0;
 }
 
-int CameraControl::setupGain(float gain_dB) {
+int CameraControl::setupShutter(float shutter_ms_in) {
+    
+    shutter_ms = shutter_ms_in;
+    setupShutter();
+}
+
+int CameraControl::setupGain() {
 
     std::cout << "Setting camera gain..." << std::endl; 
     
@@ -166,7 +176,14 @@ int CameraControl::setupGain(float gain_dB) {
     return 0;
 }
 
-int CameraControl::setupExposure(float exposure_EV) {
+int CameraControl::setupGain(float gain_dB_in) {
+    
+    gain_dB = gain_dB_in;
+    setupGain();
+ 
+}
+
+int CameraControl::setupExposure() {
 
     std::cout << "Setting up exposure..." << std::endl; 
     
@@ -222,6 +239,12 @@ int CameraControl::setupExposure(float exposure_EV) {
     std::cout << "Exposure set to " << std::fixed << std::setprecision(2) << exposure_EV << " EV." << std::endl;
     
     return 0;
+}
+
+int CameraControl::setupExposure(float exposure_EV_in) {
+
+    exposure_EV = exposure_EV_in;
+    setupExposure();
 }
 
 /**
@@ -332,10 +355,6 @@ int CameraControl::setupTrigger(int source, int polarity) {
     triggerMode.mode = 14; // Trigger Mode 14 (“Overlapped Exposure/Readout Mode”)
     triggerMode.parameter = 0;
     triggerMode.source = 0;
-
-    // TODO: Triggering the camera externally using provided source and polarity
-    //trig_mode.source = source;
-    //trig_mode.polarity = polarity;
 
     error = camera.SetTriggerMode(&triggerMode);
     if (error != PGRERROR_OK) {

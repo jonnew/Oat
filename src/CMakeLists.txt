@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 2.8)
 project (SimpleTracker)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
 # Put outputs into separate folders so they can be gitignored
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -27,8 +28,10 @@ find_library(FLYCAPTURE2 flycapture)
 include_directories ("${PROJECT_SOURCE_DIR}/CameraControl")
 add_subdirectory (CameraControl) 
 
-include_directories ("${PROJECT_SOURCE_DIR}/Tracker")
-add_subdirectory (Tracker) 
+include_directories ("${PROJECT_SOURCE_DIR}/Processors")
+add_subdirectory (Processors) 
+
+add_library(Tracker Tracker.cpp)
 
 find_package (OpenCV REQUIRED)
 add_executable (SimpleTracker SimpleTracker.cpp )
