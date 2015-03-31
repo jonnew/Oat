@@ -38,20 +38,20 @@ int main(int argc, char *argv[]) {
 
     // TODO: recorder class
 
-    cv::Mat image = cv::Mat(tracker.cc.get_frame_size(), CV_8UC3);
+    //cv::Mat image = cv::Mat(tracker.cc.get_frame_size(), CV_8UC3);
     //cv::Mat filt_image_blue = image.clone();
     //cv::Mat filt_image_orange = image.clone();
 
     // Start image acquisition
     // TODO: Make better usage of the key commands for dynamically altering
     // the tracker's parameters at runtime
-    char key = '0';
-    int i = 0;
-    while (key != 'q') {
+    //char key = '0';
+    //int i = 0;
+    //while (key != 'q') {
 
         // Get image
-        tracker.cc.grabImage(image);
-        cv::imshow("Original image", image);
+        //tracker.cc.grabImage(image);
+        //cv::imshow("Original image", image);
 
         // TODO: Allow setting at arbitrary times
         //        if (i == 0) {
@@ -75,10 +75,10 @@ int main(int argc, char *argv[]) {
         //cv::imshow("Original image", image);
 
         // Display
-        key = cv::waitKey(1);
+        //key = cv::waitKey(1);
 
-        i++;
-    }
+        //i++;
+    //}
 
     // Exit
     return 0;

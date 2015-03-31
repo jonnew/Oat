@@ -15,7 +15,7 @@ format = "json"
 ###
 [camera]  		# Camera configuration
 index = 0
-exposure = -0.5 	# EV, if specified, shutter and gain are ignored
+exposure = 0.0          # EV, if specified, shutter and gain are ignored
 shutter = 3 		# ms
 gain = 0 		# dB
 white_bal = {red = 500, blue = 800} 	
@@ -39,7 +39,7 @@ method = "linear-interp"
 
 # Background subtraction
 [tracker.background_subtract]
-show = true
+show = false
 
 # Color detection. The number of detection tables
 # specified in this array dictate the number of tracked
@@ -50,10 +50,11 @@ show = true
 position = "anterior"
 erode = 2 			# pixels
 dilate = 8 			# pixels
-
+hsv_tune = true                 # provide sliders for tuning hsv thresholds
 h_thresholds = {min = 106, max = 126}
 s_thresholds = {min = 69, max = 256}
 v_thresholds = {min = 180, max = 256}
+
  
 [[tracker.detector]]
 name = "orange"
@@ -61,10 +62,10 @@ show = true
 position = "posterior"
 erode = 2 			# pixels
 dilate = 8 			# pixels
-
-h_thresholds = {min = 0, max = 32}
-s_thresholds = {min = 32, max = 210}
-v_thresholds = {min = 164, max = 256}
+hsv_tune = true                 # provide sliders for tuning hsv thresholds
+h_thresholds = {min = 0, max = 20}
+s_thresholds = {min = 99, max = 210}
+v_thresholds = {min = 49, max = 256}
 
 # Combiner to combine the objects produced by the detectors
 # into unified position and heading estimate. The selected

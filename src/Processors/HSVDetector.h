@@ -103,7 +103,7 @@ private:
     int v_max;
 
     // For manual manipulation of HSV filtering
-    std::string filter_name;
+    std::string filter_name, slider_title;
 
     // Object detection parameters
     std::string position;
@@ -124,12 +124,23 @@ private:
 
     // Binary threshold
     void applyThreshold(cv::Mat& threshold_img);
+    
+    // Use the binary threshold to mask the image
+    void applyThresholdMask(cv::Mat& threshold_img);
 
     // Erode/dilate objects to get rid of speckles
     void clarifyObjects(cv::Mat& threshold_img);
 
     // Add information to displayed image
     void decorateFeed(cv::Mat& display_img, const cv::Scalar&);
+    
+    // Callbacks for sliders
+    static void hminSliderChangedCallback(int, void*);
+    static void hmaxSliderChangedCallback(int, void*);
+    static void sminSliderChangedCallback(int, void*);
+    static void smaxSliderChangedCallback(int, void*);
+    static void vminSliderChangedCallback(int, void*);
+    static void vmaxSliderChangedCallback(int, void*);
 
 };
 

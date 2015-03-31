@@ -144,8 +144,8 @@ void Tracker::build() {
                 if ((*it)->contains("name")) {
                     
                     std::string name = *(*it)->get_as<std::string>("name");
-                    HSVDetector hsv_detector(name);
-                    hsv_detectors.push_back(hsv_detector);
+                    HSVDetector* hsv_detector = new HSVDetector(name);
+                    hsv_detectors.push_back(*hsv_detector);
                 } else {
                     HSVDetector hsv_detector("generic");
                     hsv_detectors.push_back(hsv_detector);
@@ -180,9 +180,7 @@ void Tracker::build() {
                      if  (t.contains("max")) {
                          hsv_detectors.back().h_max = (int) (*t.get_as<int64_t>("max"));
                      }
-                } else {
-                    hsv_detectors.back().createTrackbars();
-                }
+                } 
                 
                 if ((*it)->contains("s_thresholds")) {
                      auto t = *(*it)->get_table("s_thresholds");
@@ -193,9 +191,7 @@ void Tracker::build() {
                      if  (t.contains("max")) {
                          hsv_detectors.back().s_max = (int) (*t.get_as<int64_t>("max"));
                      }
-                } else {
-                    hsv_detectors.back().createTrackbars();
-                }
+                } 
                 
                 if ((*it)->contains("v_thresholds")) {
                      auto t = *(*it)->get_table("v_thresholds");
@@ -206,8 +202,11 @@ void Tracker::build() {
                      if  (t.contains("max")) {
                          hsv_detectors.back().v_max = (int) (*t.get_as<int64_t>("max"));
                      }
-                } else {
-                    hsv_detectors.back().createTrackbars();
+                } 
+                
+                if ((*it)->contains("hsv_tune")) {
+                    if (*(*it)->get_as<bool>("hsv_tune")) 
+                        hsv_detectors.back().createTrackbars();
                 }
                 
                 cv::Mat filt_img;

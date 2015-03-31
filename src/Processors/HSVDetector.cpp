@@ -37,6 +37,7 @@ HSVDetector::HSVDetector(const std::string filter_name_in,
     
     filter_name = filter_name_in;
     title = filter_name + "_detector";
+    slider_title = filter_name + "_hsv_sliders";
 
     // Initial threshold values
     h_min = h_min_in;
@@ -75,16 +76,47 @@ HSVDetector::~HSVDetector() {
 void HSVDetector::createTrackbars() {
 
     // Create window for trackbars
-    namedWindow(filter_name + "HSV_slider", 0);
+    namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
 
     // Create trackbars and insert them into window
-    createTrackbar("H_MIN", filter_name, &h_min, h_max, 0);
-    createTrackbar("H_MAX", filter_name, &h_max, h_max, 0);
-    createTrackbar("S_MIN", filter_name, &s_min, s_max, 0);
-    createTrackbar("S_MAX", filter_name, &s_max, s_max, 0);
-    createTrackbar("V_MIN", filter_name, &v_min, v_max, 0);
-    createTrackbar("V_MAX", filter_name, &v_max, v_max, 0);
+    // TODO: Does not work for multiple detectors. For the second one, 'this' points to nonsense...
+    createTrackbar("H_MIN", slider_title, &h_min, 256, &HSVDetector::hminSliderChangedCallback, this);
+    createTrackbar("H_MAX", slider_title, &h_max, 256, &HSVDetector::hmaxSliderChangedCallback, this);
+    createTrackbar("S_MIN", slider_title, &s_min, 256, &HSVDetector::sminSliderChangedCallback, this);
+    createTrackbar("S_MAX", slider_title, &s_max, 256, &HSVDetector::smaxSliderChangedCallback, this);
+    createTrackbar("V_MIN", slider_title, &v_min, 256, &HSVDetector::vminSliderChangedCallback, this);
+    createTrackbar("V_MAX", slider_title, &v_max, 256, &HSVDetector::vmaxSliderChangedCallback, this);
 
+}
+
+void HSVDetector::hminSliderChangedCallback(int value, void* object) {
+    HSVDetector* hsv_detector = (HSVDetector*) object;
+    hsv_detector->h_min = value;
+}
+
+void HSVDetector::hmaxSliderChangedCallback(int value, void* object) {
+    HSVDetector* hsv_detector = (HSVDetector*) object;
+    hsv_detector->h_max = value;
+}
+
+void HSVDetector::sminSliderChangedCallback(int value, void* object) {
+    HSVDetector* hsv_detector = (HSVDetector*) object;
+    hsv_detector->s_min = value;
+}
+
+void HSVDetector::smaxSliderChangedCallback(int value, void* object) {
+    HSVDetector* hsv_detector = (HSVDetector*) object;
+    hsv_detector->s_max = value;
+}
+
+void HSVDetector::vminSliderChangedCallback(int value, void* object) {
+    HSVDetector* hsv_detector = (HSVDetector*) object;
+    hsv_detector->v_min = value;
+}
+
+void HSVDetector::vmaxSliderChangedCallback(int value, void* object) {
+    HSVDetector* hsv_detector = (HSVDetector*) object;
+    hsv_detector->v_max = value;
 }
 
 void HSVDetector::applyFilter(const Mat& rgb_img, Mat& threshold_img) {
@@ -92,6 +124,7 @@ void HSVDetector::applyFilter(const Mat& rgb_img, Mat& threshold_img) {
     rgb_img.copyTo(image);
     hsvTransform();
     applyThreshold(threshold_img);
+    applyThresholdMask(threshold_img);
     clarifyObjects(threshold_img);
     findObjects(threshold_img);
     decorateFeed(image, cv::Scalar(0, 0, 255));
@@ -110,6 +143,11 @@ void HSVDetector::applyThreshold(Mat& threshold_img) {
 
     inRange(image, Scalar(h_min, s_min, v_min), Scalar(h_max, s_max, v_max), threshold_img);
 
+}
+
+void HSVDetector::applyThresholdMask(Mat& threshold_img) {
+    
+    image.setTo(0,threshold_img == 0);
 }
 
 void HSVDetector::clarifyObjects(Mat& threshold_img) {
@@ -180,7 +218,7 @@ void HSVDetector::decorateFeed(cv::Mat& display_img, const cv::Scalar& color) { 
         cv::circle(display_img, xy_coord_px, rad, color, 2);
     }
     else {
-        cv::putText(display_img, status_text, cv::Point(0, 50), 2, 1, cv::Scalar(255, 255, 255), 2);
+        cv::putText(display_img, status_text, cv::Point(5, 35), 2, 1, cv::Scalar(255, 255, 255), 2);
     }
     
     
