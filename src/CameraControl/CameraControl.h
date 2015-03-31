@@ -3,11 +3,11 @@
 
 #include "FlyCapture2.h"
 #include <opencv2/core/mat.hpp>
-//#include "../Tracker.h"
+#include "../IPC/SMServer.h"
 
 class Tracker;
 
-class CameraControl {
+class CameraControl : public SMServer {
     
    friend Tracker;
    
@@ -37,7 +37,13 @@ public:
     // Physical camera control
     int turnCameraOn(void);
     //TODO: int turnCameraOff(void);
-    void grabImage(cv::Mat& image);
+    void grabImage(void);
+    void grabMat(cv::Mat& image);
+    cv::Mat imageToMat(void);
+
+    // IPC
+    void createSharedBlock(void);
+    void serveMat(void);
 
     // Accessors
     cv::Size get_frame_size(void) {

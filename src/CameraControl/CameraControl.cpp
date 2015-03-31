@@ -8,19 +8,18 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
+#include "../IPC/SMServer.h"
 #include "stdafx.h"
 #include "FlyCapture2.h"
 
 using namespace FlyCapture2;
 
-CameraControl::CameraControl(void) {
+CameraControl::CameraControl(void) : SMServer(std::string server_name){
 
     // Initialize the frame size
-    // TODO: Hardcoded for the max square image on blackfly 09C
-    // Put in the configuration file
     frame_size = cv::Size(728, 728);
     frame_offset = cv::Size(0, 0);
 
@@ -534,14 +533,40 @@ void CameraControl::grabImage(cv::Mat& image) {
 
     //std::cout << "Grabbed image " << std::endl;
 
+}
+
+cv::Mat CameraControl::imageToMat() {
+    
     // convert to rgb
     raw_image.Convert(FlyCapture2::PIXEL_FORMAT_BGR, &rgb_image);
 
     // convert to OpenCV cv::Mat
     unsigned int rowBytes = (double) rgb_image.GetReceivedDataSize() / (double) rgb_image.GetRows();
-    image = cv::Mat(rgb_image.GetRows(), rgb_image.GetCols(), CV_8UC3, rgb_image.GetData(), rowBytes);
-    //std::cout << " Image = " << std::endl << " " << image << std::endl << std::endl;
+    return cv::Mat(rgb_image.GetRows(), rgb_image.GetCols(), CV_8UC3, rgb_image.GetData(), rowBytes);
+  
+}
 
+void CameraControl::grabMat(cv::Mat& image) {
+    
+    grabImage();
+    image = imageToMat();
+}
+
+void CameraControl::serveMat() {
+    if (!write_object_created) {
+        createSharedBlock();
+    }
+    else {
+        grabMat();
+    }
+        
+    
+    
+}
+
+void CameraControl::createSharedBlock() {
+    cv::Mat image = grabMat();
+    createSharedBlock(image.total() * image.elemSize());
 }
 
 // PRIVATE
