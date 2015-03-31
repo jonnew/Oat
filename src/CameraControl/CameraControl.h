@@ -21,12 +21,15 @@ public:
     // Once connected
     int setupStreamChannels(void);
     int setupShutter(float shutter_ms);
-    int setupShutter(void);
+    int setupShutter(bool is_auto);
     int setupGain(float gain_dB);
-    int setupGain(void);
+    int setupGain(bool is_auto);
     int setupExposure(float exposure_EV);
-    int setupExposure(void);
+    int setupExposure(bool is_auto);
+    int setupWhiteBalance(int white_bal_red, int white_bal_blue);
+    int setupWhiteBalance(bool is_on);
     int setupImageFormat(void);
+    int setupDefaultImageFormat(void);
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
     //int setupImageBinning(int xBinFactor, int yBinFactor);
     int setupTrigger(int source, int polarity);
@@ -43,16 +46,13 @@ public:
 
 private:
 
-    // Size of the image to aquire
-    cv::Size frame_size;
+    // Size and offset of the image to aquire
+    cv::Size frame_size, frame_offset;
     
-    // TODO: Size of the offset box in lower right hand corner of sensory array 
-    // to move the ROI of frame_size around
-    //cv::Size frame_offset; 
-
     bool aquisition_started;
     unsigned int num_cameras, index;
-    float gain_dB, shutter_ms, exposure_EV, white_bal;
+    float gain_dB, shutter_ms, exposure_EV;
+    int white_bal_red, white_bal_blue;
     FlyCapture2::GigECamera camera;
 
     // Camera and control state info

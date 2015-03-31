@@ -1,1 +1,1 @@
-add_library(Processors Detector.cpp HSVFilter.cpp BackgroundSubtractor.cpp PositionMeasurement.cpp)
+add_library(Processors ImageDisplay.cpp HSVDetector.cpp BackgroundSubtractor.cpp PositionMeasurement.cpp)

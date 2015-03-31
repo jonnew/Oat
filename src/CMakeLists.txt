@@ -35,4 +35,4 @@ add_library(Tracker Tracker.cpp)
 
 find_package (OpenCV REQUIRED)
 add_executable (SimpleTracker SimpleTracker.cpp )
-target_link_libraries (SimpleTracker CameraControl Tracker ${OpenCV_LIBS} ${FLYCAPTURE2})
+target_link_libraries (SimpleTracker Tracker CameraControl Processors ${OpenCV_LIBS} ${FLYCAPTURE2})

@@ -19,6 +19,7 @@ class Combiner {
 protected:
     
     virtual PositionMeasurement calculatePosition(std::vector<cv::Point>& raw_coordinates);
+    virtual PositionMeasurement filterPosition(PositionMeasurement input_pos); // TODO: Kalman
 
 };
 

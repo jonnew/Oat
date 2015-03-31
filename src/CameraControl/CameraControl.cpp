@@ -22,6 +22,7 @@ CameraControl::CameraControl(void) {
     // TODO: Hardcoded for the max square image on blackfly 09C
     // Put in the configuration file
     frame_size = cv::Size(728, 728);
+    frame_offset = cv::Size(0, 0);
 
     // Start with 0 cameras on bus
     num_cameras = 0;
@@ -93,6 +94,7 @@ int CameraControl::setupStreamChannels() {
             exit(EXIT_FAILURE);
         }
 
+        // TODO: This is not going to valid if cameras are on a switch...
         streamChannel.destinationIpAddress.octets[0] = 224;
         streamChannel.destinationIpAddress.octets[1] = 0;
         streamChannel.destinationIpAddress.octets[2] = 0;
@@ -116,135 +118,197 @@ int CameraControl::setupStreamChannels() {
     return 0;
 }
 
-int CameraControl::setupShutter() {
+int CameraControl::setupShutter(bool is_auto) {
 
-    std::cout << "Setting up shutter..." << std::endl; 
-    
+    std::cout << "Setting up shutter..." << std::endl;
+
     Property prop;
     prop.type = SHUTTER;
     Error error = camera.GetProperty(&prop);
     if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+        printError(error);
+        exit(EXIT_FAILURE);
     }
-    
-    prop.autoManualMode = false;
+
+    prop.autoManualMode = is_auto;
     prop.absControl = true;
     prop.absValue = shutter_ms;
-    
+
     error = camera.SetProperty(&prop);
     if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+        printError(error);
+        exit(EXIT_FAILURE);
     }
     
-    std::cout << "Shutter time set to " << std::fixed << std::setprecision(2) << shutter_ms << " ms." << std::endl;
-    
+    if (is_auto) {
+        std::cout << "Shutter set to auto." << std::endl;
+    }
+    else {
+        std::cout << "Shutter time set to " << std::fixed << std::setprecision(2) << shutter_ms << " ms." << std::endl;
+    }
+
     return 0;
 }
 
 int CameraControl::setupShutter(float shutter_ms_in) {
-    
+
     shutter_ms = shutter_ms_in;
-    setupShutter();
+    setupShutter(false);
 }
 
-int CameraControl::setupGain() {
+int CameraControl::setupGain(bool is_auto) {
 
-    std::cout << "Setting camera gain..." << std::endl; 
-    
+    std::cout << "Setting camera gain..." << std::endl;
+
     Property prop;
     prop.type = GAIN;
     Error error = camera.GetProperty(&prop);
     if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+        printError(error);
+        exit(EXIT_FAILURE);
     }
-    
-    prop.autoManualMode = false;
+
+    prop.autoManualMode = is_auto;
     prop.absControl = true;
     prop.absValue = gain_dB;
-    
+
     error = camera.SetProperty(&prop);
     if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+        printError(error);
+        exit(EXIT_FAILURE);
     }
-    
-    std::cout << "Gain set to " << std::fixed << std::setprecision(2) << gain_dB << " dB." << std::endl;
-    
+
+    if (is_auto) {
+        std::cout << "Gain set to auto." << std::endl;
+    }
+    else {
+        std::cout << "Gain set to " << std::fixed << std::setprecision(2) << gain_dB << " dB." << std::endl;
+    }
+
     return 0;
 }
 
 int CameraControl::setupGain(float gain_dB_in) {
-    
+
     gain_dB = gain_dB_in;
-    setupGain();
- 
+    setupGain(false);
+
 }
 
-int CameraControl::setupExposure() {
+int CameraControl::setupExposure(bool is_auto) {
 
-    std::cout << "Setting up exposure..." << std::endl; 
-    
+    std::cout << "Setting up exposure..." << std::endl;
+
+    setupShutter(true);
+    setupGain(true);
+    //    Property prop;
+    //    prop.type = SHUTTER;
+    //    Error error = camera.GetProperty(&prop);
+    //    if (error != PGRERROR_OK) {
+    //            printError(error);
+    //            exit(EXIT_FAILURE);
+    //    }
+    //    
+    //    prop.autoManualMode = true;
+    //    
+    //    error = camera.SetProperty(&prop);
+    //    if (error != PGRERROR_OK) {
+    //            printError(error);
+    //            exit(EXIT_FAILURE);
+    //    }
+    //    
+    //    prop.type = GAIN;
+    //    error = camera.GetProperty(&prop);
+    //    if (error != PGRERROR_OK) {
+    //            printError(error);
+    //            exit(EXIT_FAILURE);
+    //    }
+    //    
+    //    prop.autoManualMode = true;
+    //    
+    //    error = camera.SetProperty(&prop);
+    //    if (error != PGRERROR_OK) {
+    //            printError(error);
+    //            exit(EXIT_FAILURE);
+    //    }
+
     Property prop;
-    prop.type = SHUTTER;
+    prop.type = AUTO_EXPOSURE;
     Error error = camera.GetProperty(&prop);
     if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+        printError(error);
+        exit(EXIT_FAILURE);
     }
-    
-    prop.autoManualMode = true;
-    
-    error = camera.SetProperty(&prop);
-    if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
-    }
-    
-    prop.type = GAIN;
-    error = camera.GetProperty(&prop);
-    if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
-    }
-    
-    prop.autoManualMode = true;
-    
-    error = camera.SetProperty(&prop);
-    if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
-    }
-    
-    prop.type = AUTO_EXPOSURE;
-    error = camera.GetProperty(&prop);
-    if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
-    }
-    
+
     prop.onOff = true;
-    prop.autoManualMode = false;
+    prop.autoManualMode = is_auto;
     prop.absControl = true;
     prop.absValue = exposure_EV;
-    
+
     error = camera.SetProperty(&prop);
     if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+        printError(error);
+        exit(EXIT_FAILURE);
     }
-    
-    std::cout << "Exposure set to " << std::fixed << std::setprecision(2) << exposure_EV << " EV." << std::endl;
-    
+
+    if (is_auto) {
+        std::cout << "Exposure set to auto." << std::endl;
+    }
+    else {
+        std::cout << "Exposure set to " << std::fixed << std::setprecision(2) << exposure_EV << " EV." << std::endl;
+    }
+
     return 0;
 }
 
 int CameraControl::setupExposure(float exposure_EV_in) {
 
     exposure_EV = exposure_EV_in;
-    setupExposure();
+    setupExposure(false);
+}
+
+int CameraControl::setupWhiteBalance(bool is_on) {
+
+    std::cout << "Setting camera white balance..." << std::endl;
+
+    Property prop;
+    prop.type = WHITE_BALANCE;
+    Error error = camera.GetProperty(&prop);
+    if (error != PGRERROR_OK) {
+        printError(error);
+        exit(EXIT_FAILURE);
+    }
+
+    prop.onOff = is_on;
+    prop.autoManualMode = false;
+    prop.absControl = false;
+    prop.valueA = white_bal_red;
+    prop.valueB = white_bal_blue;
+
+    error = camera.SetProperty(&prop);
+    if (error != PGRERROR_OK) {
+        printError(error);
+        exit(EXIT_FAILURE);
+    }
+
+    if (is_on) {
+        std::cout << "White balance set to: " << std::endl;
+        std::cout << "\tRed: " << std::fixed << std::setprecision(2) << white_bal_red << std::endl;
+        std::cout << "\tBlue: " << std::fixed << std::setprecision(2) << white_bal_blue << std::endl;
+    }
+    else {
+        std::cout << "White balance turned off." << std::endl;
+    }
+
+    return 0;
+}
+
+int CameraControl::setupWhiteBalance(int white_bal_red_in, int white_bal_blue_in) {
+
+    white_bal_red = white_bal_red_in;
+    white_bal_blue = white_bal_blue_in;
+    setupWhiteBalance(true);
+
 }
 
 /**
@@ -252,7 +316,7 @@ int CameraControl::setupExposure(float exposure_EV_in) {
  * 
  * @return 0 if successful.
  */
-int CameraControl::setupImageFormat() {
+int CameraControl::setupDefaultImageFormat() {
 
     std::cout << "Querying GigE image setting information..." << std::endl;
 
@@ -262,9 +326,14 @@ int CameraControl::setupImageFormat() {
         return -1;
     }
 
+    frame_offset.width = 0;
+    frame_offset.height = 0;
+    frame_size.width = image_settings_info.maxWidth;
+    frame_size.height = image_settings_info.maxHeight;
+
     GigEImageSettings imageSettings;
-    imageSettings.offsetX = 0;
-    imageSettings.offsetY = 0;
+    imageSettings.offsetX = frame_offset.width;
+    imageSettings.offsetY = frame_offset.height;
     imageSettings.height = frame_size.height;
     imageSettings.width = frame_size.width;
     imageSettings.pixelFormat = PIXEL_FORMAT_RAW12;
@@ -280,6 +349,64 @@ int CameraControl::setupImageFormat() {
 
     return 0;
 
+}
+
+/**
+ * Custom image setup. Image uses the internally specified ROI settings.
+ * @return 
+ */
+int CameraControl::setupImageFormat() {
+
+    std::cout << "Querying GigE image setting information..." << std::endl;
+
+    Error error = camera.GetGigEImageSettingsInfo(&image_settings_info);
+    if (error != PGRERROR_OK) {
+        printError(error);
+        exit(EXIT_FAILURE);
+    }
+
+    if (frame_offset.width > image_settings_info.maxWidth ||
+        frame_offset.height > image_settings_info.maxHeight) {
+
+        std::cerr << "ROI pixel offsets are larger than the CCD array. Exiting." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if ((frame_offset.width + frame_size.width) > image_settings_info.maxWidth) {
+
+        frame_size.width = image_settings_info.maxWidth - frame_offset.width;
+        std::cout << "WARNING: Current X-axis ROI settings is off the CCD array" << std::endl;
+        std::cout << "WARNING: Cropping the ROI to fit on the array: " << std::endl;
+        std::cout << "\tFrame width: " + frame_size.width << std::endl;
+        std::cout << "\tFrame offset: " + frame_offset.width << std::endl;
+    }
+
+    if ((frame_offset.height + frame_size.height) > image_settings_info.maxHeight) {
+
+        frame_size.height = image_settings_info.maxHeight - frame_offset.height;
+        std::cout << "WARNING: Current Y-axis ROI settings is off the CCD array" << std::endl;
+        std::cout << "WARNING: Cropping the ROI to fit on the array: " << std::endl;
+        std::cout << "\tFrame height: " + frame_size.height << std::endl;
+        std::cout << "\tFrame offset: " + frame_offset.height << std::endl;
+    }
+
+    GigEImageSettings imageSettings;
+    imageSettings.offsetX = frame_offset.width;
+    imageSettings.offsetY = frame_offset.height;
+    imageSettings.height = frame_size.height;
+    imageSettings.width = frame_size.width;
+    imageSettings.pixelFormat = PIXEL_FORMAT_RAW12;
+    //imageSettings.pixelFormat = PIXEL_FORMAT_MONO8;
+
+    std::cout << "Setting GigE image settings..." << std::endl;
+
+    error = camera.SetGigEImageSettings(&imageSettings);
+    if (error != PGRERROR_OK) {
+        printError(error);
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
 }
 
 /**
@@ -400,13 +527,12 @@ void CameraControl::grabImage(cv::Mat& image) {
 
         // TODO: implement onboard buffer and perform retry a RetrieveBuffer
         // A single time if a torn image is detected.
-    }
-    else if (error != PGRERROR_OK) {
+    } else if (error != PGRERROR_OK) {
         printError(error);
         std::cout << "WARNING: capture error." << std::endl;
     }
 
-    std::cout << "Grabbed image " << std::endl;
+    //std::cout << "Grabbed image " << std::endl;
 
     // convert to rgb
     raw_image.Convert(FlyCapture2::PIXEL_FORMAT_BGR, &rgb_image);

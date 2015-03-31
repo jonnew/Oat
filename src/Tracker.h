@@ -12,9 +12,8 @@
 #include <opencv2/core/mat.hpp>
 
 #include "CameraControl/CameraControl.h"
-#include "Processors/HSVFilter.h"
+#include "Processors/HSVDetector.h"
 #include "Processors/BackgroundSubtractor.h"
-#include "Processors/Detector.h"
 #include "Processors/Combiner.h"
 #include "cpptoml.h"
 
@@ -24,19 +23,24 @@ public:
     Tracker(const Tracker& orig);
     virtual ~Tracker();
     
+    int run(void);
+    
     CameraControl cc;
-    //BackgroundSubtractor br_subtractor;
-    std::vector<HSVFilter> hsv_filters;
-    std::vector<Detector> detectors;
+    BackgroundSubtractor subtractor;
+    std::vector<HSVDetector> hsv_detectors;
     //Combiner combiner;
     
 private:
     
-    cv::Mat curr_image;
+    bool background_subtract_on = false;
+    
+    cv::Mat orig_image;
+    cv::Mat proc_image;
     std::vector<cv::Mat> filtered_images;
     
     cpptoml::table config;
     void build(void);
+    
 
 };
 

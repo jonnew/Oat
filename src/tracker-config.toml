@@ -1,7 +1,7 @@
 # Example tracker configuration file.
 
 ###
-[io] 				# File saving/streaming
+[io] 			# File saving/streaming
 [io.save]
 auto_name = true 	# Automatically name files using timestamp
 subject = "3(3)"
@@ -13,61 +13,58 @@ client_ip = "100.100.100.100"
 format = "json"
 
 ###
-[camera]  			# Camera configuration
+[camera]  		# Camera configuration
 index = 0
 exposure = -0.5 	# EV, if specified, shutter and gain are ignored
 shutter = 3 		# ms
-gain = 0 			# dB
-whitebal = false 	# TODO...
+gain = 0 		# dB
+white_bal = {red = 500, blue = 800} 	
+roi = {x_offset = 0, y_offset = 0, width = 728, height = 728} # Pixels
+
+# Trigger
+[camera.trigger]
+on = true               # If trigger is not specified, or this is false, free run the camera
+polarity = true         # Rising edge active
+mode = 14               # Overlapped Exposure/Readout Mode (see Camera manual)
+source = 0              # GPIO pin that trigger will be sent to
 
 ###
 [tracker] 			# Tracker configuration
 
 # Image registration sequence for transforming
 # pixels to mm
-[tracker.registration] 
+[tracker.registration]  
 on = false
 method = "linear-interp"
 
 # Background subtraction
-[tracker.subtract-background]
-on = false
-show = false
+[tracker.background_subtract]
+show = true
 
 # Color detection. The number of detection tables
 # specified in this array dictate the number of tracked
 # objects available to the combiner
 [[tracker.detector]]
 name = "blue"
-show = false
+show = true
 position = "anterior"
+erode = 2 			# pixels
+dilate = 8 			# pixels
 
-[tracker.detector.hsv]
-h_thresholds = {h_min = 106, h_max = 126}
-s_thresholds = {s_min = 69, s_max = 256}
-v_thresholds = {v_min = 180, v_max = 256}
+h_thresholds = {min = 106, max = 126}
+s_thresholds = {min = 69, max = 256}
+v_thresholds = {min = 180, max = 256}
  
-[tracker.detector.erode]
-size = 2 			# pixels
-
-[tracker.detector.dilate]
-size = 8 			# pixels
-
 [[tracker.detector]]
 name = "orange"
-show = false
+show = true
 position = "posterior"
+erode = 2 			# pixels
+dilate = 8 			# pixels
 
-[tracker.detector.hsv]
-h_thresholds = {h_min = 0, h_max = 32}
-s_thresholds = {s_min = 32, s_max = 210}
-v_thresholds = {v_min = 164, v_max = 256}
-
-[tracker.detector.erode]
-size = 2 			# pixels
-
-[tracker.detector.dilate]
-size = 8 			# pixels
+h_thresholds = {min = 0, max = 32}
+s_thresholds = {min = 32, max = 210}
+v_thresholds = {min = 164, max = 256}
 
 # Combiner to combine the objects produced by the detectors
 # into unified position and heading estimate. The selected

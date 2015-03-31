@@ -11,12 +11,6 @@
 
 using cv::Mat;
 
-BackgroundSubtractor::BackgroundSubtractor() {
-}
-
-BackgroundSubtractor::~BackgroundSubtractor() {
-}
-
 /**
  * Set the background image to be used during subsequent subtraction operations.
  * 
@@ -24,6 +18,7 @@ BackgroundSubtractor::~BackgroundSubtractor() {
  */
 void BackgroundSubtractor::setBackgroundImage(const Mat& input_img) {
 
+    background_set = true;
     background_img = input_img.clone();
 }
 
@@ -33,21 +28,25 @@ void BackgroundSubtractor::setBackgroundImage(const Mat& input_img) {
  * 
  * @param input_img Input matrix
  * @param output_img Output matrix
+ * 
  */
-void BackgroundSubtractor::subtrackBackground(Mat& input_img, Mat& output_img) {
-
-
+void BackgroundSubtractor::subtractBackground(const Mat& input_img, Mat& output_img) {
 
     // If we have set a background image, perform subtraction
-    if (&background_img) {
+    if (background_set) {
 
         if ((input_img.size() != output_img.size()) || (input_img.size() != background_img.size())) {
-            std::cerr << "Input and output matrices must be the same size." << std::endl;
+            std::cerr << "Background Subtractor: Input and output matrices must be the same size." << std::endl;
             exit(EXIT_FAILURE);
         }
+        
+        //cv::Mat temp = input_img.clone();
         output_img = input_img - background_img;
+    } else {
+        input_img.copyTo(output_img);
     }
-    else {
-        output_img = input_img;
+    
+    if (show) {
+        showImage("Background subtraction", output_img);
     }
 }
