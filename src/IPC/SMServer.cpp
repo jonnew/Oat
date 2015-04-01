@@ -13,32 +13,38 @@
 
 using namespace boost::interprocess;
 
-SMServer::SMServer(std::string block_name) {
-    
-    write_block_name = block_name;
-    shared_memory_object::remove(write_block_name);
-    
+SMServer::SMServer(std::string _name) {
+
+	name = shared_object_name;
+	shared_memory_object::remove(name);
 }
 
 SMServer::SMServer(const SMServer& orig) {
 }
 
 SMServer::~SMServer() {
-    
-    shared_memory_object::remove("write_block_name");
+
+	// This should be taken care of automatically by
+	// remove_shared_memory_on_destroy
+	shared_memory_object::remove(write_block_name);
 }
 
 SMServer::createSharedBlock(size_t bytes) {
-    
-    //Create a shared memory object.
-      shared_write_object(create_only, write_block_name, read_write);
 
-      //Set size
-      shared_write_object.truncate(bytes);
+	// Create a shared memory object
+	shared_write_object(open_or_create, write_block_name, read_write);
+	
+	// Automatically cleanup shared memory when object 
+	// is detroyed
+	remove_on_destroy(shared_write_object);
 
-      //Map the whole shared memory in this process
-      write_region(shared_write_object, read_write);
-      
-      write_object_created = true;
+	// Set size
+	shared_write_object.truncate(bytes);
+
+	// Map the whole shared memory in this processes'
+	// address space
+	write_region(shared_write_object, read_write);
+
+	write_object_created = true;
 }
 

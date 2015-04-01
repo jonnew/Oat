@@ -23,9 +23,10 @@ public:
 
 protected:
 
-    std::string write_block_name;
-    bool write_object_created = false;
-    boost::interprocess::shared_memory_object shared_write_object;
+    std::string name;
+    bool shared_object_created = false;
+    boost::interprocess::managed_shared_memory shared_write_object;
+	boost::interprocess::remove_shared_memory_on_destroy remove_on_destroy;	
     boost::interprocess::mapped_region write_region;
     std::vector<boost::interprocess::shared_memory_object> read_blocks;
 

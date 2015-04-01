@@ -11,5 +11,6 @@ set (CMAKE_SHARED_LINKER_FLAGS "-lpthread, -lrt")
 
 find_package (Boost 1.57.0 EXACT REQUIRED)
 
+add_executable (synctest condvar.cpp)
 add_executable (memtest main.cpp)
 target_link_libraries (memtest ${Boost_LIBRARIES} ${CPP_PTHREAD_LINK_FLAG} ${CPP_RT_LINK_FLAG})
