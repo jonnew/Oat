@@ -52,10 +52,10 @@ void SMServer<T>::createSharedObject(size_t bytes) {
         named_condition::remove(cond_name.c_str());
 
         // Allocate shared memory
-        shared_write_object = managed_shared_memory(open_or_create, shmem_name.c_str(), bytes);
+        shared_memory = managed_shared_memory(open_or_create, shmem_name.c_str(), bytes);
 
         // Make the shared object
-        shared_object = shared_write_object.construct<T>(shobj_name.c_str())();
+        shared_object = shared_memory.find_or_construct<T>(shobj_name.c_str())();
 
     } catch (boost::interprocess::bad_alloc &ex) {
         std::cerr << ex.what() << '\n';

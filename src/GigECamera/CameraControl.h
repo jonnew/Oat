@@ -57,6 +57,11 @@ private:
     // Size and offset of the image to aquire
     cv::Size frame_size, frame_offset;
     
+    // If we are serving the data, this is the currently captured image and
+    // data size is the number of bytes in its data block
+    cv::Mat mat;
+    int data_size;
+    
     bool aquisition_started;
     unsigned int num_cameras, index;
     float gain_dB, shutter_ms, exposure_EV;

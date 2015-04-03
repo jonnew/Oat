@@ -14,6 +14,7 @@
 #include "FlyCapture2.h"
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/shmem/SharedMat.h"
 #include "../../lib/shmem/SMServer.h"
 #include "../../lib/shmem/SMServer.cpp"
 
@@ -653,7 +654,8 @@ void CameraControl::serveMat() {
     if (!shared_write_object_created) {
         cv::Mat mat;
         grabMat(mat);
-        createSharedObject(mat.total() * mat.elemSize() + 1024);
+        data_size = mat.total() * mat.elemSize();
+        createSharedObject(data_size + sizeof(sharedmat::SharedMat) + 1024);
         set_shared_object(mat);
     } else {
         cv::Mat mat;

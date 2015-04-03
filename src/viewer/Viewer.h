@@ -13,6 +13,7 @@ public:
     //Viewer(const Viewer& orig);
     //virtual ~Viewer();
 
+    void constructImage(void);
     void showImage(void);
     void showImage(std::string title);
    

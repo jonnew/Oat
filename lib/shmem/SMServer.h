@@ -24,20 +24,20 @@ public:
 
     //const SMServer& operator=( const SMServer& other );
 
-    void set_shared_object(T val);
+    //void set_shared_object(T val);
 
 protected:
+    
+    T* shared_object;
+    
     std::string name, shmem_name, shobj_name, mtx_name, cond_name;
     bool shared_write_object_created = false;
     boost::interprocess::named_condition serv_condition;
-    boost::interprocess::managed_shared_memory shared_write_object;
+    boost::interprocess::managed_shared_memory shared_memory;
     boost::interprocess::named_mutex serv_mutex;
 
     void createSharedObject(size_t bytes);
-
-private:
-    T* shared_object;
-
+   
 };
 
 #endif	/* SMSERVER_H */

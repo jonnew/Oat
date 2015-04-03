@@ -8,21 +8,23 @@
 //#include "cpptoml.h"
 
 //#include "MatServer.h"
+#include "../../lib/shmem/SharedMat.h"
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/shmem/SMClient.cpp"
 
-Viewer::Viewer(std::string server_name) : SMClient<cv::Mat>(server_name) { }
+Viewer::Viewer(std::string server_name) : SMClient<sharedmat::SharedMat>(server_name) { }
+
 
 void Viewer::showImage() {
     
-    get_shared_object(&image);
+    image = sharedmat::constructImage(shared_object);
     cv::imshow(name, image);
     cv::waitKey(1);
 }
 
 void Viewer::showImage(const std::string title) {
     
-    get_shared_object(&image);
+    image = sharedmat::constructImage(shared_object);
     cv::imshow(title, image);
     cv::waitKey(1);
 }

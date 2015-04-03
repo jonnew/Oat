@@ -25,20 +25,20 @@ public:
 
     //const SMServer& operator=( const SMServer& other );
 
-    void get_shared_object(T* val);
+    //void get_shared_object(T* val);
 
 protected:
 
+    T* shared_object;
+    
     std::string name, shmem_name, shobj_name, mtx_name, cond_name;
     bool shared_read_object_created = false;
     boost::interprocess::named_condition client_condition;
-    boost::interprocess::managed_shared_memory shared_read_object;
+    boost::interprocess::managed_shared_memory shared_memory;
     boost::interprocess::named_mutex client_mutex;
     
     void findSharedObject(void);
-
-private:
-    T* shared_object;
+    
 
 };
 

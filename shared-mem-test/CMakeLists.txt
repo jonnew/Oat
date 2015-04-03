@@ -3,6 +3,9 @@ project (memtest)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
+include_directories(opt/boost_1_57_0)
+
+
 set (BOOST_ROOT /opt/boost_1_57_0 )
 set (CPP_PTHREAD_LINK_FLAG "-lpthread")
 set (CPP_RT_LINK_FLAG "-lrt")

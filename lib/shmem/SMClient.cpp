@@ -43,10 +43,10 @@ void SMClient<T>::findSharedObject() {
     try {
 
         // Allocate shared memory
-        shared_read_object = managed_shared_memory(open_only, shmem_name.c_str());
+        shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
 
         // Make the shared object
-        shared_object = shared_read_object.construct<T>(shobj_name.c_str())();
+        shared_object = shared_memory.find<T>(shobj_name.c_str()).first;
 
     } catch (boost::interprocess::bad_alloc &ex) {
         std::cerr << ex.what() << '\n';
@@ -55,17 +55,17 @@ void SMClient<T>::findSharedObject() {
     shared_read_object_created = true;
 }
 
-template<class T>
-void SMClient<T>::get_shared_object(T* val) {
-    
-    {
-        // Lock access to the shared object
-        scoped_lock<named_mutex> lock{client_mutex};
-        
-        *shared_object = *val; 
-        
-        client_condition.notify_all();
-        client_condition.wait(lock);
-    } 
+//template<class T>
+//void SMClient<T>::get_shared_object(T* val) {
+//    
+//    {
+//        // Lock access to the shared object
+//        scoped_lock<named_mutex> lock{client_mutex};
+//        
+//        *shared_object = *val; 
+//        
+//        client_condition.notify_all();
+//        client_condition.wait(lock);
+//    } 
 }
 
