@@ -8,27 +8,29 @@
 #ifndef SMSERVER_H
 #define	SMSERVER_H
 
-#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <string>
 
-class SMServer {
+template <typename T> class SMServer {
+    
 public:
     SMServer(std::string block_name);
     SMServer(const SMServer& orig);
     virtual ~SMServer();
-
-    void createSharedBlock(size_t bytes);
-    void openSharedBlock(std::string block_to_open);
-
+    
 protected:
+    
+    T shared_object;
 
     std::string name;
-    bool shared_object_created = false;
+    bool shared_write_object_created = false;
     boost::interprocess::managed_shared_memory shared_write_object;
-	boost::interprocess::remove_shared_memory_on_destroy remove_on_destroy;	
-    boost::interprocess::mapped_region write_region;
-    std::vector<boost::interprocess::shared_memory_object> read_blocks;
+    
+    void createSharedObject(size_t bytes);
+    
+    //template<typename T>
+    //void makeSharedObject(T data_object);
 
 };
 

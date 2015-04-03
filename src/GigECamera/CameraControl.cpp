@@ -10,12 +10,14 @@
 #include <sstream>
 #include <iomanip>
 #include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include "cpptoml.h"
 
-#include "../IPC/SMServer.h"
-#include "stdafx.h"
 #include "FlyCapture2.h"
+
+#include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/shmem/SMServer.h"
+#include "../../lib/shmem/SMServer.cpp"
+
+#include "stdafx.h"
 
 using namespace FlyCapture2;
 
@@ -37,7 +39,7 @@ CameraControl::CameraControl(std::string name) : SMServer<cv::Mat>(name) {
 void CameraControl::configure(std::string config_file) {
 
     cpptoml::table config;
-    
+
     try {
         config = cpptoml::parse_file(config_file);
 
@@ -647,14 +649,16 @@ void CameraControl::grabMat(cv::Mat& mat) {
 }
 
 void CameraControl::serveMat() {
-    
+
     if (!shared_write_object_created) {
         cv::Mat mat;
         grabMat(mat);
         createSharedObject(mat.total() * mat.elemSize() + 1024);
-        shared_object = mat;
+        set_shared_object(mat);
     } else {
-        grabMat(shared_object);
+        cv::Mat mat;
+        grabMat(mat);
+        set_shared_object(mat);
     }
 }
 

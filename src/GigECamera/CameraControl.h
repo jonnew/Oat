@@ -3,10 +3,10 @@
 
 #include <string>
 #include <opencv2/core/mat.hpp>
-#include "../IPC/SMServer.h"
 
 #include "FlyCapture2.h"
-#include "../IPC/SMServer.h"
+
+#include "../../lib/shmem/SMServer.h"
 
 class CameraControl : public SMServer<cv::Mat> {
    

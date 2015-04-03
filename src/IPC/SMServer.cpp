@@ -7,16 +7,17 @@
 
 #include "SMServer.h"
 
+#include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <string>
 
 using namespace boost::interprocess;
 
-SMServer::SMServer(std::string _name) {
+SMServer::SMServer(std::string shared_object_name) {
 
-	name = shared_object_name;
-	shared_memory_object::remove(name);
+    name = shared_object_name;
+    
 }
 
 SMServer::SMServer(const SMServer& orig) {
@@ -24,27 +25,20 @@ SMServer::SMServer(const SMServer& orig) {
 
 SMServer::~SMServer() {
 
-	// This should be taken care of automatically by
-	// remove_shared_memory_on_destroy
-	shared_memory_object::remove(write_block_name);
+    // Remove_shared_memory on object destruction
+    shared_memory_object::remove(name);
 }
 
-SMServer::createSharedBlock(size_t bytes) {
+SMServer::createSharedObject(size_t bytes) {
 
-	// Create a shared memory object
-	shared_write_object(open_or_create, write_block_name, read_write);
-	
-	// Automatically cleanup shared memory when object 
-	// is detroyed
-	remove_on_destroy(shared_write_object);
+    try {
+        shared_memory_object::remove(name);
+        shared_write_object{open_or_create, name, bytes};
+        T *shared_object = shared_write_object.construct<T>("w_" + name)();
+    } catch (boost::interprocess::bad_alloc &ex) {
+        std::cerr << ex.what() << '\n';
+    }
 
-	// Set size
-	shared_write_object.truncate(bytes);
-
-	// Map the whole shared memory in this processes'
-	// address space
-	write_region(shared_write_object, read_write);
-
-	write_object_created = true;
+    shared_write_object_created = true;
 }
 
