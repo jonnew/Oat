@@ -11,8 +11,8 @@ using namespace boost::interprocess;
 
 MatClient::MatClient(std::string server_name) :
 name(server_name)
-, shmem_name(server_name.append("_sh_mem"))
-, shobj_name(server_name.append("_sh_obj")) {
+, shmem_name(server_name + "_sh_mem")
+, shobj_name(server_name + "_sh_obj") {
 }
 
 MatClient::MatClient(const MatClient& orig) {
@@ -30,15 +30,27 @@ void MatClient::findSharedMat() {
     shared_mat_header = shared_memory.find<shmem::SharedMatHeader>(shobj_name.c_str()).first;
 
     shared_mat_created = true;
-    
+
     mat.create(shared_mat_header->size,
                shared_mat_header->type);
-    
-    mat.data = (uchar*)shared_memory.get_address_from_handle(shared_mat_header->handle);
+
+    mat.data = (uchar*) shared_memory.get_address_from_handle(shared_mat_header->handle);
 
 }
 
 cv::Mat MatClient::get_shared_mat() {
 
     return mat;
+}
+
+void MatClient::set_name(std::string server_name) {
+    
+    if (!shared_mat_created) {
+        name = server_name;
+        shmem_name = server_name + "_sh_mem";
+        shobj_name = server_name + "_sh_obj";
+        
+    } else {
+        std::cerr << "Cannot reset MatClient name after shared memory has bee allocated." << std::endl;
+    }
 }

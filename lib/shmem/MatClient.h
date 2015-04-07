@@ -20,6 +20,7 @@ public:
 protected:
     void findSharedMat(void);
     cv::Mat get_shared_mat(void);
+    void set_name(std::string server_name);
     std::string name;
     shmem::SharedMatHeader* shared_mat_header;
     bool shared_mat_created = false;

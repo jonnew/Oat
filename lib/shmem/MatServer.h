@@ -22,9 +22,12 @@ public:
     MatServer(const MatServer& orig);
     virtual ~MatServer();
     
+    std::string get_name(void) { return name; }
+    
 protected:
     void createSharedMat(cv::Mat model);
     void set_shared_mat(cv::Mat mat);
+    void set_name(std::string server_name);
     std::string name;
     bool shared_mat_created = false;
 

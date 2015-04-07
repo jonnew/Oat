@@ -4,15 +4,18 @@
 int main(int argc, char *argv[]) {
 
 
-    if (argc != 2) {
-        std::cout << "Usage: " << argv[0] << " CAMERA-SETTINGS-FILE" << std::endl;
+    if (argc != 3) {
+        std::cout << "Usage: " << argv[0] << "SINK-NAME CAMERA-SETTINGS-FILE" << std::endl;
         std::cout << "Data server for point-grey GigE cameras." << std::endl;
         return 1;
     }
 
-    CameraControl cc("server");
-    cc.configure(argv[1]);
+    CameraControl cc(argv[1]);
+    cc.configure(argv[2]);
+    
+    std::cout << "GigECamera server named " + cc.get_name() + " has started." << std::endl;
 
+    // TODO: exit signal
     while (1) {
 
         cc.serveMat();

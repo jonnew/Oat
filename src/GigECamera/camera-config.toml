@@ -1,7 +1,8 @@
-# Example ge camera configuration file.
+# Example GigE camera configuration file.
 
 [camera]  		# Camera configuration
-index = 0
+#name = "maze_cam" 	# (TODO: remove)Server name
+index = 0 		# Index of camera on the bus
 exposure = 0.0          # EV, if specified, shutter and gain are ignored
 shutter = 3 		# ms
 gain = 0 		# dB

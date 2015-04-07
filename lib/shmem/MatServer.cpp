@@ -11,8 +11,8 @@ using namespace boost::interprocess;
 
 MatServer::MatServer(std::string server_name) :
   name(server_name)
-, shmem_name(name.append("_sh_mem"))
-, shobj_name(name.append("_sh_obj"))
+, shmem_name(name + "_sh_mem")
+, shobj_name(name + "_sh_obj")
 { }
 
 MatServer::MatServer(const MatServer& orig) { }
@@ -44,12 +44,14 @@ void MatServer::createSharedMat(cv::Mat model) {
         std::cerr << ex.what() << '\n';
     }
     
+
+    // Write the handler to the unnamed shared region holding the data
+    shared_mat_data_ptr = shared_memory.allocate(data_size);
+    
     // write the size, type and image version to the header
     shared_mat_header->size = model.size();
     shared_mat_header->type = model.type();
-    
-    // Write the handler to the unnamed shared region holding the data
-    shared_mat_data_ptr = shared_memory.allocate(data_size);
+    shared_mat_header->handle = shared_memory.get_handle_from_address(shared_mat_data_ptr);
     
     shared_mat_created = true;
 }
@@ -67,4 +69,16 @@ void MatServer::set_shared_mat(cv::Mat mat) {
     
     shared_mat_header->cond_var.notify_all();
     shared_mat_header->cond_var.wait(lock);
+}
+
+void MatServer::set_name(std::string server_name) {
+    
+    if (!shared_mat_created) {
+        name = server_name;
+        shmem_name = server_name + "_sh_mem";
+        shobj_name = server_name + "_sh_obj";
+        
+    } else {
+        std::cerr << "Cannot reset MatServer name after shared memory has bee allocated." << std::endl;
+    }
 }

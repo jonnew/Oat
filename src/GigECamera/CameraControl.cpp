@@ -15,14 +15,14 @@
 
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/shmem/SharedMat.h"
-#include "../../lib/shmem/SMServer.h"
-#include "../../lib/shmem/SMServer.cpp"
+#include "../../lib/shmem/MatServer.h"
+#include "../../lib/shmem/MatServer.cpp"
 
 #include "stdafx.h"
 
 using namespace FlyCapture2;
 
-CameraControl::CameraControl(std::string name) : SMServer<cv::Mat>(name) {
+CameraControl::CameraControl(std::string name) : MatServer(name) {
 
     // Initialize the frame size
     frame_size = cv::Size(728, 728);
@@ -55,6 +55,14 @@ void CameraControl::configure(std::string config_file) {
         if (config.contains("camera")) {
 
             auto camera_config = *config.get_table("camera");
+            //            
+            //            // Set the server name
+            //            if (camera_config.contains("name"))
+            //                set_name(*camera_config.get_as<std::string>("name"));
+            //            else {
+            //                std::cerr << "You must provide a name parameter for the camera. Exiting." << std::endl;
+            //                exit(EXIT_FAILURE);
+            //            }
 
             // Set the camera index
             if (camera_config.contains("index"))
@@ -653,13 +661,14 @@ void CameraControl::serveMat() {
 
     cv::Mat mat;
     grabMat(mat);
-    if (!shared_write_object_created) {
-        data_size = mat.total() * mat.elemSize();
-        createSharedObject(data_size + sizeof (shmem::SharedMatHeader) + 1024);
-        set_shared_object(mat);
-    } else {
-        set_shared_object(mat);
-    }
+    set_shared_mat(mat);
+    //    if (!shared_write_object_created) {
+    //        data_size = mat.total() * mat.elemSize();
+    //        createSharedObject(data_size + sizeof (shmem::SharedMatHeader) + 1024);
+    //        set_shared_object(mat);
+    //    } else {
+    //        set_shared_object(mat);
+    //    }
 }
 
 // PRIVATE

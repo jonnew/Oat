@@ -6,9 +6,9 @@
 
 #include "FlyCapture2.h"
 
-#include "../../lib/shmem/SMServer.h"
+#include "../../lib/shmem/MatServer.h"
 
-class CameraControl : public SMServer<cv::Mat> {
+class CameraControl : public MatServer {
    
 public:
     CameraControl(std::string name);
