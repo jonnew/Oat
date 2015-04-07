@@ -9,25 +9,29 @@
 #define	SHAREDMAT_H
 
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
+#include <boost/interprocess/sync/interprocess_condition_any.hpp>
 #include <opencv2/core/mat.hpp>
 
-namespace sharedmat {
+namespace shmem {
 
     typedef struct {
         cv::Size size;
         int type;
         boost::interprocess::managed_shared_memory::handle_t handle;
-    } SharedMat;
+        boost::interprocess::interprocess_sharable_mutex mutex;
+        boost::interprocess::interprocess_condition_any cond_var;
+    } SharedMatHeader;
 
-    cv::Mat constructMat(SharedMat shared_mat) {
-
-        cv::Mat mat(
-            shared_mat->size,
-            shared_mat->type,
-            shared_mat.get_address_from_handle(shared_mat->handle));
-
-        return mat;
-    }
+//    cv::Mat constructSharedMat(SharedMat* shared_mat, boost::interprocess::managed_shared_memory* shm) {
+//
+//        cv::Mat mat(
+//                shared_mat->size,
+//                shared_mat->type,
+//                shm->get_address_from_handle(shared_mat->handle));
+//
+//        return mat;
+//    }
 }
 
 

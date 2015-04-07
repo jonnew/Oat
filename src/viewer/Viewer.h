@@ -4,16 +4,16 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/SMClient.h"
+#include "../../lib/shmem/SharedMat.h"
+#include "../../lib/shmem/MatClient.h"
 
-class Viewer : public SMClient<cv::Mat> {
+class Viewer : public MatClient {
    
 public:
     Viewer(std::string server_name);
     //Viewer(const Viewer& orig);
     //virtual ~Viewer();
 
-    void constructImage(void);
     void showImage(void);
     void showImage(std::string title);
    

@@ -651,15 +651,13 @@ void CameraControl::grabMat(cv::Mat& mat) {
 
 void CameraControl::serveMat() {
 
+    cv::Mat mat;
+    grabMat(mat);
     if (!shared_write_object_created) {
-        cv::Mat mat;
-        grabMat(mat);
         data_size = mat.total() * mat.elemSize();
-        createSharedObject(data_size + sizeof(sharedmat::SharedMat) + 1024);
+        createSharedObject(data_size + sizeof (shmem::SharedMatHeader) + 1024);
         set_shared_object(mat);
     } else {
-        cv::Mat mat;
-        grabMat(mat);
         set_shared_object(mat);
     }
 }
