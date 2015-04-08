@@ -10,12 +10,13 @@
 
 #include <string>
 #include <opencv2/core/mat.hpp>
+
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
 
 #define PI 3.14159265358979323846
 
-class HSVDetector : public MatClient, public MatServer {
+class HSVDetector {
     
 public:
     
@@ -132,6 +133,12 @@ private:
     unsigned int max_num_contours;
     double min_object_area;
     double max_object_area;
+    
+    // Mat client object for receiving frames
+    MatClient frame_source;
+    
+    // Mat server for sending processed frames
+    MatServer frame_sink;
 
     // HSV filter
     void hsvTransform(cv::Mat& rgb_img);

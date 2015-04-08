@@ -8,7 +8,7 @@
 
 #include "../../lib/shmem/MatServer.h"
 
-class CameraControl : public MatServer {
+class CameraControl  {
    
 public:
     CameraControl(std::string name);
@@ -79,6 +79,9 @@ private:
     // The current, unbuffered frame
     FlyCapture2::Image raw_image;
     FlyCapture2::Image rgb_image;
+    
+    // The mat server for sending frames to shared memory
+    MatServer frame_sink;
 
     int findNumCameras(void);
     void printError(FlyCapture2::Error error);

@@ -20,35 +20,30 @@
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-//#include "cpptoml.h"
 
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatClient.cpp"
 
 using namespace boost::interprocess;
 
-Viewer::Viewer(std::string source_name) : MatClient(source_name) 
+Viewer::Viewer(std::string source_name) : frame_source(source_name)
 { 
-// TODO: Settings specify window location
-
+    // Attach to the source
+    if (!frame_source.is_shared_mat_created()) {
+        frame_source.findSharedMat();
+    }
 }
 
 void Viewer::showImage() {
     
-    showImage(cli_name);
+    showImage(frame_source.get_name());
 }
 
 void Viewer::showImage(const std::string title) {
     
-    if (!cli_shared_mat_created) {
-        findSharedMat();
-    }
-    
-    sharable_lock<interprocess_sharable_mutex> lock(cli_shared_mat_header->mutex);
-
-    cv::imshow(title, get_shared_mat());
+    cv::imshow(title, frame_source.get_shared_mat());
     cv::waitKey(1);
     
-    cli_shared_mat_header->cond_var.notify_all();
-    cli_shared_mat_header->cond_var.wait(lock);
+    // Wait for signal that next frame is ready
+    frame_source.notifyAllAndWait();
 }

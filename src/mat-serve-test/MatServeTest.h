@@ -14,7 +14,7 @@ public:
     MatServeTest(std::string server_name);
 
     int openVideo(const std::string fid);
-    void serveMat(void);
+    int serveMat(void);
    
 private:
     

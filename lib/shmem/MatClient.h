@@ -18,33 +18,50 @@
 #define	MATCLIENT_H
 
 #include "SharedMat.h"
+
 #include <string>
+#include <boost/interprocess/sync/sharable_lock.hpp>
+#include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
+
+namespace ip = boost::interprocess;
 
 class MatClient {
 public:
+    //MatClient(void);
     MatClient(const std::string server_name);
     MatClient(const MatClient& orig);
     virtual ~MatClient();
     
-    std::string get_cli_name(void) { return cli_name; }
-    
-protected:
+    // Find cv::Mat object in shared memory
     void findSharedMat(void);
+    
+    // Condition variable manipulation
+    void notifyAll(void);
+    void wait(void);
+    void notifyAllAndWait(void);
+     
+    // Accessors
     cv::Mat get_shared_mat(void);
-    std::string cli_name;
-    shmem::SharedMatHeader* cli_shared_mat_header;
-    bool cli_shared_mat_created = false;
-
+    std::string get_name(void) { return name; }
+    bool is_shared_mat_created(void) { return shared_mat_created; }
+    void set_source(const std::string);
+    
 private:
     
-    cv::Mat mat;
+    ip::sharable_lock<ip::interprocess_sharable_mutex> makeLock();
 
+    std::string name;
+    shmem::SharedMatHeader* shared_mat_header;
+    bool shared_mat_created;
     void* shared_mat_data_ptr;
     int data_size; // Size of raw mat data in bytes
-    
-    std::string shmem_name, shobj_name;
-    boost::interprocess::managed_shared_memory shared_memory;
 
+    // Shared mat object, constructed from the shared_mat_header
+    cv::Mat mat;
+
+    std::string shmem_name, shobj_name;
+    ip::managed_shared_memory shared_memory;
+    ip::sharable_lock<ip::interprocess_sharable_mutex> lock;
 };
 
 #endif	/* MATCLIENT_H */

@@ -34,10 +34,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    CameraControl cc(argv[1]);
+    const std::string sink = static_cast<std::string>(argv[1]);
+    
+    CameraControl cc(sink);
     cc.configure(argv[2], argv[3]);
     
-    std::cout << "GigECamera server named \"" + cc.get_srv_name() + "\" has started." << std::endl;
+    std::cout << "GigECamera server named \"" + sink + "\" has started." << std::endl;
 
     // TODO: exit signal
      while (!done) {
@@ -45,6 +47,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Exit
-    std::cout << "GigECamera server named\"" + cc.get_srv_name() + "\" is exiting." << std::endl;
+    std::cout << "GigECamera server named\"" + sink + "\" is exiting." << std::endl;
     return 0;
 }

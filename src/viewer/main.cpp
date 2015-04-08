@@ -16,6 +16,7 @@
 
 #include "Viewer.h"
 
+#include <string>
 #include <signal.h>
 
 volatile sig_atomic_t done = 0;
@@ -34,8 +35,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    Viewer viewer(argv[1]);
-    std::cout << "A viewer has begun listening to source \"" + viewer.get_cli_name() + "\"." << std::endl;
+    const std::string source = static_cast<std::string>(argv[1]);
+    
+    Viewer viewer(source);
+    std::cout << "A viewer has begun listening to source \"" + source + "\"." << std::endl;
 
     // Execute infinite, thread-safe loop with showImage calls governed by
     // underlying condition variable system.
@@ -44,6 +47,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Exit
-    std::cout << "Viewer listening to source \"" + viewer.get_cli_name() + "\" is exiting." << std::endl;
+    std::cout << "Viewer listening to source \"" + source + "\" is exiting." << std::endl;
     return 0;
 }

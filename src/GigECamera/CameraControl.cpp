@@ -36,7 +36,7 @@
 
 using namespace FlyCapture2;
 
-CameraControl::CameraControl(std::string name) : MatServer(name) {
+CameraControl::CameraControl(std::string name) : frame_sink(name) {
 
     // Initialize the frame size
     frame_size = cv::Size(728, 728);
@@ -668,8 +668,8 @@ void CameraControl::serveMat() {
 
     cv::Mat mat;
     grabMat(mat);
-    set_shared_mat(mat);
-   
+    frame_sink.set_shared_mat(mat); 
+    frame_sink.notifyAllAndWait(); // Release exclusive lock on shared memory and wait
 }
 
 // PRIVATE

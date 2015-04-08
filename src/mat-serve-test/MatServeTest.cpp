@@ -20,11 +20,17 @@ int MatServeTest::openVideo(const std::string fid) {
         return -1;
 }
 
-void MatServeTest::serveMat() {
+int MatServeTest::serveMat() {
 
     cap >> mat; // get a new frame from video
+    if (mat.empty()) {
+        return 0;
+        usleep(100000);
+    }
     
     // Thread-safe set to shared mat object
     set_shared_mat(mat);
+    
+    return 1;
 
 }

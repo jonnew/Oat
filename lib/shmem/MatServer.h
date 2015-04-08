@@ -24,6 +24,8 @@
 
 #include "SharedMat.h"
 
+namespace ip = boost::interprocess;
+
 class MatServer {
     
 public:
@@ -31,21 +33,30 @@ public:
     MatServer(const MatServer& orig);
     virtual ~MatServer();
     
-    std::string get_srv_name(void) { return srv_name; }
-    
-protected:
     void createSharedMat(cv::Mat model);
+    
+    void notifyAll(void);
+    void wait(void);
+    void notifyAllAndWait(void);
+    
+    // Accessors
     void set_shared_mat(cv::Mat mat);
-    std::string srv_name;
-    bool srv_shared_mat_created = false;
-
+    bool is_shared_mat_created(void) { return shared_mat_created; }
+    std::string get_name(void) { return name; }
+    
 private:
+    
+    ip::scoped_lock<ip::interprocess_sharable_mutex> makeLock();
+    
+    std::string name;
     shmem::SharedMatHeader* shared_mat_header;
+    bool shared_mat_created = false;
     void* shared_mat_data_ptr;
     int data_size; // Size of raw mat data in bytes
     
     std::string shmem_name, shobj_name;
-    boost::interprocess::managed_shared_memory shared_memory;
+    ip::managed_shared_memory shared_memory;
+    ip::scoped_lock<ip::interprocess_sharable_mutex> lock; 
 
 };
 

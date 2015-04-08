@@ -21,48 +21,85 @@
 using namespace boost::interprocess;
 
 MatClient::MatClient(const std::string source_name) :
-cli_name(source_name)
+  name(source_name)
 , shmem_name(source_name + "_sh_mem")
-, shobj_name(source_name + "_sh_obj") {
-}
+, shobj_name(source_name + "_sh_obj")
+, shared_mat_created(false)
+{ }
 
-MatClient::MatClient(const MatClient& orig) {
-}
+MatClient::MatClient(const MatClient& orig) { }
 
 MatClient::~MatClient() {
 
     // Clean up sync objects
-    cli_shared_mat_header->cond_var.notify_all();
+    notifyAll();
 }
 
 void MatClient::findSharedMat() {
 
-    while (!cli_shared_mat_header->ready) {
+    bool ready = false;
+    while (!ready) {
         try {
 
             shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
-            cli_shared_mat_header = shared_memory.find<shmem::SharedMatHeader>(shobj_name.c_str()).first;
+            shared_mat_header = shared_memory.find<shmem::SharedMatHeader>(shobj_name.c_str()).first;
+            ready = shared_mat_header->ready;
 
         } catch (...) {
-            std::cout << "Waiting for source \"" + cli_name + "\" to start..." << std::endl;
+            std::cout << "Waiting for source \"" + name + "\" to start..." << std::endl;
             usleep(100000);
         } 
     }
     
-    std::cout << "Server found, starting." << std::endl;
-    cli_shared_mat_created = true;
+    // Pass mutex to the scoped sharable_lock. This will lock the shared_mat_header->mutex
+    // until wait(lock) is called.
+    lock = makeLock();
+    
+    //std::cout << "Server found, starting." << std::endl;
+    shared_mat_created = true;
 
-    mat.create(cli_shared_mat_header->size,
-            cli_shared_mat_header->type);
+    mat.create(shared_mat_header->size,
+            shared_mat_header->type);
 
-    mat.data = static_cast<uchar*>(shared_memory.get_address_from_handle(cli_shared_mat_header->handle));
-
+    mat.data = static_cast<uchar*>(shared_memory.get_address_from_handle(shared_mat_header->handle));
 }
 
 cv::Mat MatClient::get_shared_mat() {
-
-	// TODO: This should be wrapped in the lock mechanism, right? 
-	// This can be separate from wait(), which can be up to the user
-	// to call. Same for the write side, probably.
+    
     return mat;
 }
+
+void MatClient::notifyAll() {
+    
+    shared_mat_header->cond_var.notify_all();
+}
+
+void MatClient::wait() {
+    
+    shared_mat_header->cond_var.wait(lock);
+}
+
+void MatClient::notifyAllAndWait() {
+    
+    notifyAll();
+    wait();
+}
+
+sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {
+    sharable_lock<interprocess_sharable_mutex> sl(shared_mat_header->mutex);
+    return sl;
+}
+
+void MatClient::set_source(const std::string source_name) {
+    
+    // Make sure we are not already attached to some source
+    if (!shared_mat_created) {
+        name = source_name;
+        shmem_name = source_name + "_sh_mem";
+        shobj_name = source_name + "_sh_obj";
+    } else {
+        std::cerr << "Cannot edit the source name because we are already reading from \"" + name + "\".";
+    }
+    
+}
+

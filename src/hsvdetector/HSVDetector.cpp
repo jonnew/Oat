@@ -54,10 +54,10 @@ HSVDetector::HSVDetector(const std::string source_name,
         int h_min_in, int h_max_in,
         int s_min_in, int s_max_in,
         int v_min_in, int v_max_in) :
-MatClient(source_name),
-MatServer(sink_name) {
+frame_source(source_name),
+frame_sink(sink_name) {
 
-    detector_name = srv_name + "_hsv_detector";
+    detector_name = source_name + "_hsv_detector";
     slider_title = detector_name + "_hsv_sliders";
 
     // Initial threshold values
@@ -89,6 +89,11 @@ MatServer(sink_name) {
     object_found = false;
     xy_coord_px.x = 0;
     xy_coord_px.y = 0;
+    
+    // Attach to the source
+    if (!frame_source.is_shared_mat_created()) {
+        frame_source.findSharedMat();
+    }
 }
 
 HSVDetector::HSVDetector(const std::string source_name, const std::string sink_name) :
@@ -142,16 +147,8 @@ void HSVDetector::vmaxSliderChangedCallback(int value, void* object) {
 
 void HSVDetector::applyFilter() { //(const Mat& rgb_img, Mat& threshold_img) {
 
-    if (!cli_shared_mat_created) {
-        findSharedMat();
-    }
-
-    sharable_lock<interprocess_sharable_mutex> lock(cli_shared_mat_header->mutex);
-
-    proc_mat = get_shared_mat().clone();
-
-    cli_shared_mat_header->cond_var.notify_all();
-    cli_shared_mat_header->cond_var.wait(lock);
+    proc_mat = frame_source.get_shared_mat().clone();
+    frame_source.notifyAllAndWait();
 
     hsvTransform(proc_mat);
     applyThreshold(proc_mat, threshold_img);
@@ -164,7 +161,8 @@ void HSVDetector::applyFilter() { //(const Mat& rgb_img, Mat& threshold_img) {
     }
 
     // Put processed mat in shared memory
-    set_shared_mat(proc_mat);
+    frame_sink.set_shared_mat(proc_mat);
+    frame_sink.notifyAllAndWait();
 
 }
 

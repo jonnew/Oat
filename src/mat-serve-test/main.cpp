@@ -14,9 +14,8 @@ int main(int argc, char *argv[]) {
     server.openVideo(argv[2]);
 
     
-    while (1) {
+    while (server.serveMat()) {
         std::cout << "Sent frame." << std::endl;
-        server.serveMat();
     }
 
     // Exit

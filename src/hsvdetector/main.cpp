@@ -30,15 +30,18 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, term);
 
     if (argc != 5) {
-        std::cout << "Usage: " << argv[0] << " SOURCE-NAME SINK-NAME CONFIG-FILE CONFIG-KEY" << std::endl; 
+        std::cout << "Usage: " << argv[0] << " SOURCE-NAME SINK-NAME CONFIG-FILE CONFIG-KEY" << std::endl;
         std::cout << "HSV object detector for cv::Mat data servers." << std::endl;
         return 1;
     }
+    
+    const std::string source = static_cast<std::string> (argv[1]);
+    const std::string sink = static_cast<std::string> (argv[2]);
 
     HSVDetector detector(argv[1], argv[2]);
     detector.configure(argv[3], argv[4]);
-    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" has begun listening to source \"" + detector.get_cli_name() + "\"." << std::endl;
-    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" has begun steaming to sink \"" + detector.get_srv_name() + "\"." << std::endl;
+    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" has begun listening to source \"" + source + "\"." << std::endl;
+    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" has begun steaming to sink \"" + sink + "\"." << std::endl;
 
     // Execute infinite, thread-safe loop with function calls governed by
     // underlying condition variable system.
