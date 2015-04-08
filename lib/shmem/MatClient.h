@@ -1,9 +1,18 @@
-/* 
- * File:   MatClient.h
- * Author: Jon Newman <jpnewman snail mit dot edu>
- *
- * Created on April 6, 2015, 8:47 PM
- */
+//******************************************************************************
+//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* All right reserved.
+//* This file is part of the Simple Tracker project.
+//* This is free software: you can redistribute it and/or modify
+//* it under the terms of the GNU General Public License as published by
+//* the Free Software Foundation, either version 3 of the License, or
+//* (at your option) any later version.
+//* This software is distributed in the hope that it will be useful,
+//* but WITHOUT ANY WARRANTY; without even the implied warranty of
+//* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//* GNU General Public License for more details.
+//* You should have received a copy of the GNU General Public License
+//* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
+//******************************************************************************
 
 #ifndef MATCLIENT_H
 #define	MATCLIENT_H
@@ -13,17 +22,18 @@
 
 class MatClient {
 public:
-    MatClient(std::string server_name);
+    MatClient(const std::string server_name);
     MatClient(const MatClient& orig);
     virtual ~MatClient();
+    
+    std::string get_cli_name(void) { return cli_name; }
     
 protected:
     void findSharedMat(void);
     cv::Mat get_shared_mat(void);
-    void set_name(std::string server_name);
-    std::string name;
-    shmem::SharedMatHeader* shared_mat_header;
-    bool shared_mat_created = false;
+    std::string cli_name;
+    shmem::SharedMatHeader* cli_shared_mat_header;
+    bool cli_shared_mat_created = false;
 
 private:
     
@@ -32,7 +42,7 @@ private:
     void* shared_mat_data_ptr;
     int data_size; // Size of raw mat data in bytes
     
-    std::string shmem_name, shobj_name, mtx_name, cond_name;
+    std::string shmem_name, shobj_name;
     boost::interprocess::managed_shared_memory shared_memory;
 
 };

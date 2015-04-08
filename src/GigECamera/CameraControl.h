@@ -14,7 +14,7 @@ public:
     CameraControl(std::string name);
     
     // Use a configuration file to specify parameters
-    void configure(std::string config_file);
+    void configure(std::string config_file, std::string key);
 
     // For establishing connection
     int setCameraIndex(unsigned int requested_idx);
@@ -54,6 +54,9 @@ public:
 
 private:
 
+    // Camera name
+    std::string camera_name;
+    
     // Size and offset of the image to aquire
     cv::Size frame_size, frame_offset;
     

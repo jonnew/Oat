@@ -1,18 +1,29 @@
-/* 
- * File:   MatClient.cpp
- * Author: Jon Newman <jpnewman snail mit dot edu>
- * 
- * Created on April 6, 2015, 8:47 PM
- */
+//******************************************************************************
+//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* All right reserved.
+//* This file is part of the Simple Tracker project.
+//* This is free software: you can redistribute it and/or modify
+//* it under the terms of the GNU General Public License as published by
+//* the Free Software Foundation, either version 3 of the License, or
+//* (at your option) any later version.
+//* This software is distributed in the hope that it will be useful,
+//* but WITHOUT ANY WARRANTY; without even the implied warranty of
+//* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//* GNU General Public License for more details.
+//* You should have received a copy of the GNU General Public License
+//* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
+//******************************************************************************
 
 #include "MatClient.h"
 
+#include <unistd.h>
+
 using namespace boost::interprocess;
 
-MatClient::MatClient(std::string server_name) :
-name(server_name)
-, shmem_name(server_name + "_sh_mem")
-, shobj_name(server_name + "_sh_obj") {
+MatClient::MatClient(const std::string source_name) :
+cli_name(source_name)
+, shmem_name(source_name + "_sh_mem")
+, shobj_name(source_name + "_sh_obj") {
 }
 
 MatClient::MatClient(const MatClient& orig) {
@@ -21,36 +32,37 @@ MatClient::MatClient(const MatClient& orig) {
 MatClient::~MatClient() {
 
     // Clean up sync objects
-    shared_mat_header->cond_var.notify_all();
+    cli_shared_mat_header->cond_var.notify_all();
 }
 
 void MatClient::findSharedMat() {
 
-    shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
-    shared_mat_header = shared_memory.find<shmem::SharedMatHeader>(shobj_name.c_str()).first;
+    while (!cli_shared_mat_header->ready) {
+        try {
 
-    shared_mat_created = true;
+            shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
+            
+            // TODO: Should not continue if it cannot find the shared memory
+            cli_shared_mat_header = shared_memory.find<shmem::SharedMatHeader>(shobj_name.c_str()).first;
 
-    mat.create(shared_mat_header->size,
-               shared_mat_header->type);
+        } catch (...) {
+            std::cout << "Waiting for source \"" + cli_name + "\" to start..." << std::endl;
+            usleep(100000);
+        } 
+    }
+    
+    std::cout << "Server found, starting." << std::endl;
+    
+    cli_shared_mat_created = true;
 
-    mat.data = (uchar*) shared_memory.get_address_from_handle(shared_mat_header->handle);
+    mat.create(cli_shared_mat_header->size,
+            cli_shared_mat_header->type);
+
+    mat.data = (uchar*) shared_memory.get_address_from_handle(cli_shared_mat_header->handle);
 
 }
 
 cv::Mat MatClient::get_shared_mat() {
 
     return mat;
-}
-
-void MatClient::set_name(std::string server_name) {
-    
-    if (!shared_mat_created) {
-        name = server_name;
-        shmem_name = server_name + "_sh_mem";
-        shobj_name = server_name + "_sh_obj";
-        
-    } else {
-        std::cerr << "Cannot reset MatClient name after shared memory has bee allocated." << std::endl;
-    }
 }

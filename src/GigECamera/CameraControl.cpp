@@ -1,4 +1,18 @@
-/* Camera configuration for rat-vision*/
+//******************************************************************************
+//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* All right reserved.
+//* This file is part of the Simple Tracker project.
+//* This is free software: you can redistribute it and/or modify
+//* it under the terms of the GNU General Public License as published by
+//* the Free Software Foundation, either version 3 of the License, or
+//* (at your option) any later version.
+//* This software is distributed in the hope that it will be useful,
+//* but WITHOUT ANY WARRANTY; without even the implied warranty of
+//* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//* GNU General Public License for more details.
+//* You should have received a copy of the GNU General Public License
+//* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
+//******************************************************************************
 
 #include "CameraControl.h"
 
@@ -37,33 +51,26 @@ CameraControl::CameraControl(std::string name) : MatServer(name) {
     aquisition_started = false;
 }
 
-void CameraControl::configure(std::string config_file) {
+void CameraControl::configure(std::string config_file, std::string key) {
 
     cpptoml::table config;
 
     try {
         config = cpptoml::parse_file(config_file);
 
-        std::cout << "Parsed the following configuration..." << std::endl << std::endl;
-        std::cout << config << std::endl;
+        //std::cout << "Parsed the following configuration..." << std::endl << std::endl;
+        //std::cout << config << std::endl;
     } catch (const cpptoml::parse_exception& e) {
         std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
     }
 
     try {
         // See if a camera configuration was provided
-        if (config.contains("camera")) {
+        if (config.contains(key)) {
 
-            auto camera_config = *config.get_table("camera");
-            //            
-            //            // Set the server name
-            //            if (camera_config.contains("name"))
-            //                set_name(*camera_config.get_as<std::string>("name"));
-            //            else {
-            //                std::cerr << "You must provide a name parameter for the camera. Exiting." << std::endl;
-            //                exit(EXIT_FAILURE);
-            //            }
-
+            auto camera_config = *config.get_table(key);
+            camera_name = key;
+          
             // Set the camera index
             if (camera_config.contains("index"))
                 index = (unsigned int) (*camera_config.get_as<int64_t>("index"));
@@ -132,7 +139,7 @@ void CameraControl::configure(std::string config_file) {
             setupTrigger(0, 1); // TODO: Trigger options, free running w/o trigger
 
         } else {
-            std::cerr << "No camera configuration was provided. Exiting." << std::endl;
+            std::cerr << "No camera configuration named \"" + key + "\" was provided. Exiting." << std::endl;
             exit(EXIT_FAILURE);
         }
     } catch (const std::exception& e) {
@@ -662,13 +669,7 @@ void CameraControl::serveMat() {
     cv::Mat mat;
     grabMat(mat);
     set_shared_mat(mat);
-    //    if (!shared_write_object_created) {
-    //        data_size = mat.total() * mat.elemSize();
-    //        createSharedObject(data_size + sizeof (shmem::SharedMatHeader) + 1024);
-    //        set_shared_object(mat);
-    //    } else {
-    //        set_shared_object(mat);
-    //    }
+   
 }
 
 // PRIVATE

@@ -14,9 +14,10 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "CameraControl.h"
+#include "HSVDetector.h"
 
 #include <signal.h>
+#include <opencv2/highgui.hpp>
 
 volatile sig_atomic_t done = 0;
 
@@ -28,23 +29,27 @@ int main(int argc, char *argv[]) {
 
     signal(SIGINT, term);
 
-    if (argc != 4) {
-        std::cout << "Usage: " << argv[0] << "SINK-NAME CONFIG-FILE KEY" << std::endl;
-        std::cout << "Data server for point-grey GigE cameras." << std::endl;
+    if (argc != 5) {
+        std::cout << "Usage: " << argv[0] << " SOURCE-NAME SINK-NAME CONFIG-FILE CONFIG-KEY" << std::endl; 
+        std::cout << "HSV object detector for cv::Mat data servers." << std::endl;
         return 1;
     }
 
-    CameraControl cc(argv[1]);
-    cc.configure(argv[2], argv[3]);
-    
-    std::cout << "GigECamera server named \"" + cc.get_srv_name() + "\" has started." << std::endl;
+    HSVDetector detector(argv[1], argv[2]);
+    detector.configure(argv[3], argv[4]);
+    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" has begun listening to source \"" + detector.get_cli_name() + "\"." << std::endl;
+    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" has begun steaming to sink \"" + detector.get_srv_name() + "\"." << std::endl;
 
-    // TODO: exit signal
-     while (!done) {
-        cc.serveMat();
+    // Execute infinite, thread-safe loop with function calls governed by
+    // underlying condition variable system.
+    while (!done) {
+        detector.applyFilter();
+        cv::waitKey(1);
     }
 
     // Exit
-    std::cout << "GigECamera server named\"" + cc.get_srv_name() + "\" is exiting." << std::endl;
+    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" is exiting." << std::endl;
     return 0;
 }
+
+

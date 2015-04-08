@@ -1,0 +1,11 @@
+# Example HSV Detector configuration file.
+
+# Color detection.
+[blue_detector]
+position = "anterior"
+erode = 2 			# pixels
+dilate = 8 			# pixels
+hsv_tune = true                 # provide sliders for tuning hsv thresholds
+h_thresholds = {min = 106, max = 126}
+s_thresholds = {min = 69, max = 256}
+v_thresholds = {min = 180, max = 256}

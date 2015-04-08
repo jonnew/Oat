@@ -1,18 +1,27 @@
-/* 
- * File:   MatServer.cpp
- * Author: Jon Newman <jpnewman snail mit dot edu>
- * 
- * Created on April 6, 2015, 4:25 PM
- */
+//******************************************************************************
+//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* All right reserved.
+//* This file is part of the Simple Tracker project.
+//* This is free software: you can redistribute it and/or modify
+//* it under the terms of the GNU General Public License as published by
+//* the Free Software Foundation, either version 3 of the License, or
+//* (at your option) any later version.
+//* This software is distributed in the hope that it will be useful,
+//* but WITHOUT ANY WARRANTY; without even the implied warranty of
+//* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//* GNU General Public License for more details.
+//* You should have received a copy of the GNU General Public License
+//* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
+//******************************************************************************
 
 #include "MatServer.h"
 
 using namespace boost::interprocess;
 
-MatServer::MatServer(std::string server_name) :
-  name(server_name)
-, shmem_name(name + "_sh_mem")
-, shobj_name(name + "_sh_obj")
+MatServer::MatServer(const std::string server_name) :
+  srv_name(server_name)
+, shmem_name(srv_name + "_sh_mem")
+, shobj_name(srv_name + "_sh_obj")
 { }
 
 MatServer::MatServer(const MatServer& orig) { }
@@ -53,14 +62,15 @@ void MatServer::createSharedMat(cv::Mat model) {
     shared_mat_header->type = model.type();
     shared_mat_header->handle = shared_memory.get_handle_from_address(shared_mat_data_ptr);
     
-    shared_mat_created = true;
+    srv_shared_mat_created = true;
 }
 
 void MatServer::set_shared_mat(cv::Mat mat) {
     
     
-    if (!shared_mat_created) {
+    if (!srv_shared_mat_created) {
         createSharedMat(mat);
+        shared_mat_header->ready = true;
     }
     
     scoped_lock<interprocess_sharable_mutex> lock(shared_mat_header->mutex);
@@ -69,16 +79,4 @@ void MatServer::set_shared_mat(cv::Mat mat) {
     
     shared_mat_header->cond_var.notify_all();
     shared_mat_header->cond_var.wait(lock);
-}
-
-void MatServer::set_name(std::string server_name) {
-    
-    if (!shared_mat_created) {
-        name = server_name;
-        shmem_name = server_name + "_sh_mem";
-        shobj_name = server_name + "_sh_obj";
-        
-    } else {
-        std::cerr << "Cannot reset MatServer name after shared memory has bee allocated." << std::endl;
-    }
 }
