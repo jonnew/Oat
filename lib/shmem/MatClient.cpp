@@ -41,8 +41,6 @@ void MatClient::findSharedMat() {
         try {
 
             shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
-            
-            // TODO: Should not continue if it cannot find the shared memory
             cli_shared_mat_header = shared_memory.find<shmem::SharedMatHeader>(shobj_name.c_str()).first;
 
         } catch (...) {
@@ -52,17 +50,19 @@ void MatClient::findSharedMat() {
     }
     
     std::cout << "Server found, starting." << std::endl;
-    
     cli_shared_mat_created = true;
 
     mat.create(cli_shared_mat_header->size,
             cli_shared_mat_header->type);
 
-    mat.data = (uchar*) shared_memory.get_address_from_handle(cli_shared_mat_header->handle);
+    mat.data = static_cast<uchar*>(shared_memory.get_address_from_handle(cli_shared_mat_header->handle));
 
 }
 
 cv::Mat MatClient::get_shared_mat() {
 
+	// TODO: This should be wrapped in the lock mechanism, right? 
+	// This can be separate from wait(), which can be up to the user
+	// to call. Same for the write side, probably.
     return mat;
 }
