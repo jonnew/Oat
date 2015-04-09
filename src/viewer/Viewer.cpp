@@ -45,5 +45,5 @@ void Viewer::showImage(const std::string title) {
     cv::waitKey(1);
     
     // Wait for signal that next frame is ready
-    frame_source.notifyAllAndWait();
+    frame_source.wait();
 }

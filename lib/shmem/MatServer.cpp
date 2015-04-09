@@ -55,7 +55,7 @@ void MatServer::createSharedMat(cv::Mat model) {
         // until wait(lock) is called. This is fine because there is nothing for clients
         // to read in the shared memory until a call to set_shared_mat, which finishes
         // with wait(lock).
-        lock = makeLock();
+        //lock = makeLock();
 
     } catch (bad_alloc &ex) {
         std::cerr << ex.what() << '\n';
@@ -74,32 +74,40 @@ void MatServer::createSharedMat(cv::Mat model) {
 
 void MatServer::set_shared_mat(cv::Mat mat) {
 
+    
     if (!shared_mat_created) {
-        createSharedMat(mat); // Aquires exclusive lock on shared_mat_header->mutex
+        createSharedMat(mat); // Acquires exclusive lock on shared_mat_header->mutex
         shared_mat_header->ready = true;
     }
-
+    
+    // Exclusive scoped_lock on the shared_mat_header->mutex
+    scoped_lock<interprocess_sharable_mutex> lock(shared_mat_header->mutex);
+    
+    // Perform write in shared memory
     memcpy(shared_mat_data_ptr, mat.data, data_size);
-
-}
-
-scoped_lock<interprocess_sharable_mutex> MatServer::makeLock(void) {
-    scoped_lock<interprocess_sharable_mutex> sl(shared_mat_header->mutex);
-    return sl;
-}
-
-void MatServer::notifyAll() {
     
+    // Notify all client processes they can now access the data
     shared_mat_header->cond_var.notify_all();
-}
-
-void MatServer::wait() {
     
-    shared_mat_header->cond_var.wait(lock);
-}
+} // Lock is released on scope exit
 
-void MatServer::notifyAllAndWait() {
-    
-    notifyAll();
-    wait();
-}
+//scoped_lock<interprocess_sharable_mutex> MatServer::makeLock(void) {
+//    scoped_lock<interprocess_sharable_mutex> sl(shared_mat_header->mutex);
+//    return sl;
+//}
+
+//void MatServer::notifyAll() {
+//    
+//    shared_mat_header->cond_var.notify_all();
+//}
+//
+//void MatServer::wait() {
+//    
+//    shared_mat_header->cond_var.wait(lock);
+//}
+//
+//void MatServer::notifyAllAndWait() {
+//    
+//    notifyAll();
+//    wait();
+//}

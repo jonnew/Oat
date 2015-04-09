@@ -21,8 +21,6 @@
 #include <limits>
 #include <math.h>
 
-#include <boost/interprocess/sync/sharable_lock.hpp>
-#include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -69,12 +67,12 @@ frame_sink(sink_name) {
     v_max = v_max_in;
 
     // Set defaults for the erode and dilate blocks
-    erode_size = Size(2, 2);
-    dilate_size = Size(10, 10);
+    set_erode_size(0);
+    set_dilate_size(10);
 
     // Relative position of the object
     position = "unknown";
-    
+
     // Decorate stream
     decorate = false;
 
@@ -89,7 +87,7 @@ frame_sink(sink_name) {
     object_found = false;
     xy_coord_px.x = 0;
     xy_coord_px.y = 0;
-    
+
     // Attach to the source
     if (!frame_source.is_shared_mat_created()) {
         frame_source.findSharedMat();
@@ -107,48 +105,30 @@ void HSVDetector::createTrackbars() {
 
     // Create trackbars and insert them into window
     // TODO: Does not work for multiple detectors. For the second one, 'this' points to nonsense...
-    createTrackbar("H_MIN", slider_title, &h_min, 256, &HSVDetector::hminSliderChangedCallback, this);
-    createTrackbar("H_MAX", slider_title, &h_max, 256, &HSVDetector::hmaxSliderChangedCallback, this);
-    createTrackbar("S_MIN", slider_title, &s_min, 256, &HSVDetector::sminSliderChangedCallback, this);
-    createTrackbar("S_MAX", slider_title, &s_max, 256, &HSVDetector::smaxSliderChangedCallback, this);
-    createTrackbar("V_MIN", slider_title, &v_min, 256, &HSVDetector::vminSliderChangedCallback, this);
-    createTrackbar("V_MAX", slider_title, &v_max, 256, &HSVDetector::vmaxSliderChangedCallback, this);
+    createTrackbar("H_MIN", slider_title, &h_min, 256); //, &HSVDetector::hminSliderChangedCallback, this);
+    createTrackbar("H_MAX", slider_title, &h_max, 256); //, &HSVDetector::hmaxSliderChangedCallback, this);
+    createTrackbar("S_MIN", slider_title, &s_min, 256); //, &HSVDetector::sminSliderChangedCallback, this);
+    createTrackbar("S_MAX", slider_title, &s_max, 256); //, &HSVDetector::smaxSliderChangedCallback, this);
+    createTrackbar("V_MIN", slider_title, &v_min, 256); //, &HSVDetector::vminSliderChangedCallback, this);
+    createTrackbar("V_MAX", slider_title, &v_max, 256); //, &HSVDetector::vmaxSliderChangedCallback, this);
+    createTrackbar("ERODE", slider_title, &erode_px, 50, &HSVDetector::erodeSliderChangedCallback, this);
+    createTrackbar("DILATE", slider_title, &dilate_px, 50, &HSVDetector::dilateSliderChangedCallback, this);
+
 }
 
-void HSVDetector::hminSliderChangedCallback(int value, void* object) {
+void HSVDetector::erodeSliderChangedCallback(int value, void* object) {
     HSVDetector* hsv_detector = (HSVDetector*) object;
-    hsv_detector->h_min = value;
+    hsv_detector->set_erode_size(value);
 }
 
-void HSVDetector::hmaxSliderChangedCallback(int value, void* object) {
+void HSVDetector::dilateSliderChangedCallback(int value, void* object) {
     HSVDetector* hsv_detector = (HSVDetector*) object;
-    hsv_detector->h_max = value;
-}
-
-void HSVDetector::sminSliderChangedCallback(int value, void* object) {
-    HSVDetector* hsv_detector = (HSVDetector*) object;
-    hsv_detector->s_min = value;
-}
-
-void HSVDetector::smaxSliderChangedCallback(int value, void* object) {
-    HSVDetector* hsv_detector = (HSVDetector*) object;
-    hsv_detector->s_max = value;
-}
-
-void HSVDetector::vminSliderChangedCallback(int value, void* object) {
-    HSVDetector* hsv_detector = (HSVDetector*) object;
-    hsv_detector->v_min = value;
-}
-
-void HSVDetector::vmaxSliderChangedCallback(int value, void* object) {
-    HSVDetector* hsv_detector = (HSVDetector*) object;
-    hsv_detector->v_max = value;
+    hsv_detector->set_dilate_size(value);
 }
 
 void HSVDetector::applyFilter() { //(const Mat& rgb_img, Mat& threshold_img) {
 
     proc_mat = frame_source.get_shared_mat().clone();
-    frame_source.notifyAllAndWait();
 
     hsvTransform(proc_mat);
     applyThreshold(proc_mat, threshold_img);
@@ -157,12 +137,12 @@ void HSVDetector::applyFilter() { //(const Mat& rgb_img, Mat& threshold_img) {
     findObjects(threshold_img);
 
     if (decorate) {
-        decorateFeed(proc_mat, cv::Scalar(0, 0, 255)); // TODO: get rid of this, replace with position server. we can have a viewer to make things pretty.
+        decorateFeed(threshold_img, cv::Scalar(0, 0, 255)); // TODO: get rid of this, replace with position server. we can have a viewer to make things pretty.
     }
 
     // Put processed mat in shared memory
-    frame_sink.set_shared_mat(proc_mat);
-    frame_sink.notifyAllAndWait();
+    frame_sink.set_shared_mat(threshold_img);
+    frame_source.wait();
 
 }
 
@@ -184,14 +164,17 @@ void HSVDetector::applyThresholdMask(const cv::Mat threshold_img, cv::Mat& hsv_i
 
 void HSVDetector::clarifyObjects(Mat& threshold_img) {
 
-    erode_element = getStructuringElement(MORPH_RECT, erode_size);
-    dilate_element = getStructuringElement(MORPH_RECT, dilate_size);
+    if (erode_on) {
+        cv::erode(threshold_img, threshold_img, erode_element);
+        //cv::erode(threshold_img, threshold_img, erode_element);
+    }
 
-    cv::erode(threshold_img, threshold_img, erode_element);
-    cv::erode(threshold_img, threshold_img, erode_element);
 
-    cv::dilate(threshold_img, threshold_img, dilate_element);
-    cv::dilate(threshold_img, threshold_img, dilate_element);
+    if (dilate_on) {
+        cv::dilate(threshold_img, threshold_img, dilate_element);
+        //cv::dilate(threshold_img, threshold_img, dilate_element);
+    }
+
 }
 
 bool HSVDetector::findObjects(const cv::Mat& threshold_img) {
@@ -275,7 +258,7 @@ void HSVDetector::configure(std::string config_file, std::string key) {
             if (hsv_config.contains("position")) {
                 position = *hsv_config.get_as<std::string>("position");
             }
-            
+
             if (hsv_config.contains("decorate")) {
                 decorate = *hsv_config.get_as<bool>("decorate");
             }
@@ -332,5 +315,26 @@ void HSVDetector::configure(std::string config_file, std::string key) {
         }
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
+    }
+}
+
+void HSVDetector::set_erode_size(int _erode_px) {
+
+    if (_erode_px > 0) {
+        erode_on = true;
+        erode_px = _erode_px;
+        erode_element = getStructuringElement(MORPH_RECT, cv::Size(erode_px, erode_px));
+    } else {
+        erode_on = false;
+    }
+}
+
+void HSVDetector::set_dilate_size(int _dilate_px) {
+    if (_dilate_px > 0) {
+        dilate_on = true;
+        dilate_px = _dilate_px;
+        dilate_element = getStructuringElement(MORPH_RECT, cv::Size(dilate_px, dilate_px));
+    } else {
+        dilate_on = false;
     }
 }

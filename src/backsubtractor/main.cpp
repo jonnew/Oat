@@ -14,7 +14,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "CameraControl.h"
+#include "BackgroundSubtractor.h"
 
 #include <signal.h>
 
@@ -25,28 +25,37 @@ void term(int) {
 }
 
 int main(int argc, char *argv[]) {
-
+    
     signal(SIGINT, term);
 
-    if (argc != 4) {
-        std::cout << "Usage: " << argv[0] << "SINK-NAME CONFIG-FILE KEY" << std::endl;
-        std::cout << "Data server for point-grey GigE cameras." << std::endl;
+    if (argc != 3) {
+        std::cout << "Usage: " << argv[0] << " SOURCE-NAME SINK-NAME " << std::endl;
+        std::cout << "Background subtractor detector for cv::Mat data servers." << std::endl;
+        std::cout << "Press \"B\" during acquisition to set background image to current frame." << std::endl;
         return 1;
     }
-
-    const std::string sink = static_cast<std::string>(argv[1]);
     
-    CameraControl cc(sink);
-    cc.configure(argv[2], argv[3]);
-    
-    std::cout << "GigECamera server named \"" + sink + "\" has started (☞ﾟヮﾟ)☞." << std::endl;
+    const std::string source = static_cast<std::string> (argv[1]);
+    const std::string sink = static_cast<std::string> (argv[2]);
 
-    // TODO: exit signal
-     while (!done) {
-        cc.serveMat();
+    BackgroundSubtractor backsub(argv[1], argv[2]);
+
+    std::cout << "Background subtractor has begun listening to source \"" + source + "\"." << std::endl;
+    std::cout << "Background subtractor has begun steaming to sink \"" + sink + "\"." << std::endl;
+
+    // Execute infinite, thread-safe loop with function calls governed by
+    // underlying condition variable system.
+    while (!done) {
+        //if (getch()) {
+            backsub.subtractBackground();
+        //} else {
+            //backsub.setBackgroundImageAndSubtract();
+        //}
     }
 
     // Exit
-    std::cout << "GigECamera server named\"" + sink + "\" is exiting." << std::endl;
+    std::cout << "Background subtractor is exiting." << std::endl;
     return 0;
 }
+
+

@@ -32,7 +32,7 @@ MatClient::MatClient(const MatClient& orig) { }
 MatClient::~MatClient() {
 
     // Clean up sync objects
-    notifyAll();
+    //notifyAll();
 }
 
 void MatClient::findSharedMat() {
@@ -65,25 +65,30 @@ void MatClient::findSharedMat() {
 }
 
 cv::Mat MatClient::get_shared_mat() {
+
+    if (!shared_mat_created) {
+        findSharedMat(); // Acquires shared lock on shared_mat_header->mutex
+        shared_mat_header->ready = true;
+    }
     
-    return mat;
+    return mat; // User responsible for calling wait after they get, and process this result!
 }
 
-void MatClient::notifyAll() {
-    
-    shared_mat_header->cond_var.notify_all();
-}
+//void MatClient::notifyAll() {
+//    
+//    shared_mat_header->cond_var.notify_all();
+//}
 
 void MatClient::wait() {
     
     shared_mat_header->cond_var.wait(lock);
 }
 
-void MatClient::notifyAllAndWait() {
-    
-    notifyAll();
-    wait();
-}
+//void MatClient::notifyAllAndWait() {
+//    
+//    notifyAll();
+//    wait();
+//}
 
 sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {
     sharable_lock<interprocess_sharable_mutex> sl(shared_mat_header->mutex);

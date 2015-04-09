@@ -35,9 +35,9 @@ public:
     
     void createSharedMat(cv::Mat model);
     
-    void notifyAll(void);
-    void wait(void);
-    void notifyAllAndWait(void);
+//    void notifyAll(void);
+//    void wait(void);
+//    void notifyAllAndWait(void);
     
     // Accessors
     void set_shared_mat(cv::Mat mat);
@@ -46,7 +46,7 @@ public:
     
 private:
     
-    ip::scoped_lock<ip::interprocess_sharable_mutex> makeLock();
+    //ip::scoped_lock<ip::interprocess_sharable_mutex> makeLock();
     
     std::string name;
     shmem::SharedMatHeader* shared_mat_header;
@@ -56,7 +56,7 @@ private:
     
     std::string shmem_name, shobj_name;
     ip::managed_shared_memory shared_memory;
-    ip::scoped_lock<ip::interprocess_sharable_mutex> lock; 
+    //ip::scoped_lock<ip::interprocess_sharable_mutex> lock; 
 
 };
 

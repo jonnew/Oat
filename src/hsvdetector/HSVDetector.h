@@ -1,9 +1,18 @@
-/* 
- * File:   HSVFilter.h
- * Author: Jon Newman <jpnewman snail mit dot edu>
- *
- * Created on March 25, 2015, 5:11 PM
- */
+//******************************************************************************
+//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* All right reserved.
+//* This file is part of the Simple Tracker project.
+//* This is free software: you can redistribute it and/or modify
+//* it under the terms of the GNU General Public License as published by
+//* the Free Software Foundation, either version 3 of the License, or
+//* (at your option) any later version.
+//* This software is distributed in the hope that it will be useful,
+//* but WITHOUT ANY WARRANTY; without even the implied warranty of
+//* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//* GNU General Public License for more details.
+//* You should have received a copy of the GNU General Public License
+//* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
+//******************************************************************************
 
 #ifndef HSVFILTER_H
 #define	HSVFILTER_H
@@ -89,14 +98,9 @@ public:
     void set_v_max(int v_max) {
         v_max = v_max;
     }
-
-    void set_erode_size(int erode_px) {
-        erode_size = cv::Size(erode_px, erode_px);
-    }
-
-    void set_dilate_size(int dilate_px) {
-        dilate_size = cv::Size(dilate_px, dilate_px);
-    }
+    
+    void set_erode_size(int erode_px);
+    void set_dilate_size(int dilate_px);
     
     void set_decorate (bool decorate){
         decorate = decorate;
@@ -105,7 +109,9 @@ public:
 private:
 
     // Sizes of the erode and dilate blocks
-    cv::Size erode_size, dilate_size;
+    int erode_px, dilate_px;
+    //cv::Size erode_size, dilate_size;
+    bool erode_on, dilate_on;
     cv::Mat proc_mat, threshold_img, erode_element, dilate_element;
 
     // Initial threshold values
@@ -156,13 +162,8 @@ private:
     void decorateFeed(cv::Mat& display_img, const cv::Scalar&);
     
     // Callbacks for sliders
-    static void hminSliderChangedCallback(int, void*);
-    static void hmaxSliderChangedCallback(int, void*);
-    static void sminSliderChangedCallback(int, void*);
-    static void smaxSliderChangedCallback(int, void*);
-    static void vminSliderChangedCallback(int, void*);
-    static void vmaxSliderChangedCallback(int, void*);
-
+    static void erodeSliderChangedCallback(int, void*);
+    static void dilateSliderChangedCallback(int, void*);
 };
 
 #endif	/* HSVFILTER_H */

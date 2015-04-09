@@ -14,37 +14,37 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "MatServeTest.h"
+#ifndef BACKGROUNDSUBTRACTOR_H
+#define	BACKGROUNDSUBTRACTOR_H
 
 #include <string>
-#include <opencv2/core/core.hpp>
-//#include "cpptoml.h"
+#include <opencv2/core/mat.hpp>
 
-//#include "MatServer.h"
-#include "../../lib/shmem/SharedMat.h"
+#include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
-#include "../../lib/shmem/MatServer.cpp"
 
-MatServeTest::MatServeTest(std::string server_name) : MatServer(server_name) { }
-
-int MatServeTest::openVideo(const std::string fid) {
-
-    cap.open(fid); // open the default video
-    if (!cap.isOpened()) // check if we succeeded
-        return -1;
-}
-
-int MatServeTest::serveMat() {
-
-    cap >> mat; // get a new frame from video
-    if (mat.empty()) {
-        return 0;
-        usleep(100000);
-    }
+class BackgroundSubtractor {
     
-    // Thread-safe set to shared mat object
-    set_shared_mat(mat);
+public:
     
-    return 1;
+    BackgroundSubtractor(const std::string source_name, const std::string sink_name);
 
-}
+    void setBackgroundImageAndSubtract(void);
+    void subtractBackground(void);
+
+private:
+
+    // The background image used for subtraction
+    bool background_set = false;
+    cv::Mat background_img;
+    
+    // Mat client object for receiving frames
+    MatClient frame_source;
+    
+    // Mat server for sending processed frames
+    MatServer frame_sink;
+
+};
+
+#endif	/* BACKGROUNDSUBTRACTOR_H */
+

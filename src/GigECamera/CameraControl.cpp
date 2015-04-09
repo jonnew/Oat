@@ -668,8 +668,10 @@ void CameraControl::serveMat() {
 
     cv::Mat mat;
     grabMat(mat);
-    frame_sink.set_shared_mat(mat); 
-    frame_sink.notifyAllAndWait(); // Release exclusive lock on shared memory and wait
+    
+    // Write frame to shared memory and notify all client processes
+    // that a new frame is available. Do not block, though.
+    frame_sink.set_shared_mat(mat);  
 }
 
 // PRIVATE

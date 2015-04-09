@@ -36,9 +36,9 @@ public:
     void findSharedMat(void);
     
     // Condition variable manipulation
-    void notifyAll(void);
+    //void notifyAll(void);
     void wait(void);
-    void notifyAllAndWait(void);
+    //void notifyAllAndWait(void);
      
     // Accessors
     cv::Mat get_shared_mat(void);
