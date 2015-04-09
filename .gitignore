@@ -39,6 +39,5 @@ Makefile
 cmake_install.cmake
 install_manifest.txt
 
-# Ignore netbeans project info for now
+# Ignore netbeans project info
 nbproject/
-/src/build/
