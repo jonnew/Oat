@@ -1,1 +1,1 @@
-add_library(shmem SMServer.cpp SMClient.cpp)
+add_library(shmem SMServer.cpp SMClient.cpp MatClient.cpp MatServer.cpp)

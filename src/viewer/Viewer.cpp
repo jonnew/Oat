@@ -26,13 +26,7 @@
 
 using namespace boost::interprocess;
 
-Viewer::Viewer(std::string source_name) : frame_source(source_name)
-{ 
-    // Attach to the source
-    if (!frame_source.is_shared_mat_created()) {
-        frame_source.findSharedMat();
-    }
-}
+Viewer::Viewer(std::string source_name) : frame_source(source_name) { }
 
 void Viewer::showImage() {
     

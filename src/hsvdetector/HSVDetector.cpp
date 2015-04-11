@@ -142,6 +142,11 @@ void HSVDetector::applyFilter() { //(const Mat& rgb_img, Mat& threshold_img) {
 
     // Put processed mat in shared memory
     frame_sink.set_shared_mat(threshold_img);
+    
+    // Put position in shared memory
+    position_sink.set_value()
+    
+    
     frame_source.wait();
 
 }

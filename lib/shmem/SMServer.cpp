@@ -24,9 +24,9 @@ using namespace boost::interprocess;
 
 template<class SyncType>
 SMServer<SyncType>::SMServer(std::string sink_name) :
-  srv_name(sink_name)
-, srv_shmem_name(srv_name + "_sh_mem")
-, srv_shobj_name(srv_name + "_sh_obj")
+  name(sink_name)
+, shmem_name(sink_name + "_sh_mem")
+, shobj_name(sink_name + "_sh_obj")
 { }
 
 template<class SyncType>
@@ -37,30 +37,47 @@ template<class SyncType>
 SMServer<SyncType>::~SMServer() {
 
     // Remove_shared_memory on object destruction
-    srv_shared_object->cond_var.notify_all();
-    shared_memory_object::remove(srv_shmem_name.c_str());
+    shared_object->cond_var.notify_all();
+    shared_memory_object::remove(shmem_name.c_str());
 }
 
 template<class SyncType>
-void SMServer<SyncType>::createSharedObject(size_t bytes) {
+void SMServer<SyncType>::createSharedObject( ) {
 
     try {
 
         // Clean up any potential leftovers
-        shared_memory_object::remove(srv_shmem_name.c_str());
-        //        named_sharable_mutex::remove(mtx_name.c_str());
-        //        named_condition::remove(cond_name.c_str());
+        shared_memory_object::remove(shmem_name.c_str());
 
         // Allocate shared memory
-        srv_shared_memory = managed_shared_memory(open_or_create, srv_shmem_name.c_str(), bytes);
+        shared_memory = managed_shared_memory(open_or_create, shmem_name.c_str(), sizeof(SyncType) + 1024);
 
         // Make the shared object
-        srv_shared_object = srv_shared_memory.find_or_construct<SyncType>(srv_shobj_name.c_str())();
+        shared_object = shared_memory.find_or_construct<SyncType>(shobj_name.c_str())();
+        
+        // Set the ready flag
+        shared_object->ready = true;
 
     } catch (bad_alloc &ex) {
         std::cerr << ex.what() << '\n';
     }
-
-    srv_shared_write_object_created = true;
 }
 
+template<class SyncType>
+void SMServer<SyncType>::set_value(SyncType value) {
+    
+    if (!value->ready) {
+       createSharedObject( ); 
+       value->ready = true; 
+    }
+    
+    // Exclusive scoped_lock on the shared_mat_header->mutex
+    scoped_lock<interprocess_sharable_mutex> lock(value->mutex);
+    
+    // Perform write in shared memory
+    *shared_object = value;
+    
+    // Notify all client processes they can now access the data
+    value->cond_var.notify_all();
+    
+} // Scoped lock is released

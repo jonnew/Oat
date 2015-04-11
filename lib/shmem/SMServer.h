@@ -27,18 +27,21 @@ public:
     SMServer(std::string sink_name);
     SMServer(const SMServer& orig);
     virtual ~SMServer();
-
+    
+    void createSharedObject(void);
+    void set_value(SyncType value);
+    
+    
 protected:
     
-    SyncType* srv_shared_object;
+    SyncType* shared_object;
     
-    std::string srv_name, srv_shmem_name, srv_shobj_name, srv_mtx_name, srv_cond_name;
-    bool srv_shared_write_object_created = false;
-    boost::interprocess::managed_shared_memory srv_shared_memory;
+    std::string name;
+    std::string shmem_name, shobj_name;
+    boost::interprocess::managed_shared_memory shared_memory;
 
     void createSharedObject(size_t bytes);
-    void set_shared_object(SyncType val);
-   
+
 };
 
 #endif	/* SMSERVER_H */

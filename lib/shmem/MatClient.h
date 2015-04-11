@@ -23,8 +23,6 @@
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
 
-namespace ip = boost::interprocess;
-
 class MatClient {
 public:
     //MatClient(void);
@@ -43,16 +41,15 @@ public:
     // Accessors
     cv::Mat get_shared_mat(void);
     std::string get_name(void) { return name; }
-    bool is_shared_mat_created(void) { return shared_mat_created; }
     void set_source(const std::string);
     
 private:
     
-    ip::sharable_lock<ip::interprocess_sharable_mutex> makeLock();
+    boost::interprocess::sharable_lock<boost::interprocess::interprocess_sharable_mutex> makeLock();
 
     std::string name;
     shmem::SharedMatHeader* shared_mat_header;
-    bool shared_mat_created;
+    //bool shared_mat_created;
     void* shared_mat_data_ptr;
     int data_size; // Size of raw mat data in bytes
 
@@ -60,8 +57,8 @@ private:
     cv::Mat mat;
 
     std::string shmem_name, shobj_name;
-    ip::managed_shared_memory shared_memory;
-    ip::sharable_lock<ip::interprocess_sharable_mutex> lock;
+    boost::interprocess::managed_shared_memory shared_memory;
+    boost::interprocess::sharable_lock<boost::interprocess::interprocess_sharable_mutex> lock;
 };
 
 #endif	/* MATCLIENT_H */

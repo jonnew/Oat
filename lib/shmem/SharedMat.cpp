@@ -14,40 +14,29 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef MATSERVER_H
-#define	MATSERVER_H
-
-#include <string>
-
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <opencv2/core/mat.hpp>
-
 #include "SharedMat.h"
 
-class MatServer {
-    
-public:
-    MatServer(const std::string sink_name);
-    MatServer(const MatServer& orig);
-    virtual ~MatServer();
-    
-    void createSharedMat(cv::Mat model); // TODO: encapsulate in the SharedMatHeader object
-    
-    // Accessors
-    void set_shared_mat(cv::Mat mat);
-    std::string get_name(void) { return name; }
-    
-private:
-    
-    std::string name;
-    shmem::SharedMatHeader* shared_mat_header;
-    void* shared_mat_data_ptr;
-    int data_size; // Size of raw mat data in bytes
-    
-    std::string shmem_name, shobj_name;
-    boost::interprocess::managed_shared_memory shared_memory; // TODO:  encapsulate in the SharedMatHeader object
+#include <opencv2/core/mat.hpp>
 
-};
+namespace shmem {
 
-#endif	/* MATSERVER_H */
+    void SharedMatHeader::set_value(cv::Mat mat) {
 
+        memcpy(data_ptr, mat.data, data_size_in_bytes);
+    }
+
+    void SharedMatHeader::buildHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat model) {
+
+        data_size_in_bytes = model.total() * model.elemSize();
+        data_ptr = shared_mem.allocate(data_size_in_bytes);
+        mat_size = model.size();
+        type = model.type();
+        handle = shared_mem.get_handle_from_address(data_ptr);
+    }
+
+    void SharedMatHeader::attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat) {
+
+        mat.create(mat_size, type);
+        mat.data = static_cast<uchar*> (shared_mem.get_address_from_handle(handle));
+    }
+}

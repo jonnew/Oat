@@ -14,32 +14,46 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef SHAREDMAT_H
-#define	SHAREDMAT_H
-
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <opencv2/core/mat.hpp>
+#ifndef POSITION2D_H
+#define	POSITION2D_H
 
 #include "SyncSharedMemoryObject.h"
 
 namespace shmem {
 
-    class SharedMatHeader : public SyncSharedMemoryObject {
+    class Position2D : public SyncSharedMemoryObject {
         
     public:
 
-        void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat model);
-        void set_value(cv::Mat mat);
-        void attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat);
-
+        /**
+         * Update the 2D position. The absolute (mm) position is updated
+         * automatically if mm_per_px has been set.
+         * @param xy_px_in xy position in pixels
+         */
+        void set_value(std::array<int,2> xy_px_in) { 
+            xy_px = xy_px_in;
+            if (mm_conversion_set) {
+                getmmFromPx();
+            }
+        }
+        
+        /**
+         * Set the mm_per_px conversion value
+         * @param value mm per pixel
+         */
+        void set_mm_per_px(double value) {
+            mm_per_px = value;
+            mm_conversion_set = true;     
+        }
+        
     private:
-        cv::Size mat_size;
-        int type;
-        void* data_ptr;
-        int data_size_in_bytes;
-        boost::interprocess::managed_shared_memory::handle_t handle;
+        double mm_per_px = 10.0;
+        bool mm_conversion_set = false;
+        std::array<int,2> xy_px = {0, 0};
+        std::array<double,2> xy_mm = {0.0, 0.0};
+        void getmmFromPx(void) { xy_mm = {mm_per_px * xy_px[0], mm_per_px * xy_px[1] }; }     
     };
 }
 
-#endif	/* SHAREDMAT_H */
+#endif	/* POSITION2D_H */
 

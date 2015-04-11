@@ -22,6 +22,8 @@
 
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
+#include "../../lib/shmem/SMServer.h"
+#include "../../lib/shmem/Position2D.h"
 
 #define PI 3.14159265358979323846
 
@@ -51,6 +53,9 @@ public:
     // Apply the HSVTransform, thresholding, and erode/dilate operations to/from
     // shared memory allocated mat objects
     void applyFilter(void);
+    
+    // Following filtering, serve position object
+    void sendPosition(void);
 
     // Accessors
     
@@ -145,6 +150,9 @@ private:
     
     // Mat server for sending processed frames
     MatServer frame_sink;
+    
+    // Position server
+    SMServer<shmem::Position2D> position_sink;
 
     // HSV filter
     void hsvTransform(cv::Mat& rgb_img);
@@ -159,7 +167,7 @@ private:
     void clarifyObjects(cv::Mat& threshold_img);
 
     // Add information to displayed image
-    void decorateFeed(cv::Mat& display_img, const cv::Scalar&);
+    void decorateFeed(cv::Mat& display_img, const cv::Scalar&); // TODO: Remove (this class is doing too much!)
     
     // Callbacks for sliders
     static void erodeSliderChangedCallback(int, void*);
