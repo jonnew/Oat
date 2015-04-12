@@ -27,6 +27,7 @@ MatServer::MatServer(const std::string server_name) :
   name(server_name)
 , shmem_name(name + "_sh_mem")
 , shobj_name(name + "_sh_obj")
+, shared_object_created(false)
 { }
 
 MatServer::MatServer(const MatServer& orig) { }
@@ -36,6 +37,7 @@ MatServer::~MatServer() {
     // Remove_shared_memory on object destruction
     shared_mat_header->cond_var.notify_all();
     shared_memory_object::remove(shmem_name.c_str());
+    std::cout << "The server named \"" + name + "\" was destructed." << std::endl;
 }
 
 void MatServer::createSharedMat(cv::Mat model) {
@@ -49,22 +51,24 @@ void MatServer::createSharedMat(cv::Mat model) {
         // Define shared memory
         shared_memory = managed_shared_memory(open_or_create,
                 shmem_name.c_str(),
-                data_size + sizeof (shmem::SharedMatHeader) + 1024);
+                data_size + sizeof (shmem::SharedCVMatHeader) + 1024);
 
         // Make the shared object
-        shared_mat_header = shared_memory.find_or_construct<shmem::SharedMatHeader>(shobj_name.c_str())();
+        shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
 
     } catch (bad_alloc &ex) {
         std::cerr << ex.what() << '\n';
     }
     
     shared_mat_header->buildHeader(shared_memory, model);
+    
+    shared_object_created = true;
 
 }
 
 void MatServer::set_shared_mat(cv::Mat mat) {
 
-    if (!shared_mat_header->ready) {
+    if (!shared_object_created) {
         createSharedMat(mat); 
         shared_mat_header->ready = true; 
     }
@@ -80,3 +84,15 @@ void MatServer::set_shared_mat(cv::Mat mat) {
     shared_mat_header->cond_var.notify_all();
     
 } // Lock is released on scope exit
+
+void MatServer::set_name(const std::string sink_name) {
+    
+    // Make sure we are not already attached to some source
+    if (!shared_object_created) {
+        name = source_name;
+        shmem_name = sink_name + "_sh_mem";
+        shobj_name = sink_name + "_sh_obj";
+    } else {
+        std::cerr << "Cannot edit the sink name because we are already reading from \"" + name + "\".";
+    }
+}

@@ -36,11 +36,13 @@ public:
     // Accessors
     void set_shared_mat(cv::Mat mat);
     std::string get_name(void) { return name; }
+    void set_name(std::string value);
     
 private:
     
     std::string name;
-    shmem::SharedMatHeader* shared_mat_header;
+    shmem::SharedCVMatHeader* shared_mat_header;
+    bool shared_object_created;
     void* shared_mat_data_ptr;
     int data_size; // Size of raw mat data in bytes
     

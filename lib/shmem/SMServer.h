@@ -20,7 +20,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <string>
 
-template <class SyncType>
+template <class SyncType, class IOType>
 class SMServer {
     
 public:
@@ -29,7 +29,7 @@ public:
     virtual ~SMServer();
     
     void createSharedObject(void);
-    void set_value(SyncType value);
+    void set_value(IOType value);
     
     
 protected:

@@ -22,27 +22,28 @@
 
 using namespace boost::interprocess;
 
-template<class SyncType>
-SMServer<SyncType>::SMServer(std::string sink_name) :
+template<class SyncType, class IOType>
+SMServer<SyncType, IOType>::SMServer(std::string sink_name) :
   name(sink_name)
 , shmem_name(sink_name + "_sh_mem")
 , shobj_name(sink_name + "_sh_obj")
 { }
 
-template<class SyncType>
-SMServer<SyncType>::SMServer(const SMServer& orig) {
+template<class SyncType, class IOType>
+SMServer<SyncType, IOType>::SMServer(const SMServer& orig) {
 }
 
-template<class SyncType>
-SMServer<SyncType>::~SMServer() {
+template<class SyncType, class IOType>
+SMServer<SyncType, IOType>::~SMServer() {
 
     // Remove_shared_memory on object destruction
     shared_object->cond_var.notify_all();
     shared_memory_object::remove(shmem_name.c_str());
+    std::cout << "The server named \"" + name + "\" was destructed." << std::endl;
 }
 
-template<class SyncType>
-void SMServer<SyncType>::createSharedObject( ) {
+template<class SyncType, class IOType>
+void SMServer<SyncType, IOType>::createSharedObject( ) {
 
     try {
 
@@ -63,8 +64,8 @@ void SMServer<SyncType>::createSharedObject( ) {
     }
 }
 
-template<class SyncType>
-void SMServer<SyncType>::set_value(SyncType value) {
+template<class SyncType, class IOType>
+void SMServer<SyncType, IOType>::set_value(IOType value) {
     
     if (!value->ready) {
        createSharedObject( ); 
@@ -75,7 +76,7 @@ void SMServer<SyncType>::set_value(SyncType value) {
     scoped_lock<interprocess_sharable_mutex> lock(value->mutex);
     
     // Perform write in shared memory
-    *shared_object = value;
+    *shared_object->set_value(value);
     
     // Notify all client processes they can now access the data
     value->cond_var.notify_all();

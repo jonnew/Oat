@@ -17,11 +17,27 @@
 #include "CameraControl.h"
 
 #include <signal.h>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
 
 volatile sig_atomic_t done = 0;
+bool running = true;
 
 void term(int) {
     done = 1;
+}
+
+void run(std::string sink, std::string config_file, std::string config_key) {
+
+    CameraControl cc(sink);
+    cc.configure(config_file, config_key);
+    std::cout << "GigECamera server named \"" + sink + "\" has started (☞ﾟヮﾟ)☞." << std::endl;
+
+    while (!done) { // !done
+        if (running) {
+            cc.serveMat();
+        }
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -34,19 +50,47 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    const std::string sink = static_cast<std::string>(argv[1]);
-    
-    CameraControl cc(sink);
-    cc.configure(argv[2], argv[3]);
-    
-    std::cout << "GigECamera server named \"" + sink + "\" has started (☞ﾟヮﾟ)☞." << std::endl;
+    const std::string sink = static_cast<std::string> (argv[1]);
+    const std::string config_file = static_cast<std::string> (argv[2]);
+    const std::string config_key = static_cast<std::string> (argv[3]);
 
-    // TODO: exit signal
-     while (!done) {
-        cc.serveMat();
+    boost::thread_group thread_group;
+    thread_group.create_thread(boost::bind(&run, sink, config_file, config_key));
+
+    // TODO: Standard startup dialog (common to all simple-tracker programs, perhaps)
+
+    while (!done) {
+        int user_input;
+        std::cout << std::endl;
+        std::cout << "Select an action:" << std::endl;
+        std::cout << "   [1]: Pause/unpause camera." << std::endl;
+        std::cout << "   [2]: Exit camera." << std::endl;
+        std::cin >> user_input;
+
+        switch (user_input) {
+
+            case 1:
+            {
+                running = !running;
+                break;
+            }
+
+            case 2:
+            {
+                done = true;
+                break;
+            }
+            default:
+
+                std::cout << "Invalid selection. Try again." << std::endl;
+                break;
+        }
     }
 
+    // TODO: Exit gracefully and ensure all shared resources are cleaned up!
+    thread_group.join_all();
+
     // Exit
-    std::cout << "GigECamera server named\"" + sink + "\" is exiting." << std::endl;
+    std::cout << "GigECamera server named \"" + sink + "\" is exiting." << std::endl;
     return 0;
 }

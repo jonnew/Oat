@@ -48,8 +48,8 @@ private:
     boost::interprocess::sharable_lock<boost::interprocess::interprocess_sharable_mutex> makeLock();
 
     std::string name;
-    shmem::SharedMatHeader* shared_mat_header;
-    //bool shared_mat_created;
+    shmem::SharedCVMatHeader* shared_mat_header;
+    bool shared_object_found;
     void* shared_mat_data_ptr;
     int data_size; // Size of raw mat data in bytes
 

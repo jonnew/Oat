@@ -24,6 +24,7 @@ MatClient::MatClient(const std::string source_name) :
   name(source_name)
 , shmem_name(source_name + "_sh_mem")
 , shobj_name(source_name + "_sh_obj")
+, shared_object_found(false)
 { }
 
 MatClient::MatClient(const MatClient& orig) { }
@@ -32,12 +33,12 @@ MatClient::~MatClient() { }
 
 void MatClient::findSharedMat() {
 
-    while (!shared_mat_header->ready) {
+    while (!shared_object_found) {
         try {
 
             shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
-            shared_mat_header = shared_memory.find<shmem::SharedMatHeader>(shobj_name.c_str()).first;
-            shared_mat_header->ready = true;
+            shared_mat_header = shared_memory.find<shmem::SharedCVMatHeader>(shobj_name.c_str()).first;
+            shared_object_found = true;
 
         } catch (...) {
             std::cout << "Waiting for source \"" + name + "\" to start..." << std::endl;
@@ -45,12 +46,9 @@ void MatClient::findSharedMat() {
         } 
     }
     
-    // Pass mutex to the scoped sharable_lock. This will lock the shared_mat_header->mutex
-    // until wait(lock) is called.
+    // Pass mutex to the scoped sharable_lock. 
     lock = makeLock();
-    
     shared_mat_header->attachMatToHeader(shared_memory, mat);
-    
 }
 
 
@@ -65,12 +63,12 @@ void MatClient::findSharedMat() {
  */
 cv::Mat MatClient::get_shared_mat() {
 
-    lock.lock();
-    if (!shared_mat_header->ready) {
-        findSharedMat(); // Acquires shared lock on shared_mat_header->mutex
-        shared_mat_header->ready = true;
+    if (!shared_object_found) {
+        findSharedMat(); // Creates lock targeting shared_mat_header->mutex, but does not engage
     }
     
+    //lock.lock();
+    //mat = shared_cvmat->get_value();
     return mat; // User responsible for calling wait after they get, and process this result!
 }
 
@@ -80,20 +78,19 @@ void MatClient::wait() {
 }
 
 sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {
-    sharable_lock<interprocess_sharable_mutex> sl(shared_mat_header->mutex, defer_lock);
+    sharable_lock<interprocess_sharable_mutex> sl(shared_mat_header->mutex); // defer_lock
     return sl;
 }
 
 void MatClient::set_source(const std::string source_name) {
     
     // Make sure we are not already attached to some source
-    if (!shared_mat_header->ready) {
+    if (!shared_object_found) {
         name = source_name;
         shmem_name = source_name + "_sh_mem";
         shobj_name = source_name + "_sh_obj";
     } else {
         std::cerr << "Cannot edit the source name because we are already reading from \"" + name + "\".";
     }
-    
 }
 

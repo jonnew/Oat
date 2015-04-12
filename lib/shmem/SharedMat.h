@@ -24,10 +24,9 @@
 
 namespace shmem {
 
-    class SharedMatHeader : public SyncSharedMemoryObject {
+    class SharedCVMatHeader : public SyncSharedMemoryObject {
         
     public:
-
         void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat model);
         void set_value(cv::Mat mat);
         void attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat);

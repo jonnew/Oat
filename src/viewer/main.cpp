@@ -18,11 +18,26 @@
 
 #include <string>
 #include <signal.h>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
 
 volatile sig_atomic_t done = 0;
+bool running = true;
 
 void term(int) {
     done = 1;
+}
+
+void run(std::string source) {
+
+    Viewer viewer(source);
+    std::cout << "A viewer has begun listening to source \"" + source + "\"." << std::endl;
+
+    while (!done) { // !done
+        if (running) {
+            viewer.showImage();
+        }
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -35,16 +50,43 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    const std::string source = static_cast<std::string>(argv[1]);
-    
-    Viewer viewer(source);
-    std::cout << "A viewer has begun listening to source \"" + source + "\"." << std::endl;
+    const std::string source = static_cast<std::string> (argv[1]);
 
-    // Execute infinite, thread-safe loop with showImage calls governed by
-    // underlying condition variable system.
+    boost::thread_group thread_group;
+    thread_group.create_thread(boost::bind(&run, source));
+
+    // TODO: Standard startup dialog (common to all simple-tracker programs, perhaps)
+
     while (!done) {
-        viewer.showImage();
+        int user_input;
+        std::cout << std::endl;
+        std::cout << "Select an action:" << std::endl;
+        std::cout << "   [1]: Pause/unpause viewer " << std::endl;
+        std::cout << "   [2]: Exit viewer " << std::endl;
+        std::cin >> user_input;
+
+        switch (user_input) {
+
+            case 1:
+            {
+                running = !running;
+                break;
+            }
+
+            case 2:
+            {
+                done = true;
+                break;
+            }
+            default:
+
+                std::cout << "Invalid selection. Try again." << std::endl;
+                break;
+        }
     }
+
+    // TODO: Exit gracefully and ensure all shared resources are cleaned up!
+    thread_group.join_all();
 
     // Exit
     std::cout << "Viewer listening to source \"" + source + "\" is exiting." << std::endl;

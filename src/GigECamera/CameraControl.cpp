@@ -643,7 +643,7 @@ void CameraControl::grabImage() {
         std::cout << "WARNING: capture error." << std::endl;
     }
 
-    std::cout << "Grabbed image " << std::endl;
+    //std::cout << "Grabbed image " << std::endl;
 
 }
 

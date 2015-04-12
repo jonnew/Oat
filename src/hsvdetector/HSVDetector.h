@@ -32,17 +32,20 @@ class HSVDetector {
 public:
     
     // HSV values known
-    HSVDetector(const std::string source_name, const std::string sink_name,
+    HSVDetector(const std::string source_name, const std::string pos_sink_name,
                 int h_min, int h_max,
                 int s_min, int s_max,
                 int v_min, int v_max);
     
     // Start with full range of HSV thresholds. This is typically used
     // for manual tuning of thresholds using the createTrackbars call
-    HSVDetector(const std::string source_name, const std::string sink_name);
+    HSVDetector(const std::string source_name, const std::string pos_sink_name);
 
     // Use a configuration file to specify parameters
     void configure(std::string config_file, std::string key);
+    
+    // Add a frame sink to view the filtered output. Not normally needed.
+    void addFrameSink(std::string frame_sink_name);
     
     // Sliders to allow manipulation of HSV thresholds
     void createTrackbars(void);
@@ -52,7 +55,7 @@ public:
 
     // Apply the HSVTransform, thresholding, and erode/dilate operations to/from
     // shared memory allocated mat objects
-    void applyFilter(void);
+    void applyFilterAndServe(void);
     
     // Following filtering, serve position object
     void sendPosition(void);
@@ -80,30 +83,6 @@ public:
         max_object_area = max_object_area;
     }
 
-    void set_h_min(int h_min) {
-        h_min = h_min;
-    }
-
-    void set_h_max(int h_max) {
-        h_max = h_max;
-    }
-
-    void set_s_min(int s_min) {
-        s_min = s_min;
-    }
-
-    void set_s_max(int s_max) {
-        s_max = s_max;
-    }
-
-    void set_v_min(int v_min) {
-        v_min = v_min;
-    }
-
-    void set_v_max(int v_max) {
-        v_max = v_max;
-    }
-    
     void set_erode_size(int erode_px);
     void set_dilate_size(int dilate_px);
     
@@ -132,13 +111,12 @@ private:
 
     // Object detection parameters
     std::string position;
-    float mm_per_px;
+    double mm_per_px; // TODO: impelment mm_per_px somehow
 
     std::string status_text;
     bool object_found;
     double object_area;
-    cv::Point xy_coord_px;
-    cv::Point xy_coord_mm;
+    cv::Point2i xy_coord_px;
     bool decorate; 
 
     unsigned int max_num_contours;
@@ -148,11 +126,12 @@ private:
     // Mat client object for receiving frames
     MatClient frame_source;
     
-    // Mat server for sending processed frames
-    MatServer frame_sink;
-    
     // Position server
-    SMServer<shmem::Position2D> position_sink;
+    SMServer<shmem::Position2D, cv::Point2i> position_sink;
+    
+    // Mat server for sending processed frames
+    bool frame_sink_used;
+    MatServer frame_sink;
 
     // HSV filter
     void hsvTransform(cv::Mat& rgb_img);

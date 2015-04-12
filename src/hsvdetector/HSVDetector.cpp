@@ -48,12 +48,14 @@ using cv::dilate;
 using namespace boost::interprocess;
 
 HSVDetector::HSVDetector(const std::string source_name,
-        const std::string sink_name,
+        const std::string pos_sink_name,
         int h_min_in, int h_max_in,
         int s_min_in, int s_max_in,
         int v_min_in, int v_max_in) :
 frame_source(source_name),
-frame_sink(sink_name) {
+position_sink(pos_sink_name),
+frame_sink_used(false)
+{
 
     detector_name = source_name + "_hsv_detector";
     slider_title = detector_name + "_hsv_sliders";
@@ -87,15 +89,10 @@ frame_sink(sink_name) {
     object_found = false;
     xy_coord_px.x = 0;
     xy_coord_px.y = 0;
-
-    // Attach to the source
-    if (!frame_source.is_shared_mat_created()) {
-        frame_source.findSharedMat();
-    }
 }
 
-HSVDetector::HSVDetector(const std::string source_name, const std::string sink_name) :
-HSVDetector::HSVDetector(source_name, sink_name, 0, 256, 0, 256, 0, 256) {
+HSVDetector::HSVDetector(const std::string source_name, const std::string pos_sink_name) :
+HSVDetector::HSVDetector(source_name, pos_sink_name, 0, 256, 0, 256, 0, 256) {
 }
 
 void HSVDetector::createTrackbars() {
@@ -126,7 +123,7 @@ void HSVDetector::dilateSliderChangedCallback(int value, void* object) {
     hsv_detector->set_dilate_size(value);
 }
 
-void HSVDetector::applyFilter() { //(const Mat& rgb_img, Mat& threshold_img) {
+void HSVDetector::applyFilterAndServe() { 
 
     proc_mat = frame_source.get_shared_mat().clone();
 
@@ -141,11 +138,12 @@ void HSVDetector::applyFilter() { //(const Mat& rgb_img, Mat& threshold_img) {
     }
 
     // Put processed mat in shared memory
-    frame_sink.set_shared_mat(threshold_img);
+    if (frame_sink_used) {
+        frame_sink.set_shared_mat(threshold_img);
+    }
     
     // Put position in shared memory
-    position_sink.set_value()
-    
+    position_sink.set_value(xy_coord_px);
     
     frame_source.wait();
 
@@ -321,6 +319,11 @@ void HSVDetector::configure(std::string config_file, std::string key) {
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
     }
+}
+
+void HSVDetector::addFrameSink(std::string frame_sink_name) {
+    frame_sink.set_name(frame_sink_name);
+    frame_sink_used = true;
 }
 
 void HSVDetector::set_erode_size(int _erode_px) {

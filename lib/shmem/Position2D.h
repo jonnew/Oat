@@ -17,7 +17,11 @@
 #ifndef POSITION2D_H
 #define	POSITION2D_H
 
+#include <opencv2/core/mat.hpp>
+
 #include "SyncSharedMemoryObject.h"
+
+
 
 namespace shmem {
 
@@ -30,8 +34,8 @@ namespace shmem {
          * automatically if mm_per_px has been set.
          * @param xy_px_in xy position in pixels
          */
-        void set_value(std::array<int,2> xy_px_in) { 
-            xy_px = xy_px_in;
+        void set_value(cv::Point2i& value) { 
+            xy_px = value;
             if (mm_conversion_set) {
                 getmmFromPx();
             }
@@ -46,12 +50,21 @@ namespace shmem {
             mm_conversion_set = true;     
         }
         
+        /**
+         * Set the position label for this point (e.g. posterior vs. anterior)
+         * @param value 
+         */
+        void set_position(std::string value) {
+            position = value;
+        }
+        
     private:
-        double mm_per_px = 10.0;
+        double mm_per_px;
         bool mm_conversion_set = false;
-        std::array<int,2> xy_px = {0, 0};
-        std::array<double,2> xy_mm = {0.0, 0.0};
-        void getmmFromPx(void) { xy_mm = {mm_per_px * xy_px[0], mm_per_px * xy_px[1] }; }     
+        cv::Point2i xy_px;
+        cv::Point2d xy_mm;
+        std::string position;
+        void getmmFromPx(void) { xy_mm = mm_per_px * xy_px; }     
     };
 }
 
