@@ -20,75 +20,121 @@
 #include <signal.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
 bool running = true;
 
 void term(int) {
-    done = 1;
+	done = 1;
 }
 
 void run(std::string source) {
 
-    Viewer viewer(source);
-    std::cout << "A viewer has begun listening to source \"" + source + "\"." << std::endl;
+	Viewer viewer(source);
+	std::cout << "Viewer has begun listening to source \"" + source + "\"." << std::endl;
 
-    while (!done) { // !done
-        if (running) {
-            viewer.showImage();
-        }
-    }
+	while (!done) { 
+		if (running) {
+			viewer.showImage();
+		}
+	}
+
+	std::cout << "Viewer listening to source \"" + source + "\" is exiting." << std::endl;
 }
 
 int main(int argc, char *argv[]) {
 
-    signal(SIGINT, term);
+	// If Ctrl-C is pressed, handle the signal with the term routine
+	signal(SIGINT, term);
 
-    if (argc != 2) {
-        std::cout << "Usage: " << argv[0] << " SOURCE-NAME" << std::endl;
-        std::cout << "Viewer for cv::Mat data servers" << std::endl;
-        return 1;
-    }
+	// The image source to view
+	const std::string source = static_cast<std::string> (argv[1]);
 
-    const std::string source = static_cast<std::string> (argv[1]);
+	try {
+		int opt;
 
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, source));
+		po::options_description basic_options("Basic options");
+		basic_options.add_options()
+			("version,v", "print version number")
+			("help", "produce help message")
+			("source,s", po::value<string>(&source), 
+			 " The name of the server that supplies images to view.\n"
+			 " The server must be of type server<SharedCVMatHeader>\n")
+			;
 
-    // TODO: Standard startup dialog (common to all simple-tracker programs, perhaps)
+		po::positional_options_description positional_options;
+		positional_options.add("source", -1);
 
-    while (!done) {
-        int user_input;
-        std::cout << std::endl;
-        std::cout << "Select an action:" << std::endl;
-        std::cout << "   [1]: Pause/unpause viewer " << std::endl;
-        std::cout << "   [2]: Exit viewer " << std::endl;
-        std::cin >> user_input;
+		po::variables_map variable_map;
+		po::store(po::command_line_parser(argc, argv)
+				.options(basic_options)
+				.positional(positional_options)
+				.run(), 
+				variable_map);
+		po::notify(variable_map);
 
-        switch (user_input) {
+		// Use the parsed options
+		if (variable_map.count("version")) {
+			std::cout << "Simple-Tracker Viewer, version 1.0" << std::endl; //TODO: Cmake managed versioning
+			exit(EXIT_SUCCESS);
+		}
 
-            case 1:
-            {
-                running = !running;
-                break;
-            }
+		if (variable_map.count("help")) {
+			std::cout << basic_options << std::endl;
+			exit(EXIT_SUCCESS);
+		}
 
-            case 2:
-            {
-                done = true;
-                break;
-            }
-            default:
+		if (!variable_map.count("source")) {
+			std::cout << "An image SOURCE must be specified. Exiting." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	} 
+	catch (exception& e) {
+		cerr << "error: " << e.what() << "\n";
+		return 1;
+	}
+	catch (...) {
+		cerr << "Exception of unknown type!\n";
+	}
 
-                std::cout << "Invalid selection. Try again." << std::endl;
-                break;
-        }
-    }
+	// Two threads - one for user interaction, the other
+	// for executing the viewer
+	boost::thread_group thread_group;
+	thread_group.create_thread(boost::bind(&run, source));
 
-    // TODO: Exit gracefully and ensure all shared resources are cleaned up!
-    thread_group.join_all();
+	while (!done) {
 
-    // Exit
-    std::cout << "Viewer listening to source \"" + source + "\" is exiting." << std::endl;
-    return 0;
+		int user_input;
+		std::cout << std::endl;
+		std::cout << "Select an action:" << std::endl;
+		std::cout << " [1]: Pause/unpause viewer " << std::endl;
+		std::cout << " [2]: Exit viewer " << std::endl;
+		std::coud << ">> ";
+
+		std::cin >> user_input;
+
+		switch (user_input) {
+			case 1: {
+						running = !running;
+						break;
+					}
+			case 2: {
+						done = true;
+						break;
+					}
+			default:
+					std::cout << "Invalid selection. Try again." << std::endl;
+					break;
+		}
+	}
+
+	// TODO: Exit gracefully and ensure all shared resources are cleaned up. This might already
+	// be functional, but I'm not sure...
+	thread_group.join_all();
+
+	// Exit
+	exit(EXIT_SUCCESS);
 }
