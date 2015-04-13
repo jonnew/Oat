@@ -18,7 +18,7 @@
 
 #include <string>
 #include <stdlib.h> 
-#include <unistd.h> // Don't know how to include only if LINUX with cmake
+#include <unistd.h> // TODO: Don't know how to include only if LINUX with cmake
 #include <stdint.h>
 #include <iostream>
 #include <sstream>
@@ -337,37 +337,6 @@ int CameraControl::setupExposure(bool is_auto) {
 
     setupShutter(true);
     setupGain(true);
-    //    Property prop;
-    //    prop.type = SHUTTER;
-    //    Error error = camera.GetProperty(&prop);
-    //    if (error != PGRERROR_OK) {
-    //            printError(error);
-    //            exit(EXIT_FAILURE);
-    //    }
-    //    
-    //    prop.autoManualMode = true;
-    //    
-    //    error = camera.SetProperty(&prop);
-    //    if (error != PGRERROR_OK) {
-    //            printError(error);
-    //            exit(EXIT_FAILURE);
-    //    }
-    //    
-    //    prop.type = GAIN;
-    //    error = camera.GetProperty(&prop);
-    //    if (error != PGRERROR_OK) {
-    //            printError(error);
-    //            exit(EXIT_FAILURE);
-    //    }
-    //    
-    //    prop.autoManualMode = true;
-    //    
-    //    error = camera.SetProperty(&prop);
-    //    if (error != PGRERROR_OK) {
-    //            printError(error);
-    //            exit(EXIT_FAILURE);
-    //    }
-
     Property prop;
     prop.type = AUTO_EXPOSURE;
     Error error = camera.GetProperty(&prop);
@@ -530,7 +499,6 @@ int CameraControl::setupImageFormat() {
     imageSettings.height = frame_size.height;
     imageSettings.width = frame_size.width;
     imageSettings.pixelFormat = PIXEL_FORMAT_RAW12;
-    //imageSettings.pixelFormat = PIXEL_FORMAT_MONO8;
 
     std::cout << "Setting GigE image settings..." << std::endl;
 
@@ -666,7 +634,7 @@ void CameraControl::grabImage() {
         std::cout << "WARNING: capture error." << std::endl;
     }
 
-    //std::cout << "Grabbed image " << std::endl;
+    //std::cout << "Grabbed imag.\n" << std::endl;
 
 }
 

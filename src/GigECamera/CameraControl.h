@@ -1,5 +1,5 @@
-#ifndef CameraControl_H
-#define CameraControl_H
+#ifndef CAMERACONTROL_H
+#define CAMERACONTROL_H
 
 #include <string>
 #include <opencv2/core/mat.hpp>
@@ -21,7 +21,7 @@ public:
     int setCameraIndex(unsigned int requested_idx);
     int connectToCamera(void);
 
-    // Once connected
+    // Acqusition options 
     int setupStreamChannels(void);
     int setupShutter(float shutter_ms);
     int setupShutter(bool is_auto);
@@ -42,10 +42,9 @@ public:
     //TODO: int turnCameraOff(void);
     void grabImage(void);
     void grabMat(cv::Mat& image);
-    cv::Mat imageToMat(void);
 
     // IPC
-    void createSharedBlock(void);
+    cv::Mat imageToMat(void);
     void serveMat(void);
 
     // Accessors
@@ -92,4 +91,4 @@ private:
     void printStreamChannelInfo(FlyCapture2::GigEStreamChannel *stream_channel);
 };
 
-#endif //CameraConfig_H
+#endif //CAMERACONFIG_H
