@@ -31,6 +31,8 @@
 #include "../../lib/shmem/MatClient.cpp"
 #include "../../lib/shmem/MatServer.h"
 #include "../../lib/shmem/MatServer.cpp"
+#include "../../lib/shmem/SMServer.h"
+#include "../../lib/shmem/SMServer.cpp"
 
 using cv::Mat;
 using cv::namedWindow;
@@ -52,9 +54,9 @@ HSVDetector::HSVDetector(const std::string source_name,
         int h_min_in, int h_max_in,
         int s_min_in, int s_max_in,
         int v_min_in, int v_max_in) :
-frame_source(source_name),
-position_sink(pos_sink_name),
-frame_sink_used(false)
+  frame_source(source_name)
+, position_sink(pos_sink_name)
+, frame_sink_used(false)
 {
 
     detector_name = source_name + "_hsv_detector";
@@ -92,8 +94,7 @@ frame_sink_used(false)
 }
 
 HSVDetector::HSVDetector(const std::string source_name, const std::string pos_sink_name) :
-HSVDetector::HSVDetector(source_name, pos_sink_name, 0, 256, 0, 256, 0, 256) {
-}
+HSVDetector::HSVDetector(source_name, pos_sink_name, 0, 256, 0, 256, 0, 256) { }
 
 void HSVDetector::createTrackbars() {
 

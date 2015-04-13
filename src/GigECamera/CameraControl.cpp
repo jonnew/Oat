@@ -51,6 +51,29 @@ CameraControl::CameraControl(std::string name) : frame_sink(name) {
     aquisition_started = false;
 }
 
+/**
+ * Set default camera configuration
+ */
+void CameraControl::configure() {
+    
+    camera_name = "Default";
+    setCameraIndex(0);
+    connectToCamera();
+    turnCameraOn();
+    setupStreamChannels();
+    setupExposure(true);
+    setupShutter(true);
+    setupGain(true);
+    setupWhiteBalance(false);
+    setupDefaultImageFormat();
+    setupTrigger(0, 1); // TODO: Trigger options, free running w/o trigger should be default!
+}
+
+/**
+ * Configure file using TOML configuration file
+ * @param config_file The configuration file.
+ * @param key The configuration key specifying options for this instance.
+ */
 void CameraControl::configure(std::string config_file, std::string key) {
 
     cpptoml::table config;
@@ -70,7 +93,7 @@ void CameraControl::configure(std::string config_file, std::string key) {
 
             auto camera_config = *config.get_table(key);
             camera_name = key;
-          
+
             // Set the camera index
             if (camera_config.contains("index"))
                 index = (unsigned int) (*camera_config.get_as<int64_t>("index"));
@@ -668,10 +691,10 @@ void CameraControl::serveMat() {
 
     cv::Mat mat;
     grabMat(mat);
-    
+
     // Write frame to shared memory and notify all client processes
     // that a new frame is available. Do not block, though.
-    frame_sink.set_shared_mat(mat);  
+    frame_sink.set_shared_mat(mat);
 }
 
 // PRIVATE

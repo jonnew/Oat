@@ -29,10 +29,10 @@ public:
 
 protected:
     
-    SyncType* cli_shared_object;
+    SyncType* shared_object;
 
-    std::string cli_name, cli_shmem_name, cli_shobj_name, cli_mtx_name, cli_cond_name;
-    bool cli_shared_read_object_created = false;
+    std::string name, shmem_name, shobj_name;
+    bool shared_object_found = false;
     boost::interprocess::managed_shared_memory cli_shared_memory;
 
     void findSharedObject(void);

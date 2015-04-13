@@ -29,7 +29,7 @@ public:
     
     BackgroundSubtractor(const std::string source_name, const std::string sink_name);
 
-    void setBackgroundImageAndSubtract(void);
+    void setBackgroundImage(void);
     void subtractBackground(void);
 
 private:

@@ -28,8 +28,8 @@ namespace shmem {
         
         bool ready = false;
         boost::interprocess::interprocess_sharable_mutex mutex;
-        boost::interprocess::interprocess_condition_any cond_var;
-
+        boost::interprocess::interprocess_condition_any new_data_condition;
+        
     };
 }
 

@@ -28,113 +28,141 @@ volatile sig_atomic_t done = 0;
 bool running = true;
 
 void term(int) {
-	done = 1;
+    done = 1;
 }
 
 void run(std::string source) {
 
-	Viewer viewer(source);
-	std::cout << "Viewer has begun listening to source \"" + source + "\"." << std::endl;
+    Viewer viewer(source);
+    std::cout << "Viewer has begun listening to source \"" + source + "\".\n";
 
-	while (!done) { 
-		if (running) {
-			viewer.showImage();
-		}
-	}
+    while (!done) {
+        if (running) {
+            viewer.showImage();
+        }
+    }
 
-	std::cout << "Viewer listening to source \"" + source + "\" is exiting." << std::endl;
+    std::cout << "Viewer listening to source \"" + source + "\" is exiting." << std::endl;
+}
+
+void printUsage(po::options_description options) {
+    std::cout << "Usage: viewer [OPTIONS]\n";
+    std::cout << "   or: viewer SOURCE\n";
+    std::cout << "View the output of a SOURCE of type SMServer<SharedCVMatHeader>\n";
+    std::cout << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
 
-	// If Ctrl-C is pressed, handle the signal with the term routine
-	signal(SIGINT, term);
+    // If ctrl-c is pressed, handle the signal with the term routine, which
+    // will attempt to clean up the shared memory before exiting by calling
+    // the object that is using shmem's destructor
+    signal(SIGINT, term);
 
-	// The image source to view
-	const std::string source = static_cast<std::string> (argv[1]);
+    // The image source to which the viewer will be attached
+    std::string source;
+    
+    try {
 
-	try {
-		int opt;
+        po::options_description options("OPTIONS");
+        options.add_options()
+                ("help", "Produce help message.")
+                ("version,v", "Print version information.")
+                ;
+        
+        po::options_description hidden("HIDDEN OPTIONS");
+        hidden.add_options()
+                ("source", po::value<std::string>(&source),
+                "The name of the server that supplies images to view."
+                "The server must be of type server<SharedCVMatHeader>\n")
+                ;
+        
+        po::positional_options_description positional_options;
+        positional_options.add("source", -1);
+        
+        po::options_description all_options("ALL OPTIONS");
+        all_options.add(options).add(hidden);
 
-		po::options_description basic_options("Basic options");
-		basic_options.add_options()
-			("version,v", "print version number")
-			("help", "produce help message")
-			("source,s", po::value<string>(&source), 
-			 " The name of the server that supplies images to view.\n"
-			 " The server must be of type server<SharedCVMatHeader>\n")
-			;
+        po::variables_map variable_map;
+        po::store(po::command_line_parser(argc, argv)
+                .options(all_options)
+                .positional(positional_options)
+                .run(),
+                variable_map);
+        po::notify(variable_map);
 
-		po::positional_options_description positional_options;
-		positional_options.add("source", -1);
+        // Use the parsed options
+        if (variable_map.count("help")) {
+            printUsage(options);
+            return 0;
+        }
 
-		po::variables_map variable_map;
-		po::store(po::command_line_parser(argc, argv)
-				.options(basic_options)
-				.positional(positional_options)
-				.run(), 
-				variable_map);
-		po::notify(variable_map);
+        if (variable_map.count("version")) {
+            std::cout << "Simple-Tracker Viewer, version 1.0\n"; //TODO: Cmake managed versioning
+            std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
+            std::cout << "Licensed under the GPL3.0.\n";
+            return 0;
+        }
 
-		// Use the parsed options
-		if (variable_map.count("version")) {
-			std::cout << "Simple-Tracker Viewer, version 1.0" << std::endl; //TODO: Cmake managed versioning
-			exit(EXIT_SUCCESS);
-		}
+        if (!variable_map.count("source")) {
+            printUsage(options);
+            std::cout << "Error: a SOURCE must be specified. Exiting.\n";
+            return -1;
+        }
+        
+        
+    } catch (std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    } catch (...) {
+        std::cerr << "Exception of unknown type! " << std::endl;
+    }
+    
+    // Two threads - one for user interaction, the other
+    // for executing the processor
+    boost::thread_group thread_group;
+    thread_group.create_thread(boost::bind(&run, source));
+    sleep(1);
+    
+    // Start the user interface
+    while (!done) {
 
-		if (variable_map.count("help")) {
-			std::cout << basic_options << std::endl;
-			exit(EXIT_SUCCESS);
-		}
+        int user_input;
+        std::cout << "Select an action:\n";
+        std::cout << " [1]: Pause/unpause viewer\n";
+        std::cout << " [2]: Exit viewer\n";
+        std::cout << ">> ";
 
-		if (!variable_map.count("source")) {
-			std::cout << "An image SOURCE must be specified. Exiting." << std::endl;
-			exit(EXIT_FAILURE);
-		}
-	} 
-	catch (exception& e) {
-		cerr << "error: " << e.what() << "\n";
-		return 1;
-	}
-	catch (...) {
-		cerr << "Exception of unknown type!\n";
-	}
+        std::cin >> user_input;
 
-	// Two threads - one for user interaction, the other
-	// for executing the viewer
-	boost::thread_group thread_group;
-	thread_group.create_thread(boost::bind(&run, source));
+        switch (user_input) {
+            case 1:
+            {
+                running = !running;
+                if (running)
+                    std::cout << " Resumed...\n";
+                else
+                    std::cout << " Paused.\n";
+                break;
+            }
+            case 2:
+            {
+                done = true;
+                break;
+            }
+            default:
+                std::cout << "Invalid selection. Try again.\n";
+                break;
+        }
+    }
 
-	while (!done) {
+    // TODO: If the server exits before the client, the client is blocked due
+    // to the wait() call and therefore the done condition is never evaluated
+    // and therefore the thread is never available for joining and therefore
+    // this call hangs.
+    thread_group.interrupt_all();
+    thread_group.join_all();
 
-		int user_input;
-		std::cout << std::endl;
-		std::cout << "Select an action:" << std::endl;
-		std::cout << " [1]: Pause/unpause viewer " << std::endl;
-		std::cout << " [2]: Exit viewer " << std::endl;
-		std::coud << ">> ";
-
-		std::cin >> user_input;
-
-		switch (user_input) {
-			case 1: {
-						running = !running;
-						break;
-					}
-			case 2: {
-						done = true;
-						break;
-					}
-			default:
-					std::cout << "Invalid selection. Try again." << std::endl;
-					break;
-		}
-	}
-
-	// TODO: Exit gracefully and ensure all shared resources are cleaned up. This might already
-	// be functional, but I'm not sure...
-	thread_group.join_all();
-
-	// Exit
-	exit(EXIT_SUCCESS);
+    // Exit
+    return 0;
 }

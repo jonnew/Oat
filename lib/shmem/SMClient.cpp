@@ -25,10 +25,10 @@ using namespace boost::interprocess;
 
 template<class SyncType>
 SMClient<SyncType>::SMClient(std::string source_name) :
-  cli_name(source_name)
-, cli_shmem_name(source_name + "_sh_mem")
-, cli_shobj_name(source_name + "_sh_obj")
-{ }
+  name(source_name)
+, shmem_name(source_name + "_sh_mem")
+, shobj_name(source_name + "_sh_obj") {
+}
 
 template<class SyncType>
 SMClient<SyncType>::SMClient(const SMClient& orig) {
@@ -38,7 +38,7 @@ template<class SyncType>
 SMClient<SyncType>::~SMClient() {
 
     // Clean up sync objects
-    cli_shared_object->cond_var.notify_all();
+    shared_object->cond_var.notify_all();
 }
 
 template<class SyncType>
@@ -47,15 +47,18 @@ void SMClient<SyncType>::findSharedObject() {
     try {
 
         // Allocate shared memory
-        cli_shared_memory = managed_shared_memory(open_only, cli_shmem_name.c_str());
+        cli_shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
 
         // Make the shared object
-        cli_shared_object = cli_shared_memory.find<SyncType>(cli_shobj_name.c_str()).first;
+        shared_object = cli_shared_memory.find<SyncType>(shobj_name.c_str()).first;
 
-    } catch (bad_alloc &ex) {
-        std::cerr << ex.what() << '\n';
+    } catch (interprocess_exception& e) {
+        std::cerr << "Error: " << e.what() << "\n";
+        std::cerr << "  This is likely due to the SOURCE, \"" << name << "\", not being started.\n";
+        std::cerr << "  Did you start the SOURCE, \"" << name << "\", before staring this client?" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
-    cli_shared_read_object_created = true;
+    shared_object_found = true;
 }
 

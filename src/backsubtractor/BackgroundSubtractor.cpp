@@ -32,24 +32,18 @@ using namespace boost::interprocess;
 
 BackgroundSubtractor::BackgroundSubtractor(const std::string source_name, const std::string sink_name) :
     frame_source(source_name),
-    frame_sink(sink_name) 
-{
-    // Attach to the source
-    if (!frame_source.is_shared_mat_created()) {
-        frame_source.findSharedMat();
-    }
-}
+    frame_sink(sink_name) { }
 
 /**
  * Set the background image to be used during subsequent subtraction operations.
  * The frame_source must have previously populated the the shared cv::Mat object.
  * 
  */
-void BackgroundSubtractor::setBackgroundImageAndSubtract() {
+void BackgroundSubtractor::setBackgroundImage() {
     
     background_img = frame_source.get_shared_mat().clone();
     background_set = true;
-    subtractBackground(); // Need to call this for the wait(), which releases our
+    //subtractBackground(); // Need to call this for the wait(), which releases our
                           // shared lock on frame_source's mutex
 }
 
@@ -71,8 +65,11 @@ void BackgroundSubtractor::subtractBackground() {
         }
         
         current_frame = current_frame - background_img;
-    } else {
-        setBackgroundImageAndSubtract(); // TODO: Trigger using user input.
+    } 
+    else {
+     
+        // First image is always used as the default background image
+        setBackgroundImage(); 
     }
     
     frame_sink.set_shared_mat(current_frame);

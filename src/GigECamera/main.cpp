@@ -19,6 +19,9 @@
 #include <signal.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
 bool running = true;
@@ -27,44 +30,130 @@ void term(int) {
     done = 1;
 }
 
-void run(std::string sink, std::string config_file, std::string config_key) {
+void run(CameraControl* cc, std::string name) {
 
-    CameraControl cc(sink);
-    cc.configure(config_file, config_key);
-    std::cout << "GigECamera server named \"" + sink + "\" has started (☞ﾟヮﾟ)☞." << std::endl;
+    std::cout << "GigECamera server named \"" + name + "\" has started.\n";
 
     while (!done) { // !done
         if (running) {
-            cc.serveMat();
+            cc->serveMat();
         }
     }
+ 
+    std::cout << "GigECamera server named \"" + name + "\" is exiting." << std::endl;
+}
+
+void printUsage(po::options_description options) {
+    std::cout << "Usage: camserv_ge [OPTIONS]\n";
+    std::cout << "   or: camserv_ge SINK [CONFIGURATION]\n";
+    std::cout << "Serve images captured by the camera to SINK\n";
+    std::cout << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
 
+    // If ctrl-c is pressed, handle the signal with the term routine, which
+    // will attempt to clean up the shared memory before exiting by calling
+    // the object that is using shmem's destructor
     signal(SIGINT, term);
 
-    if (argc != 4) {
-        std::cout << "Usage: " << argv[0] << "SINK-NAME CONFIG-FILE KEY" << std::endl;
-        std::cout << "Data server for point-grey GigE cameras." << std::endl;
+    std::string sink;
+    std::string config_file;
+    std::string config_key;
+    bool config_used = false;
+
+    try {
+
+        po::options_description options("OPTIONS");
+        options.add_options()
+                ("help", "Produce help message.")
+                ("version,v", "Print version information.")
+                ;
+
+        po::options_description config("CONFIGURATION");
+        config.add_options()
+                ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
+                ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
+                ;
+
+        po::options_description hidden("HIDDEN OPTIONS");
+        hidden.add_options()
+                ("sink", po::value<std::string>(&sink),
+                "The name of the sink through which images collected by the camera will be served.\n")
+                ;
+
+        po::positional_options_description positional_options;
+        positional_options.add("sink", -1);
+
+        po::options_description visible_options("VISIBLE OPTIONS");
+        visible_options.add(options).add(config);
+
+        po::options_description all_options("ALL OPTIONS");
+        all_options.add(options).add(config).add(hidden);
+
+        po::variables_map variable_map;
+        po::store(po::command_line_parser(argc, argv)
+                .options(all_options)
+                .positional(positional_options)
+                .run(),
+                variable_map);
+        po::notify(variable_map);
+
+        // Use the parsed options
+        if (variable_map.count("help")) {
+            printUsage(visible_options);
+            return 0;
+        }
+
+        if (variable_map.count("version")) {
+            std::cout << "Simple-Tracker GigECamera Server version 1.0\n"; //TODO: Cmake managed versioning
+            std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
+            std::cout << "Licensed under the GPL3.0.\n";
+            return 0;
+        }
+
+        if (!variable_map.count("sink")) {
+            printUsage(visible_options);
+            std::cout << "Error: a SINK must be specified. Exiting.\n";
+            return -1;
+        } 
+       
+        if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
+                (!variable_map.count("config-file") && variable_map.count("config-key"))) {
+            printUsage(visible_options);
+            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+           return -1;
+        } else if (variable_map.count("config-file")) {
+            config_used = true;
+        }
+        
+
+    } catch (std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
         return 1;
+    } catch (...) {
+        std::cerr << "Exception of unknown type!" << std::endl;
     }
-
-    const std::string sink = static_cast<std::string> (argv[1]);
-    const std::string config_file = static_cast<std::string> (argv[2]);
-    const std::string config_key = static_cast<std::string> (argv[3]);
-
+    
+    CameraControl cc(sink);
+    if (config_used)
+        cc.configure(config_file, config_key);
+    else
+        cc.configure();
+    
+    // Two threads - one for user interaction, the other
+    // for executing the processor
     boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, sink, config_file, config_key));
-
-    // TODO: Standard startup dialog (common to all simple-tracker programs, perhaps)
-
+    thread_group.create_thread(boost::bind(&run, &cc, sink));
+    sleep(1);
+    
     while (!done) {
         int user_input;
-        std::cout << std::endl;
-        std::cout << "Select an action:" << std::endl;
-        std::cout << "   [1]: Pause/unpause camera." << std::endl;
-        std::cout << "   [2]: Exit camera." << std::endl;
+        std::cout << "Select an action:\n";
+        std::cout << " [1]: Pause/unpause\n";
+        std::cout << " [2]: Exit\n";
+        std::cout << ">> ";
+
         std::cin >> user_input;
 
         switch (user_input) {
@@ -72,6 +161,10 @@ int main(int argc, char *argv[]) {
             case 1:
             {
                 running = !running;
+                if (running)
+                    std::cout << " Resumed...\n";
+                else
+                    std::cout << " Paused.\n";
                 break;
             }
 
@@ -81,16 +174,14 @@ int main(int argc, char *argv[]) {
                 break;
             }
             default:
-
-                std::cout << "Invalid selection. Try again." << std::endl;
+                std::cout << "Invalid selection. Try again.\n";
                 break;
         }
     }
 
     // TODO: Exit gracefully and ensure all shared resources are cleaned up!
     thread_group.join_all();
-
+    
     // Exit
-    std::cout << "GigECamera server named \"" + sink + "\" is exiting." << std::endl;
     return 0;
 }

@@ -35,9 +35,9 @@ MatServer::MatServer(const MatServer& orig) { }
 MatServer::~MatServer() {
 
     // Remove_shared_memory on object destruction
-    shared_mat_header->cond_var.notify_all();
+    shared_mat_header->new_data_condition.notify_all();
     shared_memory_object::remove(shmem_name.c_str());
-    std::cout << "The server named \"" + name + "\" was destructed." << std::endl;
+    //std::cout << "The server named \"" + name + "\" was destructed.\n";
 }
 
 void MatServer::createSharedMat(cv::Mat model) {
@@ -58,6 +58,7 @@ void MatServer::createSharedMat(cv::Mat model) {
 
     } catch (bad_alloc &ex) {
         std::cerr << ex.what() << '\n';
+        exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
     }
     
     shared_mat_header->buildHeader(shared_memory, model);
@@ -81,7 +82,7 @@ void MatServer::set_shared_mat(cv::Mat mat) {
     shared_mat_header->set_value(mat);
     
     // Notify all client processes they can now access the data
-    shared_mat_header->cond_var.notify_all();
+    shared_mat_header->new_data_condition.notify_all();
     
 } // Lock is released on scope exit
 
@@ -89,7 +90,7 @@ void MatServer::set_name(const std::string sink_name) {
     
     // Make sure we are not already attached to some source
     if (!shared_object_created) {
-        name = source_name;
+        name = sink_name;
         shmem_name = sink_name + "_sh_mem";
         shobj_name = sink_name + "_sh_obj";
     } else {

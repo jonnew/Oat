@@ -14,6 +14,7 @@ public:
     CameraControl(std::string name);
     
     // Use a configuration file to specify parameters
+    void configure(void); // Defualt options
     void configure(std::string config_file, std::string key);
 
     // For establishing connection

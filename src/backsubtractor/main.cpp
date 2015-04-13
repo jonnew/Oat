@@ -17,44 +17,165 @@
 #include "BackgroundSubtractor.h"
 
 #include <signal.h>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
+bool running = true;
 
 void term(int) {
     done = 1;
+}
+
+void run(BackgroundSubtractor* background_subtractor, std::string source, std::string sink) {
+
+    std::cout << "Background subtractor has begun listening to source \"" + source + "\".\n";
+    std::cout << "Background subtractor has begun steaming to sink \"" + sink + "\".\n";
+
+    while (!done) {
+        if (running) {
+            background_subtractor->subtractBackground();
+        }
+    }
+
+    std::cout << "Background subtractor is exiting.\n";
+}
+
+void printUsage(po::options_description options) {
+    std::cout << "Usage: backsub [OPTIONS]\n";
+    std::cout << "   or: backsub SOURCE SINK\n";
+    std::cout << "Perform background subtraction on images from SOURCE.\n";
+    std::cout << "Publish background-subtracted images to SMServer<SharedCVMatHeader> SINK.\n";
+    std::cout << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
     
     signal(SIGINT, term);
 
-    if (argc != 3) {
-        std::cout << "Usage: " << argv[0] << " SOURCE-NAME SINK-NAME " << std::endl;
-        std::cout << "Background subtractor detector for cv::Mat data servers." << std::endl;
-        std::cout << "Press \"B\" during acquisition to set background image to current frame." << std::endl;
+    std::string source;
+    std::string sink;
+    
+    try {
+
+        po::options_description options("OPTIONS");
+        options.add_options()
+                ("help", "Produce help message.")
+                ("version,v", "Print version information.")
+                ;
+        
+        po::options_description hidden("HIDDEN OPTIONS");
+        hidden.add_options()
+                ("source", po::value<std::string>(&source),
+                "The name of the SOURCE that supplies images on which to perform background subtraction."
+                "The server must be of type SMServer<SharedCVMatHeader>\n")
+                ("sink", po::value<std::string>(&sink),
+                "The name of the SINK to which background subtracted images will be served.")
+                ;
+        
+        po::positional_options_description positional_options;
+        positional_options.add("source", 1);
+        positional_options.add("sink", 2);
+        
+        po::options_description all_options("All options");
+        all_options.add(options).add(hidden);
+
+        po::variables_map variable_map;
+        po::store(po::command_line_parser(argc, argv)
+                .options(all_options)
+                .positional(positional_options)
+                .run(),
+                variable_map);
+        po::notify(variable_map);
+
+        // Use the parsed options
+        if (variable_map.count("help")) {
+            printUsage(options);
+            return 0;
+        }
+
+        if (variable_map.count("version")) {
+            std::cout << "Simple-Tracker Background Subtractor version 1.0\n"; //TODO: Cmake managed versioning
+            std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
+            std::cout << "Licensed under the GPL3.0.\n";
+            return 0;
+        }
+
+        if (!variable_map.count("source")) {
+            printUsage(options);
+            std::cout << "Error: a SOURCE must be specified. Exiting.\n";
+            return -1;
+        }
+        
+        if (!variable_map.count("sink")) {
+            printUsage(options);
+            std::cout << "Error: a SINK name must be specified. Exiting.\n";
+            return -1;
+        }
+        
+        
+    } catch (std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
         return 1;
+    } catch (...) {
+        std::cerr << "Exception of unknown type! " << std::endl;
     }
     
-    const std::string source = static_cast<std::string> (argv[1]);
-    const std::string sink = static_cast<std::string> (argv[2]);
-
-    BackgroundSubtractor backsub(argv[1], argv[2]);
-
-    std::cout << "Background subtractor has begun listening to source \"" + source + "\"." << std::endl;
-    std::cout << "Background subtractor has begun steaming to sink \"" + sink + "\"." << std::endl;
-
-    // Execute infinite, thread-safe loop with function calls governed by
-    // underlying condition variable system.
+    BackgroundSubtractor background_subtractor(source, sink);
+    
+    // Two threads - one for user interaction, the other
+    // for executing the processor
+    boost::thread_group thread_group;
+    thread_group.create_thread(boost::bind(&run, &background_subtractor, source, sink));
+    sleep(1);
+    
+    // Start the user interface
     while (!done) {
-        //if (getch()) {
-            backsub.subtractBackground();
-        //} else {
-            //backsub.setBackgroundImageAndSubtract();
-        //}
+
+        int user_input;
+        std::cout << "Select an action:\n";
+        std::cout << " [1]: Pause/unpause\n";
+        std::cout << " [2]: Set background image to current\n";
+        std::cout << " [3]: Exit\n";
+        std::cout << ">> ";
+
+        std::cin >> user_input;
+
+        switch (user_input) {
+            case 1:
+            {
+                running = !running;
+                if (running)
+                    std::cout << " Resumed...\n";
+                else
+                    std::cout << " Paused.\n";
+                break;
+            }
+            case 2:
+            {
+                background_subtractor.setBackgroundImage();
+                break;
+            }
+            case 3:
+            {
+                done = true;
+                break;
+            }
+            default:
+                std::cout << "Invalid selection. Try again.\n";
+                break;
+        }
     }
 
+    // TODO: Exit gracefully and ensure all shared resources are cleaned up. This might already
+    // be functional, but I'm not sure...
+    thread_group.interrupt_all();
+    thread_group.join_all();
+
     // Exit
-    std::cout << "Background subtractor is exiting." << std::endl;
     return 0;
 }
 

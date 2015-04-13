@@ -17,6 +17,7 @@
 #include "MatClient.h"
 
 #include <unistd.h>
+#include <boost/thread.hpp>
 
 using namespace boost::interprocess;
 
@@ -40,9 +41,11 @@ void MatClient::findSharedMat() {
             shared_mat_header = shared_memory.find<shmem::SharedCVMatHeader>(shobj_name.c_str()).first;
             shared_object_found = true;
 
-        } catch (...) {
-            std::cout << "Waiting for source \"" + name + "\" to start..." << std::endl;
-            usleep(100000);
+        } catch (interprocess_exception& e) {
+            std::cerr << "Error: " << e.what() << "\n";
+            std::cerr << "  This is likely due to the SOURCE, \"" << name << "\", not being started.\n";
+            std::cerr << "  Did you start the SOURCE, \"" << name << "\", before staring this client?" << std::endl;
+            exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
         } 
     }
     
@@ -68,13 +71,16 @@ cv::Mat MatClient::get_shared_mat() {
     }
     
     //lock.lock();
-    //mat = shared_cvmat->get_value();
     return mat; // User responsible for calling wait after they get, and process this result!
 }
 
 void MatClient::wait() {
     
-    shared_mat_header->cond_var.wait(lock);
+    try {
+        shared_mat_header->new_data_condition.wait(lock);
+    } catch (...) {
+        std::cout << "Thread interrupt occurred\n"; //TODO: Not working!
+    }
 }
 
 sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {
