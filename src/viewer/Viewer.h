@@ -32,6 +32,7 @@ public:
 
     void showImage(void);
     void showImage(std::string title);
+    void stop(void);
    
 private:
     

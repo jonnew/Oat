@@ -7,29 +7,29 @@
 #include <opencv2/core/core.hpp> // TODO: correct header...
 
 class WebCam {
+public:
+    WebCam(std::string name);
 
-	public:
-		WebCam(std::string name);
- 		
-		// Configure
-		void configure(void); // Defualt options
-		void configure(std::string config_file, std::string key);
+    // Configure
+    void configure(void); // Defualt options
+    void configure(std::string config_file, std::string key);
 
-		// IPC
-		void grabMat(cv::Mat& image);
-		void serveMat(void);
+    // IPC
+    void grabMat(cv::Mat& image);
+    void serveMat(void);
 
-	private:
-		std::string camera_name;
-		bool aquisition_started;
+private:
+    std::string camera_name;
+    bool aquisition_started;
 
-		// The webcam object
-		cv::VideoCapture camera;
-		
-		// Currently acquired frame
-		cv::Mat current_frame;
+    // The webcam object
+    cv::VideoCapture camera;
 
-		// Shared memory server
-		MatServer frame_sink;
+    // Currently acquired frame
+    cv::Mat current_frame;
 
+    // Shared memory server
+    MatServer frame_sink;
+
+};
 #endif //WEBCAM_H

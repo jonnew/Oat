@@ -24,15 +24,11 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/shmem/MatClient.h"
-#include "../../lib/shmem/MatClient.cpp"
 #include "../../lib/shmem/MatServer.h"
-#include "../../lib/shmem/MatServer.cpp"
 #include "../../lib/shmem/SMServer.h"
-#include "../../lib/shmem/SMServer.cpp"
 
 using cv::Mat;
 using cv::namedWindow;
@@ -47,15 +43,13 @@ using cv::Size;
 using cv::erode;
 using cv::dilate;
 
-using namespace boost::interprocess;
-
-HSVDetector::HSVDetector(const std::string source_name,
-        const std::string pos_sink_name,
+HSVDetector::HSVDetector(std::string source_name, std::string pos_sink_name,
         int h_min_in, int h_max_in,
         int s_min_in, int s_max_in,
         int v_min_in, int v_max_in) :
   frame_source(source_name)
 , position_sink(pos_sink_name)
+, frame_sink(pos_sink_name + "_frame")
 , frame_sink_used(false)
 {
 
@@ -93,7 +87,7 @@ HSVDetector::HSVDetector(const std::string source_name,
     xy_coord_px.y = 0;
 }
 
-HSVDetector::HSVDetector(const std::string source_name, const std::string pos_sink_name) :
+HSVDetector::HSVDetector(std::string source_name, std::string pos_sink_name) :
 HSVDetector::HSVDetector(source_name, pos_sink_name, 0, 256, 0, 256, 0, 256) { }
 
 void HSVDetector::createTrackbars() {

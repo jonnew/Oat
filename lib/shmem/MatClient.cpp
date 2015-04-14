@@ -22,15 +22,15 @@
 using namespace boost::interprocess;
 
 MatClient::MatClient(const std::string source_name) :
-  name(source_name)
+name(source_name)
 , shmem_name(source_name + "_sh_mem")
 , shobj_name(source_name + "_sh_obj")
-, shared_object_found(false)
-{ }
+, shared_object_found(false) { }
 
 MatClient::MatClient(const MatClient& orig) { }
 
-MatClient::~MatClient() { }
+MatClient::~MatClient() {
+}
 
 void MatClient::findSharedMat() {
 
@@ -46,14 +46,13 @@ void MatClient::findSharedMat() {
             std::cerr << "  This is likely due to the SOURCE, \"" << name << "\", not being started.\n";
             std::cerr << "  Did you start the SOURCE, \"" << name << "\", before staring this client?" << std::endl;
             exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
-        } 
+        }
     }
-    
+
     // Pass mutex to the scoped sharable_lock. 
     lock = makeLock();
     shared_mat_header->attachMatToHeader(shared_memory, mat);
 }
-
 
 /**
  * Engages shared lock on the unnamed shared mutex residing in the shared_mat_header
@@ -69,18 +68,22 @@ cv::Mat MatClient::get_shared_mat() {
     if (!shared_object_found) {
         findSharedMat(); // Creates lock targeting shared_mat_header->mutex, but does not engage
     }
-    
+
     //lock.lock();
     return mat; // User responsible for calling wait after they get, and process this result!
 }
 
 void MatClient::wait() {
+
+    // TODO: timed_wait?
+//    try {
+//    bool in_wait = true;
+//    while(in_wait) {
+//        boost::system_time timeout = boost::get_system_time() + boost::posix_time::milliseconds(10);
+//        in_wait = !shared_mat_header->new_data_condition.timed_wait(lock, timeout);
+//    }
+    shared_mat_header->new_data_condition.wait(lock);
     
-    try {
-        shared_mat_header->new_data_condition.wait(lock);
-    } catch (...) {
-        std::cout << "Thread interrupt occurred\n"; //TODO: Not working!
-    }
 }
 
 sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {
@@ -89,7 +92,7 @@ sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {
 }
 
 void MatClient::set_source(const std::string source_name) {
-    
+
     // Make sure we are not already attached to some source
     if (!shared_object_found) {
         name = source_name;

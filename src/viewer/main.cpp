@@ -31,14 +31,13 @@ void term(int) {
     done = 1;
 }
 
-void run(std::string source) {
-
-    Viewer viewer(source);
+void run(Viewer* viewer, std::string source) {
+ 
     std::cout << "Viewer has begun listening to source \"" + source + "\".\n";
 
     while (!done) {
         if (running) {
-            viewer.showImage();
+            viewer->showImage();
         }
     }
 
@@ -118,10 +117,13 @@ int main(int argc, char *argv[]) {
         std::cerr << "Exception of unknown type! " << std::endl;
     }
     
+    // Make the viewer
+    Viewer viewer(source);
+    
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, source));
+    thread_group.create_thread(boost::bind(&run, &viewer, source));
     sleep(1);
     
     // Start the user interface
@@ -129,8 +131,8 @@ int main(int argc, char *argv[]) {
 
         int user_input;
         std::cout << "Select an action:\n";
-        std::cout << " [1]: Pause/unpause viewer\n";
-        std::cout << " [2]: Exit viewer\n";
+        std::cout << " [1]: Pause/unpause\n";
+        std::cout << " [2]: Exit\n";
         std::cout << ">> ";
 
         std::cin >> user_input;

@@ -32,14 +32,14 @@ class HSVDetector {
 public:
     
     // HSV values known
-    HSVDetector(const std::string source_name, const std::string pos_sink_name,
+    HSVDetector(std::string source_name, std::string pos_sink_name,
                 int h_min, int h_max,
                 int s_min, int s_max,
                 int v_min, int v_max);
     
     // Start with full range of HSV thresholds. This is typically used
     // for manual tuning of thresholds using the createTrackbars call
-    HSVDetector(const std::string source_name, const std::string pos_sink_name);
+    HSVDetector(std::string source_name, std::string pos_sink_name);
 
     // Use a configuration file to specify parameters
     void configure(std::string config_file, std::string key);
@@ -94,7 +94,6 @@ private:
 
     // Sizes of the erode and dilate blocks
     int erode_px, dilate_px;
-    //cv::Size erode_size, dilate_size;
     bool erode_on, dilate_on;
     cv::Mat proc_mat, threshold_img, erode_element, dilate_element;
 
@@ -111,7 +110,7 @@ private:
 
     // Object detection parameters
     std::string position;
-    double mm_per_px; // TODO: impelment mm_per_px somehow
+    double mm_per_px; // TODO: implement mm_per_px somehow
 
     std::string status_text;
     bool object_found;
@@ -127,7 +126,7 @@ private:
     MatClient frame_source;
     
     // Position server
-    SMServer<shmem::Position2D, cv::Point2i> position_sink;
+    SMServer<shmem::Position2D<cv::Point2i>, cv::Point2i> position_sink;
     
     // Mat server for sending processed frames
     bool frame_sink_used;
