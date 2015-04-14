@@ -14,5 +14,5 @@ add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
 
-add_executable (camserv_ge CameraControl.cpp main.cpp )
+add_executable (camserv_ge CameraControl.cpp WebCam.cpp main.cpp )
 target_link_libraries (camserv_ge shmem ${OpenCV_LIBS} ${FLYCAPTURE2} ${Boost_LIBRARIES})

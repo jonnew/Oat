@@ -16,6 +16,7 @@
 
 #include "CameraControl.h"
 
+#include <unordered_map>
 #include <signal.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
@@ -45,8 +46,12 @@ void run(CameraControl* cc, std::string name) {
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: camserv_ge [OPTIONS]\n";
-    std::cout << "   or: camserv_ge SINK [CONFIGURATION]\n";
+    std::cout << "   or: camserv_ge CAMERA SINK [CONFIGURATION]\n";
     std::cout << "Serve images captured by the camera to SINK\n";
+    std::cout <<  "\n";
+    std::cout <<  "  CAMERA options:\n";
+    std::cout <<  "  - WebCam: onboard or USB webcam.\n";
+                  "  - PGGigE: Point Grey GigE camera.\n";
     std::cout << options << "\n";
 }
 
@@ -61,6 +66,10 @@ int main(int argc, char *argv[]) {
     std::string config_file;
     std::string config_key;
     bool config_used = false;
+
+	std::unordered_map<string,int> camera_hash;
+	camera_hash.insert({"WebCam",0});
+	camera_hash.insert({"PGGigE",1});
 
     try {
 
@@ -78,12 +87,14 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
+				("camera", po::value<std::string>(&camera_code>), "Camera code."),
                 ("sink", po::value<std::string>(&sink),
                 "The name of the sink through which images collected by the camera will be served.\n")
                 ;
 
         po::positional_options_description positional_options;
-        positional_options.add("sink", -1);
+        positional_options.add("camera", 1);
+        positional_options.add("sink", 2);
 
         po::options_description visible_options("VISIBLE OPTIONS");
         visible_options.add(options).add(config);
@@ -111,6 +122,12 @@ int main(int argc, char *argv[]) {
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
+
+        if (!variable_map.count("camera")) {
+            printUsage(visible_options);
+            std::cout << "Error: a CAMERA code must be specified. Exiting.\n";
+            return -1;
+        } 
 
         if (!variable_map.count("sink")) {
             printUsage(visible_options);

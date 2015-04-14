@@ -1,6 +1,5 @@
 #include "WebCam.h"
 
-
 WebCam::WebCam(std::string name) :
   camera_name(name)
 , camera(0) {}
