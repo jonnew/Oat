@@ -30,7 +30,6 @@
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/shmem/SharedMat.h"
 #include "../../lib/shmem/MatServer.h"
-#include "../../lib/shmem/MatServer.cpp"
 
 #include "stdafx.h"
 

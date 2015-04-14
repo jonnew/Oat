@@ -32,8 +32,8 @@ void term(int) {
 
 void run(HSVDetector* detector, std::string source, std::string sink) {
     
-    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" has begun listening to source \"" + source + "\".\n";
-    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" has begun steaming to sink \"" + sink + "\".\n";
+    std::cout << "HSV detector \"" + detector->get_detector_name() + "\" has begun listening to source \"" + source + "\".\n";
+    std::cout << "HSV detector \"" + detector->get_detector_name() + "\" has begun steaming to sink \"" + sink + "\".\n";
 
     while (!done) { // !done
         if (running) {
@@ -41,7 +41,7 @@ void run(HSVDetector* detector, std::string source, std::string sink) {
         }
     }
     
-    std::cout << "HSV detector \"" + detector.get_detector_name() + "\" is exiting.\n";
+    std::cout << "HSV detector \"" + detector->get_detector_name() + "\" is exiting.\n";
 }
 
 void printUsage(po::options_description options) {

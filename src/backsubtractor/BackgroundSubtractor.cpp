@@ -23,16 +23,11 @@
 #include <opencv2/imgproc.hpp>
 
 #include "../../lib/shmem/MatClient.h"
-#include "../../lib/shmem/MatClient.cpp"
 #include "../../lib/shmem/MatServer.h"
-#include "../../lib/shmem/MatServer.cpp"
-
-
-using namespace boost::interprocess;
 
 BackgroundSubtractor::BackgroundSubtractor(const std::string source_name, const std::string sink_name) :
-    frame_source(source_name),
-    frame_sink(sink_name) { }
+  frame_source(source_name)
+, frame_sink(sink_name) { }
 
 /**
  * Set the background image to be used during subsequent subtraction operations.
@@ -43,8 +38,6 @@ void BackgroundSubtractor::setBackgroundImage() {
     
     background_img = frame_source.get_shared_mat().clone();
     background_set = true;
-    //subtractBackground(); // Need to call this for the wait(), which releases our
-                          // shared lock on frame_source's mutex
 }
 
 /**

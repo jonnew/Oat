@@ -20,6 +20,9 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <string>
 
+#include "Position2D.h"
+#include <opencv2/core/mat.hpp>
+
 using namespace boost::interprocess;
 
 template<class SyncType, class IOType>
@@ -30,14 +33,13 @@ SMServer<SyncType, IOType>::SMServer(std::string sink_name) :
 { }
 
 template<class SyncType, class IOType>
-SMServer<SyncType, IOType>::SMServer(const SMServer& orig) {
-}
+SMServer<SyncType, IOType>::SMServer(const SMServer<SyncType, IOType>& orig) { }
 
 template<class SyncType, class IOType>
 SMServer<SyncType, IOType>::~SMServer() {
 
     // Remove_shared_memory on object destruction
-    shared_object->cond_var.notify_all();
+    shared_object->new_data_condition.notify_all();
     shared_memory_object::remove(shmem_name.c_str());
     std::cout << "The server named \"" + name + "\" was destructed." << std::endl;
 }
@@ -67,18 +69,22 @@ void SMServer<SyncType, IOType>::createSharedObject( ) {
 template<class SyncType, class IOType>
 void SMServer<SyncType, IOType>::set_value(IOType value) {
     
-    if (!value->ready) {
+    if (!shared_object->ready) {
        createSharedObject( ); 
-       value->ready = true; 
     }
     
     // Exclusive scoped_lock on the shared_mat_header->mutex
-    scoped_lock<interprocess_sharable_mutex> lock(value->mutex);
+    scoped_lock<interprocess_sharable_mutex> lock( shared_object->mutex);
     
     // Perform write in shared memory
-    *shared_object->set_value(value);
+    shared_object->set_value(value);
     
     // Notify all client processes they can now access the data
-    value->cond_var.notify_all();
+    shared_object->new_data_condition.notify_all();
     
 } // Scoped lock is released
+
+
+// Explicit instantiations
+template class SMServer<shmem::Position2D<cv::Point2i>, cv::Point2i>;
+template class SMServer<shmem::Position2D<cv::Point2f>, cv::Point2f>;
