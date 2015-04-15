@@ -4,7 +4,10 @@
 #include <string>
 
 #include <opencv2/core/mat.hpp>
-#include <opencv2/core/core.hpp> // TODO: correct header...
+#include <opencv2/videoio.hpp> // TODO: correct header...
+
+#include "../../lib/shmem/SharedCVMatHeader.h"
+#include "../../lib/shmem/MatServer.h"
 
 class WebCam {
 public:

@@ -22,7 +22,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <opencv2/core/mat.hpp>
 
-#include "SharedMat.h"
+#include "SharedCVMatHeader.h"
 
 class MatServer {
     

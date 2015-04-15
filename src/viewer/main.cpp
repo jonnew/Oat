@@ -150,6 +150,7 @@ int main(int argc, char *argv[]) {
             case 2:
             {
                 done = true;
+                viewer.stop();
                 break;
             }
             default:

@@ -17,11 +17,12 @@
 #ifndef MATCLIENT_H
 #define	MATCLIENT_H
 
-#include "SharedMat.h"
-
 #include <string>
+#include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
+
+#include "SharedCVMatHeader.h"
 
 class MatClient {
 public:
@@ -34,15 +35,15 @@ public:
     void findSharedMat(void);
     
     // Condition variable manipulation
-    //void notifyAll(void);
     void wait(void);
-    //void notifyAllAndWait(void);
+    
+    // Auto notification to exit wait()
+    void notifySelf(void);
      
     // Accessors
     cv::Mat get_shared_mat(void);
     std::string get_name(void) { return name; }
     void set_source(const std::string);
-    //void set_running(bool value) { running = value; }
     
 private:
     

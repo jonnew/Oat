@@ -14,37 +14,32 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "Viewer.h"
+#ifndef POSITIONDIRECTION2D_H
+#define	POSITIONDIRECTION2D_H
 
-#include <string>
-#include <boost/interprocess/sync/sharable_lock.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "SyncSharedMemoryObject.h"
 
-#include "../../lib/shmem/MatClient.h"
+namespace shmem {
 
-using namespace boost::interprocess;
+    template<class PointType>
+    class PositionDirection2D : public SyncSharedMemoryObject {
+        
+    public:
 
-Viewer::Viewer(std::string source_name) : frame_source(source_name) { }
+        /**
+         * Update the 2D position and direction. value is some type of cv::Point (e.g. cv::Pointd,
+         * or cv::Pointi). 
+         */
+        void set_value(PointType& position, double direction_in_radians) { 
+            xy = position;
+            direction_in_rad = direction_in_radians;
+        }
 
-void Viewer::showImage() {
-    
-    showImage(frame_source.get_name());
+    private:
+        PointType xy; 
+        double direction_in_rad;
+    };
 }
 
-void Viewer::showImage(const std::string title) {
-    
-    cv::Mat current_frame = frame_source.get_shared_mat();
-    
-    //if (frame_source.is_running()) {
-        cv::imshow(title, current_frame);
-        cv::waitKey(1);
-    //}
-    
-    // Wait for signal that next frame is ready
-    frame_source.wait();
-}
+#endif	/* POSITIONDIRECTION2D_H */
 
-void Viewer::stop() {
-    frame_source.notifySelf();
-}

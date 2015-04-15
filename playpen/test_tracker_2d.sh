@@ -12,17 +12,17 @@ shutdown() {
 trap "shutdown" SIGINT SIGTERM
 
 # Start a bunch of child processes that are killable with CTRL-C
-./bin/camserv_ge maze_cam config.toml maze_cam				&
+gnome-terminal -x sh -c "./bin/camserv gige maze_cam -c config.toml -k maze_cam; bash" &
 sleep 3
-./bin/backsubtractor maze_cam back_out 						& 
+gnome-terminal -x sh -c "./bin/backsub maze_cam back_out; bash" &
 sleep 1
-./bin/hsvdetector back_out blue_det config.toml blue_hsv	&
-./bin/hsvdetector back_out orange_det config.toml orange_hsv	&
+gnome-terminal -x sh -c "./bin/hsvdetector back_out post --framesink blue_det -c config.toml -k blue_hsv; bash" &
+gnome-terminal -x sh -c "./bin/hsvdetector back_out ant --framesink orange_det -c config.toml -k orange_hsv; bash" &
 sleep 1
-./bin/viewer maze_cam 						&
-./bin/viewer back_out 						&
-./bin/viewer blue_det 						&
-./bin/viewer orange_det 						&
+gnome-terminal -x sh -c "./bin/viewer maze_cam; bash" &
+gnome-terminal -x sh -c "./bin/viewer back_out; bash" &
+gnome-terminal -x sh -c "./bin/viewer blue_det; bash" &
+gnome-terminal -x sh -c "./bin/viewer orange_det; bash" &
 
 wait
 

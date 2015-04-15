@@ -23,42 +23,48 @@
 
 using namespace boost::interprocess;
 
-template<class SyncType>
-SMClient<SyncType>::SMClient(std::string source_name) :
+template<class SyncType, class IOType>
+SMClient<SyncType, IOType>::SMClient(std::string source_name) :
   name(source_name)
 , shmem_name(source_name + "_sh_mem")
 , shobj_name(source_name + "_sh_obj") {
 }
 
-template<class SyncType>
-SMClient<SyncType>::SMClient(const SMClient& orig) {
+template<class SyncType, class IOType>
+SMClient<SyncType, IOType>::SMClient(const SMClient& orig) {
 }
 
-template<class SyncType>
-SMClient<SyncType>::~SMClient() {
+template<class SyncType, class IOType>
+SMClient<SyncType, IOType>::~SMClient() {
 
     // Clean up sync objects
-    shared_object->cond_var.notify_all();
+    shared_object->new_data_condition.notify_all();
 }
 
-template<class SyncType>
-void SMClient<SyncType>::findSharedObject() {
+template<class SyncType, class IOType>
+void SMClient<SyncType, IOType>::findSharedObject() {
 
     try {
 
         // Allocate shared memory
         cli_shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
 
-        // Make the shared object
+        // Find the object in shared memory
         shared_object = cli_shared_memory.find<SyncType>(shobj_name.c_str()).first;
+        shared_object_found = true;
 
     } catch (interprocess_exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         std::cerr << "  This is likely due to the SOURCE, \"" << name << "\", not being started.\n";
         std::cerr << "  Did you start the SOURCE, \"" << name << "\", before staring this client?" << std::endl;
-        exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
     }
 
-    shared_object_found = true;
+    lock = makeLock();
 }
 
+template<class SyncType, class IOType>
+sharable_lock<interprocess_sharable_mutex> SMClient<SyncType, IOType>::makeLock(void) {
+    sharable_lock<interprocess_sharable_mutex> sl(shared_object->mutex); // defer_lock
+    return sl;
+}

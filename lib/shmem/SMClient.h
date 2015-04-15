@@ -17,26 +17,34 @@
 #ifndef SMCLIENT_H
 #define	SMCLIENT_H
 
-#include <boost/interprocess/managed_shared_memory.hpp>
 #include <string>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/sharable_lock.hpp>
+#include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
 
-template <class SyncType>
+template<class SyncType, class IOType>
 class SMClient {
 public:
     SMClient(std::string source_name);
     SMClient(const SMClient& orig);
     virtual ~SMClient();
+    
+    IOType get_value(void);
 
 protected:
+    
+    
     
     SyncType* shared_object;
 
     std::string name, shmem_name, shobj_name;
     bool shared_object_found = false;
     boost::interprocess::managed_shared_memory cli_shared_memory;
+    boost::interprocess::sharable_lock<boost::interprocess::interprocess_sharable_mutex> lock;
 
+    boost::interprocess::sharable_lock<boost::interprocess::interprocess_sharable_mutex> makeLock();
     void findSharedObject(void);
-
+   
 };
 
 #endif	/* SMCLIENT_H */

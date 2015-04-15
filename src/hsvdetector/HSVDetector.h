@@ -89,15 +89,20 @@ public:
     void set_decorate (bool decorate){
         decorate = decorate;
     }
+    
+    void stop(void);
 
 private:
+    
+    // Allow manual tuning of detection parameters using sliders
+    bool tuning_on;
 
     // Sizes of the erode and dilate blocks
     int erode_px, dilate_px;
     bool erode_on, dilate_on;
     cv::Mat proc_mat, threshold_img, erode_element, dilate_element;
 
-    // Initial threshold values
+    // Initial threshold values    
     int h_min;
     int h_max;
     int s_min;
@@ -108,10 +113,7 @@ private:
     // For manual manipulation of HSV filtering
     std::string detector_name, slider_title;
 
-    // Object detection parameters
-    std::string position;
-    double mm_per_px; // TODO: implement mm_per_px somehow
-
+    // Object detection
     std::string status_text;
     bool object_found;
     double object_area;

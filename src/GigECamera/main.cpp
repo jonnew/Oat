@@ -33,7 +33,7 @@ void term(int) {
 
 void run(CameraControl* cc, std::string name) {
 
-    std::cout << "GigECamera server named \"" + name + "\" has started.\n";
+    std::cout << "Camera named \"" + name + "\" has started.\n";
 
     while (!done) { // !done
         if (running) {
@@ -41,7 +41,7 @@ void run(CameraControl* cc, std::string name) {
         }
     }
  
-    std::cout << "GigECamera server named \"" + name + "\" is exiting." << std::endl;
+    std::cout << "Camera named \"" + name + "\" is exiting." << std::endl;
 }
 
 void printUsage(po::options_description options) {
@@ -49,9 +49,9 @@ void printUsage(po::options_description options) {
     std::cout << "   or: camserv_ge CAMERA SINK [CONFIGURATION]\n";
     std::cout << "Serve images captured by the camera to SINK\n";
     std::cout <<  "\n";
-    std::cout <<  "  CAMERA options:\n";
-    std::cout <<  "  - WebCam: onboard or USB webcam.\n";
-                  "  - PGGigE: Point Grey GigE camera.\n";
+    std::cout <<  "CAMERA\n";
+    std::cout <<  "  \'wcam\': Onboard or USB webcam.\n";
+    std::cout <<  "  \'gige\': Point Grey GigE camera.\n\n";
     std::cout << options << "\n";
 }
 
@@ -63,13 +63,14 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, term);
 
     std::string sink;
+    std::string camera_code;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
 
-	std::unordered_map<string,int> camera_hash;
-	camera_hash.insert({"WebCam",0});
-	camera_hash.insert({"PGGigE",1});
+    std::unordered_map<std::string, int> camera_hash;
+    camera_hash.insert({"wcam", 0});
+    camera_hash.insert({"gige", 1});
 
     try {
 
@@ -87,7 +88,7 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-				("camera", po::value<std::string>(&camera_code>), "Camera code."),
+		("camera", po::value<std::string>(&camera_code), "Camera code.")
                 ("sink", po::value<std::string>(&sink),
                 "The name of the sink through which images collected by the camera will be served.\n")
                 ;
@@ -125,7 +126,7 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("camera")) {
             printUsage(visible_options);
-            std::cout << "Error: a CAMERA code must be specified. Exiting.\n";
+            std::cout << "Error: a CAMERA must be specified. Exiting.\n";
             return -1;
         } 
 
@@ -152,7 +153,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Exception of unknown type!" << std::endl;
     }
     
-    CameraControl cc(sink);
+    CameraControl cc(sink); // TODO: CameraControl should be a class template that allows different camera types with common methods 
     if (config_used)
         cc.configure(config_file, config_key);
     else

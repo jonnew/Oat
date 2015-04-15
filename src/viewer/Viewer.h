@@ -20,7 +20,7 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/SharedMat.h"
+#include "../../lib/shmem/SharedCVMatHeader.h"
 #include "../../lib/shmem/MatClient.h"
 
 class Viewer {

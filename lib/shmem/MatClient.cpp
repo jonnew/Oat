@@ -22,7 +22,7 @@
 using namespace boost::interprocess;
 
 MatClient::MatClient(const std::string source_name) :
-name(source_name)
+  name(source_name)
 , shmem_name(source_name + "_sh_mem")
 , shobj_name(source_name + "_sh_obj")
 , shared_object_found(false) { }
@@ -34,19 +34,17 @@ MatClient::~MatClient() {
 
 void MatClient::findSharedMat() {
 
-    while (!shared_object_found) {
-        try {
+    try {
 
-            shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
-            shared_mat_header = shared_memory.find<shmem::SharedCVMatHeader>(shobj_name.c_str()).first;
-            shared_object_found = true;
+        shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
+        shared_mat_header = shared_memory.find<shmem::SharedCVMatHeader>(shobj_name.c_str()).first;
+        shared_object_found = true;
 
-        } catch (interprocess_exception& e) {
-            std::cerr << "Error: " << e.what() << "\n";
-            std::cerr << "  This is likely due to the SOURCE, \"" << name << "\", not being started.\n";
-            std::cerr << "  Did you start the SOURCE, \"" << name << "\", before staring this client?" << std::endl;
-            exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
-        }
+    } catch (interprocess_exception& e) {
+        std::cerr << "Error: " << e.what() << "\n";
+        std::cerr << "  This is likely due to the SOURCE, \"" << name << "\", not being started.\n";
+        std::cerr << "  Did you start the SOURCE, \"" << name << "\", before staring this client?" << std::endl;
+        exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
     }
 
     // Pass mutex to the scoped sharable_lock. 
@@ -101,5 +99,10 @@ void MatClient::set_source(const std::string source_name) {
     } else {
         std::cerr << "Cannot edit the source name because we are already reading from \"" + name + "\".";
     }
+}
+
+void MatClient::notifySelf(){
+    
+    shared_mat_header->new_data_condition.notify_one();
 }
 

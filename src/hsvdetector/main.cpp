@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         visible_options.add(options).add(imgsink).add(config);
 
         po::options_description all_options("ALL OPTIONS");
-        all_options.add(options).add(config).add(hidden);
+        all_options.add(options).add(imgsink).add(config).add(hidden);
 
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         
-        if (!variable_map.count("framesink")) {
+        if (variable_map.count("framesink")) {
             frame_sink_used = true;
         }
        
@@ -193,6 +193,7 @@ int main(int argc, char *argv[]) {
             case 2:
             {
                 done = true;
+                detector.stop();
                 break;
             }
             default:

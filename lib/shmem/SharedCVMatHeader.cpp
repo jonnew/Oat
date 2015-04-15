@@ -14,7 +14,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "SharedMat.h"
+#include "SharedCVMatHeader.h"
 
 #include <opencv2/core/mat.hpp>
 

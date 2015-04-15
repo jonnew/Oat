@@ -59,7 +59,7 @@ void SMServer<SyncType, IOType>::createSharedObject( ) {
         shared_object = shared_memory.find_or_construct<SyncType>(shobj_name.c_str())();
         
         // Set the ready flag
-        shared_object->ready = true;
+        shared_object_created = true;
 
     } catch (bad_alloc &ex) {
         std::cerr << ex.what() << '\n';
@@ -69,8 +69,9 @@ void SMServer<SyncType, IOType>::createSharedObject( ) {
 template<class SyncType, class IOType>
 void SMServer<SyncType, IOType>::set_value(IOType value) {
     
-    if (!shared_object->ready) {
-       createSharedObject( ); 
+    if (!shared_object_created) {
+       createSharedObject(); 
+       shared_object->ready = true;
     }
     
     // Exclusive scoped_lock on the shared_mat_header->mutex

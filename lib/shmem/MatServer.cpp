@@ -18,8 +18,8 @@
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 
-#include "SharedMat.h"
-#include "SharedMat.cpp" // TODO: Why???
+#include "SharedCVMatHeader.h"
+#include "SharedCVMatHeader.cpp" // TODO: Why???
 
 using namespace boost::interprocess;
 

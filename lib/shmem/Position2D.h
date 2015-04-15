@@ -32,9 +32,9 @@ namespace shmem {
          * Update the 2D position. value is some type of cv::Point (e.g. cv::Pointd,
          * or cv::Pointi)
          */
-        void set_value(PointType& value) { 
-            xy = value;
-        }
+        void set_value(PointType& value) { xy = value; }
+        
+        PointType get_value(void) { return xy; }
 
     private:
         PointType xy;  

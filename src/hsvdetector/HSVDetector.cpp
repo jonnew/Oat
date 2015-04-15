@@ -53,9 +53,11 @@ HSVDetector::HSVDetector(std::string source_name, std::string pos_sink_name,
 , frame_sink_used(false)
 {
 
-    detector_name = source_name + "_hsv_detector";
+    detector_name = pos_sink_name + "_hsv_detector";
     slider_title = detector_name + "_hsv_sliders";
 
+    tuning_on = false;
+    
     // Initial threshold values
     h_min = h_min_in;
     h_max = h_max_in;
@@ -67,9 +69,6 @@ HSVDetector::HSVDetector(std::string source_name, std::string pos_sink_name,
     // Set defaults for the erode and dilate blocks
     set_erode_size(0);
     set_dilate_size(10);
-
-    // Relative position of the object
-    position = "unknown";
 
     // Decorate stream
     decorate = false;
@@ -105,7 +104,7 @@ void HSVDetector::createTrackbars() {
     createTrackbar("V_MAX", slider_title, &v_max, 256); //, &HSVDetector::vmaxSliderChangedCallback, this);
     createTrackbar("ERODE", slider_title, &erode_px, 50, &HSVDetector::erodeSliderChangedCallback, this);
     createTrackbar("DILATE", slider_title, &dilate_px, 50, &HSVDetector::dilateSliderChangedCallback, this);
-
+    
 }
 
 void HSVDetector::erodeSliderChangedCallback(int value, void* object) {
@@ -135,6 +134,10 @@ void HSVDetector::applyFilterAndServe() {
     // Put processed mat in shared memory
     if (frame_sink_used) {
         frame_sink.set_shared_mat(threshold_img);
+    }
+    
+    if (tuning_on) {
+        cv::waitKey(1);
     }
     
     // Put position in shared memory
@@ -253,10 +256,6 @@ void HSVDetector::configure(std::string config_file, std::string key) {
             auto hsv_config = *config.get_table(key);
             set_detector_name(key);
 
-            if (hsv_config.contains("position")) {
-                position = *hsv_config.get_as<std::string>("position");
-            }
-
             if (hsv_config.contains("decorate")) {
                 decorate = *hsv_config.get_as<bool>("decorate");
             }
@@ -303,8 +302,10 @@ void HSVDetector::configure(std::string config_file, std::string key) {
             }
 
             if (hsv_config.contains("hsv_tune")) {
-                if (*hsv_config.get_as<bool>("hsv_tune"))
+                if (*hsv_config.get_as<bool>("hsv_tune")){
+                    tuning_on = true;
                     createTrackbars();
+                }    
             }
 
         } else {
@@ -340,4 +341,8 @@ void HSVDetector::set_dilate_size(int _dilate_px) {
     } else {
         dilate_on = false;
     }
+}
+
+void HSVDetector::stop() {
+    frame_source.notifySelf();
 }

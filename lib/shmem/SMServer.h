@@ -39,6 +39,7 @@ protected:
     std::string name;
     std::string shmem_name, shobj_name;
     boost::interprocess::managed_shared_memory shared_memory;
+    bool shared_object_created;
 
     void createSharedObject(size_t bytes);
 
