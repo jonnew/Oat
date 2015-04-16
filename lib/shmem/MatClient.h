@@ -41,7 +41,7 @@ public:
     void notifySelf(void);
      
     // Accessors
-    cv::Mat get_shared_mat(void);
+    cv::Mat get_value(void);
     std::string get_name(void) { return name; }
     void set_source(const std::string);
     
@@ -51,7 +51,7 @@ private:
 
     std::string name;
     shmem::SharedCVMatHeader* shared_mat_header;
-    bool shared_object_found; //, running;
+    bool shared_object_found, terminated;
     void* shared_mat_data_ptr;
     int data_size; // Size of raw mat data in bytes
 

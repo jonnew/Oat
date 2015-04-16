@@ -71,7 +71,6 @@ void MatServer::set_shared_mat(cv::Mat mat) {
 
     if (!shared_object_created) {
         createSharedMat(mat); 
-        shared_mat_header->ready = true; 
     }
     
     // Exclusive scoped_lock on the shared_mat_header->mutex

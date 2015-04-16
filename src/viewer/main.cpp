@@ -40,8 +40,6 @@ void run(Viewer* viewer, std::string source) {
             viewer->showImage();
         }
     }
-
-    std::cout << "Viewer listening to source \"" + source + "\" is exiting." << std::endl;
 }
 
 void printUsage(po::options_description options) {

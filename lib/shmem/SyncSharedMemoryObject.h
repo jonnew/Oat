@@ -20,18 +20,34 @@
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_condition_any.hpp>
 
+#include "Position2D.h"
+
 
 namespace shmem {
-    
+
+    template <class T>
     class SyncSharedMemoryObject {
     public:
         
-        bool ready = false;
         boost::interprocess::interprocess_sharable_mutex mutex;
         boost::interprocess::interprocess_condition_any new_data_condition;
-        
+
+        void set_value(T value) {
+            object = value;
+        }
+
+        T get_value(void) {
+            return object;
+        }
+
+    private:
+        T object;
+
     };
 }
+
+// Explicit instantiations
+template class shmem::SyncSharedMemoryObject<shmem::Position2D>;
 
 
 #endif	/* SYNCSHAREDMEMORYOBJECT_H */

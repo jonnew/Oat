@@ -33,16 +33,10 @@ void Viewer::showImage() {
 }
 
 void Viewer::showImage(const std::string title) {
-    
-    cv::Mat current_frame = frame_source.get_shared_mat();
-    
-    //if (frame_source.is_running()) {
-        cv::imshow(title, current_frame);
-        cv::waitKey(1);
-    //}
-    
-    // Wait for signal that next frame is ready
-    frame_source.wait();
+
+    cv::Mat current_frame = frame_source.get_value(); // Thread safe
+    cv::imshow(title, current_frame);
+    cv::waitKey(1);
 }
 
 void Viewer::stop() {

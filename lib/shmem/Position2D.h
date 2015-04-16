@@ -19,30 +19,19 @@
 
 #include <opencv2/core/mat.hpp>
 
-#include "SyncSharedMemoryObject.h"
-
 namespace shmem {
 
-    template<class PointType>
-    class Position2D : public SyncSharedMemoryObject {
-        
-    public:
+    struct Position2D {
 
-        /**
-         * Update the 2D position. value is some type of cv::Point (e.g. cv::Pointd,
-         * or cv::Pointi)
-         */
-        void set_value(PointType& value) { xy = value; }
-        
-        PointType get_value(void) { return xy; }
+        bool position_valid = false;
+        cv::Point2f position; // The 2D position measure
 
-    private:
-        PointType xy;  
+        bool velocity_valid = false;
+        cv::Point2f velocity; // Always a float since its derived, not measured
+
+        bool head_direction_valid = false;
+        cv::Point2f head_direction; // Always a float since its derived, not measured
     };
 }
 
 #endif	/* POSITION2D_H */
-
-// Explicit instantiations
-template class shmem::Position2D<cv::Point2i>;
-template class shmem::Position2D<cv::Point2f>;

@@ -119,7 +119,7 @@ void HSVDetector::dilateSliderChangedCallback(int value, void* object) {
 
 void HSVDetector::applyFilterAndServe() { 
 
-    proc_mat = frame_source.get_shared_mat().clone();
+    proc_mat = frame_source.get_value().clone();
 
     hsvTransform(proc_mat);
     applyThreshold(proc_mat, threshold_img);
@@ -141,7 +141,7 @@ void HSVDetector::applyFilterAndServe() {
     }
     
     // Put position in shared memory
-    position_sink.set_value(xy_coord_px);
+    position_sink.set_value(object_position);
     
     frame_source.wait();
 
@@ -188,7 +188,7 @@ bool HSVDetector::findObjects(const cv::Mat& threshold_img) {
     cv::findContours(thesh_cpy, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 
     object_area = 0;
-    object_found = false;
+    object_position.position_valid = false;
 
     if (int num_contours = hierarchy.size() > 0) {
 
@@ -201,9 +201,9 @@ bool HSVDetector::findObjects(const cv::Mat& threshold_img) {
 
                 // Isolate the largest contour within the min/max range.
                 if (area > min_object_area && area < max_object_area && area > object_area) {
-                    xy_coord_px.x = moment.m10 / area;
-                    xy_coord_px.y = moment.m01 / area;
-                    object_found = true;
+                    object_position.position.x = moment.m10 / area;
+                    object_position.position.y = moment.m01 / area;
+                    object_position.position_valid = true;
                     object_area = area;
                 }
             }
@@ -220,7 +220,7 @@ bool HSVDetector::findObjects(const cv::Mat& threshold_img) {
         status_text = "No contours. Tracking off.";
     }
 
-    return object_found;
+    return object_position.position_valid;
 }
 
 void HSVDetector::decorateFeed(cv::Mat& display_img, const cv::Scalar& color) { //const cv::Scalar& color

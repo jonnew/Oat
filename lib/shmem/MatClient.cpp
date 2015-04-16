@@ -25,30 +25,36 @@ MatClient::MatClient(const std::string source_name) :
   name(source_name)
 , shmem_name(source_name + "_sh_mem")
 , shobj_name(source_name + "_sh_obj")
-, shared_object_found(false) { }
+, shared_object_found(false)
+, terminated(false) { }
 
 MatClient::MatClient(const MatClient& orig) { }
 
-MatClient::~MatClient() {
-}
+MatClient::~MatClient() { }
 
 void MatClient::findSharedMat() {
 
-    try {
+    while (!shared_object_found) {
+        try {
 
-        shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
-        shared_mat_header = shared_memory.find<shmem::SharedCVMatHeader>(shobj_name.c_str()).first;
-        shared_object_found = true;
+            shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
+            shared_mat_header = shared_memory.find<shmem::SharedCVMatHeader>(shobj_name.c_str()).first;
+            shared_object_found = true;
 
-    } catch (interprocess_exception& e) {
-        std::cerr << "Error: " << e.what() << "\n";
-        std::cerr << "  This is likely due to the SOURCE, \"" << name << "\", not being started.\n";
-        std::cerr << "  Did you start the SOURCE, \"" << name << "\", before staring this client?" << std::endl;
-        exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
+        } catch (interprocess_exception& e) {
+            usleep(100000); // Wait for shared memory to be created by SOURCE
+            //std::cerr << "Error: " << e.what() << "\n";
+            //std::cerr << "  This is likely due to the SOURCE, \"" << name << "\", not being started.\n";
+            //std::cerr << "  Did you start the SOURCE, \"" << name << "\", before staring this client?" << std::endl;
+            //exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
+        } 
+        
+        if (terminated)
+            exit(EXIT_FAILURE); // Nothing to clean, so we are OK to exit.
     }
 
     // Pass mutex to the scoped sharable_lock. 
-    lock = makeLock();
+    lock = makeLock();  // This will block until the lock has sharable access to the mutex
     shared_mat_header->attachMatToHeader(shared_memory, mat);
 }
 
@@ -61,27 +67,20 @@ void MatClient::findSharedMat() {
  * 
  * @return shared cv::Mat. Do not write on this object.
  */
-cv::Mat MatClient::get_shared_mat() {
+cv::Mat MatClient::get_value() {
 
     if (!shared_object_found) {
-        findSharedMat(); // Creates lock targeting shared_mat_header->mutex, but does not engage
+        findSharedMat(); // Creates lock targeting shared_mat_header->mutex, and engages
     }
+    
+    wait(); // Wait for notification from SOURCE to grant access to shared memory
 
-    //lock.lock();
     return mat; // User responsible for calling wait after they get, and process this result!
 }
 
 void MatClient::wait() {
 
-    // TODO: timed_wait?
-//    try {
-//    bool in_wait = true;
-//    while(in_wait) {
-//        boost::system_time timeout = boost::get_system_time() + boost::posix_time::milliseconds(10);
-//        in_wait = !shared_mat_header->new_data_condition.timed_wait(lock, timeout);
-//    }
     shared_mat_header->new_data_condition.wait(lock);
-    
 }
 
 sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {
@@ -103,6 +102,9 @@ void MatClient::set_source(const std::string source_name) {
 
 void MatClient::notifySelf(){
     
-    shared_mat_header->new_data_condition.notify_one();
+    if (shared_object_found) {
+        shared_mat_header->new_data_condition.notify_one();
+    }
+    terminated = true;
 }
 

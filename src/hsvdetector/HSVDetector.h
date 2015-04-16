@@ -128,7 +128,8 @@ private:
     MatClient frame_source;
     
     // Position server
-    SMServer<shmem::Position2D<cv::Point2i>, cv::Point2i> position_sink;
+    shmem::Position2D object_position;
+    shmem::SMServer<shmem::Position2D, shmem::SyncSharedMemoryObject> position_sink;
     
     // Mat server for sending processed frames
     bool frame_sink_used;
