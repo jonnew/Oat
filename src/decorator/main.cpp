@@ -14,7 +14,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "Viewer.h"
+#include "Decorator.h"
 
 #include <string>
 #include <signal.h>
@@ -31,21 +31,21 @@ void term(int) {
     done = 1;
 }
 
-void run(Viewer* viewer, std::string source) {
+void run(Decorator* decorator) {
  
-    std::cout << "Viewer has begun listening to source \"" + source + "\".\n";
+    //std::cout << "Viewer has begun listening to source \"" + source + "\".\n";
 
     while (!done) {
-        if (running) {
-            viewer->showImage();
-        }
+        decorator->decorateImage();
+        decorator->serveImage();
     }
 }
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: viewer [OPTIONS]\n";
-    std::cout << "   or: viewer SOURCE\n";
-    std::cout << "View the output of a SOURCE of type SMServer<SharedCVMatHeader>\n";
+    std::cout << "   or: viewer POSITION_SOURCE IMAGE_SOURCE IMAGE_SINK\n";
+    std::cout << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCE.\n";
+    std::cout << "Publish decorated image to IMAGE_SINK.\n";
     std::cout << options << "\n";
 }
 
@@ -57,7 +57,9 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, term);
 
     // The image source to which the viewer will be attached
-    std::string source;
+    std::string position_source;
+    std::string image_source;
+    std::string sink;
     
     try {
 
@@ -69,13 +71,21 @@ int main(int argc, char *argv[]) {
         
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("source", po::value<std::string>(&source),
-                "The name of the server that supplies images to view."
-                "The server must be of type server<SharedCVMatHeader>\n")
+                ("positionsource", po::value<std::string>(&position_source),
+                "The name of the server that supplies object position information."
+                "The server must be of type SMServer<Position2D>\n")
+                ("imagesource", po::value<std::string>(&image_source),
+                "The name of the server that supplies images to decorate."
+                "The server must be of type SMServer<SharedCVMatHeader>\n")
+                ("sink", po::value<std::string>(&sink),
+                "The name of the sink to which decorated images will be published."
+                "The server must be of type SMServer<SharedCVMatHeader>\n")
                 ;
         
         po::positional_options_description positional_options;
-        positional_options.add("source", -1);
+        positional_options.add("positionsource", 1);
+        positional_options.add("imagesource", 1);
+        positional_options.add("sink", 1);
         
         po::options_description all_options("ALL OPTIONS");
         all_options.add(options).add(hidden);
@@ -95,15 +105,27 @@ int main(int argc, char *argv[]) {
         }
 
         if (variable_map.count("version")) {
-            std::cout << "Simple-Tracker Viewer, version 1.0\n"; //TODO: Cmake managed versioning
+            std::cout << "Simple-Tracker Decorator, version 1.0\n"; //TODO: Cmake managed versioning
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
 
-        if (!variable_map.count("source")) {
+        if (!variable_map.count("positionsource")) {
             printUsage(options);
-            std::cout << "Error: a SOURCE must be specified. Exiting.\n";
+            std::cout << "Error: a POSITION_SOURCE must be specified. Exiting.\n";
+            return -1;
+        }
+        
+        if (!variable_map.count("imagesource")) {
+            printUsage(options);
+            std::cout << "Error: a IMAGE_SOURCE must be specified. Exiting.\n";
+            return -1;
+        }
+        
+        if (!variable_map.count("sink")) {
+            printUsage(options);
+            std::cout << "Error: a IMAGE_SINK must be specified. Exiting.\n";
             return -1;
         }
         
@@ -116,12 +138,12 @@ int main(int argc, char *argv[]) {
     }
     
     // Make the viewer
-    Viewer viewer(source);
+    Decorator decorator(position_source, image_source, sink);
     
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &viewer, source));
+    thread_group.create_thread(boost::bind(&run, &decorator));
     sleep(1);
     
     // Start the user interface
@@ -129,26 +151,16 @@ int main(int argc, char *argv[]) {
 
         int user_input;
         std::cout << "Select an action:\n";
-        std::cout << " [1]: Pause/unpause\n";
         std::cout << " [2]: Exit\n";
         std::cout << ">> ";
 
         std::cin >> user_input;
 
         switch (user_input) {
-            case 1:
-            {
-                running = !running;
-                if (running)
-                    std::cout << " Resumed...\n";
-                else
-                    std::cout << " Paused.\n";
-                break;
-            }
             case 2:
             {
                 done = true;
-                viewer.stop();
+                decorator.stop();
                 break;
             }
             default:

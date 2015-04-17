@@ -14,30 +14,41 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef POSITION2D_H
-#define	POSITION2D_H
+#ifndef DETECTOR_H
+#define	DETECTOR_H
 
-#include <opencv2/core/mat.hpp>
+#include <string>
 
-namespace shmem {
+#include "../../lib/shmem/Position2D.h"
+#include "../../lib/shmem/MatClient.h"
+#include "../../lib/shmem/SMServer.h"
 
-    struct Position2D {
+class Detector {
+public:
+    
+    virtual void findObject(void) = 0;
+    virtual void servePosition(void) = 0;
+    
+protected:
+    
+    // Method for sifting a threshold image to find objects
+    virtual void siftBlobs(void) = 0;
+    
+    // Detectors must allow manual tuning
+    bool tuning_on;
+    std::string slider_title;
+    virtual void createSliders(void) = 0;
+    
+    // The detected object position
+    shmem::Position2D object_position;
+    
+    // The image source (Client side)
+    MatClient image_source;
+    
+    // The detected object position destination (Server side)
+    shmem::SMServer<shmem::Position2D> position_sink;
+    
+};
 
-        bool position_valid = false;
-        cv::Point2f position; // The 2D position measure
-        
-        bool anterior_valid = false;
-        cv::Point2f anterior;
-        
-        bool posterior_valid = false;
-        cv::Point2f posterior;
+#endif	/* DETECTOR_H */
 
-        bool velocity_valid = false;
-        cv::Point2f velocity; 
-
-        bool head_direction_valid = false;
-        cv::Point2f head_direction; 
-    };
-}
-
-#endif	/* POSITION2D_H */

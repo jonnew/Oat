@@ -47,17 +47,16 @@ HSVDetector::HSVDetector(std::string source_name, std::string pos_sink_name,
         int h_min_in, int h_max_in,
         int s_min_in, int s_max_in,
         int v_min_in, int v_max_in) :
-  frame_source(source_name)
+image_source(source_name)
 , position_sink(pos_sink_name)
 , frame_sink(pos_sink_name + "_frame")
-, frame_sink_used(false)
-{
+, frame_sink_used(false) {
 
     detector_name = pos_sink_name + "_hsv_detector";
     slider_title = detector_name + "_hsv_sliders";
 
     tuning_on = false;
-    
+
     // Initial threshold values
     h_min = h_min_in;
     h_max = h_max_in;
@@ -70,41 +69,30 @@ HSVDetector::HSVDetector(std::string source_name, std::string pos_sink_name,
     set_erode_size(0);
     set_dilate_size(10);
 
-    // Decorate stream
-    decorate = false;
-
     // Initialize area parameters without constraint
     min_object_area = 0;
-    max_object_area = std::numeric_limits<double>::max();
-
-    // Maximum number of contours defining candidate objects
-    max_num_contours = 50;
-
-    // Initial point is unknown
-    object_found = false;
-    xy_coord_px.x = 0;
-    xy_coord_px.y = 0;
+    max_object_area = std::numeric_limits<double>::max(); //TODO: These are not being used and would be helpful, esp max_area!
 }
 
 HSVDetector::HSVDetector(std::string source_name, std::string pos_sink_name) :
-HSVDetector::HSVDetector(source_name, pos_sink_name, 0, 256, 0, 256, 0, 256) { }
+HSVDetector::HSVDetector(source_name, pos_sink_name, 0, 256, 0, 256, 0, 256) {
+}
 
-void HSVDetector::createTrackbars() {
+void HSVDetector::createSliders() {
 
-    // Create window for trackbars
+    // Create window for sliders
     namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
 
-    // Create trackbars and insert them into window
-    // TODO: Does not work for multiple detectors. For the second one, 'this' points to nonsense...
-    createTrackbar("H_MIN", slider_title, &h_min, 256); //, &HSVDetector::hminSliderChangedCallback, this);
-    createTrackbar("H_MAX", slider_title, &h_max, 256); //, &HSVDetector::hmaxSliderChangedCallback, this);
-    createTrackbar("S_MIN", slider_title, &s_min, 256); //, &HSVDetector::sminSliderChangedCallback, this);
-    createTrackbar("S_MAX", slider_title, &s_max, 256); //, &HSVDetector::smaxSliderChangedCallback, this);
-    createTrackbar("V_MIN", slider_title, &v_min, 256); //, &HSVDetector::vminSliderChangedCallback, this);
-    createTrackbar("V_MAX", slider_title, &v_max, 256); //, &HSVDetector::vmaxSliderChangedCallback, this);
+    // Create sliders and insert them into window
+    createTrackbar("H_MIN", slider_title, &h_min, 256); 
+    createTrackbar("H_MAX", slider_title, &h_max, 256); 
+    createTrackbar("S_MIN", slider_title, &s_min, 256); 
+    createTrackbar("S_MAX", slider_title, &s_max, 256); 
+    createTrackbar("V_MIN", slider_title, &v_min, 256); 
+    createTrackbar("V_MAX", slider_title, &v_max, 256); 
     createTrackbar("ERODE", slider_title, &erode_px, 50, &HSVDetector::erodeSliderChangedCallback, this);
     createTrackbar("DILATE", slider_title, &dilate_px, 50, &HSVDetector::dilateSliderChangedCallback, this);
-    
+
 }
 
 void HSVDetector::erodeSliderChangedCallback(int value, void* object) {
@@ -117,124 +105,91 @@ void HSVDetector::dilateSliderChangedCallback(int value, void* object) {
     hsv_detector->set_dilate_size(value);
 }
 
-void HSVDetector::applyFilterAndServe() { 
+void HSVDetector::findObject() {
 
-    proc_mat = frame_source.get_value().clone();
+    hsv_image = image_source.get_value().clone();
 
-    hsvTransform(proc_mat);
-    applyThreshold(proc_mat, threshold_img);
-    applyThresholdMask(threshold_img, proc_mat);
+    cv::cvtColor(hsv_image, hsv_image, COLOR_BGR2HSV);
+    applyThreshold(hsv_image, threshold_img);
     clarifyObjects(threshold_img);
-    findObjects(threshold_img);
-
-    if (decorate) {
-        decorateFeed(threshold_img, cv::Scalar(0, 0, 255)); // TODO: get rid of this, replace with position server. we can have a viewer to make things pretty.
-    }
+    siftBlobs(threshold_img);
 
     // Put processed mat in shared memory
     if (frame_sink_used) {
         frame_sink.set_shared_mat(threshold_img);
     }
-    
+
     if (tuning_on) {
         cv::waitKey(1);
     }
-    
+}
+
+void HSVDetector::servePosition() {
     // Put position in shared memory
     position_sink.set_value(object_position);
-    
-    frame_source.wait();
+}
+
+void HSVDetector::applyThreshold() {
+
+    inRange(hsv_image, Scalar(h_min, s_min, v_min), Scalar(h_max, s_max, v_max), threshold_img);
+    hsv_image.setTo(0, threshold_img == 0);
 
 }
 
-void HSVDetector::hsvTransform(cv::Mat& rgb_img) {
-
-    cvtColor(rgb_img, rgb_img, COLOR_BGR2HSV);
-}
-
-void HSVDetector::applyThreshold(const cv::Mat hsv_img, Mat& threshold_img) {
-
-    inRange(hsv_img, Scalar(h_min, s_min, v_min), Scalar(h_max, s_max, v_max), threshold_img);
-
-}
-
-void HSVDetector::applyThresholdMask(const cv::Mat threshold_img, cv::Mat& hsv_img) {
-
-    hsv_img.setTo(0, threshold_img == 0);
-}
-
-void HSVDetector::clarifyObjects(Mat& threshold_img) {
+void HSVDetector::clarifyObjects() {
 
     if (erode_on) {
         cv::erode(threshold_img, threshold_img, erode_element);
-        //cv::erode(threshold_img, threshold_img, erode_element);
     }
-
 
     if (dilate_on) {
         cv::dilate(threshold_img, threshold_img, dilate_element);
-        //cv::dilate(threshold_img, threshold_img, dilate_element);
     }
 
 }
 
-bool HSVDetector::findObjects(const cv::Mat& threshold_img) {
+void HSVDetector::siftBlobs() {
 
     cv::Mat thesh_cpy = threshold_img.clone();
     std::vector< std::vector < cv::Point > > contours;
     std::vector< cv::Vec4i > hierarchy;
 
     // This function will modify the threshold_img data.
-    cv::findContours(thesh_cpy, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+    cv::findContours(thesh_cpy, contours, hierarchy, cv::CV_RETR_CCOMP, cv::CV_CHAIN_APPROX_SIMPLE);
 
     object_area = 0;
     object_position.position_valid = false;
 
-    if (int num_contours = hierarchy.size() > 0) {
+    if (int hierarchy.size() > 0) {
 
-        if (num_contours < max_num_contours) {
+        for (int index = 0; index >= 0; index = hierarchy[index][0]) {
 
-            for (int index = 0; index >= 0; index = hierarchy[index][0]) {
+            cv::Moments moment = cv::moments((cv::Mat)contours[index]);
+            double area = moment.m00;
 
-                cv::Moments moment = cv::moments((cv::Mat)contours[index]);
-                double area = moment.m00;
-
-                // Isolate the largest contour within the min/max range.
-                if (area > min_object_area && area < max_object_area && area > object_area) {
-                    object_position.position.x = moment.m10 / area;
-                    object_position.position.y = moment.m01 / area;
-                    object_position.position_valid = true;
-                    object_area = area;
-                }
+            // Isolate the largest contour within the min/max range.
+            if (area > min_object_area && area < max_object_area && area > object_area) {
+                object_position.position.x = moment.m10 / area;
+                object_position.position.y = moment.m01 / area;
+                object_position.position_valid = true;
+                object_area = area;
             }
-        } else {
-            // Issue warning because we found too many contours
-            status_text = "Too many contours. Tracking off.";
-
-            //std::cerr << "WARNING: Call to findObjects found more than the maximum allowed number of contours. " << std::endl;
-            //std::cerr << "Threshold image too noisy." << std::endl;
         }
-
-    } else {
-        // Issue warning because we found no countours
-        status_text = "No contours. Tracking off.";
-    }
-
-    return object_position.position_valid;
-}
-
-void HSVDetector::decorateFeed(cv::Mat& display_img, const cv::Scalar& color) { //const cv::Scalar& color
-
-    // Add an image of the 
-    if (object_found) {
-
-        // Get the radius of the object
-        int rad = sqrt(object_area / PI);
-        cv::circle(display_img, xy_coord_px, rad, color, 2);
-    } else {
-        cv::putText(display_img, status_text, cv::Point(5, 35), 2, 1, cv::Scalar(255, 255, 255), 2);
     }
 }
+
+//void HSVDetector::decorateFeed(cv::Mat& display_img, const cv::Scalar& color) { //const cv::Scalar& color
+//
+//    // Add an image of the 
+//    if (object_position.position_valid) {
+//
+//        // Get the radius of the object
+//        int rad = sqrt(object_area / PI);
+//        cv::circle(display_img, object_position.position, rad, color, 2);
+//    } else {
+//        cv::putText(display_img, status_text, cv::Point(5, 35), 2, 1, cv::Scalar(255, 255, 255), 2);
+//    }
+//}
 
 void HSVDetector::configure(std::string config_file, std::string key) {
 
@@ -302,10 +257,10 @@ void HSVDetector::configure(std::string config_file, std::string key) {
             }
 
             if (hsv_config.contains("hsv_tune")) {
-                if (*hsv_config.get_as<bool>("hsv_tune")){
+                if (*hsv_config.get_as<bool>("hsv_tune")) {
                     tuning_on = true;
-                    createTrackbars();
-                }    
+                    createSliders();
+                }
             }
 
         } else {
@@ -344,5 +299,5 @@ void HSVDetector::set_dilate_size(int _dilate_px) {
 }
 
 void HSVDetector::stop() {
-    frame_source.notifySelf();
+    image_source.notifySelf();
 }

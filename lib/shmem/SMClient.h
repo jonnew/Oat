@@ -28,7 +28,7 @@ namespace bip = boost::interprocess;
 
 namespace shmem {
 
-    template<class T, template <typename IOType> class SharedMemType> // = shmem::SyncSharedMemoryObject
+    template<class T, template <typename IOType> class SharedMemType = shmem::SyncSharedMemoryObject>
     class SMClient {
     public:
         SMClient(std::string source_name);
@@ -36,13 +36,14 @@ namespace shmem {
         virtual ~SMClient();
 
         T get_value(void);
+        void notifySelf(void);
 
     private:
 
         SharedMemType<T>* shared_object; // Defaults to shmem::SyncSharedMemoryObject<T>
 
         std::string name, shmem_name, shobj_name;
-        bool shared_object_found = false;
+        bool shared_object_found,  terminated;
         bip::managed_shared_memory cli_shared_memory;
         bip::sharable_lock<bip::interprocess_sharable_mutex> lock;
         bip::sharable_lock<bip::interprocess_sharable_mutex> makeLock();
@@ -53,10 +54,11 @@ namespace shmem {
 
     template<class T, template <typename> class SharedMemType>
     SMClient<T, SharedMemType>::SMClient(std::string source_name) :
-    name(source_name)
+      name(source_name)
     , shmem_name(source_name + "_sh_mem")
-    , shobj_name(source_name + "_sh_obj") {
-    }
+    , shobj_name(source_name + "_sh_obj") 
+    , shared_object_found(false)
+    , terminated(false) { }
 
     template<class T, template <typename> class SharedMemType>
     SMClient<T, SharedMemType>::SMClient(const SMClient<T, SharedMemType>& orig) {
@@ -71,29 +73,37 @@ namespace shmem {
 
     template<class T, template <typename> class SharedMemType>
     void SMClient<T, SharedMemType>::findSharedObject() {
+        while (!shared_object_found) {
+            try {
 
-        try {
+                // Allocate shared memory
+                cli_shared_memory = bip::managed_shared_memory(bip::open_only, shmem_name.c_str());
 
-            // Allocate shared memory
-            cli_shared_memory = bip::managed_shared_memory(bip::open_only, shmem_name.c_str());
+                // Find the object in shared memory
+                shared_object = cli_shared_memory.find<SharedMemType < T >> (shobj_name.c_str()).first;
+                shared_object_found = true;
 
-            // Find the object in shared memory
-            shared_object = cli_shared_memory.find<SharedMemType < T >> (shobj_name.c_str()).first;
-            shared_object_found = true;
+            } catch (bip::interprocess_exception& e) {
+                usleep(100000); // Wait for shared memory to be created by SOURCE
+            }
 
-        } catch (bip::interprocess_exception& e) {
-            std::cerr << "Error: " << e.what() << "\n";
-            std::cerr << "  This is likely due to the SOURCE, \"" << name << "\", not being started.\n";
-            std::cerr << "  Did you start the SOURCE, \"" << name << "\", before staring this client?" << std::endl;
-            exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
+            if (terminated)
+                exit(EXIT_FAILURE); // Nothing to clean, so we are OK to exit.
         }
-
+        
         lock = makeLock();
     }
 
     template<class T, template <typename> class SharedMemType>
     T SMClient<T, SharedMemType>::get_value() {
 
+        if (!shared_object_found) {
+            findSharedObject(); // Creates lock targeting shared_object->mutex, and engages
+        }
+
+        // Before reading data, we must be notified by the server that the 
+        // data is valid.
+        shared_object->new_data_condition.wait(lock);
         return shared_object->get_value();
     }
 
@@ -103,6 +113,15 @@ namespace shmem {
         return sl;
     }
 
+    template<class T, template <typename> class SharedMemType>
+    void SMClient<T, SharedMemType>::notifySelf() {
+
+        if (shared_object_found) {
+            shared_object->new_data_condition.notify_one();
+        }
+        terminated = true;
+    }
+    
 } // namespace shmem 
 
 #endif	/* SMCLIENT_H */

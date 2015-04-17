@@ -37,7 +37,8 @@ void run(HSVDetector* detector, std::string source, std::string sink) {
 
     while (!done) { // !done
         if (running) {
-            detector->applyFilterAndServe();
+            detector->findObject();
+            detector->servePosition();
         }
     }
     
@@ -58,6 +59,7 @@ int main(int argc, char *argv[]) {
     
     std::string source;
     std::string sink;
+    int type;
     std::string frame_sink;
     std::string config_file;
     std::string config_key;
@@ -74,6 +76,10 @@ int main(int argc, char *argv[]) {
 
         po::options_description imgsink("IMAGE SINK");
         imgsink.add_options()
+                ("type,t", po::value<int>(&type), "Detector type.\n\n" 
+                 "Values:\n"
+                 "  0: Difference detector (grey-scale)\n"
+                 "  1: HSV detector (color)")
                 ("framesink", po::value<std::string>(&frame_sink),"Optional IMAGE SINK SMServer<SharedCVMatHeader> to which processed images will be published.")
                 ;
         
@@ -94,7 +100,7 @@ int main(int argc, char *argv[]) {
 
         po::positional_options_description positional_options;
         positional_options.add("source", 1);
-        positional_options.add("sink", 2);
+        positional_options.add("sink", 1);
 
         po::options_description visible_options("VISIBLE OPTIONS");
         visible_options.add(options).add(imgsink).add(config);
@@ -135,7 +141,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         
-        if (variable_map.count("framesink")) {
+        if (variable_map.count("framesink")) { // TODO: Loose this and use a toggle key instead
             frame_sink_used = true;
         }
        

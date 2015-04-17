@@ -54,7 +54,7 @@ void MatClient::findSharedMat() {
     }
 
     // Pass mutex to the scoped sharable_lock. 
-    lock = makeLock();  // This will block until the lock has sharable access to the mutex
+    lock = makeLock(); // This will block until the lock has sharable access to the mutex
     shared_mat_header->attachMatToHeader(shared_memory, mat);
 }
 
@@ -73,14 +73,10 @@ cv::Mat MatClient::get_value() {
         findSharedMat(); // Creates lock targeting shared_mat_header->mutex, and engages
     }
     
-    wait(); // Wait for notification from SOURCE to grant access to shared memory
+    // Wait for notification from SOURCE to grant access to shared memory
+    shared_mat_header->new_data_condition.wait(lock); 
 
     return mat; // User responsible for calling wait after they get, and process this result!
-}
-
-void MatClient::wait() {
-
-    shared_mat_header->new_data_condition.wait(lock);
 }
 
 sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {

@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (Detector)
+project (Decorator)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
@@ -10,5 +10,6 @@ link_directories (${Boost_LIBRARY_DIR})
 add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (detector DifferenceDetector.cpp HSVDetector.cpp main.cpp )
-target_link_libraries (detector shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})
+add_executable (decorate Decorator.cpp main.cpp )
+target_link_libraries (decorate shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
+

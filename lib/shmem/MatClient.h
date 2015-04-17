@@ -34,9 +34,6 @@ public:
     // Find cv::Mat object in shared memory
     void findSharedMat(void);
     
-    // Condition variable manipulation
-    void wait(void);
-    
     // Auto notification to exit wait()
     void notifySelf(void);
      

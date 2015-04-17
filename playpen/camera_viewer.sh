@@ -12,8 +12,7 @@ shutdown() {
 trap "shutdown" SIGINT SIGTERM
 
 # Start a bunch of child processes that are killable with CTRL-C
-./bin/camserv_ge maze_cam config.toml maze_cam			&
+gnome-terminal -x sh -c "./bin/camserv gige maze_cam -c config.toml -k maze_cam; bash" &
 sleep 3
-./bin/viewer maze_cam 									&
-
+gnome-terminal -x sh -c "./bin/viewer maze_cam; bash" &
 wait

@@ -52,12 +52,14 @@ void BackgroundSubtractor::subtractBackground() {
     
     if (background_set) {
 
-        if ((current_frame.size() != background_img.size())) {
-            std::cerr << "Background subtractor: Input and background matrices must be the same size." << std::endl;
+        try {
+            CV_Assert(current_frame.size() == background_img.size());
+            current_frame = current_frame - background_img;
+        } catch (cv::Exception& e) {
+            std::cout << "CV Exception: " << e.what() << "\n";
             exit(EXIT_FAILURE);
         }
-        
-        current_frame = current_frame - background_img;
+
     } 
     else {
      
@@ -66,6 +68,5 @@ void BackgroundSubtractor::subtractBackground() {
     }
     
     frame_sink.set_shared_mat(current_frame);
-    frame_source.wait();
 
 }

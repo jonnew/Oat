@@ -28,7 +28,7 @@ namespace bip = boost::interprocess;
 
 namespace shmem {
 
-    template<class T, template <typename> class SharedMemType> //=shmem::SyncSharedMemoryObject
+    template<class T, template <typename> class SharedMemType = shmem::SyncSharedMemoryObject>
     class SMServer {
     public:
         SMServer(std::string sink_name);

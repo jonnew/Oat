@@ -14,30 +14,40 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef POSITION2D_H
-#define	POSITION2D_H
+#ifndef POSITIONCOMBINER_H
+#define	POSITIONCOMBINER_H
 
-#include <opencv2/core/mat.hpp>
+#include <string>
 
-namespace shmem {
+#include "../../lib/shmem/SMServer.h"
+#include "../../lib/shmem/SMClient.h"
+#include "../../lib/shmem/Position2D.h"
 
-    struct Position2D {
-
-        bool position_valid = false;
-        cv::Point2f position; // The 2D position measure
+class PositionCombiner {
+    
+    public:
         
-        bool anterior_valid = false;
-        cv::Point2f anterior;
+        PositionCombiner(std::string antierior_source, std::string posterior_source, std::string sink);
+                
+        void calculateGeometricMean(void);
+        void serveCombinedPosition(void);
+        void stop(void);
         
-        bool posterior_valid = false;
-        cv::Point2f posterior;
+        std::string get_name(void) { return name; }
+        
+    private:
+        
+        std::string name;
+        
+        // Anterior and posterior position measures
+        shmem::SMClient<shmem::Position2D> anterior_source;
+        shmem::SMClient<shmem::Position2D> posterior_source;
+        
+        // Processed position server
+        shmem::SMServer<shmem::Position2D> position_sink;
+        
+        shmem::Position2D processed_position;  
+};
 
-        bool velocity_valid = false;
-        cv::Point2f velocity; 
+#endif	// POSITIONCOMBINER_H
 
-        bool head_direction_valid = false;
-        cv::Point2f head_direction; 
-    };
-}
-
-#endif	/* POSITION2D_H */

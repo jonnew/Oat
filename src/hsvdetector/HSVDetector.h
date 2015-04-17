@@ -20,14 +20,12 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/MatClient.h"
+#include "Detector.h"
 #include "../../lib/shmem/MatServer.h"
-#include "../../lib/shmem/SMServer.h"
-#include "../../lib/shmem/Position2D.h"
 
 #define PI 3.14159265358979323846
 
-class HSVDetector {
+class HSVDetector : public Detector{
     
 public:
     
@@ -47,18 +45,17 @@ public:
     // Add a frame sink to view the filtered output. Not normally needed.
     void addFrameSink(std::string frame_sink_name);
     
-    // Sliders to allow manipulation of HSV thresholds
-    void createTrackbars(void);
+
 
     // Object detection
-    bool findObjects(const cv::Mat& threshold_img);
+    void findObject(void);
 
     // Apply the HSVTransform, thresholding, and erode/dilate operations to/from
     // shared memory allocated mat objects
     void applyFilterAndServe(void);
     
     // Following filtering, serve position object
-    void sendPosition(void);
+    void servePosition(void);
 
     // Accessors
     
@@ -69,10 +66,6 @@ public:
     void set_detector_name(std::string detector_name) {
         detector_name = detector_name;
         slider_title = detector_name + "_sliders";
-    }
-    
-    void set_max_num_contours(unsigned int max_num_contours) {
-        max_num_contours = max_num_contours;
     }
 
     void set_min_object_area(double min_object_area) {
@@ -86,23 +79,18 @@ public:
     void set_erode_size(int erode_px);
     void set_dilate_size(int dilate_px);
     
-    void set_decorate (bool decorate){
-        decorate = decorate;
-    }
     
     void stop(void);
 
 private:
     
-    // Allow manual tuning of detection parameters using sliders
-    bool tuning_on;
 
     // Sizes of the erode and dilate blocks
     int erode_px, dilate_px;
     bool erode_on, dilate_on;
-    cv::Mat proc_mat, threshold_img, erode_element, dilate_element;
+    cv::Mat hsv_image, threshold_img, erode_element, dilate_element;
 
-    // Initial threshold values    
+    // HSV threshold values
     int h_min;
     int h_max;
     int s_min;
@@ -111,46 +99,30 @@ private:
     int v_max;
 
     // For manual manipulation of HSV filtering
-    std::string detector_name, slider_title;
+    std::string detector_name;
 
     // Object detection
-    std::string status_text;
-    bool object_found;
     double object_area;
-    cv::Point2i xy_coord_px;
-    bool decorate; 
+    shmem::Position2D object_position;
 
-    unsigned int max_num_contours;
     double min_object_area;
     double max_object_area;
-    
-    // Mat client object for receiving frames
-    MatClient frame_source;
-    
-    // Position server
-    shmem::Position2D object_position;
-    shmem::SMServer<shmem::Position2D, shmem::SyncSharedMemoryObject> position_sink;
     
     // Mat server for sending processed frames
     bool frame_sink_used;
     MatServer frame_sink;
 
-    // HSV filter
-    void hsvTransform(cv::Mat& rgb_img);
-
-    // Binary threshold
-    void applyThreshold(const cv::Mat hsv_img, cv::Mat& threshold_img);
-    
-    // Use the binary threshold to mask the image
-    void applyThresholdMask(const cv::Mat threshold_img, cv::Mat& hsv_img);
+    // Binary threshold and use the binary threshold to mask the image
+    void applyThreshold(void);
 
     // Erode/dilate objects to get rid of speckles
-    void clarifyObjects(cv::Mat& threshold_img);
-
-    // Add information to displayed image
-    void decorateFeed(cv::Mat& display_img, const cv::Scalar&); // TODO: Remove (this class is doing too much!)
+    void clarifyObjects(void);
     
-    // Callbacks for sliders
+    // Sift through thresholded blobs to pull out potential object
+    void siftBlobs(void);
+    
+    // Sliders to allow manipulation of HSV thresholds
+    void createSliders(void);
     static void erodeSliderChangedCallback(int, void*);
     static void dilateSliderChangedCallback(int, void*);
 };
