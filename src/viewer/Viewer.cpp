@@ -25,7 +25,9 @@
 
 using namespace boost::interprocess;
 
-Viewer::Viewer(std::string source_name) : frame_source(source_name) { }
+Viewer::Viewer(std::string source_name) : 
+  frame_source(source_name)
+, name(source_name + "_viewer") { }
 
 void Viewer::showImage() {
     

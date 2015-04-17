@@ -33,9 +33,14 @@ public:
     void showImage(void);
     void showImage(std::string title);
     void stop(void);
-   
+
+	// Accessors
+	std::string get_name(void) { return name; }   
 private:
-    
+
+   	// Viewer name
+	const std::string name;
+
     // Image data
     cv::Mat image;
     
