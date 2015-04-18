@@ -10,25 +10,20 @@
 
 #include "Detector.h"
 
-#include "../../lib/shmem/MatClient.h"
-#include "../../lib/shmem/SMServer.h"
-#include "../../lib/shmem/Position2D.h"
-
-class DifferenceDetector : public Detector{
+class DifferenceDetector : public Detector {
 public:
-    DifferenceDetector();
-    DifferenceDetector(const DifferenceDetector& orig);
-    virtual ~DifferenceDetector();
+    DifferenceDetector(std::string image_source_name, std::string position_sink_name);
     
     void findObject(void);
     void servePosition(void);
+    void configure(std::string file_name, std::string key);
     
     void set_blur_size(int value);
     
 private:
     
     // Intermediate variables
-    cv::Mat last_image;
+    cv::Mat this_image, last_image;
     cv::Mat threshold_image;
     bool last_image_set;
     
@@ -36,15 +31,16 @@ private:
     double object_area;
     shmem::Position2D object_position;
     
-    // Detector parameters //TODO: config file input
-    double threshold_level;
-    double blur_size;
+    // Detector parameters
+    int difference_intensity_threshold;
+    cv::Size blur_size;
     bool blur_on;
 
-    void thresholdImage(void);
-    
-    
-    void createSliders(void);
+    void applyThreshold(void);
+    void siftBlobs(void);
+
+    void tune(void);
+    void createTuningWindows(void);
     static void blurSliderChangedCallback(int, void*);
 };
 

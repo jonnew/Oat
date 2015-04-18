@@ -20,50 +20,27 @@
 #include <iostream>
 #include <limits>
 #include <math.h>
-
-#include <opencv2/core/mat.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
+#include <opencv2/opencv.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
-#include "../../lib/shmem/SMServer.h"
 
-using cv::Mat;
-using cv::namedWindow;
-using cv::createTrackbar;
-using cv::cvtColor;
-using cv::inRange;
-using cv::COLOR_BGR2HSV;
-using cv::MORPH_RECT;
-using cv::Scalar;
-using cv::getStructuringElement;
-using cv::Size;
-using cv::erode;
-using cv::dilate;
-
-HSVDetector::HSVDetector(std::string source_name, std::string pos_sink_name,
+HSVDetector::HSVDetector(std::string image_source_name, std::string position_sink_name,
         int h_min_in, int h_max_in,
         int s_min_in, int s_max_in,
         int v_min_in, int v_max_in) :
-image_source(source_name)
-, position_sink(pos_sink_name)
-, frame_sink(pos_sink_name + "_frame")
-, frame_sink_used(false) {
-
-    detector_name = pos_sink_name + "_hsv_detector";
-    slider_title = detector_name + "_hsv_sliders";
+  Detector(image_source_name, position_sink_name)
+//, frame_sink(position_sink_name + "_frame")
+//, frame_sink_used(false)
+, h_min(h_min_in)
+, h_max(h_max_in)
+, s_min(s_min_in)
+, s_max(s_max_in)
+, v_min(v_min_in)
+, v_max(v_max_in)
+, name(position_sink_name + "_hsv") {
 
     tuning_on = false;
-
-    // Initial threshold values
-    h_min = h_min_in;
-    h_max = h_max_in;
-    s_min = s_min_in;
-    s_max = s_max_in;
-    v_min = v_min_in;
-    v_max = v_max_in;
 
     // Set defaults for the erode and dilate blocks
     set_erode_size(0);
@@ -76,23 +53,6 @@ image_source(source_name)
 
 HSVDetector::HSVDetector(std::string source_name, std::string pos_sink_name) :
 HSVDetector::HSVDetector(source_name, pos_sink_name, 0, 256, 0, 256, 0, 256) {
-}
-
-void HSVDetector::createSliders() {
-
-    // Create window for sliders
-    namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
-
-    // Create sliders and insert them into window
-    createTrackbar("H_MIN", slider_title, &h_min, 256); 
-    createTrackbar("H_MAX", slider_title, &h_max, 256); 
-    createTrackbar("S_MIN", slider_title, &s_min, 256); 
-    createTrackbar("S_MAX", slider_title, &s_max, 256); 
-    createTrackbar("V_MIN", slider_title, &v_min, 256); 
-    createTrackbar("V_MAX", slider_title, &v_max, 256); 
-    createTrackbar("ERODE", slider_title, &erode_px, 50, &HSVDetector::erodeSliderChangedCallback, this);
-    createTrackbar("DILATE", slider_title, &dilate_px, 50, &HSVDetector::dilateSliderChangedCallback, this);
-
 }
 
 void HSVDetector::erodeSliderChangedCallback(int value, void* object) {
@@ -109,19 +69,11 @@ void HSVDetector::findObject() {
 
     hsv_image = image_source.get_value().clone();
 
-    cv::cvtColor(hsv_image, hsv_image, COLOR_BGR2HSV);
-    applyThreshold(hsv_image, threshold_img);
-    clarifyObjects(threshold_img);
-    siftBlobs(threshold_img);
-
-    // Put processed mat in shared memory
-    if (frame_sink_used) {
-        frame_sink.set_shared_mat(threshold_img);
-    }
-
-    if (tuning_on) {
-        cv::waitKey(1);
-    }
+    cv::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
+    applyThreshold();
+    clarifyBlobs();
+    siftBlobs();
+    tune();
 }
 
 void HSVDetector::servePosition() {
@@ -131,36 +83,36 @@ void HSVDetector::servePosition() {
 
 void HSVDetector::applyThreshold() {
 
-    inRange(hsv_image, Scalar(h_min, s_min, v_min), Scalar(h_max, s_max, v_max), threshold_img);
-    hsv_image.setTo(0, threshold_img == 0);
+    cv::inRange(hsv_image, cv::Scalar(h_min, s_min, v_min), cv::Scalar(h_max, s_max, v_max), threshold_image);
+    hsv_image.setTo(0, threshold_image == 0);
 
 }
 
-void HSVDetector::clarifyObjects() {
+void HSVDetector::clarifyBlobs() {
 
     if (erode_on) {
-        cv::erode(threshold_img, threshold_img, erode_element);
+        cv::erode(threshold_image, threshold_image, erode_element);
     }
 
     if (dilate_on) {
-        cv::dilate(threshold_img, threshold_img, dilate_element);
+        cv::dilate(threshold_image, threshold_image, dilate_element);
     }
 
 }
 
 void HSVDetector::siftBlobs() {
 
-    cv::Mat thesh_cpy = threshold_img.clone();
+    cv::Mat thesh_cpy = threshold_image.clone();
     std::vector< std::vector < cv::Point > > contours;
     std::vector< cv::Vec4i > hierarchy;
 
     // This function will modify the threshold_img data.
-    cv::findContours(thesh_cpy, contours, hierarchy, cv::CV_RETR_CCOMP, cv::CV_CHAIN_APPROX_SIMPLE);
+    cv::findContours(thesh_cpy, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 
     object_area = 0;
     object_position.position_valid = false;
 
-    if (int hierarchy.size() > 0) {
+    if (hierarchy.size() > 0) {
 
         for (int index = 0; index >= 0; index = hierarchy[index][0]) {
 
@@ -191,40 +143,32 @@ void HSVDetector::siftBlobs() {
 //    }
 //}
 
-void HSVDetector::configure(std::string config_file, std::string key) {
+void HSVDetector::configure(std::string file_name, std::string key) {
 
     cpptoml::table config;
 
     try {
-        config = cpptoml::parse_file(config_file);
-
-        //std::cout << "HSVDetector parsed the following configuration..." << std::endl << std::endl;
-        //std::cout << config << std::endl;
+        config = cpptoml::parse_file(file_name);
     } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
+        std::cerr << "Failed to parse " << file_name << ": " << e.what() << std::endl;
     }
 
     try {
         // See if a camera configuration was provided
         if (config.contains(key)) {
 
-            auto hsv_config = *config.get_table(key);
-            set_detector_name(key);
+            auto this_config = *config.get_table(key);
 
-            if (hsv_config.contains("decorate")) {
-                decorate = *hsv_config.get_as<bool>("decorate");
+            if (this_config.contains("erode")) {
+                set_erode_size((int) (*this_config.get_as<int64_t>("erode")));
             }
 
-            if (hsv_config.contains("erode")) {
-                set_erode_size((int) (*hsv_config.get_as<int64_t>("erode")));
+            if (this_config.contains("dilate")) {
+                set_dilate_size((int) (*this_config.get_as<int64_t>("dilate")));
             }
 
-            if (hsv_config.contains("dilate")) {
-                set_dilate_size((int) (*hsv_config.get_as<int64_t>("dilate")));
-            }
-
-            if (hsv_config.contains("h_thresholds")) {
-                auto t = *hsv_config.get_table("h_thresholds");
+            if (this_config.contains("h_thresholds")) {
+                auto t = *this_config.get_table("h_thresholds");
 
                 if (t.contains("min")) {
                     h_min = (int) (*t.get_as<int64_t>("min"));
@@ -234,8 +178,8 @@ void HSVDetector::configure(std::string config_file, std::string key) {
                 }
             }
 
-            if (hsv_config.contains("s_thresholds")) {
-                auto t = *hsv_config.get_table("s_thresholds");
+            if (this_config.contains("s_thresholds")) {
+                auto t = *this_config.get_table("s_thresholds");
 
                 if (t.contains("min")) {
                     s_min = (int) (*t.get_as<int64_t>("min"));
@@ -245,8 +189,8 @@ void HSVDetector::configure(std::string config_file, std::string key) {
                 }
             }
 
-            if (hsv_config.contains("v_thresholds")) {
-                auto t = *hsv_config.get_table("v_thresholds");
+            if (this_config.contains("v_thresholds")) {
+                auto t = *this_config.get_table("v_thresholds");
 
                 if (t.contains("min")) {
                     v_min = (int) (*t.get_as<int64_t>("min"));
@@ -256,10 +200,10 @@ void HSVDetector::configure(std::string config_file, std::string key) {
                 }
             }
 
-            if (hsv_config.contains("hsv_tune")) {
-                if (*hsv_config.get_as<bool>("hsv_tune")) {
+            if (this_config.contains("tune")) {
+                if (*this_config.get_as<bool>("tune")) {
                     tuning_on = true;
-                    createSliders();
+                    createTuningWindows();
                 }
             }
 
@@ -272,32 +216,57 @@ void HSVDetector::configure(std::string config_file, std::string key) {
     }
 }
 
-void HSVDetector::addFrameSink(std::string frame_sink_name) {
-    frame_sink.set_name(frame_sink_name);
-    frame_sink_used = true;
+void HSVDetector::tune() {
+
+    if (tuning_on) {
+        if (!tuning_windows_created) {
+            createTuningWindows();
+        }
+        cv::imshow(tuning_image_title, threshold_image);
+        cv::waitKey(1);
+    } else if (!tuning_on && tuning_windows_created) {
+        // Destroy the tuning windows
+        cv::destroyWindow(tuning_image_title);
+        cv::destroyWindow(slider_title);
+        tuning_windows_created = false;
+    }
 }
 
-void HSVDetector::set_erode_size(int _erode_px) {
+void HSVDetector::createTuningWindows() {
 
-    if (_erode_px > 0) {
+    // Create window for sliders
+    cv::namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
+
+    // Create sliders and insert them into window
+    cv::createTrackbar("H_MIN", slider_title, &h_min, 256); 
+    cv::createTrackbar("H_MAX", slider_title, &h_max, 256); 
+    cv::createTrackbar("S_MIN", slider_title, &s_min, 256); 
+    cv::createTrackbar("S_MAX", slider_title, &s_max, 256); 
+    cv::createTrackbar("V_MIN", slider_title, &v_min, 256); 
+    cv::createTrackbar("V_MAX", slider_title, &v_max, 256); 
+    cv::createTrackbar("ERODE", slider_title, &erode_px, 50, &HSVDetector::erodeSliderChangedCallback, this);
+    cv::createTrackbar("DILATE", slider_title, &dilate_px, 50, &HSVDetector::dilateSliderChangedCallback, this);
+    
+    tuning_windows_created = true;
+}
+
+void HSVDetector::set_erode_size(int value) {
+
+    if (value > 0) {
         erode_on = true;
-        erode_px = _erode_px;
-        erode_element = getStructuringElement(MORPH_RECT, cv::Size(erode_px, erode_px));
+        erode_px = value;
+        erode_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(erode_px, erode_px));
     } else {
         erode_on = false;
     }
 }
 
-void HSVDetector::set_dilate_size(int _dilate_px) {
-    if (_dilate_px > 0) {
+void HSVDetector::set_dilate_size(int value) {
+    if (value > 0) {
         dilate_on = true;
-        dilate_px = _dilate_px;
-        dilate_element = getStructuringElement(MORPH_RECT, cv::Size(dilate_px, dilate_px));
+        dilate_px = value;
+        dilate_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(dilate_px, dilate_px));
     } else {
         dilate_on = false;
     }
-}
-
-void HSVDetector::stop() {
-    image_source.notifySelf();
 }

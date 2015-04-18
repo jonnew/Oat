@@ -47,8 +47,7 @@ void run(CameraControl* cc, std::string name) {
 void printUsage(po::options_description options) {
     std::cout << "Usage: camserv_ge [OPTIONS]\n";
     std::cout << "   or: camserv_ge CAMERA SINK [CONFIGURATION]\n";
-    std::cout << "Serve images captured by the camera to SINK\n";
-    std::cout <<  "\n";
+    std::cout << "Serve images captured by the camera to SINK\n\n";
     std::cout <<  "CAMERA\n";
     std::cout <<  "  \'wcam\': Onboard or USB webcam.\n";
     std::cout <<  "  \'gige\': Point Grey GigE camera.\n\n";

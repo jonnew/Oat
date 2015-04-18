@@ -20,25 +20,68 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
+#include "../../lib/cpptoml/cpptoml.h"
 
 DifferenceDetector::DifferenceDetector(std::string image_source_name, std::string position_sink_name) :
-  image_source(image_source_name)
-, position_sink(position_sink_name)
-, last_image_set(false)
-, slider_title(position_sink_name + "_sliders") { }
-
-DifferenceDetector::DifferenceDetector(const DifferenceDetector& orig) {
-}
-
-DifferenceDetector::~DifferenceDetector() {
+  Detector(image_source_name, position_sink_name)
+, last_image_set(false) { 
+    
+    set_blur_size(2);
 }
 
 void DifferenceDetector::servePosition() {
     position_sink.set_value(object_position);
 }
 
-
 void DifferenceDetector::findObject() {
+
+    this_image = image_source.get_value().clone();
+    applyThreshold();
+    siftBlobs();
+    tune();  
+}
+
+void DifferenceDetector::configure(std::string file_name, std::string key) {
+
+    cpptoml::table config;
+
+    try {
+        config = cpptoml::parse_file(file_name);
+    } catch (const cpptoml::parse_exception& e) {
+        std::cerr << "Failed to parse " << file_name << ": " << e.what() << std::endl;
+    }
+
+    try {
+        // See if a camera configuration was provided
+        if (config.contains(key)) {
+
+            auto this_config = *config.get_table(key);
+
+            if (this_config.contains("blur")) {
+                set_blur_size((int) (*this_config.get_as<int64_t>("blur")));
+            }
+
+            if (this_config.contains("diff_threshold")) {
+                difference_intensity_threshold = (int) (*this_config.get_as<int64_t>("diff_threshold"));
+            }
+
+            if (this_config.contains("tune")) {
+                if (*this_config.get_as<bool>("tune")) {
+                    tuning_on = true;
+                    createTuningWindows();
+                } 
+            }
+
+        } else {
+            std::cerr << "No DifferenceDetector configuration named \"" + key + "\" was provided. Exiting." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
+}
+
+void DifferenceDetector::siftBlobs() {
 
     cv::Mat thresh_cpy = threshold_image.clone();
     std::vector< std::vector < cv::Point > > contours;
@@ -47,7 +90,7 @@ void DifferenceDetector::findObject() {
     //these two vectors needed for output of findContours
     //find contours of filtered image using openCV findContours function
     //findContours(temp,contours,hierarchy,CV_RETR_CCOMP,CV_CHAIN_APPROX_SIMPLE );// retrieves all contours
-    cv::findContours(thresh_cpy, contours, hierarchy, cv::CV_RETR_EXTERNAL, cv::CV_CHAIN_APPROX_SIMPLE); // retrieves external contours
+    cv::findContours(thresh_cpy, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE); // retrieves external contours
 
     //if contours vector is not empty, we have found some objects
     if (contours.size() > 0) {
@@ -68,38 +111,74 @@ void DifferenceDetector::findObject() {
         cv::Rect objectBoundingRectangle = cv::boundingRect(largestContourVec.at(0));
         object_position.position.x = objectBoundingRectangle.x + 0.5 * objectBoundingRectangle.width;
         object_position.position.y = objectBoundingRectangle.y + 0.5 * objectBoundingRectangle.height;
+        
+        if (tuning_on) {
+            cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
+            cv::rectangle( threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
+        }
     }
 }
 
-void DifferenceDetector::thresholdImage() {
+void DifferenceDetector::applyThreshold() {
 
-    cv::Mat this_image = image_source.get_value().clone();
-    
     if (last_image_set){
         cv::cvtColor(this_image, this_image, cv::COLOR_BGR2GRAY);
         cv::absdiff(this_image, last_image, threshold_image);
-        cv::threshold(threshold_image, threshold_image, threshold_level, 255, cv::THRESH_BINARY);
-        cv::blur(threshold_image, threshold_image, cv::Size(blur_size, blur_size));
-        cv::threshold(threshold_image, threshold_image, threshold_level, 255, cv::THRESH_BINARY);
-    }
-    
-    // Get a copy of the last image
-    last_image = this_image.clone();
-    last_image_set = true;
+        cv::threshold(threshold_image, threshold_image, difference_intensity_threshold, 255, cv::THRESH_BINARY);
+        if (blur_on){
+            cv::blur(threshold_image, threshold_image, blur_size);
+        }
+        cv::threshold(threshold_image, threshold_image, difference_intensity_threshold, 255, cv::THRESH_BINARY);
+        last_image = this_image.clone(); // Get a copy of the last image
+    } else {
+        threshold_image = this_image.clone();
+        cv::cvtColor(threshold_image, threshold_image, cv::COLOR_BGR2GRAY);
+        last_image = this_image.clone();
+        cv::cvtColor(last_image, last_image, cv::COLOR_BGR2GRAY);
+        last_image_set = true;
+    }    
 }
 
+void DifferenceDetector::tune() {
 
-void DifferenceDetector::createSliders() {
+    if (tuning_on) {
+        if (!tuning_windows_created) {
+            createTuningWindows();
+        }
+        cv::imshow(tuning_image_title, threshold_image);
+        cv::waitKey(1);
+        
+    } else if (!tuning_on && tuning_windows_created) {
+        // Destroy the tuning windows
+        cv::destroyWindow(tuning_image_title);
+        cv::destroyWindow(slider_title);
+        tuning_windows_created = false;
+    }
+}
+
+void DifferenceDetector::createTuningWindows() {
     
     // Create window for sliders
-    namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
+    cv::namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
 
     // Create sliders and insert them into window
-    createTrackbar("THRESH", slider_title, &threshold_level, 256); 
-    createTrackbar("BLUR", slider_title, &blur_size, 50, &DifferenceDetector::blurSliderChangedCallback, this);
+    cv::createTrackbar("THRESH", slider_title, &difference_intensity_threshold, 256); 
+    cv::createTrackbar("BLUR", slider_title, &blur_size.height, 50, &DifferenceDetector::blurSliderChangedCallback, this);
+    
+    tuning_windows_created = true;
 }
 
 void DifferenceDetector::blurSliderChangedCallback(int value, void* object) {
     DifferenceDetector* diff_detector = (DifferenceDetector*) object;
     diff_detector->set_blur_size(value);
+}
+
+void DifferenceDetector::set_blur_size(int value) {
+
+    if (value > 0) {
+        blur_on = true;
+        blur_size = cv::Size(value, value);
+    } else {
+        blur_on = false;
+    }
 }

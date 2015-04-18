@@ -1,0 +1,17 @@
+# Example Detector configuration file.
+
+# DifferenceDetector for grey-scale detection.
+[diff_detector]
+blur = 2 			# pixels
+diff_threshold = 20             # pixels
+tune = true                     # provide sliders for tuning parameters
+
+
+# HSVDetector for Color detection.
+[blue_detector]
+erode = 2 			# pixels
+dilate = 8 			# pixels
+tune = true                     # provide sliders for tuning parameters
+h_thresholds = {min = 106, max = 126}
+s_thresholds = {min = 69, max = 256}
+v_thresholds = {min = 180, max = 256}
