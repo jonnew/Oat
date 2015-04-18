@@ -141,6 +141,8 @@ void DifferenceDetector::applyThreshold() {
 
 void DifferenceDetector::tune() {
 
+    tuning_mutex.lock();
+    
     if (tuning_on) {
         if (!tuning_windows_created) {
             createTuningWindows();
@@ -154,12 +156,17 @@ void DifferenceDetector::tune() {
         cv::destroyWindow(slider_title);
         tuning_windows_created = false;
     }
+    
+    tuning_mutex.unlock();
 }
 
 void DifferenceDetector::createTuningWindows() {
     
+    //cv::startWindowThread();
+    
     // Create window for sliders
-    cv::namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
+    cv::namedWindow(tuning_image_title);
+    cv::namedWindow(slider_title, cv::WINDOW_NORMAL);
 
     // Create sliders and insert them into window
     cv::createTrackbar("THRESH", slider_title, &difference_intensity_threshold, 256); 

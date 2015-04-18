@@ -19,6 +19,7 @@
 
 #include <string>
 #include <opencv2/opencv.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "../../lib/shmem/Position2D.h"
 #include "../../lib/shmem/MatClient.h"
@@ -54,8 +55,8 @@ public:
     // resources to exit
     void stop(void) { image_source.notifySelf(); }
     
-    void set_tune_mode(bool value) { tuning_on = value; }
-    bool get_tune_mode(void) { return tuning_on; }
+    void set_tune_mode(bool value) { tuning_mutex.lock(); tuning_on = value; tuning_mutex.unlock();}
+    bool get_tune_mode(void) { tuning_mutex.lock(); return tuning_on; tuning_mutex.unlock();}
     
 protected:
     
@@ -63,7 +64,9 @@ protected:
     virtual void siftBlobs(void) = 0;
     
     // Detectors must allow manual tuning
-    bool tuning_on, tuning_windows_created;
+    boost::mutex tuning_mutex; // Sync IO and processing thread, which can both manipulate the tuning state
+    bool tuning_on; // This is a shared resource and must be synchronized
+    bool tuning_windows_created;
     const std::string tuning_image_title, slider_title;
     cv::Mat tune_image;
     virtual void tune(void) = 0;

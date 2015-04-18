@@ -20,7 +20,6 @@
 
 #include <signal.h>
 #include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
@@ -28,22 +27,9 @@ namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
 bool running = true;
-boost::mutex io_mutex; // Sync IO and processing threads
 
 void term(int) {
     done = 1;
-}
-
-// Processing thread
-void run(Detector* detector) {
-
-    while (!done) {
-        {
-            boost::unique_lock<boost::mutex> scoped_lock(io_mutex);
-            detector->findObject();
-            detector->servePosition();
-        }
-    }
 }
 
 void printUsage(po::options_description options) {
@@ -51,28 +37,35 @@ void printUsage(po::options_description options) {
     std::cout << "   or: detector TYPE SOURCE SINK [CONFIGURATION]\n";
     std::cout << "Perform TYPE object detection on images from SMServer<SharedCVMatHeader> SOURCE.\n";
     std::cout << "Publish detected object positions to a SMSserver<Position2D> SINK.\n";
-    std::cout <<  "TYPE\n";
-    std::cout <<  "  0: Difference detector (grey-scale)\n";
-    std::cout <<  "  1: HSV detector (color)\n\n";
+    std::cout << "TYPE\n";
+    std::cout << "  0: Difference detector (grey-scale)\n";
+    std::cout << "  1: HSV detector (color)\n\n";
     std::cout << options << "\n";
+}
+
+// Processing thread
+void run(Detector* detector) {
+
+    while (!done) {
+        detector->findObject();
+        detector->servePosition();
+    }
 }
 
 // IO thread
 int main(int argc, char *argv[]) {
 
     signal(SIGINT, term);
-    
+
     // Base options
     po::options_description options("OPTIONS");
-    
+
     std::string source;
     std::string sink;
     int type;
-    //std::string frame_sink;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
-    //bool frame_sink_used = false;
 
     try {
 
@@ -89,10 +82,10 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("type,t", po::value<int>(&type), "Detector type.\n\n" 
-                 "Values:\n"
-                 "  0: Difference detector (grey-scale)\n"
-                 "  1: HSV detector (color)")
+                ("type,t", po::value<int>(&type), "Detector type.\n\n"
+                "Values:\n"
+                "  0: Difference detector (grey-scale)\n"
+                "  1: HSV detector (color)")
                 ("source", po::value<std::string>(&source),
                 "The name of the SOURCE that supplies images on which hsv-filter object detection will be performed."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
@@ -106,10 +99,10 @@ int main(int argc, char *argv[]) {
         positional_options.add("sink", 1);
 
         po::options_description visible_options("VISIBLE OPTIONS");
-        visible_options.add(options).add(config); 
+        visible_options.add(options).add(config);
 
         po::options_description all_options("ALL OPTIONS");
-        all_options.add(options).add(config).add(hidden); 
+        all_options.add(options).add(config).add(hidden);
 
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
@@ -131,7 +124,7 @@ int main(int argc, char *argv[]) {
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
-        
+
         if (!variable_map.count("type")) {
             printUsage(options);
             std::cout << "Error: a TYPE must be specified. Exiting.\n";
@@ -143,31 +136,31 @@ int main(int argc, char *argv[]) {
             std::cout << "Error: a SOURCE must be specified. Exiting.\n";
             return -1;
         }
-        
+
         if (!variable_map.count("sink")) {
             printUsage(options);
             std::cout << "Error: a SINK name must be specified. Exiting.\n";
             return -1;
         }
-       
+
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
             std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
-           return -1;
+            return -1;
         } else if (variable_map.count("config-file")) {
             config_used = true;
         }
-        
+
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     } catch (...) {
         std::cerr << "Exception of unknown type!" << std::endl;
     }
-    
+
     // Create the specified TYPE of detector
-    Detector* detector; 
+    Detector* detector;
     switch (type) {
         case 0:
         {
@@ -178,15 +171,15 @@ int main(int argc, char *argv[]) {
         {
             detector = new HSVDetector(source, sink);
             break;
-        }  
-        default: 
+        }
+        default:
         {
             printUsage(options);
             std::cout << "Error: invalid TYPE specified. Exiting.\n";
             return -1;
-        }   
+        }
     }
-    
+
     if (config_used)
         detector->configure(config_file, config_key);
 
@@ -195,47 +188,49 @@ int main(int argc, char *argv[]) {
     boost::thread_group thread_group;
     thread_group.create_thread(boost::bind(&run, detector));
     sleep(1);
-    
+
     std::cout << "Detector has begun listening to source \"" + source + "\".\n";
-    std::cout << "Detector has begun steaming to sink \"" + sink + "\".\n";
-    std::cout << "COMMANDS:\n" ;
-    std::cout << "  t: Toggle tuning mode.\n";
+    std::cout << "Detector has begun steaming to sink \"" + sink + "\".\n\n";
+    std::cout << "COMMANDS:\n";
+    std::cout << "  t: Enable tuning mode.\n";
+    std::cout << "  T: Disable tuning mode.\n";
     std::cout << "  x: Exit.\n";
-    
+
     while (!done) {
-        
+
         char user_input;
         std::cin >> user_input;
 
-        {
-            // Wait until you have access to the io_mutex
-            boost::unique_lock<boost::mutex> scoped_lock(io_mutex);
-            
-            switch (user_input) {
+        switch (user_input) {
 
-                case 't':
-                {
-                    detector->set_tune_mode(!detector->get_tune_mode());
-                    break;
-                }
-                case 'x':
-                {
-                    done = true;
-                    detector->stop();
-                    break;
-                }
-                default:
-                    std::cout << "Invalid command. Try again.\n";
-                    break;
+            case 't':
+            {
+                detector->set_tune_mode(true);
+                break;
             }
+            case 'T':
+            {
+                detector->set_tune_mode(false);
+                break;
+            }
+            case 'x':
+            {
+                done = true;
+                detector->stop();
+                break;
+            }
+            default:
+                std::cout << "Invalid command. Try again.\n";
+                break;
         }
+
     }
-    
+
     std::cout << "Detector is exiting.\n";
-    
+
     // TODO: Exit gracefully and ensure all shared resources are cleaned up!
     thread_group.join_all();
-    
+
     // Free heap memory allocated to detector 
     delete detector;
 
