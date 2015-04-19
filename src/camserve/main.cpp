@@ -21,7 +21,7 @@
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
-#include "CameraControl.h"
+#include "PGGigECam.h"
 #include "WebCam.h"
 #include "FileReader.h"
 
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
         }
         case 'b':
         {
-            camera = new CameraControl(sink);
+            camera = new PGGigECam(sink);
             break;
         }
         case 'c':

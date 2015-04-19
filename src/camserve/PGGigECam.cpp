@@ -14,7 +14,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "CameraControl.h"
+#include "PGGigECam.h"
 
 #include <string>
 #include <stdlib.h> 
@@ -35,7 +35,7 @@
 
 using namespace FlyCapture2;
 
-CameraControl::CameraControl(std::string frame_sink_name) : 
+PGGigECam::PGGigECam(std::string frame_sink_name) : 
   Camera(frame_sink_name)
 , num_cameras(0)
 , index(0)
@@ -53,7 +53,7 @@ CameraControl::CameraControl(std::string frame_sink_name) :
 /**
  * Set default camera configuration
  */
-void CameraControl::configure() {
+void PGGigECam::configure() {
 
     name = "Default";
     setCameraIndex(0);
@@ -73,7 +73,7 @@ void CameraControl::configure() {
  * @param config_file The configuration file.
  * @param key The configuration key specifying options for this instance.
  */
-void CameraControl::configure(std::string config_file, std::string key) {
+void PGGigECam::configure(std::string config_file, std::string key) {
 
     cpptoml::table config;
 
@@ -170,7 +170,7 @@ void CameraControl::configure(std::string config_file, std::string key) {
 
 }
 
-int CameraControl::setCameraIndex(unsigned int requestedIdx) {
+int PGGigECam::setCameraIndex(unsigned int requestedIdx) {
 
     // Find the number of cameras on the bus
     findNumCameras();
@@ -189,7 +189,7 @@ int CameraControl::setCameraIndex(unsigned int requestedIdx) {
     return 0;
 }
 
-int CameraControl::connectToCamera(void) {
+int PGGigECam::connectToCamera(void) {
 
     std::cout << "Connecting to camera: " << index << std::endl;
 
@@ -214,7 +214,7 @@ int CameraControl::connectToCamera(void) {
     return 0;
 }
 
-int CameraControl::setupStreamChannels() {
+int PGGigECam::setupStreamChannels() {
 
     unsigned int numStreamChannels = 0;
     Error error = camera.GetNumStreamChannels(&numStreamChannels);
@@ -255,7 +255,7 @@ int CameraControl::setupStreamChannels() {
     return 0;
 }
 
-int CameraControl::setupShutter(bool is_auto) {
+int PGGigECam::setupShutter(bool is_auto) {
 
     std::cout << "Setting up shutter..." << std::endl;
 
@@ -286,13 +286,13 @@ int CameraControl::setupShutter(bool is_auto) {
     return 0;
 }
 
-int CameraControl::setupShutter(float shutter_ms_in) {
+int PGGigECam::setupShutter(float shutter_ms_in) {
 
     shutter_ms = shutter_ms_in;
     setupShutter(false);
 }
 
-int CameraControl::setupGain(bool is_auto) {
+int PGGigECam::setupGain(bool is_auto) {
 
     std::cout << "Setting camera gain..." << std::endl;
 
@@ -323,14 +323,14 @@ int CameraControl::setupGain(bool is_auto) {
     return 0;
 }
 
-int CameraControl::setupGain(float gain_dB_in) {
+int PGGigECam::setupGain(float gain_dB_in) {
 
     gain_dB = gain_dB_in;
     setupGain(false);
 
 }
 
-int CameraControl::setupExposure(bool is_auto) {
+int PGGigECam::setupExposure(bool is_auto) {
 
     std::cout << "Setting up exposure..." << std::endl;
 
@@ -364,13 +364,13 @@ int CameraControl::setupExposure(bool is_auto) {
     return 0;
 }
 
-int CameraControl::setupExposure(float exposure_EV_in) {
+int PGGigECam::setupExposure(float exposure_EV_in) {
 
     exposure_EV = exposure_EV_in;
     setupExposure(false);
 }
 
-int CameraControl::setupWhiteBalance(bool is_on) {
+int PGGigECam::setupWhiteBalance(bool is_on) {
 
     std::cout << "Setting camera white balance..." << std::endl;
 
@@ -405,7 +405,7 @@ int CameraControl::setupWhiteBalance(bool is_on) {
     return 0;
 }
 
-int CameraControl::setupWhiteBalance(int white_bal_red_in, int white_bal_blue_in) {
+int PGGigECam::setupWhiteBalance(int white_bal_red_in, int white_bal_blue_in) {
 
     white_bal_red = white_bal_red_in;
     white_bal_blue = white_bal_blue_in;
@@ -418,7 +418,7 @@ int CameraControl::setupWhiteBalance(int white_bal_red_in, int white_bal_blue_in
  * 
  * @return 0 if successful.
  */
-int CameraControl::setupDefaultImageFormat() {
+int PGGigECam::setupDefaultImageFormat() {
 
     std::cout << "Querying GigE image setting information..." << std::endl;
 
@@ -457,7 +457,7 @@ int CameraControl::setupDefaultImageFormat() {
  * Custom image setup. Image uses the internally specified ROI settings.
  * @return 
  */
-int CameraControl::setupImageFormat() {
+int PGGigECam::setupImageFormat() {
 
     std::cout << "Querying GigE image setting information..." << std::endl;
 
@@ -515,7 +515,7 @@ int CameraControl::setupImageFormat() {
  * 
  * @return 0 if successful.
  */
-int CameraControl::turnCameraOn() {
+int PGGigECam::turnCameraOn() {
 
     // Power on the camera
     const unsigned int k_cameraPower = 0x610;
@@ -558,7 +558,7 @@ int CameraControl::turnCameraOn() {
     return 0;
 }
 
-int CameraControl::setupTrigger(int source, int polarity) {
+int PGGigECam::setupTrigger(int source, int polarity) {
 
     // Get current trigger settings
     Error error = camera.GetTriggerModeInfo(&trigger_mode_info);
@@ -614,7 +614,7 @@ int CameraControl::setupTrigger(int source, int polarity) {
 
 }
 
-void CameraControl::grabImage() {
+void PGGigECam::grabImage() {
 
     // Get the image
     if (!aquisition_started) {
@@ -634,7 +634,7 @@ void CameraControl::grabImage() {
     }
 }
 
-cv::Mat CameraControl::imageToMat() {
+cv::Mat PGGigECam::imageToMat() {
 
     // convert to rgb
     raw_image.Convert(FlyCapture2::PIXEL_FORMAT_BGR, &rgb_image);
@@ -645,13 +645,13 @@ cv::Mat CameraControl::imageToMat() {
 
 }
 
-void CameraControl::grabMat() {
+void PGGigECam::grabMat() {
 
     grabImage();
     cvmat_image = imageToMat();
 }
 
-void CameraControl::serveMat() {
+void PGGigECam::serveMat() {
 
     // Write frame to shared memory and notify all client processes
     // that a new frame is available. Do not block, though.
@@ -660,7 +660,7 @@ void CameraControl::serveMat() {
 
 // PRIVATE
 
-int CameraControl::findNumCameras(void) {
+int PGGigECam::findNumCameras(void) {
 
     Error error;
     BusManager busMgr;
@@ -674,14 +674,14 @@ int CameraControl::findNumCameras(void) {
     return 0;
 }
 
-void CameraControl::printError(Error error) {
+void PGGigECam::printError(Error error) {
     error.PrintErrorTrace();
     if (!camera.IsConnected()) {
         std::cerr << "Camera must be connected before getting its info." << std::endl;
     }
 }
 
-bool CameraControl::pollForTriggerReady() {
+bool PGGigECam::pollForTriggerReady() {
 
     const unsigned int k_softwareTrigger = 0x62C;
     Error error;
@@ -699,7 +699,7 @@ bool CameraControl::pollForTriggerReady() {
     return true;
 }
 
-int CameraControl::printBusInfo(void) {
+int PGGigECam::printBusInfo(void) {
 
     std::cout << std::endl;
     std::cout << "*** BUS INFORMATION ***" << std::endl;
@@ -707,7 +707,7 @@ int CameraControl::printBusInfo(void) {
     return 0;
 }
 
-int CameraControl::printCameraInfo(void) {
+int PGGigECam::printCameraInfo(void) {
 
     Error error = camera.GetCameraInfo(&camera_info);
     if (error != PGRERROR_OK) {
@@ -766,7 +766,7 @@ int CameraControl::printCameraInfo(void) {
     return 0;
 }
 
-void CameraControl::printStreamChannelInfo(GigEStreamChannel *pStreamChannel) {
+void PGGigECam::printStreamChannelInfo(GigEStreamChannel *pStreamChannel) {
     //char ipAddress[32];
     std::ostringstream ipAddress;
     ipAddress << (unsigned int) pStreamChannel->destinationIpAddress.octets[0] << "." <<

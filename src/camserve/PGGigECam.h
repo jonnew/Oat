@@ -24,9 +24,9 @@
 
 #include "Camera.h"
 
-class CameraControl : public Camera {
+class PGGigECam : public Camera {
 public:
-    CameraControl(std::string frame_sink_name);
+    PGGigECam(std::string frame_sink_name);
 
     // Use a configuration file to specify parameters
     void configure(void); // Default options
