@@ -42,6 +42,7 @@ private:
     
     std::string name;
 	std::deque<cv::Mat> mat_buffer;
+	std::thread server_thread;
     shmem::SharedCVMatHeader* shared_mat_header;
     bool shared_object_created;
     void* shared_mat_data_ptr;

@@ -17,6 +17,7 @@
 #include "MatServer.h"
 
 #include <deque>
+#include <thread>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include "SharedCVMatHeader.h"
 #include "SharedCVMatHeader.cpp" // TODO: Why???
@@ -28,16 +29,21 @@ MatServer::MatServer(const std::string server_name) :
 , shmem_name(name + "_sh_mem")
 , shobj_name(name + "_sh_obj")
 , shared_object_created(false)
-{ }
+{ 
+	// Start the server thread
+	server_thread = std::thread(&MatServer::syncServeFromBuffer, this, this);	
+}
 
 MatServer::MatServer(const MatServer& orig) { }
 
 MatServer::~MatServer() {
 
+	// Jon the server thread back with the main one
+	server_thread.join();
+		
     // Remove_shared_memory on object destruction
     shared_mat_header->new_data_condition.notify_all();
     shared_memory_object::remove(shmem_name.c_str());
-    //std::cout << "The server named \"" + name + "\" was destructed.\n";
 }
 
 void MatServer::createSharedMat(cv::Mat model) {
@@ -64,7 +70,6 @@ void MatServer::createSharedMat(cv::Mat model) {
     shared_mat_header->buildHeader(shared_memory, model);
     
     shared_object_created = true;
-
 }
 
 void MatServer::set_shared_mat(cv::Mat mat) {
