@@ -20,7 +20,7 @@
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_condition_any.hpp>
 
-#include "Position2D.h"
+#include "Position.h"
 
 
 namespace shmem {
@@ -47,7 +47,7 @@ namespace shmem {
 }
 
 // Explicit instantiations
-template class shmem::SyncSharedMemoryObject<shmem::Position2D>;
+template class shmem::SyncSharedMemoryObject<shmem::Position>;
 
 
 #endif	/* SYNCSHAREDMEMORYOBJECT_H */

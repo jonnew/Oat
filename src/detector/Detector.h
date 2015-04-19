@@ -73,13 +73,13 @@ protected:
     virtual void createTuningWindows(void) = 0;
     
     // The detected object position
-    shmem::Position2D object_position;
+    shmem::Position object_position;
     
     // The image source (Client side)
     MatClient image_source;
     
     // The detected object position destination (Server side)
-    shmem::SMServer<shmem::Position2D> position_sink;
+    shmem::SMServer<shmem::Position> position_sink;
     
 };
 

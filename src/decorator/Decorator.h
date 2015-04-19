@@ -40,13 +40,13 @@ private:
     cv::Mat image;
     
     // Current position
-    shmem::Position2D position;
+    shmem::Position position;
     
     // Mat client object for receiving frames
     MatClient frame_source;
     
     // Position client for getting current position info
-    shmem::SMClient<shmem::Position2D> position_source;
+    shmem::SMClient<shmem::Position> position_source;
     
     // Mat server for sending decorated frames
     MatServer frame_sink;

@@ -81,7 +81,7 @@ private:
 
     // Object detection
     double object_area;
-    shmem::Position2D object_position;
+    shmem::Position object_position;
 
     double min_object_area;
     double max_object_area;

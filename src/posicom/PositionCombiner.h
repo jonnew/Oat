@@ -21,7 +21,7 @@
 
 #include "../../lib/shmem/SMServer.h"
 #include "../../lib/shmem/SMClient.h"
-#include "../../lib/shmem/Position2D.h"
+#include "../../lib/shmem/Position.h"
 
 class PositionCombiner {
     
@@ -40,13 +40,13 @@ class PositionCombiner {
         std::string name;
         
         // Anterior and posterior position measures
-        shmem::SMClient<shmem::Position2D> anterior_source;
-        shmem::SMClient<shmem::Position2D> posterior_source;
+        shmem::SMClient<shmem::Position> anterior_source;
+        shmem::SMClient<shmem::Position> posterior_source;
         
         // Processed position server
-        shmem::SMServer<shmem::Position2D> position_sink;
+        shmem::SMServer<shmem::Position> position_sink;
         
-        shmem::Position2D processed_position;  
+        shmem::Position processed_position;  
 };
 
 #endif	// POSITIONCOMBINER_H

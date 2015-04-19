@@ -29,7 +29,7 @@ private:
     
     // Object detection
     double object_area;
-    shmem::Position2D object_position;
+    shmem::Position object_position;
     
     // Detector parameters
     int difference_intensity_threshold;

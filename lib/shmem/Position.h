@@ -21,22 +21,22 @@
 
 namespace shmem {
 
-    struct Position2D {
+    struct Position {
 
         bool position_valid = false;
-        cv::Point2f position; // The 2D position measure
+        cv::Point3f position;
         
         bool anterior_valid = false;
-        cv::Point2f anterior;
+        cv::Point3f anterior;
         
         bool posterior_valid = false;
-        cv::Point2f posterior;
+        cv::Point3f posterior;
 
         bool velocity_valid = false;
-        cv::Point2f velocity; 
+        cv::Point3f velocity; 
 
         bool head_direction_valid = false;
-        cv::Point2f head_direction; 
+        cv::Point3f head_direction; 
     };
 }
 

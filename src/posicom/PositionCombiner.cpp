@@ -38,8 +38,8 @@ void PositionCombiner::calculateGeometricMean() {
     // If position is valid, write it down
     // otherwise, we simply serve an invalid position for
     // a filter to deal with
-    shmem::Position2D anterior = anterior_source.get_value();
-    shmem::Position2D posterior = posterior_source.get_value();
+    shmem::Position anterior = anterior_source.get_value();
+    shmem::Position posterior = posterior_source.get_value();
     
     if (anterior.position_valid) {
         
