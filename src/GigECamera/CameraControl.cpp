@@ -35,27 +35,27 @@
 
 using namespace FlyCapture2;
 
-CameraControl::CameraControl(std::string name) : frame_sink(name) {
+CameraControl::CameraControl(std::string frame_sink_name) : 
+  Camera(frame_sink_name)
+, num_cameras(0)
+, index(0)
+, shutter_ms(0)
+, gain_dB(0)
+, exposure_EV(0)
+, aquisition_started(false) {
 
     // Initialize the frame size
     frame_size = cv::Size(728, 728);
     frame_offset = cv::Size(0, 0);
 
-    // Start with 0 cameras on bus
-    num_cameras = 0;
-    index = 0;
-    shutter_ms = 0;
-    gain_dB = 0;
-    exposure_EV = 0;
-    aquisition_started = false;
 }
 
 /**
  * Set default camera configuration
  */
 void CameraControl::configure() {
-    
-    camera_name = "Default";
+
+    name = "Default";
     setCameraIndex(0);
     connectToCamera();
     turnCameraOn();
@@ -91,7 +91,7 @@ void CameraControl::configure(std::string config_file, std::string key) {
         if (config.contains(key)) {
 
             auto camera_config = *config.get_table(key);
-            camera_name = key;
+            name = key;
 
             // Set the camera index
             if (camera_config.contains("index"))
@@ -632,9 +632,6 @@ void CameraControl::grabImage() {
         printError(error);
         std::cout << "WARNING: capture error." << std::endl;
     }
-
-    //std::cout << "Grabbed imag.\n" << std::endl;
-
 }
 
 cv::Mat CameraControl::imageToMat() {
@@ -648,20 +645,17 @@ cv::Mat CameraControl::imageToMat() {
 
 }
 
-void CameraControl::grabMat(cv::Mat& mat) {
+void CameraControl::grabMat() {
 
     grabImage();
-    mat = imageToMat();
+    cvmat_image = imageToMat();
 }
 
 void CameraControl::serveMat() {
 
-    cv::Mat mat;
-    grabMat(mat);
-
     // Write frame to shared memory and notify all client processes
     // that a new frame is available. Do not block, though.
-    frame_sink.set_shared_mat(mat);
+    frame_sink.set_shared_mat(cvmat_image);
 }
 
 // PRIVATE

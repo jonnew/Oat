@@ -14,37 +14,41 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef WEBCAM_H
-#define WEBCAM_H
 
-#include <string>
-
-#include <opencv2/core/mat.hpp>
-#include <opencv2/videoio.hpp> // TODO: correct header...
-
-#include "Camera.h"
-#include "../../lib/shmem/SharedCVMatHeader.h"
 #include "../../lib/shmem/MatServer.h"
 
-class WebCam : public Camera {
+#ifndef CAMERA_H
+#define	CAMERA_H
+
+/**
+ * Abstract base class to be implemented by any Camera Server within the Simple
+ * Tracker project.
+ * @param image_sink_name Image SINK name.
+ */
+class Camera {
 public:
-    WebCam(std::string frame_sink_name);
-
-    // Implement Camera interface
-    void configure(void); 
-    void configure(std::string config_file, std::string key);
-    void grabMat(void);
-    void serveMat(void);
-
-private:
     
-    bool aquisition_started;
-
-    // The webcam object
-    cv::VideoCapture cv_camera;
-
-    // Currently acquired frame
-    cv::Mat current_frame;
-
+    Camera(std::string image_sink_name) : 
+      name(image_sink_name)
+    , frame_sink(image_sink_name) { }
+    
+    // Cameras must be able to serve cv::Mat frames
+    virtual void serveMat(void) = 0;
+    
+    // Cameras must be able to obtain a cv::Mat from some source (physical camera, file, etc)
+    virtual void grabMat(void) = 0;
+    
+    // Cameras must be configurable via file
+    virtual void configure(void) = 0;
+    virtual void configure(std::string file_name, std::string key) = 0;
+    
+protected:
+    
+    // cv::Mat server for sending frames to shared memory
+    MatServer frame_sink;
+    std::string name;
+    
 };
-#endif //WEBCAM_H
+
+#endif	/* CAMERA_H */
+

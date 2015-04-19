@@ -12,6 +12,7 @@
                ╲                                      ╱          ╲
 	             ------------------------------------              -> Recorder    	
      In this case, Decorator must block until Detector provides a result. However, Camera _may_ have produce another image in the meantime causing the Detector result and the image used by the Decorator to be out of sync. I need to find an intellegent way to deal with this.
+- [ ] Start synchronization. The data processing chain should be initialized and waiting before the first image get sent.
 - [ ] Frame buffer?
 - [x] IPC method?
   - ~~UPD, TCP,~~ **shared memory**, ~~pipe?~~
@@ -19,6 +20,12 @@
 - [ ] General C++ coding practice
   - Pass by const ref whenever possible. Especially relevant when passing derived objects to prevent slicing.
   - const member properties can be initialized in the initialization list, rather than assigned in the constructor body. Take advantage.
+- [ ] Programs to implment
+  - Pure intensity based detector (now color conversion, just saturation on raw image)
+  - Position Filter (Kalman is first implementation)
+  - Recorder (Position and images? Viewer can also record?)
+
+
 
 ### Passing positional data to the client process 
 

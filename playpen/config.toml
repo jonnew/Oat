@@ -5,7 +5,7 @@
 # - Commented options revert to their default state, ususuall "off"
 # - Invalid parameters are ignored (TODO: with a warning)
 
-# Camera --------------------------------
+# Camera (gige) -------------------------
 
 [maze_cam]
 index = 0 								# Index of camera on the bus
@@ -13,10 +13,7 @@ exposure = -2.0							# EV
 shutter = 3 							# ms (ignored if exposure on)
 gain = 0 								# dB (ignored if exposure on)
 #white_bal = {red = 500, blue = 800}	# Defaults to "off"
-roi = {x_offset = 0,					# Regio of interest, pixels
-	   y_offset = 0,
-	   width = 728,
-	   height = 728}
+roi = {x_offset = 0, y_offset = 0, width = 728, height = 728} # Region of interest, pixels
 
 [maze_cam.trigger]						# If trigger not specified, free run
 on = true								# If false, free run
@@ -24,7 +21,12 @@ polarity = true							# Rising edge active
 mode = 14								# Overlapped Exposure/Readout Mode (see Camera manual)
 source = 0								# GPIO pin that trigger will be sent to
 
-# Blue HSV detector ---------------------
+# Camera (file) -------------------------
+
+[file_cam]
+frame_rate = 30 						# Hz
+
+# Detector (hsv, blue) ----------------
 
 [blue_hsv]
 erode = 0 								# Pixels
@@ -34,7 +36,7 @@ h_thresholds = {min = 106, max = 126}	# Hue pass band
 s_thresholds = {min = 237, max = 256}	# Saturation pass band
 v_thresholds = {min = 150, max = 256}	# Value pass band
 
-# Orange HSV detector--------------------
+# Detector (hsv, orange) ----------------
 
 [orange_hsv]
 erode = 2 								# Pixels
@@ -43,3 +45,11 @@ tune = true								# Provide sliders for tuning hsv thresholds
 h_thresholds = {min = 0, max = 32}		# Hue pass band band
 s_thresholds = {min = 230, max = 256}	# Saturation pass band
 v_thresholds = {min = 180, max = 256}	# Value pass band
+
+# Detector (difference) ----------------
+
+[diff_detector]
+blur = 2            					# pixels
+diff_threshold = 20             		# pixels
+tune = true                     		# provide sliders for tuning parameters
+

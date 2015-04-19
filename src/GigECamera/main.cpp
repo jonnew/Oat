@@ -14,7 +14,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "CameraControl.h"
 
 #include <unordered_map>
 #include <signal.h>
@@ -22,35 +21,37 @@
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
+#include "CameraControl.h"
+#include "WebCam.h"
+#include "FileReader.h"
+
 namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
-bool running = true;
+volatile bool running = true;
 
 void term(int) {
     done = 1;
 }
 
-void run(CameraControl* cc, std::string name) {
-
-    std::cout << "Camera named \"" + name + "\" has started.\n";
+void run(Camera* camera) {
 
     while (!done) { // !done
         if (running) {
-            cc->serveMat();
+            camera->grabMat();
+            camera->serveMat();
         }
     }
- 
-    std::cout << "Camera named \"" + name + "\" is exiting." << std::endl;
 }
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: camserv_ge [OPTIONS]\n";
-    std::cout << "   or: camserv_ge CAMERA SINK [CONFIGURATION]\n";
+    std::cout << "   or: camserv_ge TYPE SINK [CONFIGURATION]\n";
     std::cout << "Serve images captured by the camera to SINK\n\n";
-    std::cout <<  "CAMERA\n";
-    std::cout <<  "  \'wcam\': Onboard or USB webcam.\n";
-    std::cout <<  "  \'gige\': Point Grey GigE camera.\n\n";
+    std::cout << "TYPE\n";
+    std::cout << "  \'wcam\': Onboard or USB webcam.\n";
+    std::cout << "  \'gige\': Point Grey GigE camera.\n";
+    std::cout << "  \'file\': Stream video from file.\n\n";
     std::cout << options << "\n";
 }
 
@@ -62,14 +63,17 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, term);
 
     std::string sink;
-    std::string camera_code;
+    std::string type;
+    std::string video_file;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
+    po::options_description visible_options("VISIBLE OPTIONS");
 
-    std::unordered_map<std::string, int> camera_hash;
-    camera_hash.insert({"wcam", 0});
-    camera_hash.insert({"gige", 1});
+    std::unordered_map<std::string, char> type_hash;
+    type_hash["wcam"] = 'a';
+    type_hash["gige"] = 'b';
+    type_hash["file"] = 'c';
 
     try {
 
@@ -77,26 +81,28 @@ int main(int argc, char *argv[]) {
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
+
                 ;
 
         po::options_description config("CONFIGURATION");
         config.add_options()
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
                 ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
+                ("video-file,f", po::value<std::string>(&video_file),
+                "Path to video file if \'file\' is selected as the server TYPE.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-		("camera", po::value<std::string>(&camera_code), "Camera code.")
+                ("type", po::value<std::string>(&type), "Camera code.")
                 ("sink", po::value<std::string>(&sink),
                 "The name of the sink through which images collected by the camera will be served.\n")
                 ;
 
         po::positional_options_description positional_options;
-        positional_options.add("camera", 1);
-        positional_options.add("sink", 2);
+        positional_options.add("type", 1);
+        positional_options.add("sink", 1);
 
-        po::options_description visible_options("VISIBLE OPTIONS");
         visible_options.add(options).add(config);
 
         po::options_description all_options("ALL OPTIONS");
@@ -123,27 +129,33 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        if (!variable_map.count("camera")) {
+        if (!variable_map.count("type")) {
             printUsage(visible_options);
-            std::cout << "Error: a CAMERA must be specified. Exiting.\n";
+            std::cout << "Error: a TYPE must be specified. Exiting.\n";
             return -1;
-        } 
+        }
 
         if (!variable_map.count("sink")) {
             printUsage(visible_options);
             std::cout << "Error: a SINK must be specified. Exiting.\n";
             return -1;
-        } 
-       
+        }
+
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
             std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
-           return -1;
+            return -1;
         } else if (variable_map.count("config-file")) {
             config_used = true;
         }
-        
+
+        if (type.compare("file") == 0 && !variable_map.count("video-file")) {
+            printUsage(visible_options);
+            std::cout << "Error: when TYPE=file, a video-file path must be specified. Exiting.\n";
+            return -1;
+        }
+
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -151,47 +163,68 @@ int main(int argc, char *argv[]) {
     } catch (...) {
         std::cerr << "Exception of unknown type!" << std::endl;
     }
-    
-    CameraControl cc(sink); // TODO: CameraControl should be a class template that allows different camera types with common methods 
+
+    // Create the specified TYPE of detector
+    Camera* camera;
+    switch (type_hash[type]) {
+        case 'a':
+        {
+            camera = new WebCam(sink);
+            break;
+        }
+        case 'b':
+        {
+            camera = new CameraControl(sink);
+            break;
+        }
+        case 'c':
+        {
+            camera = new FileReader(video_file, sink);
+            break;
+        }
+        default:
+        {
+            printUsage(visible_options);
+            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            return -1;
+        }
+    }
+
     if (config_used)
-        cc.configure(config_file, config_key);
+        camera->configure(config_file, config_key);
     else
-        cc.configure();
-    
+        camera->configure();
+
+    std::cout << "Camera named \"" + sink + "\" has started.\n";
+    std::cout << "COMMANDS:\n";
+    std::cout << "  p: Pause/unpause.\n";
+    std::cout << "  x: Exit.\n";
+
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &cc, sink));
+    thread_group.create_thread(boost::bind(&run, camera));
     sleep(1);
-    
-    while (!done) {
-        int user_input;
-        std::cout << "Select an action:\n";
-        std::cout << " [1]: Pause/unpause\n";
-        std::cout << " [2]: Exit\n";
-        std::cout << ">> ";
 
+    while (!done) {
+        
+        char user_input;
         std::cin >> user_input;
 
         switch (user_input) {
 
-            case 1:
+            case 'p':
             {
                 running = !running;
-                if (running)
-                    std::cout << " Resumed...\n";
-                else
-                    std::cout << " Paused.\n";
                 break;
             }
-
-            case 2:
+            case 'x':
             {
                 done = true;
                 break;
             }
             default:
-                std::cout << "Invalid selection. Try again.\n";
+                std::cout << "Invalid command. Try again.\n";
                 break;
         }
     }
@@ -199,6 +232,11 @@ int main(int argc, char *argv[]) {
     // TODO: Exit gracefully and ensure all shared resources are cleaned up!
     thread_group.join_all();
     
+    // Free heap memory allocated to camera 
+    delete camera;
+
+    std::cout << "Camera named \"" + sink + "\" is exiting." << std::endl;
+
     // Exit
     return 0;
 }

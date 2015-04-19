@@ -14,37 +14,37 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef WEBCAM_H
-#define WEBCAM_H
+#ifndef FILEREADER_H
+#define	FILEREADER_H
 
 #include <string>
-
-#include <opencv2/core/mat.hpp>
-#include <opencv2/videoio.hpp> // TODO: correct header...
+#include <opencv2/opencv.hpp>
 
 #include "Camera.h"
-#include "../../lib/shmem/SharedCVMatHeader.h"
-#include "../../lib/shmem/MatServer.h"
 
-class WebCam : public Camera {
+class FileReader : public Camera {
 public:
-    WebCam(std::string frame_sink_name);
-
+    FileReader(std::string file_name_in, std::string image_sink_name);
+    
     // Implement Camera interface
     void configure(void); 
     void configure(std::string config_file, std::string key);
     void grabMat(void);
     void serveMat(void);
-
+    
 private:
     
-    bool aquisition_started;
-
-    // The webcam object
-    cv::VideoCapture cv_camera;
-
+    std::string file_name;
+    int frame_period_in_us;
+    double frame_rate_in_hz;
+    void calculateFramePeriod(void);
+    
+    // File read
+    cv::VideoCapture file_reader;
+   
     // Currently acquired frame
     cv::Mat current_frame;
-
 };
-#endif //WEBCAM_H
+
+#endif	/* FILEREADER_H */
+

@@ -22,6 +22,7 @@
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
+#include <unordered_map>
 
 namespace po = boost::program_options;
 
@@ -36,10 +37,10 @@ void printUsage(po::options_description options) {
     std::cout << "Usage: detector [OPTIONS]\n";
     std::cout << "   or: detector TYPE SOURCE SINK [CONFIGURATION]\n";
     std::cout << "Perform TYPE object detection on images from SMServer<SharedCVMatHeader> SOURCE.\n";
-    std::cout << "Publish detected object positions to a SMSserver<Position2D> SINK.\n";
+    std::cout << "Publish detected object positions to a SMSserver<Position2D> SINK.\n\n";
     std::cout << "TYPE\n";
-    std::cout << "  0: Difference detector (grey-scale)\n";
-    std::cout << "  1: HSV detector (color)\n\n";
+    std::cout << "  diff: Difference detector (grey-scale)\n";
+    std::cout << "  hsv: HSV detector (color)\n\n";
     std::cout << options << "\n";
 }
 
@@ -62,10 +63,14 @@ int main(int argc, char *argv[]) {
 
     std::string source;
     std::string sink;
-    int type;
+    std::string type;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
+    
+    std::unordered_map<std::string, char> type_hash;
+    type_hash["diff"] = 'a';
+    type_hash["hsv"] = 'b';
 
     try {
 
@@ -82,10 +87,10 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("type,t", po::value<int>(&type), "Detector type.\n\n"
+                ("type,t", po::value<std::string>(&type), "Detector type.\n\n"
                 "Values:\n"
-                "  0: Difference detector (grey-scale)\n"
-                "  1: HSV detector (color)")
+                "  diff: Difference detector (grey-scale)\n"
+                "  hsv: HSV detector (color)")
                 ("source", po::value<std::string>(&source),
                 "The name of the SOURCE that supplies images on which hsv-filter object detection will be performed."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
@@ -161,13 +166,14 @@ int main(int argc, char *argv[]) {
 
     // Create the specified TYPE of detector
     Detector* detector;
-    switch (type) {
-        case 0:
+
+    switch (type_hash[type]) {
+        case 'a':
         {
             detector = new DifferenceDetector(source, sink);
             break;
         }
-        case 1:
+        case 'b':
         {
             detector = new HSVDetector(source, sink);
             break;
@@ -226,13 +232,13 @@ int main(int argc, char *argv[]) {
 
     }
 
-    std::cout << "Detector is exiting.\n";
-
     // TODO: Exit gracefully and ensure all shared resources are cleaned up!
     thread_group.join_all();
 
     // Free heap memory allocated to detector 
     delete detector;
+    
+    std::cout << "Detector is exiting.\n";
 
     // Exit
     return 0;
