@@ -16,8 +16,8 @@
 
 #include "MatServer.h"
 
+#include <deque>
 #include <boost/interprocess/managed_shared_memory.hpp>
-
 #include "SharedCVMatHeader.h"
 #include "SharedCVMatHeader.cpp" // TODO: Why???
 
