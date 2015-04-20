@@ -67,6 +67,9 @@ void BackgroundSubtractor::subtractBackground() {
         setBackgroundImage(); 
     }
     
-    frame_sink.set_shared_mat(current_frame);
+    frame_sink.pushMat(current_frame);
+    
+    // Required
+    frame_source.notifyAndWait();
 
 }

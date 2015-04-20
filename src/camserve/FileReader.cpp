@@ -36,8 +36,10 @@ void FileReader::grabMat() {
 
 void FileReader::serveMat() {
     if (!current_frame.empty()) {
-        frame_sink.set_shared_mat(current_frame);
+        frame_sink.pushMat(current_frame);
         usleep(frame_period_in_us);
+    } else {
+        frame_sink.set_running(false); //TODO: signal close somehow
     }
 }
 
@@ -64,6 +66,7 @@ void FileReader::configure(std::string file_name, std::string key) {
 
             if (this_config.contains("frame_rate")) {
                 frame_rate_in_hz = (double) (*this_config.get_as<double>("frame_rate"));
+                calculateFramePeriod();
             }
 
         } else {

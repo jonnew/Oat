@@ -8,7 +8,7 @@
 # Camera (file) -------------------------
 
 [file_cam]
-frame_rate = 30 						# Hz
+frame_rate = 200.0 						# Hz
 
 # Detector (hsv, blue) ----------------
 

@@ -36,6 +36,7 @@ namespace shmem {
         virtual ~SMClient();
 
         T get_value(void);
+        void notifyAndWait(void);
         void notifySelf(void);
 
     private:
@@ -73,6 +74,11 @@ namespace shmem {
 
     template<class T, template <typename> class SharedMemType>
     void SMClient<T, SharedMemType>::findSharedObject() {
+
+        // TODO: This should be replaced some type of formal handshake between
+        // server and client.
+        bip::shared_memory_object::remove(shmem_name.c_str());
+        
         while (!shared_object_found) {
             try {
 
@@ -103,7 +109,7 @@ namespace shmem {
 
         // Before reading data, we must be notified by the server that the 
         // data is valid.
-        shared_object->new_data_condition.wait(lock);
+        //shared_object->new_data_condition.wait(lock);
         return shared_object->get_value();
     }
 
@@ -111,6 +117,14 @@ namespace shmem {
     bip::sharable_lock<bip::interprocess_sharable_mutex> SMClient<T, SharedMemType>::makeLock(void) {
         bip::sharable_lock<bip::interprocess_sharable_mutex> sl(shared_object->mutex); // defer_lock
         return sl;
+    }
+
+    template<class T, template <typename> class SharedMemType>
+    void SMClient<T, SharedMemType>::notifyAndWait() {
+
+        // Wait for notification from SOURCE to grant access to shared memory
+        shared_object->new_data_condition.notify_all();
+        shared_object->new_data_condition.wait(lock);
     }
 
     template<class T, template <typename> class SharedMemType>

@@ -38,11 +38,15 @@ void Decorator::decorateImage() {
 
     // Decorate
     drawSymbols();
+    
+    // Required
+    position_source.notifyAndWait();
+    frame_source.notifyAndWait();
 
 }
 
 void Decorator::serveImage() {
-    frame_sink.set_shared_mat(image);
+    frame_sink.pushMat(image);
 }
 
 void Decorator::stop() {

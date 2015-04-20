@@ -27,7 +27,7 @@ PositionCombiner::PositionCombiner(std::string antierior_source_name,
 
 void PositionCombiner::serveCombinedPosition() {
     
-    position_sink.set_value(processed_position);
+    position_sink.pushObject(processed_position);
 }
 
 void PositionCombiner::calculateGeometricMean() {
@@ -67,7 +67,11 @@ void PositionCombiner::calculateGeometricMean() {
         processed_position.position = 0.5 * (anterior.position + posterior.position);
         processed_position.head_direction_valid = true;
         processed_position.head_direction = (anterior.position - posterior.position)*(1.0 / cv::norm(anterior.position - posterior.position));
-    }        
+    }   
+    
+    // Required
+    anterior_source.notifyAndWait();
+    posterior_source.notifyAndWait();
 }
 
 void PositionCombiner::stop() {

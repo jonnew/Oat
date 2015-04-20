@@ -30,8 +30,6 @@ HSVDetector::HSVDetector(std::string image_source_name, std::string position_sin
         int s_min_in, int s_max_in,
         int v_min_in, int v_max_in) :
   Detector(image_source_name, position_sink_name)
-//, frame_sink(position_sink_name + "_frame")
-//, frame_sink_used(false)
 , h_min(h_min_in)
 , h_max(h_max_in)
 , s_min(s_min_in)
@@ -74,11 +72,14 @@ void HSVDetector::findObject() {
     clarifyBlobs();
     siftBlobs();
     tune();
+    
+    // Required
+    image_source.notifyAndWait();
 }
 
 void HSVDetector::servePosition() {
     // Put position in shared memory
-    position_sink.set_value(object_position);
+    position_sink.pushObject(object_position);
 }
 
 void HSVDetector::applyThreshold() {

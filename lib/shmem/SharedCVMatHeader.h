@@ -22,14 +22,14 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <opencv2/core/mat.hpp>
 
-#include "SyncSharedMemoryObject.h"
-
 namespace shmem {
 
     class SharedCVMatHeader {
         
     public:
+
         boost::interprocess::interprocess_sharable_mutex mutex;
+        boost::interprocess::interprocess_condition_any clinet_ready_condition; 
         boost::interprocess::interprocess_condition_any new_data_condition; 
 
         void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat model);
@@ -43,6 +43,7 @@ namespace shmem {
         int type;
         void* data_ptr;
         int data_size_in_bytes;
+        
         boost::interprocess::managed_shared_memory::handle_t handle;
     };
 }

@@ -655,7 +655,8 @@ void PGGigECam::serveMat() {
 
     // Write frame to shared memory and notify all client processes
     // that a new frame is available. Do not block, though.
-    frame_sink.set_shared_mat(cvmat_image);
+    frame_sink.pushMat(cvmat_image);
+    std::cout << "Sent image.\n";
 }
 
 // PRIVATE

@@ -30,7 +30,7 @@ DifferenceDetector::DifferenceDetector(std::string image_source_name, std::strin
 }
 
 void DifferenceDetector::servePosition() {
-    position_sink.set_value(object_position);
+    position_sink.pushObject(object_position);
 }
 
 void DifferenceDetector::findObject() {
@@ -39,6 +39,9 @@ void DifferenceDetector::findObject() {
     applyThreshold();
     siftBlobs();
     tune();  
+    
+    // Required
+    image_source.notifyAndWait();
 }
 
 void DifferenceDetector::configure(std::string file_name, std::string key) {

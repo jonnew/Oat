@@ -22,6 +22,7 @@
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
 
+
 #include "SharedCVMatHeader.h"
 
 class MatClient {
@@ -34,17 +35,23 @@ public:
     // Find cv::Mat object in shared memory
     void findSharedMat(void);
     
+    // Notify server when done processing
+    void notifyAndWait(void);
+    
     // Auto notification to exit wait()
     void notifySelf(void);
      
     // Accessors
     cv::Mat get_value(void);
     std::string get_name(void) { return name; }
-    void set_source(const std::string);
+    //void set_source(const std::string);
     
 private:
     
     boost::interprocess::sharable_lock<boost::interprocess::interprocess_sharable_mutex> makeLock();
+    
+    
+    const std::string start_mutex_name, start_condition_name;
 
     std::string name;
     shmem::SharedCVMatHeader* shared_mat_header;
@@ -55,7 +62,7 @@ private:
     // Shared mat object, constructed from the shared_mat_header
     cv::Mat mat;
 
-    std::string shmem_name, shobj_name;
+    const std::string shmem_name, shobj_name;
     boost::interprocess::managed_shared_memory shared_memory;
     boost::interprocess::sharable_lock<boost::interprocess::interprocess_sharable_mutex> lock;
 };

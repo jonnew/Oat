@@ -39,6 +39,7 @@ void Viewer::showImage(const std::string title) {
     cv::Mat current_frame = frame_source.get_value(); // Thread safe
     cv::imshow(title, current_frame);
     cv::waitKey(1);
+    frame_source.notifyAndWait();
 }
 
 void Viewer::stop() {

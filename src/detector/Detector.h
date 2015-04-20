@@ -21,7 +21,7 @@
 #include <opencv2/opencv.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include "../../lib/shmem/Position2D.h"
+#include "../../lib/shmem/Position.h"
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/SMServer.h"
 
@@ -51,8 +51,7 @@ public:
     // Detectors must be configurable via file
     virtual void configure(std::string file_name, std::string key) = 0;
 
-    // All detectors must be able break through infinite locks on shared
-    // resources to exit
+    // All detectors must be able break infinite locks on shared to exit
     void stop(void) { image_source.notifySelf(); }
     
     void set_tune_mode(bool value) { tuning_mutex.lock(); tuning_on = value; tuning_mutex.unlock();}
