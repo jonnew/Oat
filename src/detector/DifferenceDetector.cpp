@@ -40,8 +40,6 @@ void DifferenceDetector::findObject() {
     siftBlobs();
     tune();  
     
-    // Required
-    image_source.notifyAndWait();
 }
 
 void DifferenceDetector::configure(std::string file_name, std::string key) {

@@ -26,6 +26,9 @@ Decorator::Decorator(std::string position_source_name,
   frame_source(frame_source_name)
 , position_source(position_source_name)
 , frame_sink(frame_sink_name) {
+    
+    frame_source.findSharedMat();
+    position_source.findSharedObject();
 }
 
 void Decorator::decorateImage() {
@@ -38,10 +41,6 @@ void Decorator::decorateImage() {
 
     // Decorate
     drawSymbols();
-    
-    // Required
-    position_source.notifyAndWait();
-    frame_source.notifyAndWait();
 
 }
 

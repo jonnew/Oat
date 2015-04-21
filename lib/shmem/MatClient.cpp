@@ -32,7 +32,7 @@ name(source_name)
 , start_mutex_name(source_name + "_start_mtx")
 , start_condition_name(source_name + "_start_cv")
 , shared_object_found(false)
-, terminated(false) {
+, mat_attached_to_header(false) {
 }
 
 MatClient::MatClient(const MatClient& orig) {
@@ -40,46 +40,40 @@ MatClient::MatClient(const MatClient& orig) {
 
 MatClient::~MatClient() {
 
-    //named_sharable_mutex::remove(start_mutex_name.c_str());
-    //named_condition_any::remove(start_condition_name.c_str());
+    shared_mat_header->new_data_condition.notify_all();
 }
 
 void MatClient::findSharedMat() {
 
-    // TODO: I cannot get this to work, even though it would be far better than 
-    // my hack below, which means that clients _must_ start before servers.
+    // TODO: Wrap in a named guard of some sort.
 
-//    named_sharable_mutex start_mutex(open_or_create, start_mutex_name.c_str());
-//    named_mutex start_mutex(open_or_create, start_mutex_name.c_str());
-//    named_condition start_condition(open_or_create, start_condition_name.c_str());
-//    scoped_lock<named_mutex> start_lock(start_mutex);
-//    start_condition.wait(start_lock);
-
-    // TODO: This should be replaced by the named condition stuff above.
+    // Remove_shared_memory on object destruction
     shared_memory_object::remove(shmem_name.c_str());
 
-    while (!shared_object_found) {
-        try {
+    try {
 
-            shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
-            shared_mat_header = shared_memory.find<shmem::SharedCVMatHeader>(shobj_name.c_str()).first;
-            shared_object_found = true;
+        // If the client creates the shared memory, it does not allocate room for the cv::Mat data
+        // The server will need to resize the shared memory to make room.
+        //size_t total_bytes = sizeof (shmem::SharedCVMatHeader) + 1024; 
 
-        } catch (interprocess_exception& e) {
-            usleep(100000); // Wait for shared memory to be created by SOURCE
-        }
+        // TODO: This is a complete HACK until I can figure out how to resize 
+        // the managed shared memory segment on the server side without 
+        // causing seg faults due to bad pointers on the client side.
+        size_t total_bytes = 1024e4;
 
-        if (terminated)
-            exit(EXIT_FAILURE); // Nothing to clean, so we are OK to exit.
+
+        shared_memory = managed_shared_memory(open_or_create, shmem_name.c_str(), total_bytes);
+        shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
+        shared_object_found = true;
+
+    } catch (interprocess_exception& ex) {
+        std::cerr << ex.what() << '\n';
+        exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
     }
 
     // Pass mutex to the scoped sharable_lock. 
     lock = makeLock(); // This will block until the lock has sharable access to the mutex
-    // Problem: What if the server does not call lock before this happens. Then we are in a deadlock.
-    // To prevent, we should used a named condition to block at the top of this function until (1)
-    // shmem is allocated by MatServer and (2) the lock has been applied by matserver
 
-    shared_mat_header->attachMatToHeader(shared_memory, mat);
 }
 
 /**
@@ -93,9 +87,19 @@ void MatClient::findSharedMat() {
  */
 cv::Mat MatClient::get_value() {
 
-    if (!shared_object_found) {
-        findSharedMat(); // Creates lock targeting shared_mat_header->mutex, and engages
+    shared_mat_header->new_data_condition.notify_all();
+    shared_mat_header->new_data_condition.wait(lock);
 
+    //    if (shared_mat_header->remap_required) {
+    //        shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
+    //        //shared_mat_header = shared_memory.find<shmem::SharedCVMatHeader>(shobj_name.c_str())();
+    //        //shared_mat_header->remap_required = false;
+    //    }
+
+    if (!mat_attached_to_header) {
+        // Cannot do this until the server has called build header. 
+        shared_mat_header->attachMatToHeader(shared_memory, mat);
+        mat_attached_to_header = true;
     }
 
     return mat; // User responsible for calling notifyAndWait once they are finished processing.
@@ -118,18 +122,17 @@ sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {
 //    }
 //}
 
-void MatClient::notifyAndWait() {
-
-    // Wait for notification from SOURCE to grant access to shared memory
-    shared_mat_header->new_data_condition.notify_all();
-    shared_mat_header->new_data_condition.wait(lock);
-}
+//void MatClient::notifyAndWait() {
+//
+//    // Wait for notification from SOURCE to grant access to shared memory
+//    shared_mat_header->new_data_condition.notify_all();
+//    shared_mat_header->new_data_condition.wait(lock);
+//}
 
 void MatClient::notifySelf() {
 
     if (shared_object_found) {
         shared_mat_header->new_data_condition.notify_one();
     }
-    terminated = true;
 }
 

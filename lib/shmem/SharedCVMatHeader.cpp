@@ -20,11 +20,11 @@
 
 namespace shmem {
 
-    void SharedCVMatHeader::set_value(cv::Mat mat) {
+    void SharedCVMatHeader::set_value(const cv::Mat& mat) {
         memcpy(data_ptr, mat.data, data_size_in_bytes);
     }
 
-    void SharedCVMatHeader::buildHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat model) {
+    void SharedCVMatHeader::buildHeader(boost::interprocess::managed_shared_memory& shared_mem, const cv::Mat& model) {
 
         data_size_in_bytes = model.total() * model.elemSize();
         data_ptr = shared_mem.allocate(data_size_in_bytes);

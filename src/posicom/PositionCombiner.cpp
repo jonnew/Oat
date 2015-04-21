@@ -22,7 +22,12 @@ PositionCombiner::PositionCombiner(std::string antierior_source_name,
   name(sink_name) 
 , anterior_source(antierior_source_name)
 , posterior_source(posterior_source_name)
-, position_sink(sink_name) { }
+, position_sink(sink_name) { 
+    
+    anterior_source.findSharedObject();
+    posterior_source.findSharedObject();
+
+}
 
 
 void PositionCombiner::serveCombinedPosition() {
@@ -69,9 +74,6 @@ void PositionCombiner::calculateGeometricMean() {
         processed_position.head_direction = (anterior.position - posterior.position)*(1.0 / cv::norm(anterior.position - posterior.position));
     }   
     
-    // Required
-    anterior_source.notifyAndWait();
-    posterior_source.notifyAndWait();
 }
 
 void PositionCombiner::stop() {

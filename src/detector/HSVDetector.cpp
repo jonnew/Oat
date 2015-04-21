@@ -72,9 +72,6 @@ void HSVDetector::findObject() {
     clarifyBlobs();
     siftBlobs();
     tune();
-    
-    // Required
-    image_source.notifyAndWait();
 }
 
 void HSVDetector::servePosition() {

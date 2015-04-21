@@ -36,7 +36,7 @@ public:
     void findSharedMat(void);
     
     // Notify server when done processing
-    void notifyAndWait(void);
+    //void notifyAndWait(void);
     
     // Auto notification to exit wait()
     void notifySelf(void);
@@ -55,7 +55,7 @@ private:
 
     std::string name;
     shmem::SharedCVMatHeader* shared_mat_header;
-    bool shared_object_found, terminated;
+    bool shared_object_found, mat_attached_to_header;
     void* shared_mat_data_ptr;
     int data_size; // Size of raw mat data in bytes
 

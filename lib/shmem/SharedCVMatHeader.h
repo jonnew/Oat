@@ -27,18 +27,18 @@ namespace shmem {
     class SharedCVMatHeader {
         
     public:
-
         boost::interprocess::interprocess_sharable_mutex mutex;
         boost::interprocess::interprocess_condition_any clinet_ready_condition; 
         boost::interprocess::interprocess_condition_any new_data_condition; 
 
-        void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat model);
+        void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, const cv::Mat& model);
         void attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat);
         
         // Accessors
-        void set_value(cv::Mat mat);    // Server
+        void set_value(const cv::Mat& mat);    // Server
         
     private:
+        
         cv::Size mat_size;
         int type;
         void* data_ptr;

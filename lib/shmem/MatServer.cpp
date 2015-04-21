@@ -57,38 +57,47 @@ MatServer::~MatServer() {
 
 void MatServer::createSharedMat(const cv::Mat& model) {
     
-    // Clean up any potential leftovers
-    shared_memory_object::remove(shmem_name.c_str());
-
     data_size = model.total() * model.elemSize();
+    
+    // TODO: Wrap in a named guard of some sort to protect the grow operation, which
+    // is not thread safe
     try {
 
+        // Total amount of shared memory to allocated
+        //size_t total_bytes = data_size + sizeof (shmem::SharedCVMatHeader) + 1024;
+        
+        // TODO: This is a complete HACK until I can figure out how to resize 
+            // the managed shared memory segment on the server side without 
+            // causing seg faults due to bad pointers on the client side.
+        size_t total_bytes = 1024e4; 
+        
         // Define shared memory
         shared_memory = managed_shared_memory(open_or_create,
                 shmem_name.c_str(),
-                data_size + sizeof (shmem::SharedCVMatHeader) + 1024);
-
-        // Make the shared object
+                total_bytes);
+        
         shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
+        
+        // Check if client allocated, in which case we need to make room for
+        // the cv::Mat data
+//        if (shared_memory.get_size() < total_bytes) {
+//            size_t extra_bytes =  total_bytes - shared_memory.get_size();
+//            managed_shared_memory::grow(shmem_name.c_str(), extra_bytes);
+//            shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
+//            shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
+//            shared_mat_header->remap_required = true;
+//        } 
+//        else {
+//            shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
+//        }
 
-    } catch (bad_alloc &ex) {
+    } catch (interprocess_exception &ex) {
         std::cerr << ex.what() << '\n';
         exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
     }
     
     shared_mat_header->buildHeader(shared_memory, model);
-    
-    shared_object_created = true;
-    
-    // TODO: I cannot get this to work, even though it would be far better than 
-    // my !shared_mat_header->server_ready hack ...
-//    named_mutex start_mutex(open_or_create, start_mutex_name.c_str());
-//    named_condition start_condition(open_or_create, start_condition_name.c_str());
-//    scoped_lock<named_mutex> start_lock(start_mutex);
-//    start_condition.notify_all();
-//    boost::system_time timeout = boost::get_system_time() + boost::posix_time::milliseconds(1);
-//    start_condition.timed_wait(start_lock, timeout);
-    
+    shared_object_created = true; 
 }
 
 void MatServer::pushMat(const cv::Mat& mat) {

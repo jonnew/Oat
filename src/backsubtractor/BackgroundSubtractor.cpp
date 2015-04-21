@@ -27,7 +27,10 @@
 
 BackgroundSubtractor::BackgroundSubtractor(const std::string source_name, const std::string sink_name) :
   frame_source(source_name)
-, frame_sink(sink_name) { }
+, frame_sink(sink_name) { 
+    
+    frame_source.findSharedMat();
+}
 
 /**
  * Set the background image to be used during subsequent subtraction operations.
@@ -68,8 +71,5 @@ void BackgroundSubtractor::subtractBackground() {
     }
     
     frame_sink.pushMat(current_frame);
-    
-    // Required
-    frame_source.notifyAndWait();
 
 }

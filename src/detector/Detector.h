@@ -40,7 +40,10 @@ public:
     , tuning_image_title(position_sink_name + "_tuning")
     , slider_title(position_sink_name + "_sliders")
     , tuning_windows_created(false)
-    , tuning_on(false) { } 
+    , tuning_on(false) { 
+      
+          image_source.findSharedMat();
+      } 
       
     // Detector must be able to find an object
     virtual void findObject(void) = 0;
