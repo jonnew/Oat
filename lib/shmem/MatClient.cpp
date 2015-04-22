@@ -68,7 +68,6 @@ int MatClient::findSharedMat() {
         // causing seg faults due to bad pointers on the client side.
         size_t total_bytes = 1024e4;
 
-
         shared_memory = managed_shared_memory(open_or_create, shmem_name.c_str(), total_bytes);
         shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
         shared_object_found = true;

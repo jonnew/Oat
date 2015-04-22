@@ -41,6 +41,10 @@ namespace shmem {
 
         void createSharedObject(void);
         void pushObject(T value);
+        
+        // Accessors
+        bool is_running(void) { return running; };
+        void set_running(bool value) { running = value; } 
 
     private:
 
@@ -175,7 +179,6 @@ namespace shmem {
             }
         }
     }
-
 } // namespace shmem 
 
 #endif	/* SMSERVER_H */

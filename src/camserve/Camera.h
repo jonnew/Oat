@@ -14,11 +14,10 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-
-#include "../../lib/shmem/MatServer.h"
-
 #ifndef CAMERA_H
 #define	CAMERA_H
+
+#include "../../lib/shmem/MatServer.h"
 
 /**
  * Abstract base class to be implemented by any Camera Server within the Simple
