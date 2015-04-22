@@ -24,26 +24,29 @@
 #include "../../lib/shmem/MatClient.h"
 
 class Viewer {
-   
 public:
     Viewer(std::string server_name);
-//    Viewer(const Viewer& orig);
-//    virtual ~Viewer();
+    //    Viewer(const Viewer& orig);
+    //    virtual ~Viewer();
 
     void showImage(void);
     void showImage(std::string title);
     void stop(void);
 
-	// Accessors
-	std::string get_name(void) { return name; }   
+    // Accessors
+
+    std::string get_name(void) {
+        return name;
+    }
+    
 private:
 
-   	// Viewer name
-	const std::string name;
+    // Viewer name
+    std::string name;
 
     // Image data
     cv::Mat image;
-    
+
     // Mat client object for receiving frames
     MatClient frame_source;
 };

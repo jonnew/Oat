@@ -35,7 +35,7 @@ void DifferenceDetector::servePosition() {
 
 void DifferenceDetector::findObject() {
 
-    this_image = image_source.get_value().clone();
+    image_source.getSharedMat(this_image);
     applyThreshold();
     siftBlobs();
     tune();  

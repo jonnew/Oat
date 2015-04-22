@@ -39,7 +39,7 @@ BackgroundSubtractor::BackgroundSubtractor(const std::string source_name, const 
  */
 void BackgroundSubtractor::setBackgroundImage() {
     
-    background_img = frame_source.get_value().clone();
+    frame_source.getSharedMat(background_img);
     background_set = true;
 }
 
@@ -51,7 +51,8 @@ void BackgroundSubtractor::setBackgroundImage() {
 void BackgroundSubtractor::subtractBackground() {
 
     // If we have set a background image, perform subtraction
-    cv::Mat current_frame = frame_source.get_value().clone();
+    cv::Mat current_frame;
+    frame_source.getSharedMat(current_frame);
     
     if (background_set) {
 

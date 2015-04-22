@@ -35,8 +35,8 @@
 
 using namespace FlyCapture2;
 
-PGGigECam::PGGigECam(std::string frame_sink_name) : 
-  Camera(frame_sink_name)
+PGGigECam::PGGigECam(std::string frame_sink_name) :
+Camera(frame_sink_name)
 , num_cameras(0)
 , index(0)
 , shutter_ms(0)
@@ -656,7 +656,6 @@ void PGGigECam::serveMat() {
     // Write frame to shared memory and notify all client processes
     // that a new frame is available. Do not block, though.
     frame_sink.pushMat(cvmat_image);
-    std::cout << "Sent image.\n";
 }
 
 // PRIVATE

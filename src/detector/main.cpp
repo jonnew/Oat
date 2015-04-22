@@ -51,6 +51,8 @@ void run(Detector* detector) {
         detector->findObject();
         detector->servePosition();
     }
+    
+    detector->stop();
 }
 
 // IO thread

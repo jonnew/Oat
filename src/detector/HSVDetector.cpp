@@ -65,7 +65,7 @@ void HSVDetector::dilateSliderChangedCallback(int value, void* object) {
 
 void HSVDetector::findObject() {
 
-    hsv_image = image_source.get_value().clone();
+    image_source.getSharedMat(hsv_image);
 
     cv::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
     applyThreshold();

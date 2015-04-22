@@ -35,6 +35,8 @@ void run(Viewer* viewer) {
     while (!done) {
         viewer->showImage();
     }
+    
+    viewer->stop();
 }
 
 void printUsage(po::options_description options) {
@@ -134,6 +136,7 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
+                viewer.stop();
                 break;
             }
             default:

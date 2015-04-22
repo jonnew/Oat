@@ -17,6 +17,7 @@
 #ifndef MATSERVER_H
 #define	MATSERVER_H
 
+#include <atomic>
 #include <string>
 #include <thread>
 #include <mutex>
@@ -25,6 +26,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <opencv2/core/mat.hpp>
+
 
 #include "SharedCVMatHeader.h"
 
@@ -37,6 +39,7 @@ public:
     
     void createSharedMat(const cv::Mat& model); // TODO: encapsulate in the SharedMatHeader object
     void pushMat(const cv::Mat& mat);
+    void notifySelf(void);
     
     // Accessors  // TODO: Assess whether you really need these and get rid of them if not. 
     bool is_running(void) { return running; };
@@ -45,16 +48,20 @@ public:
     
 private:
     
-    const std::string start_mutex_name, start_condition_name;
+    // Name of this server
     std::string name;
-    boost::lockfree::spsc_queue<cv::Mat, boost::lockfree::capacity<1024> > mat_buffer;
+    
+    // Buffer
+    boost::lockfree::spsc_queue<cv::Mat, boost::lockfree::capacity<100> > mat_buffer;
+    
+    // Server threading
     std::thread server_thread;
     std::mutex server_mutex;
     std::condition_variable serve_condition;
-    bool running; // Server running
+    std::atomic<bool> running; // Server running, can be accessed from multiple threads
     shmem::SharedCVMatHeader* shared_mat_header;
     bool shared_object_created;
-    void* shared_mat_data_ptr;
+
     int data_size; // Size of raw mat data in bytes
     
     const std::string shmem_name, shobj_name;

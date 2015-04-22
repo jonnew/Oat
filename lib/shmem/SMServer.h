@@ -17,6 +17,7 @@
 #ifndef SMSERVER_H
 #define	SMSERVER_H
 
+#include <atomic>
 #include <string>
 #include <thread>
 #include <mutex>
@@ -27,9 +28,9 @@
 
 #include "SyncSharedMemoryObject.h"
 
-namespace bip = boost::interprocess;
-
 namespace shmem {
+
+    namespace bip = boost::interprocess;
 
     template<class T, template <typename> class SharedMemType = shmem::SyncSharedMemoryObject>
     class SMServer {
@@ -47,13 +48,13 @@ namespace shmem {
         std::string name;
 
         // Buffer
-        boost::lockfree::spsc_queue<T, boost::lockfree::capacity<1024> > buffer;
-        
+        boost::lockfree::spsc_queue<T, boost::lockfree::capacity<100> > buffer;
+
         // Server threading
         std::thread server_thread;
         std::mutex server_mutex;
         std::condition_variable serve_condition;
-        bool running; // Server running
+        std::atomic<bool> running; // Server running
 
         // Shared memory and managed object names
         SharedMemType<T>* shared_object; // Defaults to shmem::SyncSharedMemoryObject<T>
@@ -62,20 +63,20 @@ namespace shmem {
         bool shared_object_created;
 
         void createSharedObject(size_t bytes);
-        void serveFromBuffer(SMServer<T, SharedMemType>* object);
+        void serveFromBuffer(void);
 
     };
 
     template<class T, template <typename> class SharedMemType>
     SMServer<T, SharedMemType>::SMServer(std::string sink_name) :
-      name(sink_name)
+    name(sink_name)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
     , shared_object_created(false)
     , running(true) {
 
         // Start the server thread
-        server_thread = std::thread(&SMServer<T, SharedMemType>::serveFromBuffer, this, this);
+        server_thread = std::thread(&SMServer<T, SharedMemType>::serveFromBuffer, this);
     }
 
     template<class T, template <typename> class SharedMemType>
@@ -86,7 +87,10 @@ namespace shmem {
     SMServer<T, SharedMemType>::~SMServer() {
 
         // Remove_shared_memory on object destruction
-        shared_object->new_data_condition.notify_all();
+        if (shared_object_created) {
+            shared_object->write_barrier.post();
+        }
+
         bip::shared_memory_object::remove(shmem_name.c_str());
     }
 
@@ -99,15 +103,18 @@ namespace shmem {
             shared_memory = bip::managed_shared_memory(
                     bip::open_or_create,
                     shmem_name.c_str(),
-                    sizeof (SharedMemType<T>) + 1024);    
+                    sizeof (SharedMemType<T>) + 1024);
 
             // Make the shared object
             shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
-            shared_object_created = true;
+
 
         } catch (bip::interprocess_exception& ex) {
             std::cerr << ex.what() << '\n';
+            exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
         }
+
+        shared_object_created = true;
     }
 
     template<class T, template <typename> class SharedMemType>
@@ -116,39 +123,57 @@ namespace shmem {
         // Push data onto ring buffer
         buffer.push(value);
 
+#ifndef NDEBUG
+        std::cout << "Buffer count: " + std::to_string(buffer.read_available()) + "\n";
+#endif
+
         // notify server thread that data is available
         serve_condition.notify_one();
 
     }
 
     template<class T, template <typename> class SharedMemType>
-    void SMServer<T, SharedMemType>::serveFromBuffer(SMServer<T, SharedMemType>* object) {
+    void SMServer<T, SharedMemType>::serveFromBuffer() {
 
-        while (object->running) {
+        while (running) {
 
             // Proceed only if mat_buffer has data
-            std::unique_lock<std::mutex> lk(object->server_mutex);
-            object->serve_condition.wait(lk); 
+            std::unique_lock<std::mutex> lk(server_mutex);
+            serve_condition.wait(lk);
 
             T value;
-            while (object->buffer.pop(value)) {
+            while (buffer.pop(value)) {
 
-                if (!object->shared_object_created) {
-                    object->createSharedObject();
+                if (!shared_object_created) {
+                    createSharedObject();
+                }
+
+                /* START CRITICAL SECTION */
+                shared_object->mutex.wait();
+
+                // Perform write in shared memory 
+                shared_object->set_value(value);
+
+                // Tell each client they can proceed
+                for (int i = 0; i < shared_object->number_of_clients; ++i) {
+                    shared_object->read_barrier.post();
+                }
+
+                shared_object->mutex.post();
+                /* END CRITICAL SECTION */
+
+                // Only wait if there is a client
+                if (shared_object->number_of_clients) {
+                    shared_object->write_barrier.wait();
                 }
                 
-                // Exclusive scoped_lock on the shared_mat_header->mutex
-                bip::scoped_lock<bip::interprocess_sharable_mutex>
-                        lock(object->shared_object->mutex);
-
-                // Perform write in shared memory
-                object->shared_object->set_value(value);
-
-                // Notify all client processes they can now access the data
-                object->shared_object->new_data_condition.notify_all();
-                object->shared_object->new_data_condition.wait(lock);
-            } // Scoped lock is released
-        } 
+                // Tell each client they can proceed now that the write_barrier
+                // has been passed
+                for (int i = 0; i < shared_object->number_of_clients; ++i) {
+                    shared_object->new_data_barrier.post();
+                }
+            }
+        }
     }
 
 } // namespace shmem 

@@ -39,6 +39,8 @@ void run(Decorator* decorator) {
         decorator->decorateImage();
         decorator->serveImage();
     }
+    
+    decorator->stop();
 }
 
 void printUsage(po::options_description options) {

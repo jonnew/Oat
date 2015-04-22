@@ -17,8 +17,7 @@
 #ifndef SHAREDMAT_H
 #define	SHAREDMAT_H
 
-#include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
-#include <boost/interprocess/sync/interprocess_condition_any.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <opencv2/core/mat.hpp>
 
@@ -27,9 +26,16 @@ namespace shmem {
     class SharedCVMatHeader {
         
     public:
-        boost::interprocess::interprocess_sharable_mutex mutex;
-        boost::interprocess::interprocess_condition_any clinet_ready_condition; 
-        boost::interprocess::interprocess_condition_any new_data_condition; 
+        
+        SharedCVMatHeader();
+        
+        boost::interprocess::interprocess_semaphore mutex;
+        boost::interprocess::interprocess_semaphore write_barrier;
+        boost::interprocess::interprocess_semaphore read_barrier;
+        boost::interprocess::interprocess_semaphore new_data_barrier;
+        
+        size_t number_of_clients;
+        size_t client_read_count;
 
         void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, const cv::Mat& model);
         void attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat);

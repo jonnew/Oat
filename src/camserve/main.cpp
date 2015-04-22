@@ -42,6 +42,8 @@ void run(Camera* camera) {
             camera->serveMat();
         }
     }
+    
+    camera->stop();
 }
 
 void printUsage(po::options_description options) {
@@ -221,6 +223,7 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
+                camera->stop();
                 break;
             }
             default:

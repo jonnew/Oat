@@ -17,20 +17,31 @@
 #ifndef SYNCSHAREDMEMORYOBJECT_H
 #define	SYNCSHAREDMEMORYOBJECT_H
 
-#include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
-#include <boost/interprocess/sync/interprocess_condition_any.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 #include "Position.h"
-
 
 namespace shmem {
 
     template <class T>
     class SyncSharedMemoryObject {
     public:
+
+        SyncSharedMemoryObject(void) :
+          mutex(1)
+        , write_barrier(0)
+        , read_barrier(0)
+        , new_data_barrier(0)
+        , number_of_clients(0)
+        , client_read_count(0) { }
+
+        boost::interprocess::interprocess_semaphore mutex;
+        boost::interprocess::interprocess_semaphore write_barrier;
+        boost::interprocess::interprocess_semaphore read_barrier;
+        boost::interprocess::interprocess_semaphore new_data_barrier;
         
-        boost::interprocess::interprocess_sharable_mutex mutex;
-        boost::interprocess::interprocess_condition_any new_data_condition;
+        size_t number_of_clients;
+        size_t client_read_count;
 
         void set_value(T value) {
             object = value;

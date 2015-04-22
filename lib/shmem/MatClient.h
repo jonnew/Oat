@@ -21,6 +21,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
+#include <opencv2/core/mat.hpp>
 
 
 #include "SharedCVMatHeader.h"
@@ -33,30 +34,22 @@ public:
     virtual ~MatClient();
     
     // Find cv::Mat object in shared memory
-    void findSharedMat(void);
+    int findSharedMat(void);
     
-    // Notify server when done processing
-    //void notifyAndWait(void);
+    // get cv::Mat out of shared memory
+    void getSharedMat(cv::Mat& value);
     
     // Auto notification to exit wait()
     void notifySelf(void);
      
     // Accessors
-    cv::Mat get_value(void);
     std::string get_name(void) { return name; }
-    //void set_source(const std::string);
     
 private:
     
-    boost::interprocess::sharable_lock<boost::interprocess::interprocess_sharable_mutex> makeLock();
-    
-    
-    const std::string start_mutex_name, start_condition_name;
-
     std::string name;
     shmem::SharedCVMatHeader* shared_mat_header;
     bool shared_object_found, mat_attached_to_header;
-    void* shared_mat_data_ptr;
     int data_size; // Size of raw mat data in bytes
 
     // Shared mat object, constructed from the shared_mat_header
@@ -64,7 +57,6 @@ private:
 
     const std::string shmem_name, shobj_name;
     boost::interprocess::managed_shared_memory shared_memory;
-    boost::interprocess::sharable_lock<boost::interprocess::interprocess_sharable_mutex> lock;
 };
 
 #endif	/* MATCLIENT_H */

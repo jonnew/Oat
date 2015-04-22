@@ -42,6 +42,9 @@ public:
     virtual void configure(void) = 0;
     virtual void configure(std::string file_name, std::string key) = 0;
     
+    // Cameras must be interuptable
+    void stop(void) { frame_sink.set_running(false); frame_sink.notifySelf(); };
+    
 protected:
     
     // cv::Mat server for sending frames to shared memory

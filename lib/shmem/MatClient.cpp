@@ -18,10 +18,6 @@
 
 #include <unistd.h>
 #include <boost/thread.hpp>
-//#include <boost/interprocess/sync/named_condition_any.hpp>
-//#include <boost/interprocess/sync/named_sharable_mutex.hpp>
-//#include <boost/interprocess/sync/named_condition.hpp>
-//#include <boost/interprocess/sync/named_mutex.hpp>
 
 using namespace boost::interprocess;
 
@@ -29,8 +25,6 @@ MatClient::MatClient(const std::string source_name) :
 name(source_name)
 , shmem_name(source_name + "_sh_mem")
 , shobj_name(source_name + "_sh_obj")
-, start_mutex_name(source_name + "_start_mtx")
-, start_condition_name(source_name + "_start_cv")
 , shared_object_found(false)
 , mat_attached_to_header(false) {
 }
@@ -40,15 +34,28 @@ MatClient::MatClient(const MatClient& orig) {
 
 MatClient::~MatClient() {
 
-    shared_mat_header->new_data_condition.notify_all();
+    if (shared_object_found) {
+
+        // Make sure nobody is going to wait on a disposed object
+        shared_mat_header->mutex.wait();
+        shared_mat_header->number_of_clients--;
+        shared_mat_header->mutex.post();
+        
+#ifndef NDEBUG
+    std::cout << "Number of clients in \'" + shmem_name + "\' was decremented.\n";
+#endif
+
+    }
 }
 
-void MatClient::findSharedMat() {
+int MatClient::findSharedMat() {
 
+    
+    int client_num;
     // TODO: Wrap in a named guard of some sort.
 
     // Remove_shared_memory on object destruction
-    shared_memory_object::remove(shmem_name.c_str());
+    //shared_memory_object::remove(shmem_name.c_str());
 
     try {
 
@@ -71,8 +78,14 @@ void MatClient::findSharedMat() {
         exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
     }
 
-    // Pass mutex to the scoped sharable_lock. 
-    lock = makeLock(); // This will block until the lock has sharable access to the mutex
+    // Make sure everyone using this shared memory knows that another client
+    // has joined
+    shared_mat_header->mutex.wait();
+    shared_mat_header->number_of_clients++;
+    client_num = shared_mat_header->number_of_clients;
+    shared_mat_header->mutex.post();
+    
+    return client_num;
 
 }
 
@@ -85,16 +98,12 @@ void MatClient::findSharedMat() {
  * 
  * @return shared cv::Mat. Do not write on this object.
  */
-cv::Mat MatClient::get_value() {
+void MatClient::getSharedMat(cv::Mat& value) {
 
-    shared_mat_header->new_data_condition.notify_all();
-    shared_mat_header->new_data_condition.wait(lock);
-
-    //    if (shared_mat_header->remap_required) {
-    //        shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
-    //        //shared_mat_header = shared_memory.find<shmem::SharedCVMatHeader>(shobj_name.c_str())();
-    //        //shared_mat_header->remap_required = false;
-    //    }
+    shared_mat_header->read_barrier.wait();
+    
+    /* START CRITICAL SECTION */
+    shared_mat_header->mutex.wait();
 
     if (!mat_attached_to_header) {
         // Cannot do this until the server has called build header. 
@@ -102,37 +111,28 @@ cv::Mat MatClient::get_value() {
         mat_attached_to_header = true;
     }
 
-    return mat; // User responsible for calling notifyAndWait once they are finished processing.
+    value = mat.clone(); 
+    
+    // Now that this client has finished its read, update the count
+    shared_mat_header->client_read_count++;
+    
+    // If all clients have read, signal the barrier
+    if (shared_mat_header->client_read_count == shared_mat_header->number_of_clients) {
+        shared_mat_header->write_barrier.post();
+        shared_mat_header->client_read_count = 0;
+    }
+    
+    shared_mat_header->mutex.post();
+    /* END CRITICAL SECTION */
+       
+    shared_mat_header->new_data_barrier.wait();
+    
 }
-
-sharable_lock<interprocess_sharable_mutex> MatClient::makeLock(void) {
-    sharable_lock<interprocess_sharable_mutex> sl(shared_mat_header->mutex); // defer_lock
-    return sl;
-}
-
-//void MatClient::set_source(const std::string source_name) {
-//
-//    // Make sure we are not already attached to some source
-//    if (!shared_object_found) {
-//        name = source_name;
-//        shmem_name = source_name + "_sh_mem";
-//        shobj_name = source_name + "_sh_obj";
-//    } else {
-//        std::cerr << "Cannot edit the source name because we are already reading from \"" + name + "\".";
-//    }
-//}
-
-//void MatClient::notifyAndWait() {
-//
-//    // Wait for notification from SOURCE to grant access to shared memory
-//    shared_mat_header->new_data_condition.notify_all();
-//    shared_mat_header->new_data_condition.wait(lock);
-//}
 
 void MatClient::notifySelf() {
 
     if (shared_object_found) {
-        shared_mat_header->new_data_condition.notify_one();
+        shared_mat_header->read_barrier.post();
     }
 }
 

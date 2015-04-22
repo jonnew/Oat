@@ -33,11 +33,11 @@ Decorator::Decorator(std::string position_source_name,
 
 void Decorator::decorateImage() {
 
-    // Get the current position
-    position = position_source.get_value();
-
     // Get the current image
-    image = frame_source.get_value().clone();
+    frame_source.getSharedMat(image);
+    
+    // Get the current position
+    position_source.get_value(position);
 
     // Decorate
     drawSymbols();
