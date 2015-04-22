@@ -1,7 +1,7 @@
 //******************************************************************************
 //* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
 //* All right reserved.
-//* This file is part of the Simple Tracker project.
+
 //* This is free software: you can redistribute it and/or modify
 //* it under the terms of the GNU General Public License as published by
 //* the Free Software Foundation, either version 3 of the License, or
@@ -56,16 +56,46 @@ KalmanFilter::KalmanFilter(std::string position_source_name, std::string positio
     kf.measurementMatrix.at<float>(3,5) = 1.0;
     
     // Noise covariance matrix (see pp13-15 of MWL.JPN.105.02.002 for derivation)
+	// [dt^4/2 dt^2/3 							  ] 
+	// [dt^2/3 dt^2   							  ]
+	// [              dt^4/2 dt^2/3 			  ]
+	// [              dt^2/3 dt^2  				  ]
+	// [                            dt^4/2 dt^2/3 ]
+	// [                            dt^2/3 dt^2   ]
     kf.processNoiseCov.at<float>(1,1) = sigma_acel * (dt*dt*dt*dt)/4.0;
-    kf.processNoiseCov.at<float>(1,2) = (dt*dt*dt*dt)/4.0;
-    kf.processNoiseCov.at<float>(1,3) = (dt*dt*dt*dt)/4.0;
-    kf.processNoiseCov.at<float>(1,4) = (dt*dt*dt*dt)/4.0;
-    kf.processNoiseCov.at<float>(1,5) = 1.0;
-    kf.processNoiseCov.at<float>(1,6) = 1.0;
-    kf.processNoiseCov.at<float>(1,1) = 1.0;
-    kf.processNoiseCov.at<float>(1,1) = 1.0;
-    kf.processNoiseCov.at<float>(1,1) = 1.0;
-    kf.processNoiseCov.at<float>(1,1) = 1.0;
-        
-
+    kf.processNoiseCov.at<float>(1,2) = sigma_acel * (dt*dt*dt)/2.0
+    kf.processNoiseCov.at<float>(1,3) = 0  
+    kf.processNoiseCov.at<float>(1,4) = 0
+    kf.processNoiseCov.at<float>(1,5) = 0
+    kf.processNoiseCov.at<float>(1,6) = 0
+    kf.processNoiseCov.at<float>(2,1) = sigma_acel * (dt*dt*dt)/2.0
+    kf.processNoiseCov.at<float>(2,2) = sigma_acel * (dt*dt)
+    kf.processNoiseCov.at<float>(2,3) = 0
+    kf.processNoiseCov.at<float>(2,4) = 0
+    kf.processNoiseCov.at<float>(2,5) = 0
+    kf.processNoiseCov.at<float>(2,6) = 0
+	kf.processNoiseCov.at<float>(1,1) = 0
+	kf.processNoiseCov.at<float>(1,2) = 0
+	kf.processNoiseCov.at<float>(1,3) = sigma_acel * (dt*dt*dt*dt)/4.0; 
+	kf.processNoiseCov.at<float>(1,4) = sigma_acel * (dt*dt*dt)/2.0
+	kf.processNoiseCov.at<float>(1,5) = 0
+	kf.processNoiseCov.at<float>(1,6) = 0
+	kf.processNoiseCov.at<float>(2,1) = 0
+	kf.processNoiseCov.at<float>(2,2) = 0
+	kf.processNoiseCov.at<float>(2,3) = sigma_acel * (dt*dt*dt)/2.0
+	kf.processNoiseCov.at<float>(2,4) = sigma_acel * (dt*dt)
+	kf.processNoiseCov.at<float>(2,5) = 0
+	kf.processNoiseCov.at<float>(2,6) = 0
+	kf.processNoiseCov.at<float>(1,1) = 0
+	kf.processNoiseCov.at<float>(1,2) = 0
+	kf.processNoiseCov.at<float>(1,3) = 0  
+	kf.processNoiseCov.at<float>(1,4) = 0
+	kf.processNoiseCov.at<float>(1,5) = sigma_acel * (dt*dt*dt*dt)/4.0;
+	kf.processNoiseCov.at<float>(1,6) = sigma_acel * (dt*dt*dt)/2.0
+	kf.processNoiseCov.at<float>(2,1) = 0
+	kf.processNoiseCov.at<float>(2,2) = 0
+	kf.processNoiseCov.at<float>(2,3) = 0
+	kf.processNoiseCov.at<float>(2,4) = 0
+	kf.processNoiseCov.at<float>(2,5) = sigma_acel * (dt*dt*dt)/2.0
+	kf.processNoiseCov.at<float>(2,6) = sigma_acel * (dt*dt)
 }
