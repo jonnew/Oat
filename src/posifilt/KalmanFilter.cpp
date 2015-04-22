@@ -28,9 +28,17 @@ KalmanFilter::KalmanFilter(std::string position_source_name, std::string positio
   PositionFilter(position_source_name, position_sink_name)
 , dt(0.03333333333333333) 
 , kf(6, 3, 0)
-, sigma_acel(0.1) { 
+, sig_accel(0.1) 
+, sig_measure_noise (0.01) { 
 
-    // The state is
+	configureFilter();
+}
+
+
+KalmanFilter::configureFilter(void) {
+
+	// The state is
+	// TODO: Add head direction?
     // [x x' y y' z z'], where ' denotes the time derivative
     
     // State transition matrix
@@ -59,43 +67,46 @@ KalmanFilter::KalmanFilter(std::string position_source_name, std::string positio
 	// [dt^4/2 dt^2/3 							  ] 
 	// [dt^2/3 dt^2   							  ]
 	// [              dt^4/2 dt^2/3 			  ]
-	// [              dt^2/3 dt^2  				  ]
+	// [              dt^2/3 dt^2  				  ] * sigma_accel^2
 	// [                            dt^4/2 dt^2/3 ]
 	// [                            dt^2/3 dt^2   ]
-    kf.processNoiseCov.at<float>(1,1) = sigma_acel * (dt*dt*dt*dt)/4.0;
-    kf.processNoiseCov.at<float>(1,2) = sigma_acel * (dt*dt*dt)/2.0
-    kf.processNoiseCov.at<float>(1,3) = 0  
-    kf.processNoiseCov.at<float>(1,4) = 0
-    kf.processNoiseCov.at<float>(1,5) = 0
-    kf.processNoiseCov.at<float>(1,6) = 0
-    kf.processNoiseCov.at<float>(2,1) = sigma_acel * (dt*dt*dt)/2.0
-    kf.processNoiseCov.at<float>(2,2) = sigma_acel * (dt*dt)
-    kf.processNoiseCov.at<float>(2,3) = 0
-    kf.processNoiseCov.at<float>(2,4) = 0
-    kf.processNoiseCov.at<float>(2,5) = 0
-    kf.processNoiseCov.at<float>(2,6) = 0
-	kf.processNoiseCov.at<float>(1,1) = 0
-	kf.processNoiseCov.at<float>(1,2) = 0
-	kf.processNoiseCov.at<float>(1,3) = sigma_acel * (dt*dt*dt*dt)/4.0; 
-	kf.processNoiseCov.at<float>(1,4) = sigma_acel * (dt*dt*dt)/2.0
-	kf.processNoiseCov.at<float>(1,5) = 0
-	kf.processNoiseCov.at<float>(1,6) = 0
-	kf.processNoiseCov.at<float>(2,1) = 0
-	kf.processNoiseCov.at<float>(2,2) = 0
-	kf.processNoiseCov.at<float>(2,3) = sigma_acel * (dt*dt*dt)/2.0
-	kf.processNoiseCov.at<float>(2,4) = sigma_acel * (dt*dt)
-	kf.processNoiseCov.at<float>(2,5) = 0
-	kf.processNoiseCov.at<float>(2,6) = 0
-	kf.processNoiseCov.at<float>(1,1) = 0
-	kf.processNoiseCov.at<float>(1,2) = 0
-	kf.processNoiseCov.at<float>(1,3) = 0  
-	kf.processNoiseCov.at<float>(1,4) = 0
-	kf.processNoiseCov.at<float>(1,5) = sigma_acel * (dt*dt*dt*dt)/4.0;
-	kf.processNoiseCov.at<float>(1,6) = sigma_acel * (dt*dt*dt)/2.0
-	kf.processNoiseCov.at<float>(2,1) = 0
-	kf.processNoiseCov.at<float>(2,2) = 0
-	kf.processNoiseCov.at<float>(2,3) = 0
-	kf.processNoiseCov.at<float>(2,4) = 0
-	kf.processNoiseCov.at<float>(2,5) = sigma_acel * (dt*dt*dt)/2.0
-	kf.processNoiseCov.at<float>(2,6) = sigma_acel * (dt*dt)
+    kf.processNoiseCov.at<float>(1,1) = sig_accel*sig_accel * (dt*dt*dt*dt)/4.0;
+    kf.processNoiseCov.at<float>(1,2) = sig_accel*sig_accel * (dt*dt*dt)/2.0
+    kf.processNoiseCov.at<float>(1,3) = 0.0  
+    kf.processNoiseCov.at<float>(1,4) = 0.0
+    kf.processNoiseCov.at<float>(1,5) = 0.0
+    kf.processNoiseCov.at<float>(1,6) = 0.0
+    kf.processNoiseCov.at<float>(2,1) = sig_accel*sig_accel * (dt*dt*dt)/2.0
+    kf.processNoiseCov.at<float>(2,2) = sig_accel*sig_accel * (dt*dt)
+    kf.processNoiseCov.at<float>(2,3) = 0.0
+    kf.processNoiseCov.at<float>(2,4) = 0.0
+    kf.processNoiseCov.at<float>(2,5) = 0.0
+    kf.processNoiseCov.at<float>(2,6) = 0.0
+	kf.processNoiseCov.at<float>(3,1) = 0.0
+	kf.processNoiseCov.at<float>(3,2) = 0.0
+	kf.processNoiseCov.at<float>(3,3) = sig_accel*sig_accel * (dt*dt*dt*dt)/4.0; 
+	kf.processNoiseCov.at<float>(3,4) = sig_accel*sig_accel * (dt*dt*dt)/2.0
+	kf.processNoiseCov.at<float>(3,5) = 0.0
+	kf.processNoiseCov.at<float>(3,6) = 0.0
+	kf.processNoiseCov.at<float>(4,1) = 0.0
+	kf.processNoiseCov.at<float>(4,2) = 0.0
+	kf.processNoiseCov.at<float>(4,3) = sig_accel*sig_accel * (dt*dt*dt)/2.0
+	kf.processNoiseCov.at<float>(4,4) = sig_accel*sig_accel * (dt*dt)
+	kf.processNoiseCov.at<float>(4,5) = 0.0
+	kf.processNoiseCov.at<float>(4,6) = 0.0
+	kf.processNoiseCov.at<float>(5,1) = 0.0
+	kf.processNoiseCov.at<float>(5,2) = 0.0
+	kf.processNoiseCov.at<float>(5,3) = 0.0  
+	kf.processNoiseCov.at<float>(5,4) = 0.0
+	kf.processNoiseCov.at<float>(5,5) = sig_accel*sig_accel * (dt*dt*dt*dt)/4.0;
+	kf.processNoiseCov.at<float>(5,6) = sig_accel*sig_accel * (dt*dt*dt)/2.0
+	kf.processNoiseCov.at<float>(6,1) = 0.0
+	kf.processNoiseCov.at<float>(6,2) = 0.0
+	kf.processNoiseCov.at<float>(6,3) = 0.0
+	kf.processNoiseCov.at<float>(6,4) = 0.0
+	kf.processNoiseCov.at<float>(6,5) = sig_accel*sig_accel * (dt*dt*dt)/2.0
+	kf.processNoiseCov.at<float>(6,6) = sig_accel*sig_accel * (dt*dt)
+	
+	// Meausrement noise covariance
+	cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(sig_measure_noise * sig_measure_noise)));
 }

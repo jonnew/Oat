@@ -29,7 +29,8 @@ private:
     float dt;
     
     // Standard deviation of assumed random accelerations.
-    float sigma_acel;
+    float sig_accel;
+	float sig_measure_noise;
     
     cv::KalmanFilter kf;
     void configureFilter();
