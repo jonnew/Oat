@@ -34,23 +34,12 @@ MatClient::MatClient(const MatClient& orig) {
 
 MatClient::~MatClient() {
 
-    if (shared_object_found) {
-
-        // Make sure nobody is going to wait on a disposed object
-        shared_mat_header->mutex.wait();
-        shared_mat_header->number_of_clients--;
-        shared_mat_header->mutex.post();
-        
-#ifndef NDEBUG
-    std::cout << "Number of clients in \'" + shmem_name + "\' was decremented.\n";
-#endif
-
-    }
+    detachFromShmem();
 }
 
 int MatClient::findSharedMat() {
 
-    
+
     int client_num;
     // TODO: Wrap in a named guard of some sort.
 
@@ -83,24 +72,15 @@ int MatClient::findSharedMat() {
     shared_mat_header->number_of_clients++;
     client_num = shared_mat_header->number_of_clients;
     shared_mat_header->mutex.post();
-    
+
     return client_num;
 
 }
 
-/**
- * Engages shared lock on the unnamed shared mutex residing in the shared_mat_header
- * and returns the shared cv::Mat object. The user is responsible for calling
- * notifyAndWait() following this function call, and after they are finished using the 
- * cv::Mat object to (1) release the shared lock on the mutex and (2) to puase this
- * thread until the shared cv::Mat object is updated by the server.
- * 
- * @return shared cv::Mat. Do not write on this object.
- */
 void MatClient::getSharedMat(cv::Mat& value) {
 
     shared_mat_header->read_barrier.wait();
-    
+
     /* START CRITICAL SECTION */
     shared_mat_header->mutex.wait();
 
@@ -110,28 +90,44 @@ void MatClient::getSharedMat(cv::Mat& value) {
         mat_attached_to_header = true;
     }
 
-    value = mat.clone(); 
-    
+    value = mat.clone();
+
     // Now that this client has finished its read, update the count
     shared_mat_header->client_read_count++;
-    
+
     // If all clients have read, signal the barrier
     if (shared_mat_header->client_read_count == shared_mat_header->number_of_clients) {
         shared_mat_header->write_barrier.post();
         shared_mat_header->client_read_count = 0;
     }
-    
+
     shared_mat_header->mutex.post();
     /* END CRITICAL SECTION */
-       
+
     shared_mat_header->new_data_barrier.wait();
-    
+
+}
+
+void MatClient::detachFromShmem() {
+    if (shared_object_found) {
+
+        // Make sure nobody is going to wait on a disposed object
+        shared_mat_header->mutex.wait();
+        shared_mat_header->number_of_clients--;
+        shared_mat_header->mutex.post();
+
+#ifndef NDEBUG
+        std::cout << "Number of clients in \'" + shmem_name + "\' was decremented.\n";
+#endif
+
+    }
 }
 
 void MatClient::notifySelf() {
 
     if (shared_object_found) {
         shared_mat_header->read_barrier.post();
+        shared_mat_header->new_data_barrier.post();
     }
 }
 

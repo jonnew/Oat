@@ -16,6 +16,7 @@
 
 #include "MatServer.h"
 
+#include <chrono>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 #include "SharedCVMatHeader.h"
@@ -119,7 +120,7 @@ void MatServer::serveMatFromBuffer() {
 
         // Proceed only if mat_buffer has data
         std::unique_lock<std::mutex> lk(server_mutex);
-        serve_condition.wait(lk);
+        serve_condition.wait_for(lk, std::chrono::milliseconds(10));
 
         // Here we must attempt to clear the whole buffer before waiting again.
         cv::Mat mat;
@@ -158,9 +159,10 @@ void MatServer::serveMatFromBuffer() {
     }
 }
 
+
 void MatServer::notifySelf() {
 
     if (shared_object_created) {
-        shared_mat_header->read_barrier.post();
+        shared_mat_header->write_barrier.post();
     }
 }

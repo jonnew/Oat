@@ -57,6 +57,8 @@ private:
 
     const std::string shmem_name, shobj_name;
     boost::interprocess::managed_shared_memory shared_memory;
+    
+    void detachFromShmem(void);
 };
 
 #endif	/* MATCLIENT_H */

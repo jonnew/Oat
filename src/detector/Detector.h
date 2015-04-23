@@ -52,7 +52,7 @@ public:
     virtual void servePosition(void) = 0;
     
     // Detectors must be configurable via file
-    virtual void configure(std::string file_name, std::string key) = 0;
+    virtual void configure(std::string file_name, std::string config_key) = 0;
 
     // All detectors must be able break infinite locks on shared to exit
     void stop(void) { image_source.notifySelf(); }

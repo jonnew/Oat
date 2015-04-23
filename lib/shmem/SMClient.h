@@ -18,6 +18,7 @@
 #define	SMCLIENT_H
 
 #include <string>
+#include <boost/chrono.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 #include "SyncSharedMemoryObject.h"
@@ -50,6 +51,8 @@ namespace shmem {
         std::string shmem_name, shobj_name;
         bool shared_object_found;
         bip::managed_shared_memory shared_memory;
+        
+        void detachFromShmem(void);
     };
 
     template<class T, template <typename> class SharedMemType>
@@ -66,23 +69,13 @@ namespace shmem {
     template<class T, template <typename> class SharedMemType>
     SMClient<T, SharedMemType>::~SMClient() {
 
-        if (shared_object_found) {
-            
-            // Make sure nobody is going to wait on a disposed object
-            shared_object->mutex.wait();
-            shared_object->number_of_clients++;
-            shared_object->mutex.post();
-        }
+        detachFromShmem();
     }
 
     template<class T, template <typename> class SharedMemType>
     int SMClient<T, SharedMemType>::findSharedObject() {
         
         int client_num;
-        
-        // Remove_shared_memory on object destruction
-        // TODO: I don't like this!
-        //bip::shared_memory_object::remove(shmem_name.c_str());
         
         try {
 
@@ -113,7 +106,7 @@ namespace shmem {
 
     template<class T, template <typename> class SharedMemType>
     void SMClient<T, SharedMemType>::get_value(T& value) {
-
+        
         shared_object->read_barrier.wait();
         
         /* START CRITICAL SECTION */
@@ -137,6 +130,22 @@ namespace shmem {
              
     }
 
+    template<class T, template <typename> class SharedMemType>
+    void SMClient<T, SharedMemType>::detachFromShmem() {
+        
+        if (shared_object_found) {
+
+            // Make sure nobody is going to wait on a disposed object
+            shared_object->mutex.wait();
+            shared_object->number_of_clients--;
+            shared_object->mutex.post();
+
+#ifndef NDEBUG
+            std::cout << "Number of clients in \'" + shmem_name + "\' was decremented.\n";
+#endif
+
+        }
+    }
     template<class T, template <typename> class SharedMemType>
     void SMClient<T, SharedMemType>::notifySelf() {
 

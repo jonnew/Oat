@@ -41,6 +41,7 @@ namespace shmem {
 
         void createSharedObject(void);
         void pushObject(T value);
+        void notifySelf(void);
         
         // Accessors
         bool is_running(void) { return running; };
@@ -90,11 +91,10 @@ namespace shmem {
     template<class T, template <typename> class SharedMemType>
     SMServer<T, SharedMemType>::~SMServer() {
 
-        // Remove_shared_memory on object destruction
-        if (shared_object_created) {
-            shared_object->write_barrier.post();
-        }
+        // Unblock server thread 
+        notifySelf();
 
+        // Remove_shared_memory on object destruction
         bip::shared_memory_object::remove(shmem_name.c_str());
     }
 
@@ -143,7 +143,7 @@ namespace shmem {
 
             // Proceed only if mat_buffer has data
             std::unique_lock<std::mutex> lk(server_mutex);
-            serve_condition.wait(lk);
+            serve_condition.wait_for(lk, std::chrono::milliseconds(10));
 
             T value;
             while (buffer.pop(value)) {
@@ -177,6 +177,14 @@ namespace shmem {
                     shared_object->new_data_barrier.post();
                 }
             }
+        }
+    }
+    
+    template<class T, template <typename> class SharedMemType>
+    void SMServer<T, SharedMemType>::notifySelf() {
+        
+        if (shared_object_created) {
+            shared_object->write_barrier.post();
         }
     }
 } // namespace shmem 

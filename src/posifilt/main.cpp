@@ -14,7 +14,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "Decorator.h"
+#include "PositionFilter.h"
 
 #include <string>
 #include <signal.h>
@@ -31,24 +31,27 @@ void term(int) {
     done = 1;
 }
 
-void run(Decorator* decorator) {
+void printUsage(po::options_description options) {
+    std::cout << "Usage: posifilt [OPTIONS]\n";
+    std::cout << "   or: posifilt TYPE SOURCE SINK [CONFIGURATION]\n";
+    std::cout << "Perform TYPE position filter on a position stream published by a SMServer<Position> SOURCE.\n";
+    std::cout << "Publish filtered object position to a SMSserver<Position> SINK.\n\n";
+    std::cout << "TYPE\n";
+    std::cout << "  \'kalman\': Kalman filter\n\n";
+    std::cout << options << "\n";
+}
+
+void run(PositionFilter* positionFilter) {
  
     //std::cout << "Viewer has begun listening to source \"" + source + "\".\n";
 
     while (!done) {
-        decorator->decorateImage();
-        decorator->serveImage();
+        positionFilter->grabPosition();
+        positionFilter->filterPosition();
+        positionFilter->serveFilteredPosition();
     }
     
-    decorator->stop();
-}
-
-void printUsage(po::options_description options) {
-    std::cout << "Usage: viewer [OPTIONS]\n";
-    std::cout << "   or: viewer POSITION_SOURCE IMAGE_SOURCE IMAGE_SINK\n";
-    std::cout << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCE.\n";
-    std::cout << "Publish decorated image to IMAGE_SINK.\n";
-    std::cout << options << "\n";
+    positionFilter->stop();
 }
 
 int main(int argc, char *argv[]) {
