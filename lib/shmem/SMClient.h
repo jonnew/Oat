@@ -50,6 +50,7 @@ namespace shmem {
 				std::string name;
 				std::string shmem_name, shobj_name;
 				bool shared_object_found;
+				bool read_barrier_passed;		
 				bip::managed_shared_memory shared_memory;
 
 				void detachFromShmem(void);
@@ -60,7 +61,8 @@ namespace shmem {
 			name(source_name)
 			, shmem_name(source_name + "_sh_mem")
 			, shobj_name(source_name + "_sh_obj")
-			, shared_object_found(false) {  }
+			, shared_object_found(false)
+			, read_barrier_passed(false) {  }
 
 	template<class T, template <typename> class SharedMemType>
 		SMClient<T, SharedMemType>::SMClient(const SMClient<T, SharedMemType>& orig) {
@@ -112,31 +114,40 @@ namespace shmem {
 			boost::system_time timeout = 
 				boost::get_system_time() + boost::posix_time::milliseconds(100); 
 
-			if (!shared_object->read_barrier.timed_wait(timeout)) {
-				return false;
-			}
+			if (!read_barrier_passed) {
 
-			/* START CRITICAL SECTION */
-			shared_object->mutex.wait();
+				if (!shared_object->read_barrier.timed_wait(timeout)) {
+					return false;
+				}
 
-			value = shared_object->get_value();
+				// Write down that we made it past the read_barrier in case the
+				// new_data_barrier times out.
+				read_barrier_passed = true;
 
-			// Now that this client has finished its read, update the count
-			shared_object->client_read_count++;
+				/* START CRITICAL SECTION */
+				shared_object->mutex.wait();
 
-			// If all clients have read, signal the write barrier
-			if (shared_object->client_read_count == shared_object->number_of_clients) {
-				shared_object->write_barrier.post();
-				shared_object->client_read_count = 0;
-			}
+				value = shared_object->get_value();
 
-			shared_object->mutex.post();
-			/* END CRITICAL SECTION */
+				// Now that this client has finished its read, update the count
+				shared_object->client_read_count++;
+
+				// If all clients have read, signal the write barrier
+				if (shared_object->client_read_count == shared_object->number_of_clients) {
+					shared_object->write_barrier.post();
+					shared_object->client_read_count = 0;
+				}
+
+				shared_object->mutex.post();
+				/* END CRITICAL SECTION */
+			} 
 
 			if (!shared_object->new_data_barrier.timed_wait(timeout)) {
 				return false;
 			}
 
+			// Reset the read_barrier_passed switch
+			read_barrier_passed = false;
 			return true;
 		}
 

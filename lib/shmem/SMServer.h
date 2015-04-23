@@ -30,163 +30,163 @@
 
 namespace shmem {
 
-    namespace bip = boost::interprocess;
+	namespace bip = boost::interprocess;
 
-    template<class T, template <typename> class SharedMemType = shmem::SyncSharedMemoryObject>
-    class SMServer {
-    public:
-        SMServer(std::string sink_name);
-        SMServer(const SMServer& orig);
-        virtual ~SMServer();
+	template<class T, template <typename> class SharedMemType = shmem::SyncSharedMemoryObject>
+		class SMServer {
+			public:
+				SMServer(std::string sink_name);
+				SMServer(const SMServer& orig);
+				virtual ~SMServer();
 
-        void createSharedObject(void);
-        void pushObject(T value);
-        void notifySelf(void);
-        
-        // Accessors
-        bool is_running(void) { return running; };
-        void set_running(bool value) { running = value; } 
+				void createSharedObject(void);
+				void pushObject(T value);
+				void notifySelf(void);
 
-    private:
+				// Accessors
+				bool is_running(void) { return running; };
+				void set_running(bool value) { running = value; } 
 
-        // Name of this server
-        std::string name;
+			private:
 
-        // Buffer
-        boost::lockfree::spsc_queue<T, boost::lockfree::capacity<100> > buffer;
+				// Name of this server
+				std::string name;
 
-        // Server threading
-        std::thread server_thread;
-        std::mutex server_mutex;
-        std::condition_variable serve_condition;
-        std::atomic<bool> running; // Server running
+				// Buffer
+				boost::lockfree::spsc_queue<T, boost::lockfree::capacity<100> > buffer;
 
-        // Shared memory and managed object names
-        SharedMemType<T>* shared_object; // Defaults to shmem::SyncSharedMemoryObject<T>
-        std::string shmem_name, shobj_name;
-        bip::managed_shared_memory shared_memory;
-        bool shared_object_created;
+				// Server threading
+				std::thread server_thread;
+				std::mutex server_mutex;
+				std::condition_variable serve_condition;
+				std::atomic<bool> running; // Server running
 
-        void createSharedObject(size_t bytes);
-        void serveFromBuffer(void);
+				// Shared memory and managed object names
+				SharedMemType<T>* shared_object; // Defaults to shmem::SyncSharedMemoryObject<T>
+				std::string shmem_name, shobj_name;
+				bip::managed_shared_memory shared_memory;
+				bool shared_object_created;
 
-    };
+				void createSharedObject(size_t bytes);
+				void serveFromBuffer(void);
 
-    template<class T, template <typename> class SharedMemType>
-    SMServer<T, SharedMemType>::SMServer(std::string sink_name) :
-    name(sink_name)
-    , shmem_name(sink_name + "_sh_mem")
-    , shobj_name(sink_name + "_sh_obj")
-    , shared_object_created(false)
-    , running(true) {
+		};
 
-        // Start the server thread
-        server_thread = std::thread(&SMServer<T, SharedMemType>::serveFromBuffer, this);
-    }
+	template<class T, template <typename> class SharedMemType>
+		SMServer<T, SharedMemType>::SMServer(std::string sink_name) :
+			name(sink_name)
+			, shmem_name(sink_name + "_sh_mem")
+			, shobj_name(sink_name + "_sh_obj")
+			, shared_object_created(false)
+			, running(true) {
 
-    template<class T, template <typename> class SharedMemType>
-    SMServer<T, SharedMemType>::SMServer(const SMServer<T, SharedMemType>& orig) {
-    }
+				// Start the server thread
+				server_thread = std::thread(&SMServer<T, SharedMemType>::serveFromBuffer, this);
+			}
 
-    template<class T, template <typename> class SharedMemType>
-    SMServer<T, SharedMemType>::~SMServer() {
+	template<class T, template <typename> class SharedMemType>
+		SMServer<T, SharedMemType>::SMServer(const SMServer<T, SharedMemType>& orig) {
+		}
 
-        // Unblock server thread 
-        notifySelf();
+	template<class T, template <typename> class SharedMemType>
+		SMServer<T, SharedMemType>::~SMServer() {
 
-        // Remove_shared_memory on object destruction
-        bip::shared_memory_object::remove(shmem_name.c_str());
-    }
+			// Unblock server thread 
+			notifySelf();
 
-    template<class T, template <typename> class SharedMemType>
-    void SMServer<T, SharedMemType>::createSharedObject() {
+			// Remove_shared_memory on object destruction
+			bip::shared_memory_object::remove(shmem_name.c_str());
+		}
 
-        try {
+	template<class T, template <typename> class SharedMemType>
+		void SMServer<T, SharedMemType>::createSharedObject() {
 
-            // Allocate shared memory
-            shared_memory = bip::managed_shared_memory(
-                    bip::open_or_create,
-                    shmem_name.c_str(),
-                    sizeof (SharedMemType<T>) + 1024);
+			try {
 
-            // Make the shared object
-            shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
+				// Allocate shared memory
+				shared_memory = bip::managed_shared_memory(
+						bip::open_or_create,
+						shmem_name.c_str(),
+						sizeof (SharedMemType<T>) + 1024);
+
+				// Make the shared object
+				shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
 
 
-        } catch (bip::interprocess_exception& ex) {
-            std::cerr << ex.what() << '\n';
-            exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
-        }
+			} catch (bip::interprocess_exception& ex) {
+				std::cerr << ex.what() << '\n';
+				exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
+			}
 
-        shared_object_created = true;
-    }
+			shared_object_created = true;
+		}
 
-    template<class T, template <typename> class SharedMemType>
-    void SMServer<T, SharedMemType>::pushObject(T value) {
+	template<class T, template <typename> class SharedMemType>
+		void SMServer<T, SharedMemType>::pushObject(T value) {
 
-        // Push data onto ring buffer
-        buffer.push(value);
+			// Push data onto ring buffer
+			buffer.push(value);
 
 #ifndef NDEBUG
-        std::cout << "Buffer count: " + std::to_string(buffer.read_available()) + "\n";
+			std::cout << "Buffer count: " + std::to_string(buffer.read_available()) + "\n";
 #endif
 
-        // notify server thread that data is available
-        serve_condition.notify_one();
+			// notify server thread that data is available
+			serve_condition.notify_one();
 
-    }
+		}
 
-    template<class T, template <typename> class SharedMemType>
-    void SMServer<T, SharedMemType>::serveFromBuffer() {
+	template<class T, template <typename> class SharedMemType>
+		void SMServer<T, SharedMemType>::serveFromBuffer() {
 
-        while (running) {
+			while (running) {
 
-            // Proceed only if mat_buffer has data
-            std::unique_lock<std::mutex> lk(server_mutex);
-            serve_condition.wait_for(lk, std::chrono::milliseconds(10));
+				// Proceed only if mat_buffer has data
+				std::unique_lock<std::mutex> lk(server_mutex);
+				serve_condition.wait_for(lk, std::chrono::milliseconds(9));
 
-            T value;
-            while (buffer.pop(value)) {
+				T value;
+				while (buffer.pop(value)) {
 
-                if (!shared_object_created) {
-                    createSharedObject();
-                }
+					if (!shared_object_created) {
+						createSharedObject();
+					}
 
-                /* START CRITICAL SECTION */
-                shared_object->mutex.wait();
+					/* START CRITICAL SECTION */
+					shared_object->mutex.wait();
 
-                // Perform write in shared memory 
-                shared_object->set_value(value);
+					// Perform write in shared memory 
+					shared_object->set_value(value);
 
-                // Tell each client they can proceed
-                for (int i = 0; i < shared_object->number_of_clients; ++i) {
-                    shared_object->read_barrier.post();
-                }
+					shared_object->mutex.post();
+					/* END CRITICAL SECTION */
 
-                shared_object->mutex.post();
-                /* END CRITICAL SECTION */
+					// Tell each client they can proceed
+					for (int i = 0; i < shared_object->number_of_clients; ++i) {
+						shared_object->read_barrier.post();
+					}
 
-                // Only wait if there is a client
-                if (shared_object->number_of_clients) {
-                    shared_object->write_barrier.wait();
-                }
-                
-                // Tell each client they can proceed now that the write_barrier
-                // has been passed
-                for (int i = 0; i < shared_object->number_of_clients; ++i) {
-                    shared_object->new_data_barrier.post();
-                }
-            }
-        }
-    }
-    
-    template<class T, template <typename> class SharedMemType>
-    void SMServer<T, SharedMemType>::notifySelf() {
-        
-        if (shared_object_created) {
-            shared_object->write_barrier.post();
-        }
-    }
+					// Only wait if there is a client
+					if (shared_object->number_of_clients) {
+						shared_object->write_barrier.wait();
+					}
+
+					// Tell each client they can proceed now that the write_barrier
+					// has been passed
+					for (int i = 0; i < shared_object->number_of_clients; ++i) {
+						shared_object->new_data_barrier.post();
+					}
+				}
+			}
+		}
+
+	template<class T, template <typename> class SharedMemType>
+		void SMServer<T, SharedMemType>::notifySelf() {
+
+			if (shared_object_created) {
+				shared_object->write_barrier.post();
+			}
+		}
 } // namespace shmem 
 
 #endif	/* SMSERVER_H */
