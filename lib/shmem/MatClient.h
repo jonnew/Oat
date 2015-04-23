@@ -37,7 +37,7 @@ public:
     int findSharedMat(void);
     
     // get cv::Mat out of shared memory
-    void getSharedMat(cv::Mat& value);
+    bool getSharedMat(cv::Mat& value);
     
     // Auto notification to exit wait()
     void notifySelf(void);
