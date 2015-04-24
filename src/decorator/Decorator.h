@@ -55,11 +55,12 @@ private:
     // Mat server for sending decorated frames
     MatServer frame_sink;
     
-    // Drawing constants // TODO: These will need to change if image information
+    // Drawing constants 
+    // TODO: These will need to change if image information
     // starts coming in world-value units
     const float position_circle_radius = 5.0;
     const float head_dir_line_length = 25.0;
-    const float velocity_scale_factor = 10.0;
+    const float velocity_scale_factor = 0.1;
     
     void drawPosition();
     void drawHeadDirection();

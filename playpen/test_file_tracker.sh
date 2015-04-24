@@ -14,9 +14,9 @@ trap "shutdown" SIGINT SIGTERM
 # Start a bunch of child processes that are killable with CTRL-C
 gnome-terminal -x sh -c "./bin/viewer final1; bash" &
 sleep 1
-gnome-terminal -x sh -c "./bin/decorate hsv1 vid1 final1; bash" &
+gnome-terminal -x sh -c "./bin/decorate filt1 vid1 final1; bash" &
 sleep 1
-#gnome-terminal -x sh -c "./bin/posifilt kalman hsv filt -c test_file_tracker_config.toml -k kalman; bash" &
+gnome-terminal -x sh -c "./bin/posifilt kalman hsv1 filt1 -c test_file_tracker_config.toml -k kalman; bash" &
 sleep 1
 gnome-terminal -x sh -c "./bin/detector hsv vid1 hsv1 -c test_file_tracker_config.toml -k hsv; bash" &
 sleep 1

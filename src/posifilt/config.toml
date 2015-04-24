@@ -4,8 +4,8 @@
 # Detector (hsv, blue) ----------------
 
 [kalman]
-dt = 0.0333						  		# Sample period, seconds (Should be automatically provided)
-not_found_timeout = 10					# Seconds
-sigma_accel = 0.1 						# Meters/sec^2
-sigma_noise = 0.01						# Noise measurement (meters)
-tune = true;
+dt = 0.02					# Sample period, seconds (Should be automatically provided)
+not_found_timeout = 10.0			# Seconds
+sigma_accel = 20.0 				# Meters/sec^2
+sigma_noise = 20.0				# Noise measurement (meters)
+tune = true                                     # Use the GUI to tweak parameters

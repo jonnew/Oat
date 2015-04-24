@@ -14,379 +14,105 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <iostream>
-#include <sstream>
-#include <time.h>
+// *************** NOTE *********************
+// This program is basically a copy of the OpenCV camera calibration tutorial
+// found here: https://github.com/Itseez/opencv/blob/master/samples/cpp/calibration.cpp
+// Except that it works with simple-tracker's Camera interface.
+
+
+#include <cctype>
 #include <stdio.h>
+#include <string.h>
+#include <time.h>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/core/utility.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/highgui.hpp>
 
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
+#include "Camera.h"
+#include "PGGigECam.h"
+#include "WebCam.h"
 
 using namespace cv;
 using namespace std;
 
+const char * usage =
+        " \nexample command line for calibration from a live feed.\n"
+        "   calibration  -w 4 -h 5 -s 0.025 -o camera.yml -op -oe\n"
+        " \n"
+        " example command line for calibration from a list of stored images:\n"
+        "   imagelist_creator image_list.xml *.png\n"
+        "   calibration -w 4 -h 5 -s 0.025 -o camera.yml -op -oe image_list.xml\n"
+        " where image_list.xml is the standard OpenCV XML/YAML\n"
+        " use imagelist_creator to create the xml or yaml list\n"
+        " file consisting of the list of strings, e.g.:\n"
+        " \n"
+        "<?xml version=\"1.0\"?>\n"
+        "<opencv_storage>\n"
+        "<images>\n"
+        "view000.png\n"
+        "view001.png\n"
+        "<!-- view002.png -->\n"
+        "view003.png\n"
+        "view010.png\n"
+        "one_extra_view.jpg\n"
+        "</images>\n"
+        "</opencv_storage>\n";
+
+
+const char* liveCaptureHelp =
+        "When the live video from camera is used as input, the following hot-keys may be used:\n"
+        "  <ESC>, 'q' - quit the program\n"
+        "  'g' - start capturing images\n"
+        "  'u' - switch undistortion on/off\n";
+
 static void help() {
-    cout << "This is a camera calibration sample." << endl
-            << "Usage: calibration configurationFile" << endl
-            << "Near the sample file you'll find the configuration file, which has detailed help of "
-            "how to edit it.  It may be any OpenCV supported file format XML/YAML." << endl;
-}
-
-class Settings {
-public:
-
-    Settings() : goodInput(false) {
-    }
-
-    enum Pattern {
-        NOT_EXISTING, CHESSBOARD, CIRCLES_GRID, ASYMMETRIC_CIRCLES_GRID
-    };
-
-    enum InputType {
-        INVALID, CAMERA, VIDEO_FILE, IMAGE_LIST
-    };
-
-    void write(FileStorage& fs) const //Write serialization for this class
-    {
-        fs << "{" << "BoardSize_Width" << boardSize.width
-                << "BoardSize_Height" << boardSize.height
-                << "Square_Size" << squareSize
-                << "Calibrate_Pattern" << patternToUse
-                << "Calibrate_NrOfFrameToUse" << nrFrames
-                << "Calibrate_FixAspectRatio" << aspectRatio
-                << "Calibrate_AssumeZeroTangentialDistortion" << calibZeroTangentDist
-                << "Calibrate_FixPrincipalPointAtTheCenter" << calibFixPrincipalPoint
-
-                << "Write_DetectedFeaturePoints" << bwritePoints
-                << "Write_extrinsicParameters" << bwriteExtrinsics
-                << "Write_outputFileName" << outputFileName
-
-                << "Show_UndistortedImage" << showUndistorsed
-
-                << "Input_FlipAroundHorizontalAxis" << flipVertical
-                << "Input_Delay" << delay
-                << "Input" << input
-                << "}";
-    }
-
-    void read(const FileNode& node) //Read serialization for this class
-    {
-        node["BoardSize_Width" ] >> boardSize.width;
-        node["BoardSize_Height"] >> boardSize.height;
-        node["Calibrate_Pattern"] >> patternToUse;
-        node["Square_Size"] >> squareSize;
-        node["Calibrate_NrOfFrameToUse"] >> nrFrames;
-        node["Calibrate_FixAspectRatio"] >> aspectRatio;
-        node["Write_DetectedFeaturePoints"] >> bwritePoints;
-        node["Write_extrinsicParameters"] >> bwriteExtrinsics;
-        node["Write_outputFileName"] >> outputFileName;
-        node["Calibrate_AssumeZeroTangentialDistortion"] >> calibZeroTangentDist;
-        node["Calibrate_FixPrincipalPointAtTheCenter"] >> calibFixPrincipalPoint;
-        node["Input_FlipAroundHorizontalAxis"] >> flipVertical;
-        node["Show_UndistortedImage"] >> showUndistorsed;
-        node["Input"] >> input;
-        node["Input_Delay"] >> delay;
-        interprate();
-    }
-
-    void interprate() {
-        goodInput = true;
-        if (boardSize.width <= 0 || boardSize.height <= 0) {
-            cerr << "Invalid Board size: " << boardSize.width << " " << boardSize.height << endl;
-            goodInput = false;
-        }
-        if (squareSize <= 10e-6) {
-            cerr << "Invalid square size " << squareSize << endl;
-            goodInput = false;
-        }
-        if (nrFrames <= 0) {
-            cerr << "Invalid number of frames " << nrFrames << endl;
-            goodInput = false;
-        }
-
-        if (input.empty()) // Check for valid input
-            inputType = INVALID;
-        else {
-            if (input[0] >= '0' && input[0] <= '9') {
-                stringstream ss(input);
-                ss >> cameraID;
-                inputType = CAMERA;
-            } else {
-                if (readStringList(input, imageList)) {
-                    inputType = IMAGE_LIST;
-                    nrFrames = (nrFrames < (int) imageList.size()) ? nrFrames : (int) imageList.size();
-                } else
-                    inputType = VIDEO_FILE;
-            }
-            if (inputType == CAMERA)
-                inputCapture.open(cameraID);
-            if (inputType == VIDEO_FILE)
-                inputCapture.open(input);
-            if (inputType != IMAGE_LIST && !inputCapture.isOpened())
-                inputType = INVALID;
-        }
-        if (inputType == INVALID) {
-            cerr << " Inexistent input: " << input;
-            goodInput = false;
-        }
-
-        flag = 0;
-        if (calibFixPrincipalPoint) flag |= CV_CALIB_FIX_PRINCIPAL_POINT;
-        if (calibZeroTangentDist) flag |= CV_CALIB_ZERO_TANGENT_DIST;
-        if (aspectRatio) flag |= CV_CALIB_FIX_ASPECT_RATIO;
-
-
-        calibrationPattern = NOT_EXISTING;
-        if (!patternToUse.compare("CHESSBOARD")) calibrationPattern = CHESSBOARD;
-        if (!patternToUse.compare("CIRCLES_GRID")) calibrationPattern = CIRCLES_GRID;
-        if (!patternToUse.compare("ASYMMETRIC_CIRCLES_GRID")) calibrationPattern = ASYMMETRIC_CIRCLES_GRID;
-        if (calibrationPattern == NOT_EXISTING) {
-            cerr << " Inexistent camera calibration mode: " << patternToUse << endl;
-            goodInput = false;
-        }
-        atImageList = 0;
-
-    }
-
-    Mat nextImage() {
-        Mat result;
-        if (inputCapture.isOpened()) {
-            Mat view0;
-            inputCapture >> view0;
-            view0.copyTo(result);
-        } else if (atImageList < (int) imageList.size())
-            result = imread(imageList[atImageList++], CV_LOAD_IMAGE_COLOR);
-
-        return result;
-    }
-
-    static bool readStringList(const string& filename, vector<string>& l) {
-        l.clear();
-        FileStorage fs(filename, FileStorage::READ);
-        if (!fs.isOpened())
-            return false;
-        FileNode n = fs.getFirstTopLevelNode();
-        if (n.type() != FileNode::SEQ)
-            return false;
-        FileNodeIterator it = n.begin(), it_end = n.end();
-        for (; it != it_end; ++it)
-            l.push_back((string) * it);
-        return true;
-    }
-public:
-    Size boardSize; // The size of the board -> Number of items by width and height
-    Pattern calibrationPattern; // One of the Chessboard, circles, or asymmetric circle pattern
-    float squareSize; // The size of a square in your defined unit (point, millimeter,etc).
-    int nrFrames; // The number of frames to use from the input for calibration
-    float aspectRatio; // The aspect ratio
-    int delay; // In case of a video input
-    bool bwritePoints; //  Write detected feature points
-    bool bwriteExtrinsics; // Write extrinsic parameters
-    bool calibZeroTangentDist; // Assume zero tangential distortion
-    bool calibFixPrincipalPoint; // Fix the principal point at the center
-    bool flipVertical; // Flip the captured images around the horizontal axis
-    string outputFileName; // The name of the file where to write
-    bool showUndistorsed; // Show undistorted images after calibration
-    string input; // The input ->
-
-    int cameraID;
-    vector<string> imageList;
-    int atImageList;
-    VideoCapture inputCapture;
-    InputType inputType;
-    bool goodInput;
-    int flag;
-
-private:
-    string patternToUse;
-
-};
-
-static void read(const FileNode& node, Settings& x, const Settings& default_value = Settings()) {
-    if (node.empty())
-        x = default_value;
-    else
-        x.read(node);
+    printf("This is a camera calibration sample.\n"
+            "Usage: calibration\n"
+            "     -w <board_width>         # the number of inner corners per one of board dimension\n"
+            "     -h <board_height>        # the number of inner corners per another board dimension\n"
+            "     [-pt <pattern>]          # the type of pattern: chessboard or circles' grid\n"
+            "     [-n <number_of_frames>]  # the number of frames to use for calibration\n"
+            "                              # (if not specified, it will be set to the number\n"
+            "                              #  of board views actually available)\n"
+            "     [-d <delay>]             # a minimum delay in ms between subsequent attempts to capture a next view\n"
+            "                              # (used only for video capturing)\n"
+            "     [-s <squareSize>]        # square size in some user-defined units (1 by default)\n"
+            "     [-o <out_camera_params>] # the output filename for intrinsic [and extrinsic] parameters\n"
+            "     [-op]                    # write detected feature points\n"
+            "     [-oe]                    # write extrinsic parameters\n"
+            "     [-zt]                    # assume zero tangential distortion\n"
+            "     [-a <aspectRatio>]       # fix aspect ratio (fx/fy)\n"
+            "     [-p]                     # fix the principal point at the center\n"
+            "     [-v]                     # flip the captured images around the horizontal axis\n"
+            "     [-C <params>]            # use a simple-tracker Camera\n" //TODO: Make this work somehow
+            "     [-V]                     # use a video file, and not an image list, uses\n"
+            "                              # [input_data] string for the video file name\n"
+            "     [-su]                    # show undistorted images after calibration\n"
+            "     [input_data]             # input data, one of the following:\n"
+            "                              #  - text file with a list of the images of the board\n"
+            "                              #    the text file can be generated with imagelist_creator\n"
+            "                              #  - name of video file with a video of the board\n"
+            "                              # if input_data not specified, a live view from the camera is used\n" 
+            "\n");
+    printf("\n%s", usage);
+    printf("\n%s", liveCaptureHelp);
 }
 
 enum {
     DETECTION = 0, CAPTURING = 1, CALIBRATED = 2
 };
 
-bool runCalibrationAndSave(Settings& s, Size imageSize, Mat& cameraMatrix, Mat& distCoeffs,
-        vector<vector<Point2f> > imagePoints);
+enum Pattern {
+    CHESSBOARD, CIRCLES_GRID, ASYMMETRIC_CIRCLES_GRID
+};
 
-int main(int argc, char* argv[]) {
-    help();
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Settings s;
-    const string inputSettingsFile = argc > 1 ? argv[1] : "default.xml";
-    FileStorage fs(inputSettingsFile, FileStorage::READ); // Read the settings
-    if (!fs.isOpened()) {
-        cout << "Could not open the configuration file: \"" << inputSettingsFile << "\"" << endl;
-        return -1;
-    }
-    fs["Settings"] >> s;
-    fs.release(); // close Settings file
-
-    if (!s.goodInput) {
-        cout << "Invalid input detected. Application stopping. " << endl;
-        return -1;
-    }
-
-    vector<vector<Point2f> > imagePoints;
-    Mat cameraMatrix, distCoeffs;
-    Size imageSize;
-    int mode = s.inputType == Settings::IMAGE_LIST ? CAPTURING : DETECTION;
-    clock_t prevTimestamp = 0;
-    const Scalar RED(0, 0, 255), GREEN(0, 255, 0);
-    const char ESC_KEY = 27;
-
-    for (int i = 0;; ++i) {
-        Mat view;
-        bool blinkOutput = false;
-
-        view = s.nextImage();
-
-        //-----  If no more image, or got enough, then stop calibration and show result -------------
-        if (mode == CAPTURING && imagePoints.size() >= (unsigned) s.nrFrames) {
-            if (runCalibrationAndSave(s, imageSize, cameraMatrix, distCoeffs, imagePoints))
-                mode = CALIBRATED;
-            else
-                mode = DETECTION;
-        }
-        if (view.empty()) // If no more images then run calibration, save and stop loop.
-        {
-            if (imagePoints.size() > 0)
-                runCalibrationAndSave(s, imageSize, cameraMatrix, distCoeffs, imagePoints);
-            break;
-        }
-
-
-        imageSize = view.size(); // Format input image.
-        if (s.flipVertical) flip(view, view, 0);
-
-        vector<Point2f> pointBuf;
-
-        bool found;
-        switch (s.calibrationPattern) // Find feature points on the input format
-        {
-            case Settings::CHESSBOARD:
-                found = findChessboardCorners(view, s.boardSize, pointBuf,
-                        CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FAST_CHECK | CV_CALIB_CB_NORMALIZE_IMAGE);
-                break;
-            case Settings::CIRCLES_GRID:
-                found = findCirclesGrid(view, s.boardSize, pointBuf);
-                break;
-            case Settings::ASYMMETRIC_CIRCLES_GRID:
-                found = findCirclesGrid(view, s.boardSize, pointBuf, CALIB_CB_ASYMMETRIC_GRID);
-                break;
-            default:
-                found = false;
-                break;
-        }
-
-        if (found) // If done with success,
-        {
-            // improve the found corners' coordinate accuracy for chessboard
-            if (s.calibrationPattern == Settings::CHESSBOARD) {
-                Mat viewGray;
-                cvtColor(view, viewGray, COLOR_BGR2GRAY);
-                cornerSubPix(viewGray, pointBuf, Size(11, 11),
-                        Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
-            }
-
-            if (mode == CAPTURING && // For camera only take new samples after delay time
-                    (!s.inputCapture.isOpened() || clock() - prevTimestamp > s.delay * 1e-3 * CLOCKS_PER_SEC)) {
-                imagePoints.push_back(pointBuf);
-                prevTimestamp = clock();
-                blinkOutput = s.inputCapture.isOpened();
-            }
-
-            // Draw the corners.
-            drawChessboardCorners(view, s.boardSize, Mat(pointBuf), found);
-        }
-
-        //----------------------------- Output Text ------------------------------------------------
-        string msg = (mode == CAPTURING) ? "100/100" :
-                mode == CALIBRATED ? "Calibrated" : "Press 'g' to start";
-        int baseLine = 0;
-        Size textSize = getTextSize(msg, 1, 1, 1, &baseLine);
-        Point textOrigin(view.cols - 2 * textSize.width - 10, view.rows - 2 * baseLine - 10);
-
-        if (mode == CAPTURING) {
-            if (s.showUndistorsed)
-                msg = format("%d/%d Undist", (int) imagePoints.size(), s.nrFrames);
-            else
-                msg = format("%d/%d", (int) imagePoints.size(), s.nrFrames);
-        }
-
-        putText(view, msg, textOrigin, 1, 1, mode == CALIBRATED ? GREEN : RED);
-
-        if (blinkOutput)
-            bitwise_not(view, view);
-
-        //------------------------- Video capture  output  undistorted ------------------------------
-        if (mode == CALIBRATED && s.showUndistorsed) {
-            Mat temp = view.clone();
-            undistort(temp, view, cameraMatrix, distCoeffs);
-        }
-
-        //------------------------------ Show image and check for input commands -------------------
-        imshow("Image View", view);
-        char key = (char) waitKey(s.inputCapture.isOpened() ? 50 : s.delay);
-
-        if (key == ESC_KEY)
-            break;
-
-        if (key == 'u' && mode == CALIBRATED)
-            s.showUndistorsed = !s.showUndistorsed;
-
-        if (s.inputCapture.isOpened() && key == 'g') {
-            mode = CAPTURING;
-            imagePoints.clear();
-        }
-    }
-
-    // -----------------------Show the undistorted image for the image list ------------------------
-    if (s.inputType == Settings::IMAGE_LIST && s.showUndistorsed) {
-        Mat view, rview, map1, map2;
-        initUndistortRectifyMap(cameraMatrix, distCoeffs, Mat(),
-                getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, imageSize, 1, imageSize, 0),
-                imageSize, CV_16SC2, map1, map2);
-
-        for (int i = 0; i < (int) s.imageList.size(); i++) {
-            view = imread(s.imageList[i], 1);
-            if (view.empty())
-                continue;
-            remap(view, rview, map1, map2, INTER_LINEAR);
-            imshow("Image View", rview);
-            char c = (char) waitKey();
-            if (c == ESC_KEY || c == 'q' || c == 'Q')
-                break;
-        }
-    }
-
-
-    return 0;
-}
-
-static double computeReprojectionErrors(const vector<vector<Point3f> >& objectPoints,
+static double computeReprojectionErrors(
+        const vector<vector<Point3f> >& objectPoints,
         const vector<vector<Point2f> >& imagePoints,
         const vector<Mat>& rvecs, const vector<Mat>& tvecs,
         const Mat& cameraMatrix, const Mat& distCoeffs,
@@ -396,11 +122,10 @@ static double computeReprojectionErrors(const vector<vector<Point3f> >& objectPo
     double totalErr = 0, err;
     perViewErrors.resize(objectPoints.size());
 
-    for (i = 0; i < (int) objectPoints.size(); ++i) {
-        projectPoints(Mat(objectPoints[i]), rvecs[i], tvecs[i], cameraMatrix,
-                distCoeffs, imagePoints2);
-        err = norm(Mat(imagePoints[i]), Mat(imagePoints2), CV_L2);
-
+    for (i = 0; i < (int) objectPoints.size(); i++) {
+        projectPoints(Mat(objectPoints[i]), rvecs[i], tvecs[i],
+                cameraMatrix, distCoeffs, imagePoints2);
+        err = norm(Mat(imagePoints[i]), Mat(imagePoints2), NORM_L2);
         int n = (int) objectPoints[i].size();
         perViewErrors[i] = (float) std::sqrt(err * err / n);
         totalErr += err*err;
@@ -410,48 +135,52 @@ static double computeReprojectionErrors(const vector<vector<Point3f> >& objectPo
     return std::sqrt(totalErr / totalPoints);
 }
 
-static void calcBoardCornerPositions(Size boardSize, float squareSize, vector<Point3f>& corners,
-        Settings::Pattern patternType /*= Settings::CHESSBOARD*/) {
-    corners.clear();
+static void calcChessboardCorners(Size boardSize, float squareSize, vector<Point3f>& corners, Pattern patternType = CHESSBOARD) {
+    corners.resize(0);
 
     switch (patternType) {
-        case Settings::CHESSBOARD:
-        case Settings::CIRCLES_GRID:
-            for (int i = 0; i < boardSize.height; ++i)
-                for (int j = 0; j < boardSize.width; ++j)
-                    corners.push_back(Point3f(float( j * squareSize), float( i * squareSize), 0));
-            break;
-
-        case Settings::ASYMMETRIC_CIRCLES_GRID:
+        case CHESSBOARD:
+        case CIRCLES_GRID:
             for (int i = 0; i < boardSize.height; i++)
                 for (int j = 0; j < boardSize.width; j++)
-                    corners.push_back(Point3f(float((2 * j + i % 2) * squareSize), float(i * squareSize), 0));
+                    corners.push_back(Point3f(float(j * squareSize),
+                        float(i * squareSize), 0));
             break;
+
+        case ASYMMETRIC_CIRCLES_GRID:
+            for (int i = 0; i < boardSize.height; i++)
+                for (int j = 0; j < boardSize.width; j++)
+                    corners.push_back(Point3f(float((2 * j + i % 2) * squareSize),
+                        float(i * squareSize), 0));
+            break;
+
         default:
-            break;
+            CV_Error(Error::StsBadArg, "Unknown pattern type\n");
     }
 }
 
-static bool runCalibration(Settings& s, Size& imageSize, Mat& cameraMatrix, Mat& distCoeffs,
-        vector<vector<Point2f> > imagePoints, vector<Mat>& rvecs, vector<Mat>& tvecs,
-        vector<float>& reprojErrs, double& totalAvgErr) {
-
+static bool runCalibration(vector<vector<Point2f> > imagePoints,
+        Size imageSize, Size boardSize, Pattern patternType,
+        float squareSize, float aspectRatio,
+        int flags, Mat& cameraMatrix, Mat& distCoeffs,
+        vector<Mat>& rvecs, vector<Mat>& tvecs,
+        vector<float>& reprojErrs,
+        double& totalAvgErr) {
     cameraMatrix = Mat::eye(3, 3, CV_64F);
-    if (s.flag & CV_CALIB_FIX_ASPECT_RATIO)
-        cameraMatrix.at<double>(0, 0) = 1.0;
+    if (flags & CALIB_FIX_ASPECT_RATIO)
+        cameraMatrix.at<double>(0, 0) = aspectRatio;
 
     distCoeffs = Mat::zeros(8, 1, CV_64F);
 
     vector<vector<Point3f> > objectPoints(1);
-    calcBoardCornerPositions(s.boardSize, s.squareSize, objectPoints[0], s.calibrationPattern);
+    calcChessboardCorners(boardSize, squareSize, objectPoints[0], patternType);
 
     objectPoints.resize(imagePoints.size(), objectPoints[0]);
 
-    //Find intrinsic and extrinsic camera parameters
     double rms = calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix,
-            distCoeffs, rvecs, tvecs, s.flag | CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5);
-
-    cout << "Re-projection error reported by calibrateCamera: " << rms << endl;
+            distCoeffs, rvecs, tvecs, flags | CALIB_FIX_K4 | CALIB_FIX_K5);
+    ///*|CALIB_FIX_K3*/|CALIB_FIX_K4|CALIB_FIX_K5);
+    printf("RMS error reported by calibrateCamera: %g\n", rms);
 
     bool ok = checkRange(cameraMatrix) && checkRange(distCoeffs);
 
@@ -461,51 +190,52 @@ static bool runCalibration(Settings& s, Size& imageSize, Mat& cameraMatrix, Mat&
     return ok;
 }
 
-// Print camera parameters to the output file
-
-static void saveCameraParams(Settings& s, Size& imageSize, Mat& cameraMatrix, Mat& distCoeffs,
+static void saveCameraParams(const string& filename,
+        Size imageSize, Size boardSize,
+        float squareSize, float aspectRatio, int flags,
+        const Mat& cameraMatrix, const Mat& distCoeffs,
         const vector<Mat>& rvecs, const vector<Mat>& tvecs,
-        const vector<float>& reprojErrs, const vector<vector<Point2f> >& imagePoints,
+        const vector<float>& reprojErrs,
+        const vector<vector<Point2f> >& imagePoints,
         double totalAvgErr) {
-    FileStorage fs(s.outputFileName, FileStorage::WRITE);
+    FileStorage fs(filename, FileStorage::WRITE);
 
-    time_t tm;
-    time(&tm);
-    struct tm *t2 = localtime(&tm);
+    time_t tt;
+    time(&tt);
+    struct tm *t2 = localtime(&tt);
     char buf[1024];
     strftime(buf, sizeof (buf) - 1, "%c", t2);
 
-    fs << "calibration_Time" << buf;
+    fs << "calibration_time" << buf;
 
     if (!rvecs.empty() || !reprojErrs.empty())
-        fs << "nrOfFrames" << (int) std::max(rvecs.size(), reprojErrs.size());
-    fs << "image_Width" << imageSize.width;
-    fs << "image_Height" << imageSize.height;
-    fs << "board_Width" << s.boardSize.width;
-    fs << "board_Height" << s.boardSize.height;
-    fs << "square_Size" << s.squareSize;
+        fs << "nframes" << (int) std::max(rvecs.size(), reprojErrs.size());
+    fs << "image_width" << imageSize.width;
+    fs << "image_height" << imageSize.height;
+    fs << "board_width" << boardSize.width;
+    fs << "board_height" << boardSize.height;
+    fs << "square_size" << squareSize;
 
-    if (s.flag & CV_CALIB_FIX_ASPECT_RATIO)
-        fs << "FixAspectRatio" << s.aspectRatio;
+    if (flags & CALIB_FIX_ASPECT_RATIO)
+        fs << "aspectRatio" << aspectRatio;
 
-    if (s.flag) {
+    if (flags != 0) {
         sprintf(buf, "flags: %s%s%s%s",
-                s.flag & CV_CALIB_USE_INTRINSIC_GUESS ? " +use_intrinsic_guess" : "",
-                s.flag & CV_CALIB_FIX_ASPECT_RATIO ? " +fix_aspectRatio" : "",
-                s.flag & CV_CALIB_FIX_PRINCIPAL_POINT ? " +fix_principal_point" : "",
-                s.flag & CV_CALIB_ZERO_TANGENT_DIST ? " +zero_tangent_dist" : "");
-        cvWriteComment(*fs, buf, 0);
-
+                flags & CALIB_USE_INTRINSIC_GUESS ? "+use_intrinsic_guess" : "",
+                flags & CALIB_FIX_ASPECT_RATIO ? "+fix_aspectRatio" : "",
+                flags & CALIB_FIX_PRINCIPAL_POINT ? "+fix_principal_point" : "",
+                flags & CALIB_ZERO_TANGENT_DIST ? "+zero_tangent_dist" : "");
+        //cvWriteComment( *fs, buf, 0 );
     }
 
-    fs << "flagValue" << s.flag;
+    fs << "flags" << flags;
 
-    fs << "Camera_Matrix" << cameraMatrix;
-    fs << "Distortion_Coefficients" << distCoeffs;
+    fs << "camera_matrix" << cameraMatrix;
+    fs << "distortion_coefficients" << distCoeffs;
 
-    fs << "Avg_Reprojection_Error" << totalAvgErr;
+    fs << "avg_reprojection_error" << totalAvgErr;
     if (!reprojErrs.empty())
-        fs << "Per_View_Reprojection_Errors" << Mat(reprojErrs);
+        fs << "per_view_reprojection_errors" << Mat(reprojErrs);
 
     if (!rvecs.empty() && !tvecs.empty()) {
         CV_Assert(rvecs[0].type() == tvecs[0].type());
@@ -520,8 +250,8 @@ static void saveCameraParams(Settings& s, Size& imageSize, Mat& cameraMatrix, Ma
             r = rvecs[i].t();
             t = tvecs[i].t();
         }
-        cvWriteComment(*fs, "a set of 6-tuples (rotation vector + translation vector) for each view", 0);
-        fs << "Extrinsic_Parameters" << bigmat;
+        //cvWriteComment( *fs, "a set of 6-tuples (rotation vector + translation vector) for each view", 0 );
+        fs << "extrinsic_parameters" << bigmat;
     }
 
     if (!imagePoints.empty()) {
@@ -531,22 +261,298 @@ static void saveCameraParams(Settings& s, Size& imageSize, Mat& cameraMatrix, Ma
             Mat imgpti(imagePoints[i]);
             imgpti.copyTo(r);
         }
-        fs << "Image_points" << imagePtMat;
+        fs << "image_points" << imagePtMat;
     }
 }
 
-bool runCalibrationAndSave(Settings& s, Size imageSize, Mat& cameraMatrix, Mat& distCoeffs, vector<vector<Point2f> > imagePoints) {
+static bool readStringList(const string& filename, vector<string>& l) {
+    l.resize(0);
+    FileStorage fs(filename, FileStorage::READ);
+    if (!fs.isOpened())
+        return false;
+    FileNode n = fs.getFirstTopLevelNode();
+    if (n.type() != FileNode::SEQ)
+        return false;
+    FileNodeIterator it = n.begin(), it_end = n.end();
+    for (; it != it_end; ++it)
+        l.push_back((string) * it);
+    return true;
+}
+
+static bool runAndSave(const string& outputFilename,
+        const vector<vector<Point2f> >& imagePoints,
+        Size imageSize, Size boardSize, Pattern patternType, float squareSize,
+        float aspectRatio, int flags, Mat& cameraMatrix,
+        Mat& distCoeffs, bool writeExtrinsics, bool writePoints) {
     vector<Mat> rvecs, tvecs;
     vector<float> reprojErrs;
     double totalAvgErr = 0;
 
-    bool ok = runCalibration(s, imageSize, cameraMatrix, distCoeffs, imagePoints, rvecs, tvecs,
-            reprojErrs, totalAvgErr);
-    cout << (ok ? "Calibration succeeded" : "Calibration failed")
-            << ". avg re projection error = " << totalAvgErr;
+    bool ok = runCalibration(imagePoints, imageSize, boardSize, patternType, squareSize,
+            aspectRatio, flags, cameraMatrix, distCoeffs,
+            rvecs, tvecs, reprojErrs, totalAvgErr);
+    printf("%s. avg reprojection error = %.2f\n",
+            ok ? "Calibration succeeded" : "Calibration failed",
+            totalAvgErr);
 
     if (ok)
-        saveCameraParams(s, imageSize, cameraMatrix, distCoeffs, rvecs, tvecs, reprojErrs,
-            imagePoints, totalAvgErr);
+        saveCameraParams(outputFilename, imageSize,
+            boardSize, squareSize, aspectRatio,
+            flags, cameraMatrix, distCoeffs,
+            writeExtrinsics ? rvecs : vector<Mat>(),
+            writeExtrinsics ? tvecs : vector<Mat>(),
+            writeExtrinsics ? reprojErrs : vector<float>(),
+            writePoints ? imagePoints : vector<vector<Point2f> >(),
+            totalAvgErr);
     return ok;
+}
+
+int main(int argc, char** argv) {
+    Size boardSize, imageSize;
+    float squareSize = 1.f, aspectRatio = 1.f;
+    Mat cameraMatrix, distCoeffs;
+    const char* outputFilename = "out_camera_data.yml";
+    const char* inputFilename = 0;
+
+    int i, nframes = 10;
+    bool writeExtrinsics = false, writePoints = false;
+    bool undistortImage = false;
+    int flags = 0;
+    VideoCapture capture; 
+    
+    bool use_simple_tracker_camera = false;
+    Camera camera; // TODO: add new flag to determine if this is used and what type it is
+    
+    
+    bool flipVertical = false;
+    bool showUndistorted = false;
+    bool videofile = false;
+    int delay = 1000;
+    clock_t prevTimestamp = 0;
+    int mode = DETECTION;
+    int cameraId = 0;
+    vector<vector<Point2f> > imagePoints;
+    vector<string> imageList;
+    Pattern pattern = CHESSBOARD;
+
+    if (argc < 2) {
+        help();
+        return 0;
+    }
+
+    for (i = 1; i < argc; i++) {
+        const char* s = argv[i];
+        if (strcmp(s, "-w") == 0) {
+            if (sscanf(argv[++i], "%u", &boardSize.width) != 1 || boardSize.width <= 0)
+                return fprintf(stderr, "Invalid board width\n"), -1;
+        } else if (strcmp(s, "-h") == 0) {
+            if (sscanf(argv[++i], "%u", &boardSize.height) != 1 || boardSize.height <= 0)
+                return fprintf(stderr, "Invalid board height\n"), -1;
+        } else if (strcmp(s, "-pt") == 0) {
+            i++;
+            if (!strcmp(argv[i], "circles"))
+                pattern = CIRCLES_GRID;
+            else if (!strcmp(argv[i], "acircles"))
+                pattern = ASYMMETRIC_CIRCLES_GRID;
+            else if (!strcmp(argv[i], "chessboard"))
+                pattern = CHESSBOARD;
+            else
+                return fprintf(stderr, "Invalid pattern type: must be chessboard or circles\n"), -1;
+        } else if (strcmp(s, "-s") == 0) {
+            if (sscanf(argv[++i], "%f", &squareSize) != 1 || squareSize <= 0)
+                return fprintf(stderr, "Invalid board square width\n"), -1;
+        } else if (strcmp(s, "-n") == 0) {
+            if (sscanf(argv[++i], "%u", &nframes) != 1 || nframes <= 3)
+                return printf("Invalid number of images\n"), -1;
+        } else if (strcmp(s, "-a") == 0) {
+            if (sscanf(argv[++i], "%f", &aspectRatio) != 1 || aspectRatio <= 0)
+                return printf("Invalid aspect ratio\n"), -1;
+            flags |= CALIB_FIX_ASPECT_RATIO;
+        } else if (strcmp(s, "-d") == 0) {
+            if (sscanf(argv[++i], "%u", &delay) != 1 || delay <= 0)
+                return printf("Invalid delay\n"), -1;
+        } else if (strcmp(s, "-op") == 0) {
+            writePoints = true;
+        } else if (strcmp(s, "-oe") == 0) {
+            writeExtrinsics = true;
+        } else if (strcmp(s, "-zt") == 0) {
+            flags |= CALIB_ZERO_TANGENT_DIST;
+        } else if (strcmp(s, "-p") == 0) {
+            flags |= CALIB_FIX_PRINCIPAL_POINT;
+        } else if (strcmp(s, "-v") == 0) {
+            flipVertical = true;
+        } else if (strcmp(s, "-V") == 0) {
+            videofile = true;
+        } else if (strcmp(s, "-o") == 0) {
+            outputFilename = argv[++i];
+        } else if (strcmp(s, "-su") == 0) {
+            showUndistorted = true;
+        } else if (s[0] != '-') {
+            if (isdigit(s[0]))
+                sscanf(s, "%d", &cameraId);
+            else
+                inputFilename = s;
+        } else
+            return fprintf(stderr, "Unknown option %s", s), -1;
+    }
+
+    if (inputFilename) {
+        if (!videofile && readStringList(inputFilename, imageList))
+            mode = CAPTURING;
+        else
+            capture.open(inputFilename);
+    } else
+        
+        if (use_simple_tracker_camera) {
+            camera.configure(); //TODO:configure camera
+        } else {
+            capture.open(cameraId);
+        }
+
+    if (!capture.isOpened() && imageList.empty() && !use_simple_tracker_camera)
+        return fprintf(stderr, "Could not initialize video (%d) capture\n", cameraId), -2;
+
+    if (!imageList.empty())
+        nframes = (int) imageList.size();
+
+    if (capture.isOpened())
+        printf("%s", liveCaptureHelp);
+
+    namedWindow("Image View", 1);
+
+    for (i = 0;; i++) {
+        Mat view, viewGray;
+        bool blink = false;
+
+        if (capture.isOpened() || use_simple_tracker_camera) {
+            Mat view0;
+            if (use_simple_tracker_camera) {
+                
+                camera.grabMat();
+                view0 = camera.getCurrentFrame();
+            } else {
+                capture >> view0;
+            }
+            view0.copyTo(view);
+        } else if (i < (int) imageList.size())
+            view = imread(imageList[i], 1);
+
+        if (view.empty()) {
+            if (imagePoints.size() > 0)
+                runAndSave(outputFilename, imagePoints, imageSize,
+                    boardSize, pattern, squareSize, aspectRatio,
+                    flags, cameraMatrix, distCoeffs,
+                    writeExtrinsics, writePoints);
+            break;
+        }
+
+        imageSize = view.size();
+
+        if (flipVertical)
+            flip(view, view, 0);
+
+        vector<Point2f> pointbuf;
+        cvtColor(view, viewGray, COLOR_BGR2GRAY);
+
+        bool found;
+        switch (pattern) {
+            case CHESSBOARD:
+                found = findChessboardCorners(view, boardSize, pointbuf,
+                        CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_FAST_CHECK | CALIB_CB_NORMALIZE_IMAGE);
+                break;
+            case CIRCLES_GRID:
+                found = findCirclesGrid(view, boardSize, pointbuf);
+                break;
+            case ASYMMETRIC_CIRCLES_GRID:
+                found = findCirclesGrid(view, boardSize, pointbuf, CALIB_CB_ASYMMETRIC_GRID);
+                break;
+            default:
+                return fprintf(stderr, "Unknown pattern type\n"), -1;
+        }
+
+        // improve the found corners' coordinate accuracy
+        if (pattern == CHESSBOARD && found) cornerSubPix(viewGray, pointbuf, Size(11, 11),
+                Size(-1, -1), TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1));
+
+        if (mode == CAPTURING && found &&
+                (!capture.isOpened() || clock() - prevTimestamp > delay * 1e-3 * CLOCKS_PER_SEC)) {
+            imagePoints.push_back(pointbuf);
+            prevTimestamp = clock();
+            blink = capture.isOpened();
+        }
+
+        if (found)
+            drawChessboardCorners(view, boardSize, Mat(pointbuf), found);
+
+        string msg = mode == CAPTURING ? "100/100" :
+                mode == CALIBRATED ? "Calibrated" : "Press 'g' to start";
+        int baseLine = 0;
+        Size textSize = getTextSize(msg, 1, 1, 1, &baseLine);
+        Point textOrigin(view.cols - 2 * textSize.width - 10, view.rows - 2 * baseLine - 10);
+
+        if (mode == CAPTURING) {
+            if (undistortImage)
+                msg = format("%d/%d Undist", (int) imagePoints.size(), nframes);
+            else
+                msg = format("%d/%d", (int) imagePoints.size(), nframes);
+        }
+
+        putText(view, msg, textOrigin, 1, 1,
+                mode != CALIBRATED ? Scalar(0, 0, 255) : Scalar(0, 255, 0));
+
+        if (blink)
+            bitwise_not(view, view);
+
+        if (mode == CALIBRATED && undistortImage) {
+            Mat temp = view.clone();
+            undistort(temp, view, cameraMatrix, distCoeffs);
+        }
+
+        imshow("Image View", view);
+        int key = 0xff & waitKey(capture.isOpened() ? 50 : 500);
+
+        if ((key & 255) == 27)
+            break;
+
+        if (key == 'u' && mode == CALIBRATED)
+            undistortImage = !undistortImage;
+
+        if (capture.isOpened() && key == 'g') {
+            mode = CAPTURING;
+            imagePoints.clear();
+        }
+
+        if (mode == CAPTURING && imagePoints.size() >= (unsigned) nframes) {
+            if (runAndSave(outputFilename, imagePoints, imageSize,
+                    boardSize, pattern, squareSize, aspectRatio,
+                    flags, cameraMatrix, distCoeffs,
+                    writeExtrinsics, writePoints))
+                mode = CALIBRATED;
+            else
+                mode = DETECTION;
+            if (!capture.isOpened())
+                break;
+        }
+    }
+
+    if (!capture.isOpened() && showUndistorted) {
+        Mat view, rview, map1, map2;
+        initUndistortRectifyMap(cameraMatrix, distCoeffs, Mat(),
+                getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, imageSize, 1, imageSize, 0),
+                imageSize, CV_16SC2, map1, map2);
+
+        for (i = 0; i < (int) imageList.size(); i++) {
+            view = imread(imageList[i], 1);
+            if (view.empty())
+                continue;
+            //undistort( view, rview, cameraMatrix, distCoeffs, cameraMatrix );
+            remap(view, rview, map1, map2, INTER_LINEAR);
+            imshow("Image View", rview);
+            int c = 0xff & waitKey();
+            if ((c & 255) == 27 || c == 'q' || c == 'Q')
+                break;
+        }
+    }
+
+    return 0;
 }

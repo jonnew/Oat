@@ -27,9 +27,11 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <opencv2/core/mat.hpp>
 
-
 #include "SharedCVMatHeader.h"
 
+#define MATSERVER_BUFFER_SIZE 100
+
+// TODO: Find a why to integrate this with the must much general purpose SMServer
 class MatServer {
     
 public:
@@ -37,7 +39,7 @@ public:
     MatServer(const MatServer& orig);
     virtual ~MatServer();
     
-    void createSharedMat(const cv::Mat& model); // TODO: encapsulate in the SharedMatHeader object
+    void createSharedMat(const cv::Mat& model); 
     void pushMat(const cv::Mat& mat);
 
     // Accessors  // TODO: Assess whether you really need these and get rid of them if not. 
@@ -51,7 +53,7 @@ private:
     std::string name;
     
     // Buffer
-    boost::lockfree::spsc_queue<cv::Mat, boost::lockfree::capacity<100> > mat_buffer;
+    boost::lockfree::spsc_queue<cv::Mat, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
     
     // Server threading
     std::thread server_thread;
@@ -64,13 +66,19 @@ private:
     int data_size; // Size of raw mat data in bytes
     
     const std::string shmem_name, shobj_name;
-    boost::interprocess::managed_shared_memory shared_memory; // TODO:  encapsulate in the SharedMatHeader object
+    boost::interprocess::managed_shared_memory shared_memory; 
     
     /**
-     * Synchronized shared memory service.
+     * Synchronized shared memory publication.
      * @param mat
      */
     void serveMatFromBuffer(void);
+    
+    /**
+     * Auto post to this servers own semaphore.wait() to allow threads to unblock
+     * in order to ensure proper object destruction.
+     * @param mat
+     */
     void notifySelf(void);
 
 };

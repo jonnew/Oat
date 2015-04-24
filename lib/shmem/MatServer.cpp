@@ -22,6 +22,8 @@
 #include "SharedCVMatHeader.h"
 #include "SharedCVMatHeader.cpp" // TODO: Why???
 
+
+
 using namespace boost::interprocess;
 
 MatServer::MatServer(const std::string sink_name) :
@@ -43,7 +45,7 @@ MatServer::~MatServer() {
     running = false;
 
     // Make sure we unblock the server thread
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i <= MATSERVER_BUFFER_SIZE; ++i) {
         notifySelf();
     }
 

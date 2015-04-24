@@ -19,7 +19,7 @@
 
 /**
  * A Kalman filter for position measures. The assumed model is normally distributed
- * constant force applied at each time steps causes a random, constant accelleration
+ * constant force applied at each time steps causes a random, constant acceleration
  * in between each time-step.
  * 
  * @param position_source_name The position measure SOURCE
@@ -29,14 +29,14 @@ KalmanFilter::KalmanFilter(std::string position_source_name, std::string positio
 PositionFilter(position_source_name, position_sink_name)
 , dt(0.02)
 , kf(6, 3, 0)
-, kf_state(6, 1, CV_32F)
+, kf_predicted_state(6, 1, CV_32F)
 , kf_meas(3, 1, CV_32F)
 , found(false)
 , not_found_count_threshold(100) // TODO: good idea?
-, sig_accel(0.1)
-, sig_measure_noise(0.01)
+, sig_accel(5.0)
+, sig_measure_noise(5.0)
 , tuning_windows_created(false)
-, slider_title(position_sink_name + "_sliders") {
+, draw_scale(10.0) {
 
     sig_accel_tune = (int) (sig_measure_noise * 10.0);
     sig_measure_noise_tune = (int) (sig_measure_noise * 10.0);
@@ -72,34 +72,32 @@ bool KalmanFilter::grabPosition() {
 
 void KalmanFilter::filterPosition() {
 
-    // Tune the filter, if requested
-    tune();
-
     // If we have not gotten a measurement of the object for a long time
     // we need to reinitialize the filter
     if (not_found_count >= not_found_count_threshold) {
         found = false;
-    } else {
-        kf.statePost = kf_state;
+    } 
+    
+    // Only update if the object is found (this includes time points for which
+    // the position measurement was invalid, but we are within the not_found_count_threshold)
+    if (found) {
+        
+        kf_predicted_state = kf.predict();
 
         // Apply the Kalman update
         kf.correct(kf_meas);
-
-        // Produce state estimate
-        kf_state = kf.predict();
     }
 }
 
 void KalmanFilter::serveFilteredPosition() {
 
     // Create a new Position object from the kf_state
-    shmem::Position filtered_position;
-    filtered_position.position.x = kf_state.at<float>(0);
-    filtered_position.velocity.x = kf_state.at<float>(1);
-    filtered_position.position.x = kf_state.at<float>(2);
-    filtered_position.velocity.y = kf_state.at<float>(3);
-    filtered_position.position.x = kf_state.at<float>(4);
-    filtered_position.velocity.z = kf_state.at<float>(5);
+    filtered_position.position.x = kf_predicted_state.at<float>(0);
+    filtered_position.velocity.x = kf_predicted_state.at<float>(1);
+    filtered_position.position.y = kf_predicted_state.at<float>(2);
+    filtered_position.velocity.y = kf_predicted_state.at<float>(3);
+    filtered_position.position.z = kf_predicted_state.at<float>(4);
+    filtered_position.velocity.z = kf_predicted_state.at<float>(5);
 
     // This Position is only valid if the not_found_count_threshold has not
     // be exceeded
@@ -110,6 +108,12 @@ void KalmanFilter::serveFilteredPosition() {
         filtered_position.position_valid = false;
         filtered_position.velocity_valid = false;
     }
+
+    // Tune the filter, if requested
+    tune();
+
+    // Publish filtered position
+    position_sink.pushObject(filtered_position);
 }
 
 void KalmanFilter::configure(std::string config_file, std::string config_key) {
@@ -175,12 +179,12 @@ void KalmanFilter::initializeFilter(void) {
     // The state is
     // [ x  x'  y  y'  z  z' ], where ' denotes the time derivative
     // Initialize the state using the current measurement
-    kf_state.at<float>(0) = kf_meas.at<float>(0);
-    kf_state.at<float>(1) = 0.0;
-    kf_state.at<float>(2) = kf_meas.at<float>(1);
-    kf_state.at<float>(3) = 0.0;
-    kf_state.at<float>(4) = kf_meas.at<float>(2);
-    kf_state.at<float>(5) = 0.0;
+    kf.statePre.at<float>(0) = kf_meas.at<float>(0);
+    kf.statePre.at<float>(1) = 0.0;
+    kf.statePre.at<float>(2) = kf_meas.at<float>(1);
+    kf.statePre.at<float>(3) = 0.0;
+    kf.statePre.at<float>(4) = kf_meas.at<float>(2);
+    kf.statePre.at<float>(5) = 0.0;
 }
 
 void KalmanFilter::initializeStaticMatracies() {
@@ -193,9 +197,9 @@ void KalmanFilter::initializeStaticMatracies() {
     // [ 0  0  0  0  1  dt]
     // [ 0  0  0  0  0  1 ]    
     cv::setIdentity(kf.transitionMatrix);
-    kf.transitionMatrix.at<float>(1, 2) = dt;
-    kf.transitionMatrix.at<float>(3, 4) = dt;
-    kf.transitionMatrix.at<float>(5, 6) = dt;
+    kf.transitionMatrix.at<float>(0, 1) = dt;
+    kf.transitionMatrix.at<float>(2, 3) = dt;
+    kf.transitionMatrix.at<float>(4, 5) = dt;
 
 
     // Observation Matrix (can only see position directly)
@@ -203,9 +207,9 @@ void KalmanFilter::initializeStaticMatracies() {
     // [ 0  0  1  0  0  0 ]
     // [ 0  0  0  0  1  0 ]
     cv::Mat::zeros(3, 6, CV_32F);
-    kf.measurementMatrix.at<float>(1, 1) = 1.0;
-    kf.measurementMatrix.at<float>(2, 3) = 1.0;
-    kf.measurementMatrix.at<float>(3, 5) = 1.0;
+    kf.measurementMatrix.at<float>(0, 0) = 1.0;
+    kf.measurementMatrix.at<float>(1, 2) = 1.0;
+    kf.measurementMatrix.at<float>(2, 4) = 1.0;
 
     // Noise covariance matrix (see pp13-15 of MWL.JPN.105.02.002 for derivation)
     // [ dt^4/2 dt^2/3 				   ] 
@@ -214,42 +218,47 @@ void KalmanFilter::initializeStaticMatracies() {
     // [               dt^2/3 dt^2  		   ] * sigma_accel^2
     // [                             dt^4/2 dt^2/3 ]
     // [                             dt^2/3 dt^2   ]
-    kf.processNoiseCov.at<float>(1, 1) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
-    kf.processNoiseCov.at<float>(1, 2) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<float>(0, 0) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
+    kf.processNoiseCov.at<float>(0, 1) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<float>(0, 2) = 0.0;
+    kf.processNoiseCov.at<float>(0, 3) = 0.0;
+    kf.processNoiseCov.at<float>(0, 4) = 0.0;
+    kf.processNoiseCov.at<float>(0, 5) = 0.0;
+    
+    kf.processNoiseCov.at<float>(1, 0) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<float>(1, 1) = sig_accel * sig_accel * (dt * dt);
+    kf.processNoiseCov.at<float>(1, 2) = 0.0;
     kf.processNoiseCov.at<float>(1, 3) = 0.0;
     kf.processNoiseCov.at<float>(1, 4) = 0.0;
     kf.processNoiseCov.at<float>(1, 5) = 0.0;
-    kf.processNoiseCov.at<float>(1, 6) = 0.0;
-    kf.processNoiseCov.at<float>(2, 1) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<float>(2, 2) = sig_accel * sig_accel * (dt * dt);
-    kf.processNoiseCov.at<float>(2, 3) = 0.0;
+    
+    kf.processNoiseCov.at<float>(2, 0) = 0.0;
+    kf.processNoiseCov.at<float>(2, 1) = 0.0;
+    kf.processNoiseCov.at<float>(2, 2) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
+    kf.processNoiseCov.at<float>(2, 3) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
     kf.processNoiseCov.at<float>(2, 4) = 0.0;
     kf.processNoiseCov.at<float>(2, 5) = 0.0;
-    kf.processNoiseCov.at<float>(2, 6) = 0.0;
+    
+    kf.processNoiseCov.at<float>(3, 0) = 0.0;
     kf.processNoiseCov.at<float>(3, 1) = 0.0;
-    kf.processNoiseCov.at<float>(3, 2) = 0.0;
-    kf.processNoiseCov.at<float>(3, 3) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
-    kf.processNoiseCov.at<float>(3, 4) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<float>(3, 2) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<float>(3, 3) = sig_accel * sig_accel * (dt * dt);
+    kf.processNoiseCov.at<float>(3, 4) = 0.0;
     kf.processNoiseCov.at<float>(3, 5) = 0.0;
-    kf.processNoiseCov.at<float>(3, 6) = 0.0;
+    
+    kf.processNoiseCov.at<float>(4, 0) = 0.0;
     kf.processNoiseCov.at<float>(4, 1) = 0.0;
     kf.processNoiseCov.at<float>(4, 2) = 0.0;
-    kf.processNoiseCov.at<float>(4, 3) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<float>(4, 4) = sig_accel * sig_accel * (dt * dt);
-    kf.processNoiseCov.at<float>(4, 5) = 0.0;
-    kf.processNoiseCov.at<float>(4, 6) = 0.0;
+    kf.processNoiseCov.at<float>(4, 3) = 0.0;
+    kf.processNoiseCov.at<float>(4, 4) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
+    kf.processNoiseCov.at<float>(4, 5) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    
+    kf.processNoiseCov.at<float>(5, 0) = 0.0;
     kf.processNoiseCov.at<float>(5, 1) = 0.0;
     kf.processNoiseCov.at<float>(5, 2) = 0.0;
     kf.processNoiseCov.at<float>(5, 3) = 0.0;
-    kf.processNoiseCov.at<float>(5, 4) = 0.0;
-    kf.processNoiseCov.at<float>(5, 5) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
-    kf.processNoiseCov.at<float>(5, 6) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<float>(6, 1) = 0.0;
-    kf.processNoiseCov.at<float>(6, 2) = 0.0;
-    kf.processNoiseCov.at<float>(6, 3) = 0.0;
-    kf.processNoiseCov.at<float>(6, 4) = 0.0;
-    kf.processNoiseCov.at<float>(6, 5) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<float>(6, 6) = sig_accel * sig_accel * (dt * dt);
+    kf.processNoiseCov.at<float>(5, 4) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<float>(5, 5) = sig_accel * sig_accel * (dt * dt);
 
     // Measurement noise covariance
     // [ sig_x^2  0  0 ]
@@ -261,19 +270,25 @@ void KalmanFilter::initializeStaticMatracies() {
 void KalmanFilter::tune() {
 
     tuning_mutex.lock();
-    
+
     if (tuning_on) {
         if (!tuning_windows_created) {
             createTuningWindows();
         }
 
         // Use the new parameters to create new static filter matracies
-        sig_accel = 0.1 * ((float) sig_accel_tune);
-        sig_measure_noise = 0.1 * ((float) sig_measure_noise_tune);
+        sig_accel = ((float) sig_accel_tune);
+        sig_measure_noise = ((float) sig_measure_noise_tune);
         initializeStaticMatracies();
 
-        // Update sliders
-        //cv::waitKey(1);
+        cv::Mat tuning_canvas(canvas_hw, canvas_hw, CV_8UC3);
+        tuning_canvas.setTo(255);
+        drawPosition(tuning_canvas, raw_position);
+        drawPosition(tuning_canvas, filtered_position);
+
+        // Draw the result, update sliders
+        cv::imshow(tuning_image_title, tuning_canvas);
+        cv::waitKey(1);
 
     } else if (!tuning_on && tuning_windows_created) {
         // Destroy the tuning windows
@@ -291,8 +306,36 @@ void KalmanFilter::createTuningWindows() {
     cv::namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
 
     // Create sliders and insert them into window
+    sig_accel_tune = (int)sig_accel;
+    sig_measure_noise_tune = (int)sig_measure_noise;
     cv::createTrackbar("SIGMA ACCEL.", slider_title, &sig_accel_tune, 100);
     cv::createTrackbar("SIGMA NOISE", slider_title, &sig_measure_noise_tune, 100);
 
     tuning_windows_created = true;
+}
+
+void KalmanFilter::drawPosition(cv::Mat& canvas, const shmem::Position& position) {
+
+    float x = position.position.x * draw_scale + (float) canvas_hw / 2.0;
+    float y = position.position.y * draw_scale + (float) canvas_hw / 2.0;
+    float dx = position.velocity.x * draw_scale;
+    float dy = position.velocity.y * draw_scale;
+
+    if (x > (canvas_hw - canvas_border)     ||
+            y > (canvas_hw - canvas_border) ||
+            x < canvas_border               ||
+            y < canvas_border)              {
+
+        draw_scale = draw_scale * 0.99;
+    } 
+
+    if (position.position_valid) {
+        cv::Point2f pos(x, y);
+        cv::circle(canvas, pos, 10, cv::Scalar(0, 0, 255), 2);
+    }
+
+    if (position.velocity_valid && position.position_valid) {
+        cv::Point2f pos(x, y);
+        cv::line(canvas, pos, cv::Point2f(x + dx, y + dy), cv::Scalar(0, 255, 0), 2, 8);
+    }
 }

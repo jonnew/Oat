@@ -39,12 +39,8 @@ public:
     void configure(std::string config_file, std::string config_key);
 
 private:
-
-    // Raw position from source
-    shmem::Position raw_position;
-
     // Kalman state estimate and measurement vectors
-    cv::Mat kf_state, kf_meas;
+    cv::Mat kf_predicted_state, kf_meas;
 
     // Sample period
     float dt;
@@ -59,6 +55,7 @@ private:
     int sig_measure_noise_tune;
     std::string slider_title;
     bool tuning_on;
+    float draw_scale;
 
     // Variables and parameters to control whether or not to apply the filter
     bool found;
@@ -70,6 +67,7 @@ private:
     void initializeFilter(void);
     void initializeStaticMatracies(void);
     void createTuningWindows(void);
+    void drawPosition(cv::Mat& canvas, const shmem::Position& position);
 };
 
 #endif	/* KALMANFILTER_H */

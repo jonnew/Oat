@@ -32,6 +32,10 @@
 bin/ 
 build/
 
+# Ignore video/image files
+*.avi
+*.mpg
+
 # Ignore CMake vomit
 CMakeCache.txt
 CMakeFiles

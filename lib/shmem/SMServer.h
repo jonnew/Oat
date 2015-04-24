@@ -28,6 +28,8 @@
 
 #include "SyncSharedMemoryObject.h"
 
+#define SMSERVER_BUFFER_SIZE 100
+
 namespace shmem {
 
     namespace bip = boost::interprocess;
@@ -59,7 +61,7 @@ namespace shmem {
         std::string name;
 
         // Buffer
-        boost::lockfree::spsc_queue<T, boost::lockfree::capacity<100> > buffer;
+        boost::lockfree::spsc_queue<T, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > buffer;
 
         // Server threading
         std::thread server_thread;
@@ -101,7 +103,7 @@ namespace shmem {
         running = false;
 
         // Make sure we unblock the server thread
-        for (int i = 0; i< 100; ++i) {
+        for (int i = 0; i <= SMSERVER_BUFFER_SIZE; ++i) {
             notifySelf();
         }
 
@@ -163,7 +165,7 @@ namespace shmem {
             serve_condition.wait_for(lk, std::chrono::milliseconds(10));
 
             T value;
-            while (buffer.pop(value)) {
+            while (buffer.pop(value) && running) {
 
                 if (!shared_object_created) {
                     createSharedObject();

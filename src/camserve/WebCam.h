@@ -43,8 +43,5 @@ private:
     // The webcam object
     cv::VideoCapture cv_camera;
 
-    // Currently acquired frame
-    cv::Mat current_frame;
-
 };
 #endif //WEBCAM_H

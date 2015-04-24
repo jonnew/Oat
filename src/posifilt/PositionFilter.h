@@ -23,13 +23,19 @@
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/shmem/Position.h"
 
+
+
 class PositionFilter {
 public:
 
     PositionFilter(std::string position_source_name, std::string position_sink_name) :
     name(position_sink_name)
     , position_source(position_source_name)
-    , position_sink(position_sink_name) {
+    , position_sink(position_sink_name)
+    , canvas_hw(500.0)
+    , canvas_border(100.0)
+    , tuning_image_title(position_sink_name + "_tuning")
+    , slider_title(position_sink_name + "_sliders") {
 
         position_source.findSharedObject();
     }
@@ -64,12 +70,18 @@ public:
     void stop(void) {position_sink.set_running(false); }
 
 protected:
+    
+    const float canvas_hw;
+    const float canvas_border;
 
     std::string name;
     shmem::SMClient<shmem::Position> position_source;
+    shmem::Position raw_position;
     shmem::SMServer<shmem::Position> position_sink;
+    shmem::Position filtered_position;
 
     // tuning on or off
+    std::string tuning_image_title, slider_title;
     bool tuning_on; // This is a shared resource and must be synchronized
     boost::mutex tuning_mutex; // Sync IO and processing thread, which can both manipulate the tuning state
     
@@ -82,6 +94,9 @@ protected:
 
     // Position filters must be able serve the filtered position
     virtual void serveFilteredPosition(void) = 0;
+    
+    // Draw the position on a cv::Mat for tuning purposes
+    virtual void drawPosition(cv::Mat& canvas, const shmem::Position& position) = 0;
 };
 
 #endif	/* POSITIONFILTER_H */

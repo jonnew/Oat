@@ -17,6 +17,9 @@
 #ifndef CAMERA_H
 #define	CAMERA_H
 
+
+#include <opencv2/opencv.hpp>
+
 #include "../../lib/shmem/MatServer.h"
 
 /**
@@ -41,6 +44,9 @@ public:
     virtual void configure(void) = 0;
     virtual void configure(std::string file_name, std::string key) = 0;
     
+    // Users should be able to access current frame (without serving)
+    cv::Mat getCurrentFrame(void) { return current_frame; }
+    
     // Cameras must be interruptable
     void stop(void) { frame_sink.set_running(false); }
     
@@ -49,6 +55,12 @@ protected:
     // cv::Mat server for sending frames to shared memory
     MatServer frame_sink;
     std::string name;
+    
+    // Cameras have a region of interest to crop images
+    cv::Rect region_of_interest;
+    
+    // Currently acquired frame
+    cv::Mat current_frame;
     
 };
 

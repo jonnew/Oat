@@ -41,9 +41,9 @@ private:
     
     // File read
     cv::VideoCapture file_reader;
-   
-    // Currently acquired frame
-    cv::Mat current_frame;
+    
+    // Should the image be cropped
+    bool use_roi;
 };
 
 #endif	/* FILEREADER_H */

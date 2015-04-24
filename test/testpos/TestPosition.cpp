@@ -91,43 +91,43 @@ void TestPosition::createStaticMatracies() {
     state_transition_mat.at<float>(0, 1) = DT;
     state_transition_mat.at<float>(0, 2) = 0.0;
     state_transition_mat.at<float>(0, 3) = 0.0;
-    state_transition_mat.at<float>(0, 3) = 0.0;
-    state_transition_mat.at<float>(0, 3) = 0.0;
+    state_transition_mat.at<float>(0, 4) = 0.0;
+    state_transition_mat.at<float>(0, 5) = 0.0;
     
     state_transition_mat.at<float>(1, 0) = 0.0;
     state_transition_mat.at<float>(1, 1) = 1.0;
     state_transition_mat.at<float>(1, 2) = 0.0;
     state_transition_mat.at<float>(1, 3) = 0.0;
-    state_transition_mat.at<float>(1, 3) = 0.0;
-    state_transition_mat.at<float>(1, 3) = 0.0;
+    state_transition_mat.at<float>(1, 4) = 0.0;
+    state_transition_mat.at<float>(1, 5) = 0.0;
     
     state_transition_mat.at<float>(2, 0) = 0.0;
     state_transition_mat.at<float>(2, 1) = 0.0;
     state_transition_mat.at<float>(2, 2) = 1.0;
     state_transition_mat.at<float>(2, 3) = DT;
-    state_transition_mat.at<float>(2, 3) = 0.0;
-    state_transition_mat.at<float>(2, 3) = 0.0;
+    state_transition_mat.at<float>(2, 4) = 0.0;
+    state_transition_mat.at<float>(2, 5) = 0.0;
     
     state_transition_mat.at<float>(3, 0) = 0.0;
     state_transition_mat.at<float>(3, 1) = 0.0;
     state_transition_mat.at<float>(3, 2) = 0.0;
     state_transition_mat.at<float>(3, 3) = 1.0;
-    state_transition_mat.at<float>(3, 3) = 0.0;
-    state_transition_mat.at<float>(3, 3) = 0.0;
+    state_transition_mat.at<float>(3, 4) = 0.0;
+    state_transition_mat.at<float>(3, 5) = 0.0;
     
     state_transition_mat.at<float>(4, 0) = 0.0;
     state_transition_mat.at<float>(4, 1) = 0.0;
     state_transition_mat.at<float>(4, 2) = 0.0;
     state_transition_mat.at<float>(4, 3) = 0.0;
-    state_transition_mat.at<float>(4, 3) = 1.0;
-    state_transition_mat.at<float>(4, 3) = DT;
+    state_transition_mat.at<float>(4, 4) = 1.0;
+    state_transition_mat.at<float>(4, 5) = DT;
     
     state_transition_mat.at<float>(5, 0) = 0.0;
     state_transition_mat.at<float>(5, 1) = 0.0;
     state_transition_mat.at<float>(5, 2) = 0.0;
     state_transition_mat.at<float>(5, 3) = 0.0;
-    state_transition_mat.at<float>(5, 3) = 0.0;
-    state_transition_mat.at<float>(5, 3) = 1.0;
+    state_transition_mat.at<float>(5, 4) = 0.0;
+    state_transition_mat.at<float>(5, 5) = 1.0;
     
     // Input Matrix
     input_mat.at<float>(0, 0) = (DT*DT)/2;

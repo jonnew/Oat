@@ -62,10 +62,9 @@ private:
     FlyCapture2::TriggerModeInfo trigger_mode_info;
     FlyCapture2::GigEImageSettingsInfo image_settings_info;
 
-    // The current, unbuffered frame
+    // The current, unbuffered frame in PG's format
     FlyCapture2::Image raw_image;
     FlyCapture2::Image rgb_image;
-    cv::Mat cvmat_image;
 
     // For establishing connection
     int setCameraIndex(unsigned int requested_idx);

@@ -695,14 +695,14 @@ cv::Mat PGGigECam::imageToMat() {
 void PGGigECam::grabMat() {
 
     grabImage();
-    cvmat_image = imageToMat();
+    current_frame = imageToMat();
 }
 
 void PGGigECam::serveMat() {
 
     // Write frame to shared memory and notify all client processes
     // that a new frame is available. Do not block, though.
-    frame_sink.pushMat(cvmat_image);
+    frame_sink.pushMat(current_frame);
 }
 
 // PRIVATE

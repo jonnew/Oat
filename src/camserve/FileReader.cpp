@@ -24,7 +24,9 @@
 FileReader::FileReader(std::string file_name_in, std::string image_sink_name) :
 Camera(image_sink_name)
 , file_name(file_name_in)
-, file_reader(file_name_in) {
+, file_reader(file_name_in)
+, use_roi(false)
+, frame_rate_in_hz(24) {
 
     // Default config
     configure();
@@ -32,9 +34,15 @@ Camera(image_sink_name)
 
 void FileReader::grabMat() {
     file_reader >> current_frame;
+    
+    // Crop if nessesary
+    if (use_roi) {
+        current_frame = current_frame(region_of_interest);
+    }
 }
 
 void FileReader::serveMat() {
+    
     if (!current_frame.empty()) {
         frame_sink.pushMat(current_frame);
         usleep(frame_period_in_us);
@@ -44,7 +52,6 @@ void FileReader::serveMat() {
 }
 
 void FileReader::configure() {
-    frame_rate_in_hz = 24;
     calculateFramePeriod();
 }
 
@@ -67,6 +74,22 @@ void FileReader::configure(std::string file_name, std::string key) {
             if (this_config.contains("frame_rate")) {
                 frame_rate_in_hz = (double) (*this_config.get_as<double>("frame_rate"));
                 calculateFramePeriod();
+            }
+            
+            if (this_config.contains("roi")) {
+
+                auto roi = *this_config.get_table("roi");
+                
+                region_of_interest.x = (int) (*roi.get_as<int64_t>("x_offset"));
+                region_of_interest.y = (int) (*roi.get_as<int64_t>("y_offset"));
+                region_of_interest.width= (int) (*roi.get_as<int64_t>("width"));
+                region_of_interest.height = (int) (*roi.get_as<int64_t>("height"));
+                
+                use_roi = true;
+
+            } else {
+                
+                use_roi = false;
             }
 
         } else {
