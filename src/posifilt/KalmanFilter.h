@@ -26,7 +26,7 @@ class KalmanFilter : public PositionFilter {
 public:
     KalmanFilter(std::string position_source_name, std::string position_sink_name);
 
-    void grabPosition(void);
+    bool grabPosition(void);
     void filterPosition(void);
     void serveFilteredPosition(void);
 
@@ -55,6 +55,8 @@ private:
 
     // Parameter tuning
     bool tuning_windows_created;
+    int sig_accel_tune;
+    int sig_measure_noise_tune;
     std::string slider_title;
     bool tuning_on;
 
@@ -66,6 +68,7 @@ private:
     cv::KalmanFilter kf;
     void tune(void);
     void initializeFilter(void);
+    void initializeStaticMatracies(void);
     void createTuningWindows(void);
 };
 

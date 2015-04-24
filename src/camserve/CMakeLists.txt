@@ -16,3 +16,6 @@ find_package (OpenCV REQUIRED)
 
 add_executable (camserv PGGigECam.cpp WebCam.cpp FileReader.cpp main.cpp )
 target_link_libraries (camserv shmem ${OpenCV_LIBS} ${FLYCAPTURE2} ${Boost_LIBRARIES})
+
+add_executable (calibrator Calibrator.cpp)
+target_link_libraries (calibrator ${OpenCV_LIBS})

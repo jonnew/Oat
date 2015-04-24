@@ -18,7 +18,9 @@
 #include "HSVDetector.h"
 #include "DifferenceDetector.h"
 
+
 #include <signal.h>
+#include <memory>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
@@ -45,17 +47,17 @@ void printUsage(po::options_description options) {
 }
 
 // Processing thread
+
 void run(Detector* detector) {
 
     while (!done) {
-        detector->findObject();
-        detector->servePosition();
+        detector->findObjectAndServePosition();
+        
     }
-    
-    detector->stop();
 }
 
 // IO thread
+
 int main(int argc, char *argv[]) {
 
     signal(SIGINT, term);
@@ -69,7 +71,7 @@ int main(int argc, char *argv[]) {
     std::string config_file;
     std::string config_key;
     bool config_used = false;
-    
+
     std::unordered_map<std::string, char> type_hash;
     type_hash["diff"] = 'a';
     type_hash["hsv"] = 'b';
@@ -190,19 +192,19 @@ int main(int argc, char *argv[]) {
 
     if (config_used)
         detector->configure(config_file, config_key);
-
-    // Two threads - one for user interaction, the other
-    // for executing the processor
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, detector));
-    sleep(1);
-
+    
     std::cout << "Detector has begun listening to source \"" + source + "\".\n";
     std::cout << "Detector has begun steaming to sink \"" + sink + "\".\n\n";
     std::cout << "COMMANDS:\n";
     std::cout << "  t: Enable tuning mode.\n";
     std::cout << "  T: Disable tuning mode.\n";
     std::cout << "  x: Exit.\n";
+
+    // Two threads - one for user interaction, the other
+    // for executing the processor
+    boost::thread_group thread_group;
+    thread_group.create_thread(boost::bind(&run, detector));
+    sleep(1);
 
     while (!done) {
 
@@ -224,7 +226,6 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
-                detector->stop();
                 break;
             }
             default:
@@ -239,7 +240,7 @@ int main(int argc, char *argv[]) {
 
     // Free heap memory allocated to detector 
     delete detector;
-    
+
     std::cout << "Detector is exiting.\n";
 
     // Exit

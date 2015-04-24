@@ -32,20 +32,15 @@ void term(int) {
 }
 
 void run(Decorator* decorator) {
- 
-    //std::cout << "Viewer has begun listening to source \"" + source + "\".\n";
 
     while (!done) {
-        decorator->decorateImage();
-        decorator->serveImage();
+        decorator->decorateAndServeImage();
     }
-    
-    decorator->stop();
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: viewer [OPTIONS]\n";
-    std::cout << "   or: viewer POSITION_SOURCE IMAGE_SOURCE IMAGE_SINK\n";
+    std::cout << "Usage: decorate [OPTIONS]\n";
+    std::cout << "   or: decorate POSITION_SOURCE IMAGE_SOURCE IMAGE_SINK\n";
     std::cout << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCE.\n";
     std::cout << "Publish decorated image to IMAGE_SINK.\n";
     std::cout << options << "\n";
@@ -62,7 +57,7 @@ int main(int argc, char *argv[]) {
     std::string position_source;
     std::string image_source;
     std::string sink;
-    
+
     try {
 
         po::options_description options("OPTIONS");
@@ -70,7 +65,7 @@ int main(int argc, char *argv[]) {
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
-        
+
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
                 ("positionsource", po::value<std::string>(&position_source),
@@ -83,12 +78,12 @@ int main(int argc, char *argv[]) {
                 "The name of the sink to which decorated images will be published."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
                 ;
-        
+
         po::positional_options_description positional_options;
         positional_options.add("positionsource", 1);
         positional_options.add("imagesource", 1);
         positional_options.add("sink", 1);
-        
+
         po::options_description all_options("ALL OPTIONS");
         all_options.add(options).add(hidden);
 
@@ -118,20 +113,20 @@ int main(int argc, char *argv[]) {
             std::cout << "Error: a POSITION_SOURCE must be specified. Exiting.\n";
             return -1;
         }
-        
+
         if (!variable_map.count("imagesource")) {
             printUsage(options);
             std::cout << "Error: a IMAGE_SOURCE must be specified. Exiting.\n";
             return -1;
         }
-        
+
         if (!variable_map.count("sink")) {
             printUsage(options);
             std::cout << "Error: a IMAGE_SINK must be specified. Exiting.\n";
             return -1;
         }
-        
-        
+
+
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
@@ -139,30 +134,29 @@ int main(int argc, char *argv[]) {
         std::cerr << "Exception of unknown type! " << std::endl;
     }
     
+    std::cout << "Decorator named \"" + sink + "\" has started.\n";
+    std::cout << "COMMANDS:\n";
+    std::cout << "  x: Exit.\n";
+
     // Make the viewer
     Decorator decorator(position_source, image_source, sink);
-    
+
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
     thread_group.create_thread(boost::bind(&run, &decorator));
     sleep(1);
-    
+
     // Start the user interface
     while (!done) {
 
-        int user_input;
-        std::cout << "Select an action:\n";
-        std::cout << " [2]: Exit\n";
-        std::cout << ">> ";
-
+        char user_input;
         std::cin >> user_input;
 
         switch (user_input) {
-            case 2:
+            case 'x':
             {
                 done = true;
-                decorator.stop();
                 break;
             }
             default:
@@ -171,10 +165,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // TODO: If the server exits before the client, the client is blocked due
-    // to the wait() call and therefore the done condition is never evaluated
-    // and therefore the thread is never available for joining and therefore
-    // this call hangs.
+    // Join processing and UI threads
     thread_group.join_all();
 
     // Exit

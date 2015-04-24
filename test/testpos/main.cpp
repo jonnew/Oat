@@ -14,69 +14,88 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "PositionCombiner.h"
+#include "TestPosition.h"
 
+#include <time.h>
 #include <signal.h>
+#include <memory>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
+#include <unordered_map>
 
 namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
 bool running = true;
+struct timespec delay = {0};
+
 
 void term(int) {
     done = 1;
 }
 
-void run(PositionCombiner* combiner) {
-    
-    while (!done) { 
-        combiner->combineAndServePosition();
-    }
-}
-
 void printUsage(po::options_description options) {
-    std::cout << "Usage: combiner [OPTIONS]\n";
-    std::cout << "   or: combiner ANTERIOR_SOURCE POSTERIOR_SOURCE SINK\n"; //TODO: N sources
-    std::cout << "Combine positional information from two SMServer<Position2D> SOURCEs.\n";
-    std::cout << "Publish processed object positions to a SMServer<Position2D> SINK.\n";
+    std::cout << "Usage: testpos [OPTIONS]\n";
+    std::cout << "   or: testpos SINK [CONFIGURATION]\n";
+    std::cout << "Publish test positions to a SMSserver<Position2D> SINK.\n\n";
     std::cout << options << "\n";
 }
 
+// Processing thread
+
+void run(TestPosition* test_position) {
+
+    while (!done) {
+        test_position->simulateAndServePosition();
+        nanosleep(&delay, (struct timespec *)NULL);
+    }
+}
+
+// IO thread
+
 int main(int argc, char *argv[]) {
 
-    signal(SIGINT, term);
-    
-    std::string ant_source, pos_source;
+    delay.tv_sec = 0;
+    delay.tv_nsec = (int)(DT * 1.0e9);
+
+    // Base options
+    po::options_description options("OPTIONS");
+
+    std::string source;
     std::string sink;
+    std::string type;
+    std::string config_file;
+    std::string config_key;
+    bool config_used = false;
 
     try {
 
-        po::options_description options("OPTIONS");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
-        
+
+        po::options_description config("CONFIGURATION");
+        config.add_options()
+                ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
+                ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
+                ;
+
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("anterior", po::value<std::string>(&ant_source),
-                "The name of the ANTERIOR_SOURCE that supplies Position2D objects defining the anterior position.")
-                ("posterior", po::value<std::string>(&pos_source),
-                "The name of the POSTERIOR_SOURCE that supplies Position2D objects defining the posterior position.")
                 ("sink", po::value<std::string>(&sink),
-                "The name of the SINK to which combined position Position2D objects will be published.")
+                "The name of the SINK to which position background subtracted images will be served.")
                 ;
 
         po::positional_options_description positional_options;
-        positional_options.add("anterior", 1);
-        positional_options.add("posterior", 1);
         positional_options.add("sink", 1);
 
+        po::options_description visible_options("VISIBLE OPTIONS");
+        visible_options.add(options).add(config);
+
         po::options_description all_options("ALL OPTIONS");
-        all_options.add(options).add(hidden);
+        all_options.add(options).add(config).add(hidden);
 
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
@@ -88,33 +107,30 @@ int main(int argc, char *argv[]) {
 
         // Use the parsed options
         if (variable_map.count("help")) {
-            printUsage(options);
+            printUsage(visible_options);
             return 0;
         }
 
         if (variable_map.count("version")) {
-            std::cout << "Simple-Tracker Object Position Combiner version 1.0\n"; //TODO: Cmake managed versioning
+            std::cout << "Simple-Tracker Test Position Server version 1.0\n"; //TODO: Cmake managed versioning
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
 
-        if (!variable_map.count("anterior")) {
-            printUsage(options);
-            std::cout << "Error: an ANTERIOR_SOURCE must be specified. Exiting.\n";
-            return -1;
-        }
-        
-        if (!variable_map.count("posterior")) {
-            printUsage(options);
-            std::cout << "Error: a POSTERIOR_SOURCE must be specified. Exiting.\n";
-            return -1;
-        }   
-        
         if (!variable_map.count("sink")) {
             printUsage(options);
             std::cout << "Error: a SINK name must be specified. Exiting.\n";
             return -1;
+        }
+
+        if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
+                (!variable_map.count("config-file") && variable_map.count("config-key"))) {
+            printUsage(visible_options);
+            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+            return -1;
+        } else if (variable_map.count("config-file")) {
+            config_used = true;
         }
 
     } catch (std::exception& e) {
@@ -122,19 +138,23 @@ int main(int argc, char *argv[]) {
         return 1;
     } catch (...) {
         std::cerr << "Exception of unknown type!" << std::endl;
-        return 1;
     }
 
-    PositionCombiner combiner(ant_source, pos_source, sink);
+    // Create the specified TYPE of detector
+    TestPosition test_position(sink);
+
+    //if (config_used)
+    //test_position->configure(config_file, config_key);
     
-    std::cout << "Position combiner named \"" + sink + "\" has started.\n";
+    std::cout << "Test Position has begun publishing to sink \"" + sink + "\".\n\n";
     std::cout << "COMMANDS:\n";
+    std::cout << "  p: Pause/unpause.\n";
     std::cout << "  x: Exit.\n";
 
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &combiner));
+    thread_group.create_thread(boost::bind(&run, &test_position));
     sleep(1);
 
     while (!done) {
@@ -143,19 +163,29 @@ int main(int argc, char *argv[]) {
         std::cin >> user_input;
 
         switch (user_input) {
+
+            case 'p':
+            {
+                running = !running;
+                break;
+            }
             case 'x':
             {
                 done = true;
+                test_position.stop(); 
                 break;
             }
             default:
-                std::cout << "Invalid selection. Try again.\n";
+                std::cout << "Invalid command. Try again.\n";
                 break;
         }
     }
-    
+
     // TODO: Exit gracefully and ensure all shared resources are cleaned up!
     thread_group.join_all();
+
+
+    std::cout << "Test Position is exiting.\n";
 
     // Exit
     return 0;

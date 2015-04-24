@@ -30,14 +30,18 @@ public:
               std::string frame_source_name,             
               std::string frame_sink_name);
     
-    void decorateImage(void);
-    void serveImage(void);
-    void stop(void);
+    void decorateAndServeImage(void);
+    
+    void stop(void) {frame_sink.set_running(false); }
    
 private:
     
     // Image data
     cv::Mat image;
+    
+    // For multi-server processing, we need to keep track of all the servers
+    // we have finished reading from each processing step
+    int current_processing_stage;
     
     // Current position
     shmem::Position position;

@@ -14,12 +14,13 @@ shutter = 3 							# ms (ignored if exposure on)
 gain = 0 								# dB (ignored if exposure on)
 #white_bal = {red = 500, blue = 800}	# Defaults to "off"
 roi = {x_offset = 0, y_offset = 0, width = 728, height = 728} # Region of interest, pixels
-
-[maze_cam.trigger]						# If trigger not specified, free run
-on = true								# If false, free run
-polarity = true							# Rising edge active
-mode = 14								# Overlapped Exposure/Readout Mode (see Camera manual)
-source = 0								# GPIO pin that trigger will be sent to
+trigger_on = true						# If false, free run
+trigger_polarity = 1					# Rising edge active
+trigger_mode = 14						# 14 = Overlapped Exposure/Readout Mode (see Camera manual)
+										# 7  = Software trigger
+trigger_source = 0						# GPIO pin that trigger will be sent to
+save_images = false						# If trigger mode is software triggered, we can save each image
+										# (useful for aquiring calibration images)
 
 # Camera (file) -------------------------
 

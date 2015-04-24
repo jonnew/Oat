@@ -26,9 +26,9 @@
 #include "../../lib/shmem/MatServer.h"
 
 BackgroundSubtractor::BackgroundSubtractor(const std::string source_name, const std::string sink_name) :
-  frame_source(source_name)
-, frame_sink(sink_name) { 
-    
+frame_source(source_name)
+, frame_sink(sink_name) {
+
     frame_source.findSharedMat();
 }
 
@@ -38,8 +38,8 @@ BackgroundSubtractor::BackgroundSubtractor(const std::string source_name, const 
  * 
  */
 void BackgroundSubtractor::setBackgroundImage() {
-    
-    frame_source.getSharedMat(background_img);
+
+    background_img = current_raw_frame.clone();
     background_set = true;
 }
 
@@ -49,28 +49,29 @@ void BackgroundSubtractor::setBackgroundImage() {
  * 
  */
 void BackgroundSubtractor::subtractBackground() {
-
-    // If we have set a background image, perform subtraction
-    cv::Mat current_frame;
-    frame_source.getSharedMat(current_frame);
     
-    if (background_set) {
+    // Only proceed with processing if we are getting a valid frame
+    if (frame_source.getSharedMat(current_frame)) {
 
-        try {
-            CV_Assert(current_frame.size() == background_img.size());
-            current_frame = current_frame - background_img;
-        } catch (cv::Exception& e) {
-            std::cout << "CV Exception: " << e.what() << "\n";
-            exit(EXIT_FAILURE);
+        current_raw_frame = current_frame.clone();
+        
+        if (background_set) {
+
+            try {
+                CV_Assert(current_frame.size() == background_img.size());
+                current_frame = current_frame - background_img;
+            } catch (cv::Exception& e) {
+                std::cout << "CV Exception: " << e.what() << "\n";
+                exit(EXIT_FAILURE);
+            }
+
+        } else {
+
+            // First image is always used as the default background image
+            setBackgroundImage();
         }
 
-    } 
-    else {
-     
-        // First image is always used as the default background image
-        setBackgroundImage(); 
+        frame_sink.pushMat(current_frame);
     }
-    
-    frame_sink.pushMat(current_frame);
 
 }

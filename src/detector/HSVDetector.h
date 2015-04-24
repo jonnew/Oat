@@ -41,18 +41,9 @@ public:
     // Use a configuration file to specify parameters
     void configure(std::string file_name, std::string key);
     
-    // Add a frame sink to view the filtered output. Not normally needed.
-    //void addFrameSink(std::string frame_sink_name);
-    
-    // Object detection
-    void findObject(void);
-
     // Apply the HSVTransform, thresholding, and erode/dilate operations to/from
     // shared memory allocated mat objects
-    //void applyFilterAndServe(void);
-    
-    // Following filtering, serve position object
-    void servePosition(void);
+    void findObjectAndServePosition(void);
 
     // Accessors
     std::string get_detector_name() { return name; }

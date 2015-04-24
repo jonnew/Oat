@@ -29,7 +29,7 @@ HSVDetector::HSVDetector(std::string image_source_name, std::string position_sin
         int h_min_in, int h_max_in,
         int s_min_in, int s_max_in,
         int v_min_in, int v_max_in) :
-  Detector(image_source_name, position_sink_name)
+Detector(image_source_name, position_sink_name)
 , h_min(h_min_in)
 , h_max(h_max_in)
 , s_min(s_min_in)
@@ -63,20 +63,19 @@ void HSVDetector::dilateSliderChangedCallback(int value, void* object) {
     hsv_detector->set_dilate_size(value);
 }
 
-void HSVDetector::findObject() {
+void HSVDetector::findObjectAndServePosition() {
 
-    image_source.getSharedMat(hsv_image);
+    // If we are able to get a an image
+    if (image_source.getSharedMat(hsv_image)) {
 
-    cv::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
-    applyThreshold();
-    clarifyBlobs();
-    siftBlobs();
-    tune();
-}
+        cv::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
+        applyThreshold();
+        clarifyBlobs();
+        siftBlobs();
+        tune();
 
-void HSVDetector::servePosition() {
-    // Put position in shared memory
-    position_sink.pushObject(object_position);
+        position_sink.pushObject(object_position);
+    }
 }
 
 void HSVDetector::applyThreshold() {
@@ -236,15 +235,15 @@ void HSVDetector::createTuningWindows() {
     cv::namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
 
     // Create sliders and insert them into window
-    cv::createTrackbar("H_MIN", slider_title, &h_min, 256); 
-    cv::createTrackbar("H_MAX", slider_title, &h_max, 256); 
-    cv::createTrackbar("S_MIN", slider_title, &s_min, 256); 
-    cv::createTrackbar("S_MAX", slider_title, &s_max, 256); 
-    cv::createTrackbar("V_MIN", slider_title, &v_min, 256); 
-    cv::createTrackbar("V_MAX", slider_title, &v_max, 256); 
+    cv::createTrackbar("H_MIN", slider_title, &h_min, 256);
+    cv::createTrackbar("H_MAX", slider_title, &h_max, 256);
+    cv::createTrackbar("S_MIN", slider_title, &s_min, 256);
+    cv::createTrackbar("S_MAX", slider_title, &s_max, 256);
+    cv::createTrackbar("V_MIN", slider_title, &v_min, 256);
+    cv::createTrackbar("V_MAX", slider_title, &v_max, 256);
     cv::createTrackbar("ERODE", slider_title, &erode_px, 50, &HSVDetector::erodeSliderChangedCallback, this);
     cv::createTrackbar("DILATE", slider_title, &dilate_px, 50, &HSVDetector::dilateSliderChangedCallback, this);
-    
+
     tuning_windows_created = true;
 }
 

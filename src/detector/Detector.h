@@ -46,19 +46,16 @@ public:
       } 
       
     // Detector must be able to find an object
-    virtual void findObject(void) = 0;
-    
-    // Detector must be able to serve object position
-    virtual void servePosition(void) = 0;
+    virtual void findObjectAndServePosition(void) = 0;
     
     // Detectors must be configurable via file
     virtual void configure(std::string file_name, std::string config_key) = 0;
-
-    // All detectors must be able break infinite locks on shared to exit
-    void stop(void) { image_source.notifySelf(); }
     
     void set_tune_mode(bool value) { tuning_mutex.lock(); tuning_on = value; tuning_mutex.unlock();}
     bool get_tune_mode(void) { tuning_mutex.lock(); return tuning_on; tuning_mutex.unlock();}
+    
+    // Detectors must be interruptable
+    void stop(void) { position_sink.set_running(false); }
     
 protected:
     

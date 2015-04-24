@@ -16,40 +16,55 @@
 
 #include "PositionCombiner.h"
 
-PositionCombiner::PositionCombiner(std::string antierior_source_name, 
-                                   std::string posterior_source_name, 
-                                   std::string sink_name) :
-  name(sink_name) 
+PositionCombiner::PositionCombiner(std::string antierior_source_name,
+        std::string posterior_source_name,
+        std::string sink_name) :
+name(sink_name)
 , anterior_source(antierior_source_name)
 , posterior_source(posterior_source_name)
-, position_sink(sink_name) { 
-    
+, position_sink(sink_name)
+, current_processing_stage(0) {
+
     anterior_source.findSharedObject();
     posterior_source.findSharedObject();
 
 }
 
+void PositionCombiner::combineAndServePosition() {
 
-void PositionCombiner::serveCombinedPosition() {
-    
+    // Get the current image
+    switch (current_processing_stage) {
+        case 0:
+
+            if (!anterior_source.getSharedObject(anterior)) {
+                return;
+            }
+
+            // Fall through
+            current_processing_stage = 1;
+
+        case 1:
+
+            if (!posterior_source.getSharedObject(posterior)) {
+                return;
+            }
+
+            // Fall through
+            current_processing_stage = 0;
+    }
+
+    calculateGeometricMean();
+
     position_sink.pushObject(processed_position);
 }
 
 void PositionCombiner::calculateGeometricMean() {
 
-    cv::Point2f ant, pos;
     bool both_positions_valid = true;
 
-    // If position is valid, write it down
-    // otherwise, we simply serve an invalid position for
-    // a filter to deal with
-    shmem::Position anterior;
-    anterior_source.get_value(anterior);
-    shmem::Position posterior; 
-    posterior_source.get_value(posterior);
-    
+
     if (anterior.position_valid) {
-        
+
         processed_position.anterior_valid = true;
         processed_position.anterior = anterior.position;
     } else {
@@ -74,11 +89,6 @@ void PositionCombiner::calculateGeometricMean() {
         processed_position.position = 0.5 * (anterior.position + posterior.position);
         processed_position.head_direction_valid = true;
         processed_position.head_direction = (anterior.position - posterior.position)*(1.0 / cv::norm(anterior.position - posterior.position));
-    }   
-    
-}
+    }
 
-void PositionCombiner::stop() {
-    anterior_source.notifySelf();
-    posterior_source.notifySelf();
 }

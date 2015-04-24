@@ -39,8 +39,7 @@ public:
     
     void createSharedMat(const cv::Mat& model); // TODO: encapsulate in the SharedMatHeader object
     void pushMat(const cv::Mat& mat);
-    void notifySelf(void);
-    
+
     // Accessors  // TODO: Assess whether you really need these and get rid of them if not. 
     bool is_running(void) { return running; };
     void set_running(bool value) { running = value; } 
@@ -72,6 +71,7 @@ private:
      * @param mat
      */
     void serveMatFromBuffer(void);
+    void notifySelf(void);
 
 };
 

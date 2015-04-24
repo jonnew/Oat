@@ -14,42 +14,52 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef BACKGROUNDSUBTRACTOR_H
-#define	BACKGROUNDSUBTRACTOR_H
+#ifndef TESTPOSITION_H
+#define	TESTPOSITION_H
 
 #include <string>
+#include <random>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/MatClient.h"
-#include "../../lib/shmem/MatServer.h"
+#include "../../lib/shmem/Position.h"
+#include "../../lib/shmem/SMServer.h"
 
-class BackgroundSubtractor {
+#define DT 0.02 // TODO: Config
+
+class TestPosition  {
     
 public:
     
-    BackgroundSubtractor(const std::string source_name, const std::string sink_name);
+    TestPosition(std::string pos_sink_name);
 
-    void setBackgroundImage(void);
-    void subtractBackground(void);
+    // Use a configuration file to specify parameters
+    void configure(std::string file_name, std::string key);
     
-    // Detectors must be interruptable
-    void stop(void) { frame_sink.set_running(false); }
-
+    // Simulate object position motion and publish to shared memory
+    void simulateAndServePosition(void);
+    
+    void stop(void) { position_sink.set_running(false); }
+    
 private:
-
-    // The background image used for subtraction
-    bool background_set = false;
-    cv::Mat current_frame;
-    cv::Mat current_raw_frame;
-    cv::Mat background_img;
     
-    // Mat client object for receiving frames
-    MatClient frame_source;
+    // Random number generator
+    std::default_random_engine accel_generator;
+    std::normal_distribution<float> accel_distribution;
     
-    // Mat server for sending processed frames
-    MatServer frame_sink;
-
+    // Simulated 3D position
+    cv::Mat state;
+    cv::Mat accel_vec;
+    
+    // STM and input matrix
+    cv::Mat state_transition_mat;
+    cv::Mat input_mat;
+    
+    shmem::SMServer<shmem::Position> position_sink;
+    
+    void createStaticMatracies(void);
+    void simulateMotion(void);
+    
 };
 
-#endif	/* BACKGROUNDSUBTRACTOR_H */
+#endif	/* TESTPOSITION_H */
 

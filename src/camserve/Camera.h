@@ -42,7 +42,7 @@ public:
     virtual void configure(std::string file_name, std::string key) = 0;
     
     // Cameras must be interruptable
-    void stop(void) { frame_sink.set_running(false); frame_sink.notifySelf(); };
+    void stop(void) { frame_sink.set_running(false); }
     
 protected:
     

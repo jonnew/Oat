@@ -36,9 +36,8 @@ void run(BackgroundSubtractor* background_subtractor, std::string source, std::s
     std::cout << "Background subtractor has begun steaming to sink \"" + sink + "\".\n";
 
     while (!done) {
-        if (running) {
-            background_subtractor->subtractBackground();
-        }
+
+        background_subtractor->subtractBackground();
     }
 
     std::cout << "Background subtractor is exiting.\n";
@@ -53,12 +52,12 @@ void printUsage(po::options_description options) {
 }
 
 int main(int argc, char *argv[]) {
-    
+
     signal(SIGINT, term);
 
     std::string source;
     std::string sink;
-    
+
     try {
 
         po::options_description options("OPTIONS");
@@ -66,7 +65,7 @@ int main(int argc, char *argv[]) {
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
-        
+
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
                 ("source", po::value<std::string>(&source),
@@ -75,11 +74,11 @@ int main(int argc, char *argv[]) {
                 ("sink", po::value<std::string>(&sink),
                 "The name of the SINK to which background subtracted images will be served.")
                 ;
-        
+
         po::positional_options_description positional_options;
         positional_options.add("source", 1);
         positional_options.add("sink", 2);
-        
+
         po::options_description all_options("All options");
         all_options.add(options).add(hidden);
 
@@ -109,35 +108,34 @@ int main(int argc, char *argv[]) {
             std::cout << "Error: a SOURCE must be specified. Exiting.\n";
             return -1;
         }
-        
+
         if (!variable_map.count("sink")) {
             printUsage(options);
             std::cout << "Error: a SINK name must be specified. Exiting.\n";
             return -1;
         }
-        
-        
+
+
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     } catch (...) {
         std::cerr << "Exception of unknown type! " << std::endl;
     }
-    
+
     BackgroundSubtractor background_subtractor(source, sink);
-    
+
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
     thread_group.create_thread(boost::bind(&run, &background_subtractor, source, sink));
     sleep(1);
-    
+
     // Start the user interface
     while (!done) {
 
         int user_input;
         std::cout << "Select an action:\n";
-        std::cout << " [1]: Pause/unpause\n";
         std::cout << " [2]: Set background image to current\n";
         std::cout << " [3]: Exit\n";
         std::cout << ">> ";
@@ -145,15 +143,6 @@ int main(int argc, char *argv[]) {
         std::cin >> user_input;
 
         switch (user_input) {
-            case 1:
-            {
-                running = !running;
-                if (running)
-                    std::cout << " Resumed...\n";
-                else
-                    std::cout << " Paused.\n";
-                break;
-            }
             case 2:
             {
                 background_subtractor.setBackgroundImage();
@@ -170,9 +159,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // TODO: Exit gracefully and ensure all shared resources are cleaned up. This might already
-    // be functional, but I'm not sure...
-    thread_group.interrupt_all();
+    // Join processing and UI threads
     thread_group.join_all();
 
     // Exit

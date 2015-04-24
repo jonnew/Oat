@@ -40,8 +40,11 @@ MatServer::MatServer(const MatServer& orig) {
 
 MatServer::~MatServer() {
 
-    if (shared_object_created) {
-        shared_mat_header->write_barrier.post();
+    running = false;
+
+    // Make sure we unblock the server thread
+    for (int i = 0; i < 100; ++i) {
+        notifySelf();
     }
 
     // Join the server thread back with the main one
@@ -149,7 +152,7 @@ void MatServer::serveMatFromBuffer() {
             if (shared_mat_header->number_of_clients) {
                 shared_mat_header->write_barrier.wait();
             }
-            
+
             // Tell each client they can proceed now that the write_barrier
             // has been passed
             for (int i = 0; i < shared_mat_header->number_of_clients; ++i) {
@@ -158,7 +161,6 @@ void MatServer::serveMatFromBuffer() {
         }
     }
 }
-
 
 void MatServer::notifySelf() {
 

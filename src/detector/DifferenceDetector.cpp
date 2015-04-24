@@ -23,23 +23,22 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 DifferenceDetector::DifferenceDetector(std::string image_source_name, std::string position_sink_name) :
-  Detector(image_source_name, position_sink_name)
-, last_image_set(false) { 
-    
+Detector(image_source_name, position_sink_name)
+, last_image_set(false) {
+
     set_blur_size(2);
 }
 
-void DifferenceDetector::servePosition() {
-    position_sink.pushObject(object_position);
-}
+void DifferenceDetector::findObjectAndServePosition() {
 
-void DifferenceDetector::findObject() {
+    // If we are able to get a an image
+    if (image_source.getSharedMat(this_image)) {
+        applyThreshold();
+        siftBlobs();
+        tune();
 
-    image_source.getSharedMat(this_image);
-    applyThreshold();
-    siftBlobs();
-    tune();  
-    
+        position_sink.pushObject(object_position);
+    }
 }
 
 void DifferenceDetector::configure(std::string file_name, std::string key) {
@@ -70,7 +69,7 @@ void DifferenceDetector::configure(std::string file_name, std::string key) {
                 if (*this_config.get_as<bool>("tune")) {
                     tuning_on = true;
                     createTuningWindows();
-                } 
+                }
             }
 
         } else {
@@ -87,7 +86,7 @@ void DifferenceDetector::siftBlobs() {
     cv::Mat thresh_cpy = threshold_image.clone();
     std::vector< std::vector < cv::Point > > contours;
     std::vector< cv::Vec4i > hierarchy;
-    
+
     //these two vectors needed for output of findContours
     //find contours of filtered image using openCV findContours function
     //findContours(temp,contours,hierarchy,CV_RETR_CCOMP,CV_CHAIN_APPROX_SIMPLE );// retrieves all contours
@@ -96,37 +95,36 @@ void DifferenceDetector::siftBlobs() {
     //if contours vector is not empty, we have found some objects
     if (contours.size() > 0) {
         object_position.position_valid = true;
-    }
-    else 
+    } else
         object_position.position_valid = false;
 
     if (object_position.position_valid) {
-        
+
         //the largest contour is found at the end of the contours vector
         //we will simply assume that the biggest contour is the object we are looking for.
         std::vector< std::vector<cv::Point> > largestContourVec;
         largestContourVec.push_back(contours.at(contours.size() - 1));
-        
+
         //make a bounding rectangle around the largest contour then find its centroid
         //this will be the object's final estimated position.
         cv::Rect objectBoundingRectangle = cv::boundingRect(largestContourVec.at(0));
         object_position.position.x = objectBoundingRectangle.x + 0.5 * objectBoundingRectangle.width;
         object_position.position.y = objectBoundingRectangle.y + 0.5 * objectBoundingRectangle.height;
-        
+
         if (tuning_on) {
             cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
-            cv::rectangle( threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
+            cv::rectangle(threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
         }
     }
 }
 
 void DifferenceDetector::applyThreshold() {
 
-    if (last_image_set){
+    if (last_image_set) {
         cv::cvtColor(this_image, this_image, cv::COLOR_BGR2GRAY);
         cv::absdiff(this_image, last_image, threshold_image);
         cv::threshold(threshold_image, threshold_image, difference_intensity_threshold, 255, cv::THRESH_BINARY);
-        if (blur_on){
+        if (blur_on) {
             cv::blur(threshold_image, threshold_image, blur_size);
         }
         cv::threshold(threshold_image, threshold_image, difference_intensity_threshold, 255, cv::THRESH_BINARY);
@@ -137,42 +135,42 @@ void DifferenceDetector::applyThreshold() {
         last_image = this_image.clone();
         cv::cvtColor(last_image, last_image, cv::COLOR_BGR2GRAY);
         last_image_set = true;
-    }    
+    }
 }
 
 void DifferenceDetector::tune() {
 
     tuning_mutex.lock();
-    
+
     if (tuning_on) {
         if (!tuning_windows_created) {
             createTuningWindows();
         }
         cv::imshow(tuning_image_title, threshold_image);
         cv::waitKey(1);
-        
+
     } else if (!tuning_on && tuning_windows_created) {
         // Destroy the tuning windows
         cv::destroyWindow(tuning_image_title);
         cv::destroyWindow(slider_title);
         tuning_windows_created = false;
     }
-    
+
     tuning_mutex.unlock();
 }
 
 void DifferenceDetector::createTuningWindows() {
-    
+
     //cv::startWindowThread();
-    
+
     // Create window for sliders
     cv::namedWindow(tuning_image_title);
     cv::namedWindow(slider_title, cv::WINDOW_NORMAL);
 
     // Create sliders and insert them into window
-    cv::createTrackbar("THRESH", slider_title, &difference_intensity_threshold, 256); 
+    cv::createTrackbar("THRESH", slider_title, &difference_intensity_threshold, 256);
     cv::createTrackbar("BLUR", slider_title, &blur_size.height, 50, &DifferenceDetector::blurSliderChangedCallback, this);
-    
+
     tuning_windows_created = true;
 }
 

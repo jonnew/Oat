@@ -21,37 +21,48 @@
 #include <opencv2/opencv.hpp>
 
 Decorator::Decorator(std::string position_source_name,
-                     std::string frame_source_name,
-                     std::string frame_sink_name) :
-  frame_source(frame_source_name)
+        std::string frame_source_name,
+        std::string frame_sink_name) :
+frame_source(frame_source_name)
 , position_source(position_source_name)
-, frame_sink(frame_sink_name) {
-    
+, frame_sink(frame_sink_name)
+, current_processing_stage(0) {
+
     frame_source.findSharedMat();
     position_source.findSharedObject();
 }
 
-void Decorator::decorateImage() {
+void Decorator::decorateAndServeImage() {
 
     // Get the current image
-    frame_source.getSharedMat(image);
-    
-    // Get the current position
-    position_source.get_value(position);
+    switch (current_processing_stage) {
+        case 0:
 
-    // Decorate
+            if (!frame_source.getSharedMat(image)) {
+                return;
+            }
+
+            // Fall through
+            current_processing_stage = 1;
+
+        case 1:
+            // Get the current position
+            if (!position_source.getSharedObject(position)) {
+                return;
+            }
+
+            // Fall through
+            current_processing_stage = 0;
+    }
+
+    // Decorated image
     drawSymbols();
-
-}
-
-void Decorator::serveImage() {
+    
+    // Serve the finished product
     frame_sink.pushMat(image);
+    
 }
 
-void Decorator::stop() {
-    frame_source.notifySelf();
-    position_source.notifySelf();
-}
 
 void Decorator::drawSymbols() {
 
@@ -61,27 +72,30 @@ void Decorator::drawSymbols() {
 }
 
 // TODO: project 3rd dimension
+
 void Decorator::drawPosition() {
     if (position.position_valid) {
         cv::Point2f pos(position.position.x, position.position.y);
-        cv::circle(image, pos, position_circle_radius, cv::Scalar(0,0,255), 2);
+        cv::circle(image, pos, position_circle_radius, cv::Scalar(0, 0, 255), 2);
     }
 }
 
 // TODO: project 3rd dimension
+
 void Decorator::drawHeadDirection() {
     if (position.position_valid && position.head_direction_valid) {
         cv::Point3f start = position.position - (head_dir_line_length * position.head_direction);
         cv::Point3f end = position.position + (head_dir_line_length * position.head_direction);
-        cv::line(image, cv::Point2f(start.x,start.y), cv::Point2f(end.x,end.y), cv::Scalar(255, 255, 255), 2, 8);
+        cv::line(image, cv::Point2f(start.x, start.y), cv::Point2f(end.x, end.y), cv::Scalar(255, 255, 255), 2, 8);
     }
 }
 
 // TODO: project 3rd dimension
+
 void Decorator::drawVelocity() {
     if (position.velocity_valid && position.position_valid) {
         cv::Point3f end = position.position + (velocity_scale_factor * position.velocity);
         cv::Point2f pos(position.position.x, position.position.y);
-        cv::line(image, pos, cv::Point2f(end.x,end.y), cv::Scalar(0, 255, 0), 2, 8);
+        cv::line(image, pos, cv::Point2f(end.x, end.y), cv::Scalar(0, 255, 0), 2, 8);
     }
 }

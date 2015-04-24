@@ -14,7 +14,7 @@ class DifferenceDetector : public Detector {
 public:
     DifferenceDetector(std::string image_source_name, std::string position_sink_name);
     
-    void findObject(void);
+    void findObjectAndServePosition(void);
     void servePosition(void);
     void configure(std::string file_name, std::string key);
     

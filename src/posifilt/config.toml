@@ -1,0 +1,11 @@
+# Example posifilt configuration file
+# - Configuration examples are provide for Kalman filter, 
+
+# Detector (hsv, blue) ----------------
+
+[kalman]
+dt = 0.0333						  		# Sample period, seconds (Should be automatically provided)
+not_found_timeout = 10					# Seconds
+sigma_accel = 0.1 						# Meters/sec^2
+sigma_noise = 0.01						# Noise measurement (meters)
+tune = true;

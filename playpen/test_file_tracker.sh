@@ -12,12 +12,14 @@ shutdown() {
 trap "shutdown" SIGINT SIGTERM
 
 # Start a bunch of child processes that are killable with CTRL-C
-#gnome-terminal -x sh -c "./bin/viewer f11; bash" &
-#sleep 1
-#gnome-terminal -x sh -c "./bin/decorate h11 v11 f11; bash" &
-#sleep 1
-#gnome-terminal -x sh -c "./bin/detector hsv v11 h11 -c test_file_tracker_config.toml -k blue_hsv; bash" &
-#sleep 1
-gnome-terminal -x sh -c "./bin/camserv file v11 -c test_file_tracker_config.toml -k file_cam -f test_mouse.mpg; bash" &
+gnome-terminal -x sh -c "./bin/viewer final1; bash" &
+sleep 1
+gnome-terminal -x sh -c "./bin/decorate hsv1 vid1 final1; bash" &
+sleep 1
+#gnome-terminal -x sh -c "./bin/posifilt kalman hsv filt -c test_file_tracker_config.toml -k kalman; bash" &
+sleep 1
+gnome-terminal -x sh -c "./bin/detector hsv vid1 hsv1 -c test_file_tracker_config.toml -k hsv; bash" &
+sleep 1
+gnome-terminal -x sh -c "./bin/camserv file vid1 -c test_file_tracker_config.toml -k file_cam -f test_mouse.mpg; bash" &
 wait
 

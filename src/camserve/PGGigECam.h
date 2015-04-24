@@ -34,6 +34,7 @@ public:
 
     void grabMat(void);
     void serveMat(void);
+    void fireSoftwareTrigger(void);
 
     // Accessors
 
@@ -46,6 +47,11 @@ private:
     cv::Size frame_size, frame_offset;
 
     bool aquisition_started;
+    bool use_trigger;
+    bool use_software_trigger;
+    int trigger_polarity;
+    int trigger_mode;
+    int trigger_source_pin;
     unsigned int num_cameras, index;
     float gain_dB, shutter_ms, exposure_EV;
     int white_bal_red, white_bal_blue;
@@ -79,7 +85,7 @@ private:
     int setupDefaultImageFormat(void);
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
     //int setupImageBinning(int xBinFactor, int yBinFactor);
-    int setupTrigger(int source, int polarity);
+    int setupTrigger(void);
 
     // Physical camera control
     int turnCameraOn(void);

@@ -27,7 +27,7 @@
  */
 KalmanFilter::KalmanFilter(std::string position_source_name, std::string position_sink_name) :
 PositionFilter(position_source_name, position_sink_name)
-, dt(0.03333333333333333)
+, dt(0.02)
 , kf(6, 3, 0)
 , kf_state(6, 1, CV_32F)
 , kf_meas(3, 1, CV_32F)
@@ -37,29 +37,36 @@ PositionFilter(position_source_name, position_sink_name)
 , sig_measure_noise(0.01)
 , tuning_windows_created(false)
 , slider_title(position_sink_name + "_sliders") {
+
+    sig_accel_tune = (int) (sig_measure_noise * 10.0);
+    sig_measure_noise_tune = (int) (sig_measure_noise * 10.0);
 }
 
-void KalmanFilter::grabPosition() {
+bool KalmanFilter::grabPosition() {
 
-    position_source.get_value(raw_position);
+    if (position_source.getSharedObject(raw_position)) {
 
-    // Transform raw position into kf_meas vector
-    if (raw_position.position_valid) {
-        kf_meas.at<float>(0) = raw_position.position.x;
-        kf_meas.at<float>(1) = raw_position.position.y;
-        kf_meas.at<float>(2) = raw_position.position.z;
-        not_found_count = 0;
+        // Transform raw position into kf_meas vector
+        if (raw_position.position_valid) {
+            kf_meas.at<float>(0) = raw_position.position.x;
+            kf_meas.at<float>(1) = raw_position.position.y;
+            kf_meas.at<float>(2) = raw_position.position.z;
+            not_found_count = 0;
 
-        // We are coming from a time step where there were no measurements for a
-        // long time, so we need to reinitialize the filter
-        if (!found) {
-            initializeFilter();
+            // We are coming from a time step where there were no measurements for a
+            // long time, so we need to reinitialize the filter
+            if (!found) {
+                initializeFilter();
+            }
+
+            found = true;
+        } else {
+            not_found_count++;
         }
 
-        found = true;
-    }
-    else {
-        not_found_count++;
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -67,21 +74,20 @@ void KalmanFilter::filterPosition() {
 
     // Tune the filter, if requested
     tune();
-    
+
     // If we have not gotten a measurement of the object for a long time
     // we need to reinitialize the filter
     if (not_found_count >= not_found_count_threshold) {
         found = false;
-    }
-    else {
+    } else {
         kf.statePost = kf_state;
+
+        // Apply the Kalman update
+        kf.correct(kf_meas);
+
+        // Produce state estimate
+        kf_state = kf.predict();
     }
-
-    // Apply the Kalman update
-    kf.correct(kf_meas);
-
-    // Produce state estimate
-    kf_state = kf.predict();
 }
 
 void KalmanFilter::serveFilteredPosition() {
@@ -107,7 +113,7 @@ void KalmanFilter::serveFilteredPosition() {
 }
 
 void KalmanFilter::configure(std::string config_file, std::string config_key) {
-    
+
     cpptoml::table config;
 
     try {
@@ -123,28 +129,28 @@ void KalmanFilter::configure(std::string config_file, std::string config_key) {
             auto this_config = *config.get_table(config_key);
 
             if (this_config.contains("dt")) {
-                dt = (float)(*this_config.get_as<double>("dt"));
+                dt = (float) (*this_config.get_as<double>("dt"));
             }
-            
+
             if (this_config.contains("not_found_timeout")) {
                 // Seconds to samples
-                float timeout_in_sec = (float)(*this_config.get_as<double>("not_found_timeout"));
-                not_found_count_threshold = (int)(timeout_in_sec/dt);
+                float timeout_in_sec = (float) (*this_config.get_as<double>("not_found_timeout"));
+                not_found_count_threshold = (int) (timeout_in_sec / dt);
             }
-            
+
             if (this_config.contains("sigma_accel")) {
-                sig_accel = (float)(*this_config.get_as<double>("sigma_accel"));
+                sig_accel = (float) (*this_config.get_as<double>("sigma_accel"));
             }
-            
+
             if (this_config.contains("sigma_noise")) {
-                sig_measure_noise = (float)(*this_config.get_as<double>("sigma_noise"));
+                sig_measure_noise = (float) (*this_config.get_as<double>("sigma_noise"));
             }
-            
+
             if (this_config.contains("tune")) {
                 if (*this_config.get_as<bool>("tune")) {
                     tuning_on = true;
                     createTuningWindows();
-                } 
+                }
             }
 
         } else {
@@ -157,6 +163,27 @@ void KalmanFilter::configure(std::string config_file, std::string config_key) {
 }
 
 void KalmanFilter::initializeFilter(void) {
+
+
+    initializeStaticMatracies();
+
+    // Error covariance matrix (initialize with large value to indicate a lack
+    // of trust in the model)
+    cv::setIdentity(kf.errorCovPre, 10.0);
+
+    // TODO: Add head direction?
+    // The state is
+    // [ x  x'  y  y'  z  z' ], where ' denotes the time derivative
+    // Initialize the state using the current measurement
+    kf_state.at<float>(0) = kf_meas.at<float>(0);
+    kf_state.at<float>(1) = 0.0;
+    kf_state.at<float>(2) = kf_meas.at<float>(1);
+    kf_state.at<float>(3) = 0.0;
+    kf_state.at<float>(4) = kf_meas.at<float>(2);
+    kf_state.at<float>(5) = 0.0;
+}
+
+void KalmanFilter::initializeStaticMatracies() {
 
     // State transition matrix
     // [ 1  dt 0  0  0  0 ]
@@ -229,45 +256,43 @@ void KalmanFilter::initializeFilter(void) {
     // [ 0  sig_y^2  0 ]
     // [ 0  0  sig_z^2 ]
     cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(sig_measure_noise * sig_measure_noise));
-
-    // Error covariance matrix (initialize with large value to indicate a lack
-    // of trust in the model)
-    cv::setIdentity(kf.errorCovPre, 10.0);
-
-    // TODO: Add head direction?
-    // The state is
-    // [ x  x'  y  y'  z  z' ], where ' denotes the time derivative
-    // Initialize the state using the current measurement
-    kf_state.at<float>(0) = kf_meas.at<float>(0);
-    kf_state.at<float>(1) = 0.0;
-    kf_state.at<float>(2) = kf_meas.at<float>(1);
-    kf_state.at<float>(3) = 0.0;
-    kf_state.at<float>(4) = kf_meas.at<float>(2);
-    kf_state.at<float>(5) = 0.0;
 }
 
 void KalmanFilter::tune() {
 
+    tuning_mutex.lock();
+    
     if (tuning_on) {
         if (!tuning_windows_created) {
             createTuningWindows();
         }
-        cv::waitKey(1);
+
+        // Use the new parameters to create new static filter matracies
+        sig_accel = 0.1 * ((float) sig_accel_tune);
+        sig_measure_noise = 0.1 * ((float) sig_measure_noise_tune);
+        initializeStaticMatracies();
+
+        // Update sliders
+        //cv::waitKey(1);
+
     } else if (!tuning_on && tuning_windows_created) {
         // Destroy the tuning windows
         cv::destroyWindow(slider_title);
         tuning_windows_created = false;
+
     }
+
+    tuning_mutex.unlock();
 }
 
 void KalmanFilter::createTuningWindows() {
-    
+
     // Create window for sliders
     cv::namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
 
     // Create sliders and insert them into window
-    cv::createTrackbar("SIGMA ACCEL.", slider_title, &sig_accel, 10); 
-    cv::createTrackbar("SIGMA NOISE", slider_title, &sig_measure_noise, 10); 
-    
+    cv::createTrackbar("SIGMA ACCEL.", slider_title, &sig_accel_tune, 100);
+    cv::createTrackbar("SIGMA NOISE", slider_title, &sig_measure_noise_tune, 100);
+
     tuning_windows_created = true;
 }

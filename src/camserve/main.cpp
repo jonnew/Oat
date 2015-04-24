@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("type", po::value<std::string>(&type), "Camera code.")
+                ("type", po::value<std::string>(&type), "Camera TYPE.")
                 ("sink", po::value<std::string>(&sink),
                 "The name of the sink through which images collected by the camera will be served.\n")
                 ;
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
-                camera->stop();
+                camera->stop(); // TODO: Necessary??
                 break;
             }
             default:
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // TODO: Exit gracefully and ensure all shared resources are cleaned up!
+    // Exit gracefully and ensure all shared resources are cleaned up
     thread_group.join_all();
     
     // Free heap memory allocated to camera 

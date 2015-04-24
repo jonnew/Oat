@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (PosiFilt)
+project (TestPosition)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
@@ -10,6 +10,5 @@ link_directories (${Boost_LIBRARY_DIR})
 add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (posifilt KalmanFilter.cpp main.cpp )
-target_link_libraries (posifilt shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
-
+add_executable (testpos TestPosition.cpp main.cpp )
+target_link_libraries (testpos shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})

@@ -32,7 +32,7 @@ frame_source(source_name)
     // Find the shard cv::Mat
     int client_num = frame_source.findSharedMat();
     name = name + std::to_string(client_num);
-    
+
     cv::namedWindow(name);
 }
 
@@ -44,17 +44,21 @@ void Viewer::showImage() {
 void Viewer::showImage(const std::string title) {
 
     cv::Mat current_frame;
-    frame_source.getSharedMat(current_frame); // Thread safe
 
-    try {
-        cv::imshow(title, current_frame);
-        cv::waitKey(1);
-    } catch (cv::Exception& ex) {
-        std::cerr << ex.what() << "\n";
+    // If we are able to aquire the current frame, 
+    // show it.
+    if (frame_source.getSharedMat(current_frame)) {
+
+        try {
+            cv::imshow(title, current_frame);
+            cv::waitKey(1);
+        } catch (cv::Exception& ex) {
+            std::cerr << ex.what() << "\n";
+        }
     }
 }
 
-void Viewer::stop() {
-
-    frame_source.notifySelf();
-}
+//void Viewer::stop() {
+//
+//    frame_source.notifySelf();
+//}
