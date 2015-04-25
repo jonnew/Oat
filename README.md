@@ -27,9 +27,9 @@
   - Pass by const ref whenever possible. Especially relevant when passing derived objects to prevent slicing.
   - const member properties can be initialized in the initialization list, rather than assigned in the constructor body. Take advantage.
 - [ ] Implement pure intensity based detector (now color conversion, just saturation on raw image)
-- [ ] Implement position Filter (Kalman is first implementation)
+- [x] Implement position Filter (Kalman is first implementation)
 - [ ] Implement recorder (Position and images? Viewer can also record?)
-- [ ] Camera configuration should specify frame capture due to digital pulses on a user selected GPIO line or free running.
+- [x] Camera configuration should specify frame capture due to digital pulses on a user selected GPIO line or free running.
 - [x] To simplify IPC, clients should copy data in guarded sections. This limits the amount of time locks are engaged and likely, esp for cv::mat's make up for the copy in the increased amount of code that can be executed in parallel.
 - [ ] Can image metadata be packaged with shared cv::mats?
   - Frame rate
