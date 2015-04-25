@@ -83,7 +83,6 @@ int main(int argc, char *argv[]) {
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
-
                 ;
 
         po::options_description config("CONFIGURATION");

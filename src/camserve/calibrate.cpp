@@ -36,6 +36,7 @@
 #include "Camera.h"
 #include "PGGigECam.h"
 #include "WebCam.h"
+#include "FileReader.h"
 
 using namespace cv;
 using namespace std;
@@ -73,6 +74,7 @@ const char* liveCaptureHelp =
 static void help() {
     printf("This is a camera calibration sample.\n"
             "Usage: calibration\n"
+            ""
             "     -w <board_width>         # the number of inner corners per one of board dimension\n"
             "     -h <board_height>        # the number of inner corners per another board dimension\n"
             "     [-pt <pattern>]          # the type of pattern: chessboard or circles' grid\n"
@@ -89,14 +91,15 @@ static void help() {
             "     [-a <aspectRatio>]       # fix aspect ratio (fx/fy)\n"
             "     [-p]                     # fix the principal point at the center\n"
             "     [-v]                     # flip the captured images around the horizontal axis\n"
-            "     [-C <params>]            # use a simple-tracker Camera\n" //TODO: Make this work somehow
-            "     [-V]                     # use a video file, and not an image list, uses\n"
+            "     [-t]                     # Camera type: \'list\', \'wcam\', \'gige\', or \'file\'\n"
             "                              # [input_data] string for the video file name\n"
+            "     [-c]                     # Camera configuration file\n"
+            "     [-k]                     # Camera configuration key\n"
             "     [-su]                    # show undistorted images after calibration\n"
             "     [input_data]             # input data, one of the following:\n"
-            "                              #  - text file with a list of the images of the board\n"
+            "                              #  - (-t list) text file with a list of the images of the board\n"
             "                              #    the text file can be generated with imagelist_creator\n"
-            "                              #  - name of video file with a video of the board\n"
+            "                              #  - (-t file) name of video file with a video of the board\n"
             "                              # if input_data not specified, a live view from the camera is used\n" 
             "\n");
     printf("\n%s", usage);
@@ -109,6 +112,10 @@ enum {
 
 enum Pattern {
     CHESSBOARD, CIRCLES_GRID, ASYMMETRIC_CIRCLES_GRID
+};
+
+enum CameraType {
+    LIST, WCAM, GIGE, VIDFILE
 };
 
 static double computeReprojectionErrors(
@@ -313,20 +320,23 @@ int main(int argc, char** argv) {
     Mat cameraMatrix, distCoeffs;
     const char* outputFilename = "out_camera_data.yml";
     const char* inputFilename = 0;
+    std::string dummy_sink = "dummy_sink";
 
     int i, nframes = 10;
     bool writeExtrinsics = false, writePoints = false;
     bool undistortImage = false;
-    int flags = 0;
-    VideoCapture capture; 
+    int flags = 0; 
     
     bool use_simple_tracker_camera = false;
-    Camera camera; // TODO: add new flag to determine if this is used and what type it is
+    Camera* camera; // TODO: add new flag to determine if this is used and what type it is
+    std::string config_file;
+    std::string config_key;
+    bool config_used = false;
     
     
     bool flipVertical = false;
     bool showUndistorted = false;
-    bool videofile = false;
+    //bool videofile = false;
     int delay = 1000;
     clock_t prevTimestamp = 0;
     int mode = DETECTION;
@@ -334,6 +344,7 @@ int main(int argc, char** argv) {
     vector<vector<Point2f> > imagePoints;
     vector<string> imageList;
     Pattern pattern = CHESSBOARD;
+    CameraType camera_type = WCAM;
 
     if (argc < 2) {
         help();
@@ -348,6 +359,18 @@ int main(int argc, char** argv) {
         } else if (strcmp(s, "-h") == 0) {
             if (sscanf(argv[++i], "%u", &boardSize.height) != 1 || boardSize.height <= 0)
                 return fprintf(stderr, "Invalid board height\n"), -1;
+        } else if (strcmp(s, "-t") == 0) {
+            i++;
+            if (!strcmp(argv[i], "list"))
+                camera_type = LIST;
+            else if (!strcmp(argv[i], "wcam"))
+                camera_type = WCAM;
+            else if (!strcmp(argv[i], "gige"))
+                camera_type = GIGE;
+            else if (!strcmp(argv[i], "file"))
+                camera_type = VIDFILE;
+            else
+                return fprintf(stderr, "Invalid camera type: must be list, wcam, gige, or file\n"), -1;
         } else if (strcmp(s, "-pt") == 0) {
             i++;
             if (!strcmp(argv[i], "circles"))
@@ -358,6 +381,12 @@ int main(int argc, char** argv) {
                 pattern = CHESSBOARD;
             else
                 return fprintf(stderr, "Invalid pattern type: must be chessboard or circles\n"), -1;
+        } else if (strcmp(s, "-c") == 0) {
+            config_file = argv[++i];
+            config_used = true;
+        } else if (strcmp(s, "-k") == 0) {
+            config_key = argv[++i];
+            config_used = true;
         } else if (strcmp(s, "-s") == 0) {
             if (sscanf(argv[++i], "%f", &squareSize) != 1 || squareSize <= 0)
                 return fprintf(stderr, "Invalid board square width\n"), -1;
@@ -381,8 +410,6 @@ int main(int argc, char** argv) {
             flags |= CALIB_FIX_PRINCIPAL_POINT;
         } else if (strcmp(s, "-v") == 0) {
             flipVertical = true;
-        } else if (strcmp(s, "-V") == 0) {
-            videofile = true;
         } else if (strcmp(s, "-o") == 0) {
             outputFilename = argv[++i];
         } else if (strcmp(s, "-su") == 0) {
@@ -396,53 +423,69 @@ int main(int argc, char** argv) {
             return fprintf(stderr, "Unknown option %s", s), -1;
     }
 
-    if (inputFilename) {
-        if (!videofile && readStringList(inputFilename, imageList))
+    switch (camera_type) {
+        case LIST:
+            readStringList(inputFilename, imageList);
+            nframes = (int)imageList.size();
             mode = CAPTURING;
-        else
-            capture.open(inputFilename);
-    } else
+            break;
         
-        if (use_simple_tracker_camera) {
-            camera.configure(); //TODO:configure camera
-        } else {
-            capture.open(cameraId);
-        }
+        case WCAM:
+            use_simple_tracker_camera = true;
+            camera = new WebCam(dummy_sink);
+            break;
+            
+        case GIGE:
+            use_simple_tracker_camera = true;
+            camera = new PGGigECam(dummy_sink);
+            break;
+            
+        case VIDFILE:
+            use_simple_tracker_camera = true;
+            camera = new FileReader(inputFilename, dummy_sink);
+            break;
+            
+        default:
+             return fprintf( stderr, "Unknown camera type \n"), -2;
+    }
 
-    if (!capture.isOpened() && imageList.empty() && !use_simple_tracker_camera)
-        return fprintf(stderr, "Could not initialize video (%d) capture\n", cameraId), -2;
+    if (config_used && config_file.empty() || config_used && config_key.empty()) {
+        std::cerr << "Error: Camera config file must be supplied with a corresponding config-key. Exiting.\n";
+        return -1;
+    }
 
-    if (!imageList.empty())
-        nframes = (int) imageList.size();
+    if (use_simple_tracker_camera && config_used)
+        camera->configure(config_file, config_key);
+    else if (use_simple_tracker_camera)
+        camera->configure();
+    
+    if( use_simple_tracker_camera )
+        printf( "%s", liveCaptureHelp );
 
-    if (capture.isOpened())
-        printf("%s", liveCaptureHelp);
+    namedWindow( "Image View", 1 );
 
-    namedWindow("Image View", 1);
-
-    for (i = 0;; i++) {
+    for(i = 0;;i++)
+    {
         Mat view, viewGray;
         bool blink = false;
 
-        if (capture.isOpened() || use_simple_tracker_camera) {
+        if( use_simple_tracker_camera )
+        {
             Mat view0;
-            if (use_simple_tracker_camera) {
-                
-                camera.grabMat();
-                view0 = camera.getCurrentFrame();
-            } else {
-                capture >> view0;
-            }
+            camera->grabMat();
+            view0 = camera->getCurrentFrame();
             view0.copyTo(view);
-        } else if (i < (int) imageList.size())
+        }
+        else if( i < (int)imageList.size() )
             view = imread(imageList[i], 1);
 
-        if (view.empty()) {
-            if (imagePoints.size() > 0)
+        if(view.empty())
+        {
+            if( imagePoints.size() > 0 )
                 runAndSave(outputFilename, imagePoints, imageSize,
-                    boardSize, pattern, squareSize, aspectRatio,
-                    flags, cameraMatrix, distCoeffs,
-                    writeExtrinsics, writePoints);
+                           boardSize, pattern, squareSize, aspectRatio,
+                           flags, cameraMatrix, distCoeffs,
+                           writeExtrinsics, writePoints);
             break;
         }
 
@@ -475,10 +518,10 @@ int main(int argc, char** argv) {
                 Size(-1, -1), TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1));
 
         if (mode == CAPTURING && found &&
-                (!capture.isOpened() || clock() - prevTimestamp > delay * 1e-3 * CLOCKS_PER_SEC)) {
+                (!use_simple_tracker_camera || clock() - prevTimestamp > delay * 1e-3 * CLOCKS_PER_SEC)) {
             imagePoints.push_back(pointbuf);
             prevTimestamp = clock();
-            blink = capture.isOpened();
+            blink = use_simple_tracker_camera;
         }
 
         if (found)
@@ -509,7 +552,7 @@ int main(int argc, char** argv) {
         }
 
         imshow("Image View", view);
-        int key = 0xff & waitKey(capture.isOpened() ? 50 : 500);
+        int key = 0xff & waitKey(use_simple_tracker_camera ? 50 : 500);
 
         if ((key & 255) == 27)
             break;
@@ -517,7 +560,7 @@ int main(int argc, char** argv) {
         if (key == 'u' && mode == CALIBRATED)
             undistortImage = !undistortImage;
 
-        if (capture.isOpened() && key == 'g') {
+        if (use_simple_tracker_camera && key == 'g') {
             mode = CAPTURING;
             imagePoints.clear();
         }
@@ -530,12 +573,12 @@ int main(int argc, char** argv) {
                 mode = CALIBRATED;
             else
                 mode = DETECTION;
-            if (!capture.isOpened())
+            if (!use_simple_tracker_camera)
                 break;
         }
     }
 
-    if (!capture.isOpened() && showUndistorted) {
+    if (!use_simple_tracker_camera && showUndistorted) {
         Mat view, rview, map1, map2;
         initUndistortRectifyMap(cameraMatrix, distCoeffs, Mat(),
                 getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, imageSize, 1, imageSize, 0),
