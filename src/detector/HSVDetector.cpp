@@ -104,7 +104,7 @@ void HSVDetector::siftBlobs() {
     std::vector< cv::Vec4i > hierarchy;
 
     // This function will modify the threshold_img data.
-    cv::findContours(thesh_cpy, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+    cv::findContours(thesh_cpy, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
 
     object_area = 0;
     object_position.position_valid = false;

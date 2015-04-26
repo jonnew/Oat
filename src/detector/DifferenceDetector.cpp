@@ -90,7 +90,7 @@ void DifferenceDetector::siftBlobs() {
     //these two vectors needed for output of findContours
     //find contours of filtered image using openCV findContours function
     //findContours(temp,contours,hierarchy,CV_RETR_CCOMP,CV_CHAIN_APPROX_SIMPLE );// retrieves all contours
-    cv::findContours(thresh_cpy, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE); // retrieves external contours
+    cv::findContours(thresh_cpy, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE); // retrieves external contours
 
     //if contours vector is not empty, we have found some objects
     if (contours.size() > 0) {
