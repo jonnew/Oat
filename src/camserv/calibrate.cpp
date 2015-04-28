@@ -69,7 +69,8 @@ const char* liveCaptureHelp =
         "When the live video from camera is used as input, the following hot-keys may be used:\n"
         "  <ESC>, 'q' - quit the program\n"
         "  'g' - start capturing images\n"
-        "  'u' - switch undistortion on/off\n";
+        "  'u' - switch undistortion on/off\n"
+        "  'w' - world view calibration\n";
 
 static void help() {
     printf("This is a camera calibration sample.\n"
@@ -96,18 +97,19 @@ static void help() {
             "     [-c]                     # Camera configuration file\n"
             "     [-k]                     # Camera configuration key\n"
             "     [-su]                    # show undistorted images after calibration\n"
+            "     [-D <distance>]          # Standard distance used for world unit conversion (e.g. 1.0 meters)"
             "     [input_data]             # input data, one of the following:\n"
             "                              #  - (-t list) text file with a list of the images of the board\n"
             "                              #    the text file can be generated with imagelist_creator\n"
             "                              #  - (-t file) name of video file with a video of the board\n"
-            "                              # if input_data not specified, a live view from the camera is used\n" 
+            "                              # if input_data not specified, a live view from the camera is used\n"
             "\n");
     printf("\n%s", usage);
     printf("\n%s", liveCaptureHelp);
 }
 
 enum {
-    DETECTION = 0, CAPTURING = 1, CALIBRATED = 2
+    DETECTION = 0, CAPTURING = 1, CALIBRATED = 2, CALIBRATED_WORLDCOORD = 3
 };
 
 enum Pattern {
@@ -204,7 +206,10 @@ static void saveCameraParams(const string& filename,
         const vector<Mat>& rvecs, const vector<Mat>& tvecs,
         const vector<float>& reprojErrs,
         const vector<vector<Point2f> >& imagePoints,
-        double totalAvgErr) {
+        double totalAvgErr,
+        cv::Point2f xy_origin_in_px,
+        float mm_per_px_x,
+        float mm_per_px_y) {
     FileStorage fs(filename, FileStorage::WRITE);
 
     time_t tt;
@@ -270,6 +275,11 @@ static void saveCameraParams(const string& filename,
         }
         fs << "image_points" << imagePtMat;
     }
+
+    // Tack on our px->world coordinate info
+    fs << "xy_origin_in_px" << xy_origin_in_px;
+    fs << "mm_per_px_x" << mm_per_px_x;
+    fs << "mm_per_px_y" << mm_per_px_y;
 }
 
 static bool readStringList(const string& filename, vector<string>& l) {
@@ -288,9 +298,19 @@ static bool readStringList(const string& filename, vector<string>& l) {
 
 static bool runAndSave(const string& outputFilename,
         const vector<vector<Point2f> >& imagePoints,
-        Size imageSize, Size boardSize, Pattern patternType, float squareSize,
-        float aspectRatio, int flags, Mat& cameraMatrix,
-        Mat& distCoeffs, bool writeExtrinsics, bool writePoints) {
+        Size imageSize,
+        Size boardSize,
+        Pattern patternType,
+        float squareSize,
+        float aspectRatio,
+        int flags,
+        Mat& cameraMatrix,
+        Mat& distCoeffs,
+        bool writeExtrinsics,
+        bool writePoints,
+        cv::Point2f xy_origin_in_px,
+        float mm_per_px_x,
+        float mm_per_px_y) {
     vector<Mat> rvecs, tvecs;
     vector<float> reprojErrs;
     double totalAvgErr = 0;
@@ -303,15 +323,34 @@ static bool runAndSave(const string& outputFilename,
             totalAvgErr);
 
     if (ok)
-        saveCameraParams(outputFilename, imageSize,
-            boardSize, squareSize, aspectRatio,
-            flags, cameraMatrix, distCoeffs,
+        saveCameraParams(outputFilename,
+            imageSize,
+            boardSize,
+            squareSize,
+            aspectRatio,
+            flags,
+            cameraMatrix,
+            distCoeffs,
             writeExtrinsics ? rvecs : vector<Mat>(),
             writeExtrinsics ? tvecs : vector<Mat>(),
             writeExtrinsics ? reprojErrs : vector<float>(),
             writePoints ? imagePoints : vector<vector<Point2f> >(),
-            totalAvgErr);
+            totalAvgErr,
+            xy_origin_in_px,
+            mm_per_px_x,
+            mm_per_px_y);
     return ok;
+}
+
+static void mouseEvent(int event, int x, int y, int flags, void* ptr) {
+
+    if (event == EVENT_LBUTTONDOWN) {
+        Point* p = (Point*) ptr;
+        p->x = x;
+        p->y = y;
+
+        cout << "Position (" << x << ", " << y << ")\n";
+    }
 }
 
 int main(int argc, char** argv) {
@@ -325,15 +364,20 @@ int main(int argc, char** argv) {
     int i, nframes = 10;
     bool writeExtrinsics = false, writePoints = false;
     bool undistortImage = false;
-    int flags = 0; 
-    
+    int flags = 0;
+
     bool use_simple_tracker_camera = false;
     Camera* camera; // TODO: add new flag to determine if this is used and what type it is
     std::string config_file;
     std::string config_key;
     bool config_used = false;
-    
-    
+    float standard_distance_in_world_units;
+    bool show_world_coords = false;
+    cv::Point2f xy_origin_in_px;
+    cv::Point2f xy_1m_in_px;
+    float world_units_per_px_x;
+    float world_unit_per_px_y;
+
     bool flipVertical = false;
     bool showUndistorted = false;
     //bool videofile = false;
@@ -412,6 +456,8 @@ int main(int argc, char** argv) {
             flipVertical = true;
         } else if (strcmp(s, "-o") == 0) {
             outputFilename = argv[++i];
+        } else if (strcmp(s, "-D") == 0) {
+            standard_distance_in_world_units = std::stof(argv[++i]);
         } else if (strcmp(s, "-su") == 0) {
             showUndistorted = true;
         } else if (s[0] != '-') {
@@ -426,27 +472,27 @@ int main(int argc, char** argv) {
     switch (camera_type) {
         case LIST:
             readStringList(inputFilename, imageList);
-            nframes = (int)imageList.size();
+            nframes = (int) imageList.size();
             mode = CAPTURING;
             break;
-        
+
         case WCAM:
             use_simple_tracker_camera = true;
             camera = new WebCam(dummy_sink);
             break;
-            
+
         case GIGE:
             use_simple_tracker_camera = true;
             camera = new PGGigECam(dummy_sink);
             break;
-            
+
         case VIDFILE:
             use_simple_tracker_camera = true;
             camera = new FileReader(inputFilename, dummy_sink);
             break;
-            
+
         default:
-             return fprintf( stderr, "Unknown camera type \n"), -2;
+            return fprintf(stderr, "Unknown camera type \n"), -2;
     }
 
     if (config_used && config_file.empty() || config_used && config_key.empty()) {
@@ -458,34 +504,33 @@ int main(int argc, char** argv) {
         camera->configure(config_file, config_key);
     else if (use_simple_tracker_camera)
         camera->configure();
-    
-    if( use_simple_tracker_camera )
-        printf( "%s", liveCaptureHelp );
 
-    namedWindow( "Image View", 1 );
+    if (use_simple_tracker_camera)
+        printf("%s", liveCaptureHelp);
 
-    for(i = 0;;i++)
-    {
+    namedWindow("Image View", 1);
+
+    for (i = 0;; i++) {
         Mat view, viewGray;
         bool blink = false;
 
-        if( use_simple_tracker_camera )
-        {
+        if (use_simple_tracker_camera) {
             Mat view0;
             camera->grabMat();
             view0 = camera->getCurrentFrame();
             view0.copyTo(view);
-        }
-        else if( i < (int)imageList.size() )
+        } else if (i < (int) imageList.size())
             view = imread(imageList[i], 1);
 
-        if(view.empty())
-        {
-            if( imagePoints.size() > 0 )
+        if (view.empty()) {
+            if (imagePoints.size() > 0)
                 runAndSave(outputFilename, imagePoints, imageSize,
-                           boardSize, pattern, squareSize, aspectRatio,
-                           flags, cameraMatrix, distCoeffs,
-                           writeExtrinsics, writePoints);
+                    boardSize, pattern, squareSize, aspectRatio,
+                    flags, cameraMatrix, distCoeffs,
+                    writeExtrinsics, writePoints,
+                    xy_origin_in_px,
+                    world_units_per_px_x,
+                    world_unit_per_px_y);
             break;
         }
 
@@ -540,9 +585,6 @@ int main(int argc, char** argv) {
                 msg = format("%d/%d", (int) imagePoints.size(), nframes);
         }
 
-        putText(view, msg, textOrigin, 1, 1,
-                mode != CALIBRATED ? Scalar(0, 0, 255) : Scalar(0, 255, 0));
-
         if (blink)
             bitwise_not(view, view);
 
@@ -551,7 +593,6 @@ int main(int argc, char** argv) {
             undistort(temp, view, cameraMatrix, distCoeffs);
         }
 
-        imshow("Image View", view);
         int key = 0xff & waitKey(use_simple_tracker_camera ? 50 : 500);
 
         if ((key & 255) == 27)
@@ -560,21 +601,113 @@ int main(int argc, char** argv) {
         if (key == 'u' && mode == CALIBRATED)
             undistortImage = !undistortImage;
 
+        // Decorate image after undistort
         if (use_simple_tracker_camera && key == 'g') {
             mode = CAPTURING;
             imagePoints.clear();
+        }
+
+        if (show_world_coords) {
+
+            cv::Point2i endx = xy_origin_in_px;
+            cv::Point2i endy = xy_origin_in_px;
+            endx.x = xy_1m_in_px.x;
+            endy.y = xy_1m_in_px.y;
+
+            circle(view,
+                    xy_origin_in_px,
+                    5,
+                    Scalar(255, 255, 255),
+                    3,
+                    8);
+
+            line(view,
+                    xy_origin_in_px,
+                    endx,
+                    Scalar(0, 0, 255),
+                    1,
+                    8);
+            line(view,
+                    xy_origin_in_px,
+                    endy,
+                    Scalar(255, 0, 0),
+                    1,
+                    8);
+        }
+
+        putText(view, msg, textOrigin, 1, 1,
+                mode != CALIBRATED ? Scalar(0, 0, 255) : Scalar(0, 255, 0));
+
+
+        imshow("Image View", view);
+
+
+        if (key == 'w' && mode == CALIBRATED) {
+            mode = CALIBRATED_WORLDCOORD;
         }
 
         if (mode == CAPTURING && imagePoints.size() >= (unsigned) nframes) {
             if (runAndSave(outputFilename, imagePoints, imageSize,
                     boardSize, pattern, squareSize, aspectRatio,
                     flags, cameraMatrix, distCoeffs,
-                    writeExtrinsics, writePoints))
+                    writeExtrinsics, writePoints,
+                    xy_origin_in_px,
+                    world_units_per_px_x,
+                    world_unit_per_px_y))
                 mode = CALIBRATED;
             else
                 mode = DETECTION;
             if (!use_simple_tracker_camera)
                 break;
+        }
+
+        // This is a complete hack for my specific purposes
+        if (mode == CALIBRATED_WORLDCOORD) {
+
+            if (!undistortImage) {
+                std::cout << "Error: generating world coordinates in reference to distorted image!!\n";
+                std::cout << "Undistort image before generating the world reference frame.\n";
+                mode = CALIBRATED;
+                
+            } else {
+
+                cv::Point mouse_pt;
+
+                //set the callback function for any mouse event
+                setMouseCallback("Image View", mouseEvent, &mouse_pt);
+
+                // Click the origin and press enter to move to next point
+                std::cout << "Click the origin of the world reference frame\n";
+                std::cout << "Press enter to move to next point.\n";
+                waitKey(0);
+                xy_origin_in_px.x = (float) mouse_pt.x;
+                xy_origin_in_px.y = (float) mouse_pt.y;
+
+                // x pixel to world unit
+                std::cout << "Click the image at the point (" << standard_distance_in_world_units << " , 0) [in world units] \n";
+                std::cout << "Press enter to move to next point.\n";
+                waitKey(0);
+                xy_1m_in_px.x = mouse_pt.x;
+                world_units_per_px_x = standard_distance_in_world_units / ((float) (mouse_pt.x) - xy_origin_in_px.x);
+
+                // y pixel to world unit
+                std::cout << "Click the image at the point (0, " << standard_distance_in_world_units << ") [in world units] \n";
+                std::cout << "Press enter to complete generation of the world reference frame.\n";
+                waitKey(0);
+                xy_1m_in_px.y = mouse_pt.y;
+                world_unit_per_px_y = standard_distance_in_world_units / ((float) (mouse_pt.y) - xy_origin_in_px.y);
+
+                runAndSave(outputFilename, imagePoints, imageSize,
+                        boardSize, pattern, squareSize, aspectRatio,
+                        flags, cameraMatrix, distCoeffs,
+                        writeExtrinsics, writePoints,
+                        xy_origin_in_px,
+                        world_units_per_px_x,
+                        world_unit_per_px_y);
+
+                show_world_coords = true;
+                mode = CALIBRATED;
+            }
         }
     }
 

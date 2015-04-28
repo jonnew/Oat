@@ -33,6 +33,7 @@ void DifferenceDetector::findObjectAndServePosition() {
 
     // If we are able to get a an image
     if (image_source.getSharedMat(this_image)) {
+        addWorldReferenceFrame();
         applyThreshold();
         siftBlobs();
         tune();
@@ -112,9 +113,49 @@ void DifferenceDetector::siftBlobs() {
         object_position.position.y = objectBoundingRectangle.y + 0.5 * objectBoundingRectangle.height;
 
         if (tuning_on) {
-            cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
-            cv::rectangle(threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
+            
+            std::string msg;
+            int baseline = 0;
+            cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
+            cv::Point text_origin(
+                    threshold_image.cols - 2 * textSize.width - 10,
+                    threshold_image.rows - 2 * baseline - 10);
+            
+            // Plot a circle representing found object
+            if (object_position.position_valid) {
+                cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
+                cv::rectangle(threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
+
+                // Tell object position
+                if (object_position.world_coords_valid) {
+                    shmem::Position3D covert_pos = object_position.convertPositionToWorldCoords(object_position.position);
+                    msg = cv::format("(%d, %d) world units", (int) covert_pos.x, (int) covert_pos.y);
+                    cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+                } else {
+                    msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
+                    cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+                }
+            } else {
+                msg = "Object not found";
+                cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+            }
+
         }
+    }
+}
+
+void DifferenceDetector::addWorldReferenceFrame() {
+
+    if (image_source.get_world_coords_valid()) {
+
+        object_position.world_coords_valid = true;
+
+        object_position.xyz_origin_in_px.x = image_source.get_xy_origin_in_px().x;
+        object_position.xyz_origin_in_px.y = image_source.get_xy_origin_in_px().y;
+
+        object_position.worldunits_per_px_x = image_source.get_worldunits_per_px_x();
+        object_position.worldunits_per_px_y = image_source.get_worldunits_per_px_y();
+
     }
 }
 

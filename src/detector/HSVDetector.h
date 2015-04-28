@@ -80,6 +80,8 @@ private:
     // Mat server for sending processed frames
     //bool frame_sink_used;
     //MatServer frame_sink;
+    
+    void addWorldReferenceFrame(void);
 
     // Binary threshold and use the binary threshold to mask the image
     void applyThreshold(void);

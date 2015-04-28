@@ -47,6 +47,11 @@ public:
     void set_running(bool value) { running = value; } 
     std::string get_name(void) { return name; }
     
+    void set_world_coords_valid(bool value) { shared_mat_header->world_coords_valid = value; }
+    void set_xy_origin_in_px(cv::Point2f value) { shared_mat_header->xy_origin_in_px = value; }
+    void set_worldunits_per_px_x(float value) { shared_mat_header->worldunits_per_px_x = value; }
+    void set_worldunits_per_px_y(float value) { shared_mat_header->worldunits_per_px_y = value; }
+    
 private:
     
     // Name of this server

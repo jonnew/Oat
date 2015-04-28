@@ -36,6 +36,7 @@ private:
     cv::Size blur_size;
     bool blur_on;
 
+    void addWorldReferenceFrame(void);
     void applyThreshold(void);
     void siftBlobs(void);
 

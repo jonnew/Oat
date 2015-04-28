@@ -39,6 +39,10 @@ public:
      
     // Accessors
     std::string get_name(void) { return name; }
+    bool get_world_coords_valid(void) { return shared_mat_header->world_coords_valid; }
+    cv::Point2f get_xy_origin_in_px(void) { return shared_mat_header->xy_origin_in_px; }
+    float get_worldunits_per_px_x(void) { return shared_mat_header->worldunits_per_px_x; }
+    float get_worldunits_per_px_y(void) { return shared_mat_header->worldunits_per_px_y; }
     
 private:
     

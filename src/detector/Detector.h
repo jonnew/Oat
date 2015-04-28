@@ -62,6 +62,10 @@ protected:
     // Detector must implement method  sifting a threshold image to find objects
     virtual void siftBlobs(void) = 0;
     
+    // Append unit conversion data to the shared position object. This can be
+    // used to convert stereo image data into a 3D position, for instance
+    virtual void addWorldReferenceFrame(void) = 0;
+    
     // Detectors must allow manual tuning
     boost::mutex tuning_mutex; // Sync IO and processing thread, which can both manipulate the tuning state
     bool tuning_on; // This is a shared resource and must be synchronized
@@ -70,7 +74,7 @@ protected:
     cv::Mat tune_image;
     virtual void tune(void) = 0;
     virtual void createTuningWindows(void) = 0;
-    
+
     // The detected object position
     shmem::Position object_position;
     

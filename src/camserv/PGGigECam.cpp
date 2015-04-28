@@ -23,7 +23,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-#include <opencv2/core/core.hpp>
+#include <opencv2/opencv.hpp>
 
 #include "FlyCapture2.h"
 
@@ -180,7 +180,7 @@ void PGGigECam::configure(std::string config_file, std::string key) {
                     } else {
                         trigger_mode = 14;
                     }
-                    
+
                     if (trigger_mode == 7)
                         use_software_trigger = true;
                     else
@@ -197,8 +197,38 @@ void PGGigECam::configure(std::string config_file, std::string key) {
             }
             setupTrigger();
 
+            if (camera_config.contains("calibration_file")) {
+                std::string calibration_file = (*camera_config.get_as<std::string>("calibration_file"));
+
+                cv::FileStorage fs;
+                fs.open(calibration_file, cv::FileStorage::READ);
+
+                if (!fs.isOpened()) {
+                    std::cerr << "Failed to open " << calibration_file << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                undistort_image = true;
+                fs["camera_matrix"] >> camera_matrix;
+                fs["distortion_coefficients"] >> distortion_coefficients;
+                
+                frame_sink.set_world_coords_valid(true);
+                cv::Point2f origin;
+                fs["xy_origin_in_px"] >> origin;
+                frame_sink.set_xy_origin_in_px(origin);
+                
+                float temp;
+                fs["mm_per_px_x"] >> temp;
+                frame_sink.set_worldunits_per_px_x(temp);
+                
+                fs["mm_per_px_y"] >> temp;
+                frame_sink.set_worldunits_per_px_y(temp);
+
+                fs.release();
+            }
+
         } else {
-            std::cerr << "No camera configuration named \"" + key + "\" was provided. Exiting.\n";
+            std::cerr << "No camera configuration named \"" + key + "\" was provided. Exiting." << std::endl;
             exit(EXIT_FAILURE);
         }
     } catch (const std::exception& e) {
@@ -630,14 +660,14 @@ int PGGigECam::setupTrigger() {
 
     // TODO: This hangs...
     //Poll to ensure camera is ready
-//    if (use_trigger) { // If false, camera will free run
-//        bool retVal = pollForTriggerReady();
-//        if (!retVal) {
-//            std::cout << "\n";
-//            std::cout << "Error polling for trigger ready. Exiting...\n";
-//            exit(EXIT_FAILURE);
-//        }
-//    }
+    //    if (use_trigger) { // If false, camera will free run
+    //        bool retVal = pollForTriggerReady();
+    //        if (!retVal) {
+    //            std::cout << "\n";
+    //            std::cout << "Error polling for trigger ready. Exiting...\n";
+    //            exit(EXIT_FAILURE);
+    //        }
+    //    }
 
     // Camera is ready, start capturing images
     error = camera.StartCapture();
@@ -652,9 +682,9 @@ int PGGigECam::setupTrigger() {
     aquisition_started = true;
     if (use_trigger && use_software_trigger) {
         std::cout << "Trigger the camera by pressing Enter\n";
-    } else if(use_trigger) {
+    } else if (use_trigger) {
         std::cout << "Trigger the camera by sending a trigger pulse to GPIO_" << triggerMode.source << "\n";
-    }else {
+    } else {
         std::cout << "Camera by started in free running mode.\n";
     }
 

@@ -39,6 +39,7 @@ void run(Camera* camera) {
     while (!done) { // !done
         if (running) {
             camera->grabMat();
+            camera->undistortMat();
             camera->serveMat();
         }
     }

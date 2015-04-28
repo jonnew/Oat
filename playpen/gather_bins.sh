@@ -1,6 +1,7 @@
 #!/bin/bash          
 
-cp ../src/camserve/build/camserv ./bin
+cp ../src/camserv/build/camserv ./bin
+cp ../src/camserv/build/calibrate ./bin
 cp ../src/detector/build/detector ./bin
 cp ../src/viewer/build/viewer ./bin
 cp ../src/backsubtractor/build/backsub ./bin

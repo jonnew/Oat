@@ -37,6 +37,13 @@ public:
     // Cameras must be able to serve cv::Mat frames
     virtual void serveMat(void) = 0;
     
+    // Cameras allow image undistortion if parameters are provided
+    void undistortMat(void) {
+        if (undistort_image) {
+            cv::undistort(current_frame, current_frame, camera_matrix, distortion_coefficients);
+        }
+    }
+    
     // Cameras must be able to obtain a cv::Mat from some source (physical camera, file, etc)
     virtual void grabMat(void) = 0;
     
@@ -61,7 +68,17 @@ protected:
     
     // Currently acquired frame
     cv::Mat current_frame;
+
+    // Camera matrix and distortion coefficients. Use to undistort image
+    bool undistort_image;
+    cv::Mat camera_matrix;
+    cv::Mat distortion_coefficients;
     
+    // Conversion constants
+    cv::Point2f xy_origin_in_px;
+    float mm_per_px_y;
+    float mm_per_px_x;
+
 };
 
 #endif	/* CAMERA_H */

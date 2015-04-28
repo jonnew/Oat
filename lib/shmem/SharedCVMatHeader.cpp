@@ -26,7 +26,10 @@ namespace shmem {
     , read_barrier(0)
     , new_data_barrier(0)
     , number_of_clients(0)
-    , client_read_count(0) { }
+    , client_read_count(0)
+    , world_coords_valid(false)
+    , worldunits_per_px_x(0)
+    , worldunits_per_px_y(0) { }
 
     void SharedCVMatHeader::set_value(const cv::Mat& mat) {
         memcpy(data_ptr, mat.data, data_size_in_bytes);

@@ -24,7 +24,6 @@
 #include "../../lib/shmem/Position.h"
 
 
-
 class PositionFilter {
 public:
 
