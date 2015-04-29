@@ -38,6 +38,7 @@ namespace shmem {
         size_t client_read_count;
         
         // Used to get world coordinates from image
+        // TODO: Replace with homography transformation matrix
         bool world_coords_valid;
         cv::Point2f xy_origin_in_px;
         float worldunits_per_px_x;

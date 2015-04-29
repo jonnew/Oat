@@ -32,6 +32,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
+#include <vector>
 
 #include "Camera.h"
 #include "PGGigECam.h"
@@ -373,6 +374,7 @@ int main(int argc, char** argv) {
     bool config_used = false;
     float standard_distance_in_world_units;
     bool show_world_coords = false;
+    cv::Mat homography_transform;
     cv::Point2f xy_origin_in_px;
     cv::Point2f xy_1m_in_px;
     float world_units_per_px_x;
@@ -509,6 +511,10 @@ int main(int argc, char** argv) {
         printf("%s", liveCaptureHelp);
 
     namedWindow("Image View", 1);
+
+    //set the callback function for any mouse event
+    cv::Point mouse_pt;
+    setMouseCallback("Image View", mouseEvent, &mouse_pt);
 
     for (i = 0;; i++) {
         Mat view, viewGray;
@@ -668,42 +674,116 @@ int main(int argc, char** argv) {
                 std::cout << "Error: generating world coordinates in reference to distorted image!!\n";
                 std::cout << "Undistort image before generating the world reference frame.\n";
                 mode = CALIBRATED;
-                
+
             } else {
 
-                cv::Point mouse_pt;
+                std::cout << "Homography calculation mode started.\n";
+                std::cout << "Hot keys:"
+                        << "  'x' - exit homography generation routine and attempt to calculate translation matrix.\n"
+                        << "  'c' - calculate homography matrix using current points.\n"
+                        << "  'a' - add currently selected pixel position to homography coordinate list.\n\n";
 
-                //set the callback function for any mouse event
-                setMouseCallback("Image View", mouseEvent, &mouse_pt);
+                std::cout << "Click a points on the frozen image. You will see the pixel value at the terminal.\n";
+                std::cout << "When you are satisfied with the point's placement, press 'a' to continue...\n";
 
-                // Click the origin and press enter to move to next point
-                std::cout << "Click the origin of the world reference frame\n";
-                std::cout << "Press enter to move to next point.\n";
-                waitKey(0);
-                xy_origin_in_px.x = (float) mouse_pt.x;
-                xy_origin_in_px.y = (float) mouse_pt.y;
 
-                // x pixel to world unit
-                std::cout << "Click the image at the point (" << standard_distance_in_world_units << " , 0) [in world units] \n";
-                std::cout << "Press enter to move to next point.\n";
-                waitKey(0);
-                xy_1m_in_px.x = mouse_pt.x;
-                world_units_per_px_x = standard_distance_in_world_units / ((float) (mouse_pt.x) - xy_origin_in_px.x);
+                std::vector<cv::Point2f> src_points;
+                std::vector<cv::Point2f> dst_points;
 
-                // y pixel to world unit
-                std::cout << "Click the image at the point (0, " << standard_distance_in_world_units << ") [in world units] \n";
-                std::cout << "Press enter to complete generation of the world reference frame.\n";
-                waitKey(0);
-                xy_1m_in_px.y = mouse_pt.y;
-                world_unit_per_px_y = standard_distance_in_world_units / ((float) (mouse_pt.y) - xy_origin_in_px.y);
+                bool done = false;
+                bool homography_valid = false;
 
-                runAndSave(outputFilename, imagePoints, imageSize,
-                        boardSize, pattern, squareSize, aspectRatio,
-                        flags, cameraMatrix, distCoeffs,
-                        writeExtrinsics, writePoints,
-                        xy_origin_in_px,
-                        world_units_per_px_x,
-                        world_unit_per_px_y);
+                while (!done) {
+
+                    // Plot the current mouse click position
+                    cv::Mat view_with_dot = view.clone();
+                    cv::circle(view_with_dot, mouse_pt, 2, cv::Scalar(0, 0, 255), -1);
+
+                    int baseLine = 0;
+                    std::string coord = "(" + std::to_string(mouse_pt.x) + ", " + std::to_string(mouse_pt.y) + ")";
+                    //Size coord_text_size = cv::getTextSize(coord, 1, 1, 1, &baseLine);
+                    Point coord_text_origin(mouse_pt.x + 10.0, mouse_pt.y + 10.0);
+                    putText(view_with_dot, coord, coord_text_origin, 1, 1, Scalar(0, 0, 255));
+
+                    if (homography_valid) {
+
+                        std::vector<cv::Point2f> Q_world;
+                        std::vector<cv::Point2f> q_camera;
+
+                        q_camera.push_back(mouse_pt);
+
+                        cv::perspectiveTransform(q_camera, Q_world, homography_transform);
+
+                        std::string coord = "(" + std::to_string(Q_world[0].x)
+                                + ", " + std::to_string(Q_world[0].y) + ")";
+
+                        Point coord_text_origin(mouse_pt.x + 10.0, mouse_pt.y - 10.0);
+                        putText(view_with_dot, coord, coord_text_origin, 1, 1, Scalar(0, 0, 255));
+                    }
+
+                    cv::imshow("Image View", view_with_dot);
+
+                    int key = 0xff & waitKey(50);
+
+                    switch (key) {
+
+                        case 'x':
+                        {
+                            done = true;
+                            break;
+                        }
+
+                        case 'c':
+                        {
+                            if (src_points.size() > 1 && dst_points.size() > 1) {
+                                homography_transform = cv::findHomography(src_points, dst_points);
+                                homography_valid = true;
+                            } else {
+                                std::cout << "Add more points to before calculating.\n";
+                            }
+                            break;
+                        }
+
+                        case 'a':
+                        {
+
+                            float x, y;
+                            cv::Point2f src_pt;
+                            cv::Point2f dst_pt;
+
+                            std::string input_coords;
+
+                            std::cout << "Enter X world coordinate:\n";
+                            std::cin >> input_coords;
+                            x = std::stof(input_coords);
+
+                            std::cout << "Enter Y world coordinate:\n";
+                            std::cin >> input_coords;
+                            y = std::stof(input_coords);
+
+                            src_pt.x = (float) mouse_pt.x;
+                            src_pt.y = (float) mouse_pt.y;
+                            dst_pt.x = x;
+                            dst_pt.y = y;
+                            
+                            src_points.push_back(src_pt);
+                            dst_points.push_back(dst_pt);
+
+                            std::cout << "Point added to map. Select another action:\n";
+                            std::cout << "Hot keys:"
+                                      << "  'x' - exit homography generation routine and attempt to calculate translation matrix.\n"
+                                      << "  'c' - calculate homography matrix using current points.\n"
+                                      << "  'a' - add currently selected pixel position to homography coordinate list.\n\n";
+                            break;
+                        }
+                        default:
+                            //std::cout << "Invalid command. Try again.\n";
+                            break;
+                    }
+                }
+
+                // The pixel plane -> world plane perspective transformation]
+                homography_transform = cv::findHomography(src_points, dst_points); //, CV_LMEDS
 
                 show_world_coords = true;
                 mode = CALIBRATED;

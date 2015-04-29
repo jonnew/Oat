@@ -14,8 +14,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef POSITION2D_H
-#define	POSITION2D_H
+#ifndef POSITION_H
+#define	POSITION_H
 
 #include <opencv2/core/mat.hpp>
 
@@ -28,12 +28,12 @@ namespace shmem {
     struct Position {
         
         // Used to get world coordinates from image
+        // TODO: Replace with homography transformation matrix
         bool world_coords_valid = false;
         cv::Point3f xyz_origin_in_px;
         float worldunits_per_px_x;
         float worldunits_per_px_y;
         float worldunits_per_px_z;
-
         
         bool position_valid = false;
         Position3D position;
@@ -74,4 +74,4 @@ namespace shmem {
     };
 }
 
-#endif	/* POSITION2D_H */
+#endif	/* POSITION_H */

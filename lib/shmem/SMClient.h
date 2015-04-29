@@ -104,9 +104,6 @@ namespace shmem {
         return client_num;
     }
 
-    // TODO: All users need to deal with the false return value by skipping
-    // whatever processing they had in mind
-
     /**
      * Get the object from shared memory.
      * @param value The object to be copied from shared memory.
