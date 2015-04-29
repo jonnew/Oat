@@ -1,3 +1,16 @@
+##Installation
+
+###Boost
+
+```bash
+wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
+tar -xf download
+cd boost_1_58_0
+./bootstrap.sh
+sudo ./b2 install
+```
+
+
 ##Simple soft real-time position tracker for animal behavior
 
 - Example applications using the flycapture SDK are available in /usr/src/flycapture/src
