@@ -1,3 +1,5 @@
+sudo: required
+
 before-install:
   - wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
   - tar -xf download
