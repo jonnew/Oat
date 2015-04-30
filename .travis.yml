@@ -6,7 +6,7 @@ before-install:
   - cd boost_1_58_0
   - ./bootstrap.sh
   - cd ..
-  - sudo cp -r boost_1_58_0 /opt
-  - sudo apt-get install libopencv-dev libopencv-core2.4 libopencv-core-dev libhighgui-dev libcv-dev libopencv-highgui2.4
+  - cp -r boost_1_58_0 /opt
+  - apt-get install libopencv-dev libopencv-core2.4 libopencv-core-dev libhighgui-dev libcv-dev libopencv-highgui2.4
   - cd src/backgroundsubtractor
   - g++ BackgroundSubtractor.cpp main.cpp `pkg-config opencv --cflags --libs` -o test
