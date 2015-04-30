@@ -5,6 +5,7 @@ install:
   - ./bootstrap.sh
   - cd ..
   - sudo cp -r boost_1_58_0 /opt
+  - sudo apt-get update
   - sudo apt-get install libopencv-dev
   - cd src/backgroundsubtractor
   - g++ BackgroundSubtractor.cpp main.cpp `pkg-config opencv --cflags --libs` -o test
