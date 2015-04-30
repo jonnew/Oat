@@ -5,6 +5,7 @@ install:
   - ./bootstrap.sh
   - cd ..
   - sudo cp -r boost_1_58_0 /opt
+  - /opt/boost_1_58_0/b2 --with-program_options --with_system --with_thread
   - sudo apt-get update
   - sudo apt-get install libopencv-dev
   - cd src/backsubtractor
