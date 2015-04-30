@@ -1,0 +1,11 @@
+install:
+  - wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
+  - tar -xf download
+  - cd boost_1_58_0
+  - ./bootstrap.sh
+  - cd ..
+  - sudo cp -r boost_1_58_0 /opt
+  - sudo apt-get update
+  - sudo apt-get install libopencv-dev
+  - cd src/backsubtractor
+  - g++ BackgroundSubtractor.cpp main.cpp `pkg-config opencv --cflags --libs` -o test
