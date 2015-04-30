@@ -4,6 +4,6 @@ install:
   - cd boost_1_58_0
   - ./bootstrap.sh
   - cd ..
-  - sudo cp boost_1_58_0 /opt
+  - sudo cp -r boost_1_58_0 /opt
   - echo $OKTEST
   - df -h
