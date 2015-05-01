@@ -14,26 +14,26 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef POSITION_H
-#define	POSITION_H
+#ifndef POSITION2D_H
+#define	POSITION2D_H
 
 #include <opencv2/core/mat.hpp>
 
 namespace shmem {
     
+    enum {PIXELS=0, WORLD=1};
     typedef cv::Point3f Position3D;
     typedef cv::Point3f Velocity3D;
     typedef cv::Point3f UnitVector3D;
 
     struct Position {
         
+        // Unless manually changed, we are using pixels as our unit of measure
+        int coord_system = PIXELS;
+        
         // Used to get world coordinates from image
-        // TODO: Replace with homography transformation matrix
-        bool world_coords_valid = false;
-        cv::Point3f xyz_origin_in_px;
-        float worldunits_per_px_x;
-        float worldunits_per_px_y;
-        float worldunits_per_px_z;
+        bool homography_valid = false;
+        cv::Matx33f homography;  
         
         bool position_valid = false;
         Position3D position;
@@ -50,14 +50,14 @@ namespace shmem {
         bool head_direction_valid = false;
         UnitVector3D head_direction; 
         
-        Position3D convertPositionToWorldCoords(Position3D position) {
+        Position3D convertToWorldCoords(const Position3D& position) {
             
-            Position3D world_position;
-            
-            world_position.x = (position.x - xyz_origin_in_px.x) * worldunits_per_px_x;
-            world_position.y = (position.y - xyz_origin_in_px.y) * worldunits_per_px_y;
-            world_position.z = (position.z - xyz_origin_in_px.z) * worldunits_per_px_z;
-            
+            if (coord_system == PIXELS && homography_valid) {
+                Position3D world_position; 
+            cv::perspectiveTransform(position, world_position, homography); 
+            } else {
+                
+            }
             return world_position;
         }
         

@@ -19,7 +19,7 @@
 
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
-#include "Position.h"
+#include "../datatypes/Position2D.h"
 
 namespace shmem {
 
@@ -58,7 +58,7 @@ namespace shmem {
 }
 
 // Explicit instantiations
-template class shmem::SyncSharedMemoryObject<shmem::Position>;
+template class shmem::SyncSharedMemoryObject<datatypes::Position2D>;
 
 
 #endif	/* SYNCSHAREDMEMORYOBJECT_H */

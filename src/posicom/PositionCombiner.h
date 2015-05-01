@@ -21,43 +21,56 @@
 
 #include "../../lib/shmem/SMServer.h"
 #include "../../lib/shmem/SMClient.h"
-#include "../../lib/shmem/Position.h"
+#include "../../lib/datatypes/Position.h"
 
+/**
+ * Abstract base class to be implemented by any Position Combiner filter within
+ * the Simple Tracker project.
+ * @param position_sources A vector of position SOURCE names
+ * @param sink Combined position SINK name
+ */
 class PositionCombiner {
 public:
 
-    PositionCombiner(std::string antierior_source, std::string posterior_source, std::string sink);
-
-    void combineAndServePosition(void);
-
-    std::string get_name(void) {
-        return name;
+    PositionCombiner(std::vector<std::string> position_source_names, std::string sink_name) :
+      name(sink_name)
+    , combined_position(sink_name)
+    , position_sink(sink_name)
+    , client_idx(0) {
+          
+//        for(std::vector<int>::size_type i = 0; i != = position_source_names.size(); i++) {
+//            position_sources.push_back(shmem::SMClient<datatypes::Position2D>(position_source_names[i]));
+//            source_positions.push_back(datatypes::Position2D(position_source_names.[i]));
+//            position_sources[i].findSharedObject();
+//        }
     }
-    
+
+    // All position combiners must implement a method to combine positions and
+    // publish the result
+    virtual void combineAndServePosition(void) = 0;
+
+    std::string get_name(void) { return name; }
     void stop(void) {position_sink.set_running(false); }
 
-private:
+protected:
 
     std::string name;
 
-    // For multi-server processing, we need to keep track of all the servers
+    // For multi-source processing, we need to keep track of all the sources
     // we have finished reading from each processing step
-    int current_processing_stage;
-
-    // Anterior and posterior position measures
-    shmem::SMClient<shmem::Position> anterior_source;
-    shmem::SMClient<shmem::Position> posterior_source;
+    int client_idx;
 
     // Positions to be combined
-    shmem::Position anterior;
-    shmem::Position posterior;
+    std::vector<datatypes::Position2D > source_positions;
+    std::vector<shmem::SMClient<datatypes::Position2D> > position_sources;
 
-    // Processed position server
-    shmem::SMServer<shmem::Position> position_sink;
+    // Combined position server
+    datatypes::Position2D combined_position;
+    shmem::SMServer<datatypes::Position2D> position_sink;
 
-    shmem::Position processed_position;
-
-    void calculateGeometricMean(void);
+    // All position combiners must be able to combine the position_sources
+    // list to provide a single combined position output
+    virtual void combinePositions(void) = 0;
 };
 
 #endif	// POSITIONCOMBINER_H

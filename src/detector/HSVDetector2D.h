@@ -20,23 +20,24 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "Detector.h"
+#include "Detector2D.h"
+#include "../../lib/datatypes/Position2D.h"
 
 #define PI 3.14159265358979323846
 
-class HSVDetector : public Detector {
+class HSVDetector2D : public Detector2D {
     
 public:
     
     // HSV values known
-    HSVDetector(std::string source_name, std::string pos_sink_name,
+    HSVDetector2D(std::string source_name, std::string pos_sink_name,
                 int h_min, int h_max,
                 int s_min, int s_max,
                 int v_min, int v_max);
     
     // Start with full range of HSV thresholds. This is typically used
     // for manual tuning of thresholds using the createTrackbars call
-    HSVDetector(std::string source_name, std::string pos_sink_name);
+    HSVDetector2D(std::string source_name, std::string pos_sink_name);
 
     // Use a configuration file to specify parameters
     void configure(std::string file_name, std::string key);
@@ -72,7 +73,6 @@ private:
 
     // Object detection
     double object_area;
-    shmem::Position object_position;
 
     double min_object_area;
     double max_object_area;
@@ -81,8 +81,6 @@ private:
     //bool frame_sink_used;
     //MatServer frame_sink;
     
-    void addWorldReferenceFrame(void);
-
     // Binary threshold and use the binary threshold to mask the image
     void applyThreshold(void);
 

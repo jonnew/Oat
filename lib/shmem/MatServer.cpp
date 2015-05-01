@@ -22,12 +22,10 @@
 #include "SharedCVMatHeader.h"
 #include "SharedCVMatHeader.cpp" // TODO: Why???
 
-
-
 using namespace boost::interprocess;
 
 MatServer::MatServer(const std::string sink_name) :
-name(sink_name)
+  name(sink_name)
 , shmem_name(sink_name + "_sh_mem")
 , shobj_name(sink_name + "_sh_obj")
 , shared_object_created(false)
@@ -103,6 +101,13 @@ void MatServer::createSharedMat(const cv::Mat& model) {
     }
 
     shared_mat_header->buildHeader(shared_memory, model);
+    
+    // If supplied with valid homography info, then set that
+    if (homography_valid) {
+        shared_mat_header->homography_valid = true;
+        shared_mat_header->homography = homography;
+    }
+    
     shared_object_created = true;
 }
 
@@ -140,7 +145,7 @@ void MatServer::serveMatFromBuffer() {
             shared_mat_header->mutex.wait();
 
             // Perform write in shared memory 
-            shared_mat_header->set_value(mat);
+            shared_mat_header->set_mat(mat);
 
             // Tell each client they can proceed
             for (int i = 0; i < shared_mat_header->number_of_clients; ++i) {

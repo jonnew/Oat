@@ -15,25 +15,25 @@
 //******************************************************************************
 
 
-#include "DifferenceDetector.h"
+#include "DifferenceDetector2D.h"
 
 #include <string>
 #include <opencv2/opencv.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
 
-DifferenceDetector::DifferenceDetector(std::string image_source_name, std::string position_sink_name) :
-Detector(image_source_name, position_sink_name)
+DifferenceDetector2D::DifferenceDetector2D(std::string image_source_name, std::string position_sink_name) :
+Detector2D(image_source_name, position_sink_name)
 , last_image_set(false) {
 
     set_blur_size(2);
 }
 
-void DifferenceDetector::findObjectAndServePosition() {
+void DifferenceDetector2D::findObjectAndServePosition() {
 
     // If we are able to get a an image
     if (image_source.getSharedMat(this_image)) {
-        addWorldReferenceFrame();
+        addHomography();
         applyThreshold();
         siftBlobs();
         tune();
@@ -42,7 +42,7 @@ void DifferenceDetector::findObjectAndServePosition() {
     }
 }
 
-void DifferenceDetector::configure(std::string file_name, std::string key) {
+void DifferenceDetector2D::configure(std::string file_name, std::string key) {
 
     cpptoml::table config;
 
@@ -82,7 +82,7 @@ void DifferenceDetector::configure(std::string file_name, std::string key) {
     }
 }
 
-void DifferenceDetector::siftBlobs() {
+void DifferenceDetector2D::siftBlobs() {
 
     cv::Mat thresh_cpy = threshold_image.clone();
     std::vector< std::vector < cv::Point > > contours;
@@ -113,53 +113,39 @@ void DifferenceDetector::siftBlobs() {
         object_position.position.y = objectBoundingRectangle.y + 0.5 * objectBoundingRectangle.height;
 
         if (tuning_on) {
-            
+
             std::string msg;
-            int baseline = 0;
-            cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
-            cv::Point text_origin(
-                    threshold_image.cols - 2 * textSize.width - 10,
-                    threshold_image.rows - 2 * baseline - 10);
-            
+ 
             // Plot a circle representing found object
             if (object_position.position_valid) {
                 cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
                 cv::rectangle(threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
 
                 // Tell object position
-                if (object_position.world_coords_valid) {
-                    shmem::Position3D covert_pos = object_position.convertPositionToWorldCoords(object_position.position);
-                    msg = cv::format("(%d, %d) world units", (int) covert_pos.x, (int) covert_pos.y);
-                    cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+                if (object_position.homography_valid) {
+                    datatypes::Position2D convert_pos = object_position.convertToWorldCoordinates();
+                    msg = cv::format("(%.3f, %.3f) world units", convert_pos.position.x, convert_pos.position.y);
+
                 } else {
                     msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
-                    cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+
                 }
             } else {
                 msg = "Object not found";
-                cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+
             }
 
+            int baseline = 0;
+            cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
+            cv::Point text_origin(
+                    threshold_image.cols - 2 * textSize.width - 10,
+                    threshold_image.rows - 2 * baseline - 10);
+            cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
         }
     }
 }
 
-void DifferenceDetector::addWorldReferenceFrame() {
-
-    if (image_source.get_world_coords_valid()) {
-
-        object_position.world_coords_valid = true;
-
-        object_position.xyz_origin_in_px.x = image_source.get_xy_origin_in_px().x;
-        object_position.xyz_origin_in_px.y = image_source.get_xy_origin_in_px().y;
-
-        object_position.worldunits_per_px_x = image_source.get_worldunits_per_px_x();
-        object_position.worldunits_per_px_y = image_source.get_worldunits_per_px_y();
-
-    }
-}
-
-void DifferenceDetector::applyThreshold() {
+void DifferenceDetector2D::applyThreshold() {
 
     if (last_image_set) {
         cv::cvtColor(this_image, this_image, cv::COLOR_BGR2GRAY);
@@ -179,7 +165,7 @@ void DifferenceDetector::applyThreshold() {
     }
 }
 
-void DifferenceDetector::tune() {
+void DifferenceDetector2D::tune() {
 
     tuning_mutex.lock();
 
@@ -200,7 +186,7 @@ void DifferenceDetector::tune() {
     tuning_mutex.unlock();
 }
 
-void DifferenceDetector::createTuningWindows() {
+void DifferenceDetector2D::createTuningWindows() {
 
     //cv::startWindowThread();
 
@@ -210,17 +196,17 @@ void DifferenceDetector::createTuningWindows() {
 
     // Create sliders and insert them into window
     cv::createTrackbar("THRESH", slider_title, &difference_intensity_threshold, 256);
-    cv::createTrackbar("BLUR", slider_title, &blur_size.height, 50, &DifferenceDetector::blurSliderChangedCallback, this);
+    cv::createTrackbar("BLUR", slider_title, &blur_size.height, 50, &DifferenceDetector2D::blurSliderChangedCallback, this);
 
     tuning_windows_created = true;
 }
 
-void DifferenceDetector::blurSliderChangedCallback(int value, void* object) {
-    DifferenceDetector* diff_detector = (DifferenceDetector*) object;
+void DifferenceDetector2D::blurSliderChangedCallback(int value, void* object) {
+    DifferenceDetector2D* diff_detector = (DifferenceDetector2D*) object;
     diff_detector->set_blur_size(value);
 }
 
-void DifferenceDetector::set_blur_size(int value) {
+void DifferenceDetector2D::set_blur_size(int value) {
 
     if (value > 0) {
         blur_on = true;

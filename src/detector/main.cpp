@@ -14,9 +14,9 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "Detector.h"
-#include "HSVDetector.h"
-#include "DifferenceDetector.h"
+#include "Detector2D.h"
+#include "HSVDetector2D.h"
+#include "DifferenceDetector2D.h"
 
 
 #include <signal.h>
@@ -48,7 +48,7 @@ void printUsage(po::options_description options) {
 
 // Processing thread
 
-void run(Detector* detector) {
+void run(Detector2D* detector) {
 
     while (!done) {
         detector->findObjectAndServePosition();
@@ -169,17 +169,17 @@ int main(int argc, char *argv[]) {
     }
 
     // Create the specified TYPE of detector
-    Detector* detector;
+    Detector2D* detector;
 
     switch (type_hash[type]) {
         case 'a':
         {
-            detector = new DifferenceDetector(source, sink);
+            detector = new DifferenceDetector2D(source, sink);
             break;
         }
         case 'b':
         {
-            detector = new HSVDetector(source, sink);
+            detector = new HSVDetector2D(source, sink);
             break;
         }
         default:

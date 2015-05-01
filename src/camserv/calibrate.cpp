@@ -208,9 +208,7 @@ static void saveCameraParams(const string& filename,
         const vector<float>& reprojErrs,
         const vector<vector<Point2f> >& imagePoints,
         double totalAvgErr,
-        cv::Point2f xy_origin_in_px,
-        float mm_per_px_x,
-        float mm_per_px_y) {
+        bool homography_valid, cv::Mat homography2D) {
     FileStorage fs(filename, FileStorage::WRITE);
 
     time_t tt;
@@ -276,11 +274,10 @@ static void saveCameraParams(const string& filename,
         }
         fs << "image_points" << imagePtMat;
     }
-
-    // Tack on our px->world coordinate info
-    fs << "xy_origin_in_px" << xy_origin_in_px;
-    fs << "mm_per_px_x" << mm_per_px_x;
-    fs << "mm_per_px_y" << mm_per_px_y;
+    
+    if (homography_valid) {
+        fs << "homography" << homography2D;
+    }
 }
 
 static bool readStringList(const string& filename, vector<string>& l) {
@@ -309,9 +306,8 @@ static bool runAndSave(const string& outputFilename,
         Mat& distCoeffs,
         bool writeExtrinsics,
         bool writePoints,
-        cv::Point2f xy_origin_in_px,
-        float mm_per_px_x,
-        float mm_per_px_y) {
+        bool homography_valid, 
+        cv::Mat homography2D) {
     vector<Mat> rvecs, tvecs;
     vector<float> reprojErrs;
     double totalAvgErr = 0;
@@ -337,9 +333,8 @@ static bool runAndSave(const string& outputFilename,
             writeExtrinsics ? reprojErrs : vector<float>(),
             writePoints ? imagePoints : vector<vector<Point2f> >(),
             totalAvgErr,
-            xy_origin_in_px,
-            mm_per_px_x,
-            mm_per_px_y);
+            homography_valid, 
+            homography2D);
     return ok;
 }
 
@@ -374,11 +369,10 @@ int main(int argc, char** argv) {
     bool config_used = false;
     float standard_distance_in_world_units;
     bool show_world_coords = false;
-    cv::Mat homography_transform;
-    cv::Point2f xy_origin_in_px;
-    cv::Point2f xy_1m_in_px;
-    float world_units_per_px_x;
-    float world_unit_per_px_y;
+    
+    bool homography_valid = false;
+    cv::Mat homography2D;
+  
 
     bool flipVertical = false;
     bool showUndistorted = false;
@@ -534,9 +528,8 @@ int main(int argc, char** argv) {
                     boardSize, pattern, squareSize, aspectRatio,
                     flags, cameraMatrix, distCoeffs,
                     writeExtrinsics, writePoints,
-                    xy_origin_in_px,
-                    world_units_per_px_x,
-                    world_unit_per_px_y);
+                    homography_valid, 
+                    homography2D);
             break;
         }
 
@@ -612,35 +605,7 @@ int main(int argc, char** argv) {
             mode = CAPTURING;
             imagePoints.clear();
         }
-
-        if (show_world_coords) {
-
-            cv::Point2i endx = xy_origin_in_px;
-            cv::Point2i endy = xy_origin_in_px;
-            endx.x = xy_1m_in_px.x;
-            endy.y = xy_1m_in_px.y;
-
-            circle(view,
-                    xy_origin_in_px,
-                    5,
-                    Scalar(255, 255, 255),
-                    3,
-                    8);
-
-            line(view,
-                    xy_origin_in_px,
-                    endx,
-                    Scalar(0, 0, 255),
-                    1,
-                    8);
-            line(view,
-                    xy_origin_in_px,
-                    endy,
-                    Scalar(255, 0, 0),
-                    1,
-                    8);
-        }
-
+        
         putText(view, msg, textOrigin, 1, 1,
                 mode != CALIBRATED ? Scalar(0, 0, 255) : Scalar(0, 255, 0));
 
@@ -657,9 +622,8 @@ int main(int argc, char** argv) {
                     boardSize, pattern, squareSize, aspectRatio,
                     flags, cameraMatrix, distCoeffs,
                     writeExtrinsics, writePoints,
-                    xy_origin_in_px,
-                    world_units_per_px_x,
-                    world_unit_per_px_y))
+                    homography_valid,
+                    homography2D))
                 mode = CALIBRATED;
             else
                 mode = DETECTION;
@@ -691,8 +655,7 @@ int main(int argc, char** argv) {
                 std::vector<cv::Point2f> dst_points;
 
                 bool done = false;
-                bool homography_valid = false;
-
+                
                 while (!done) {
 
                     // Plot the current mouse click position
@@ -712,7 +675,7 @@ int main(int argc, char** argv) {
 
                         q_camera.push_back(mouse_pt);
 
-                        cv::perspectiveTransform(q_camera, Q_world, homography_transform);
+                        cv::perspectiveTransform(q_camera, Q_world, homography2D);
 
                         std::string coord = "(" + std::to_string(Q_world[0].x)
                                 + ", " + std::to_string(Q_world[0].y) + ")";
@@ -736,7 +699,11 @@ int main(int argc, char** argv) {
                         case 'c':
                         {
                             if (src_points.size() > 1 && dst_points.size() > 1) {
-                                homography_transform = cv::findHomography(src_points, dst_points);
+                                //homography_transform = cv::findHomography(src_points, dst_points);
+                                homography2D = cv::estimateRigidTransform(src_points, dst_points, true);
+                                cv::Mat row = (Mat_<double>(1, 3) << 0, 0, 1);
+                                homography2D.push_back(row);
+                                std::cout << "T = " << endl << " " << homography2D << "\n\n";
                                 homography_valid = true;
                             } else {
                                 std::cout << "Add more points to before calculating.\n";
@@ -765,15 +732,15 @@ int main(int argc, char** argv) {
                             src_pt.y = (float) mouse_pt.y;
                             dst_pt.x = x;
                             dst_pt.y = y;
-                            
+
                             src_points.push_back(src_pt);
                             dst_points.push_back(dst_pt);
 
                             std::cout << "Point added to map. Select another action:\n";
                             std::cout << "Hot keys:"
-                                      << "  'x' - exit homography generation routine and attempt to calculate translation matrix.\n"
-                                      << "  'c' - calculate homography matrix using current points.\n"
-                                      << "  'a' - add currently selected pixel position to homography coordinate list.\n\n";
+                                    << "  'x' - exit homography generation routine and attempt to calculate translation matrix.\n"
+                                    << "  'c' - calculate homography matrix using current points.\n"
+                                    << "  'a' - add currently selected pixel position to homography coordinate list.\n\n";
                             break;
                         }
                         default:
@@ -781,11 +748,17 @@ int main(int argc, char** argv) {
                             break;
                     }
                 }
+                
+                if (homography_valid) {
 
-                // The pixel plane -> world plane perspective transformation]
-                homography_transform = cv::findHomography(src_points, dst_points); //, CV_LMEDS
-
-                show_world_coords = true;
+                    runAndSave(outputFilename, imagePoints, imageSize,
+                            boardSize, pattern, squareSize, aspectRatio,
+                            flags, cameraMatrix, distCoeffs,
+                            writeExtrinsics, writePoints,
+                            homography_valid,
+                            homography2D);
+                }
+                        
                 mode = CALIBRATED;
             }
         }

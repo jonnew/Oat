@@ -1,4 +1,4 @@
-# Example tracker configuration file
+# Example camera configuration file
 # - Every viable option is listed with a reasonable value
 # - Some options are mutualy exclusive (e.g. Camera exposure, shutter, and gain),
 # and therefore will be overriden if more than one is specified.
@@ -8,49 +8,15 @@
 # Camera (gige) -------------------------
 
 [maze_cam]
-index = 0 								# Index of camera on the bus
+index = 0 							# Index of camera on the bus
 exposure = -2.0							# EV
 shutter = 3 							# ms (ignored if exposure on)
-gain = 0 								# dB (ignored if exposure on)
-#white_bal = {red = 500, blue = 800}	# Defaults to "off"
-roi = {x_offset = 0, y_offset = 0, width = 728, height = 728} # Region of interest, pixels
-trigger_on = true						# If false, free run
-trigger_polarity = 1					# Rising edge active
+gain = 0 							# dB (ignored if exposure on)
+#white_bal = {red = 500, blue = 800}                            # If not supplied, defaults to "off"
+#roi = {x_offset = 0, y_offset = 0, width = 728, height = 728}   # Region of interest, pixels
+trigger_on = false						# If false, free run
+trigger_polarity = 1                                            # Rising edge active
 trigger_mode = 14						# 14 = Overlapped Exposure/Readout Mode (see Camera manual)
-										# 7  = Software trigger
+                                                                # 7  = Software trigger
 trigger_source = 0						# GPIO pin that trigger will be sent to
-save_images = false						# If trigger mode is software triggered, we can save each image
-										# (useful for aquiring calibration images)
-
-# Camera (file) -------------------------
-
-[file_cam]
-frame_rate = 30 						# Hz
-
-# Detector (hsv, blue) ----------------
-
-[blue_hsv]
-erode = 0 								# Pixels
-dilate = 10								# Pixels
-tune = true                 			# Provide sliders for tuning hsv thresholds
-h_thresholds = {min = 106, max = 126}	# Hue pass band
-s_thresholds = {min = 237, max = 256}	# Saturation pass band
-v_thresholds = {min = 150, max = 256}	# Value pass band
-
-# Detector (hsv, orange) ----------------
-
-[orange_hsv]
-erode = 2 								# Pixels
-dilate = 10 							# Pixels
-tune = true								# Provide sliders for tuning hsv thresholds
-h_thresholds = {min = 0, max = 32}		# Hue pass band band
-s_thresholds = {min = 230, max = 256}	# Saturation pass band
-v_thresholds = {min = 180, max = 256}	# Value pass band
-
-# Detector (difference) ----------------
-
-[diff_detector]
-blur = 2            					# pixels
-diff_threshold = 20             		# pixels
-tune = true                     		# provide sliders for tuning parameters
-
+calibration_file = "calibration.yml"

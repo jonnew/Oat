@@ -8,11 +8,11 @@
 #ifndef DIFFERENCEDETECTOR_H
 #define	DIFFERENCEDETECTOR_H
 
-#include "Detector.h"
+#include "Detector2D.h"
 
-class DifferenceDetector : public Detector {
+class DifferenceDetector2D : public Detector2D {
 public:
-    DifferenceDetector(std::string image_source_name, std::string position_sink_name);
+    DifferenceDetector2D(std::string image_source_name, std::string position_sink_name);
     
     void findObjectAndServePosition(void);
     void servePosition(void);
@@ -29,14 +29,12 @@ private:
     
     // Object detection
     double object_area;
-    shmem::Position object_position;
     
     // Detector parameters
     int difference_intensity_threshold;
     cv::Size blur_size;
     bool blur_on;
 
-    void addWorldReferenceFrame(void);
     void applyThreshold(void);
     void siftBlobs(void);
 

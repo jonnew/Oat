@@ -8,7 +8,8 @@ find_package (Boost REQUIRED system thread program_options)
 link_directories (${Boost_LIBRARY_DIR})
 
 add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
+add_subdirectory("../../lib/datatypes" "${CMAKE_CURRENT_BINARY_DIR}/datatypes_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (detector DifferenceDetector.cpp HSVDetector.cpp main.cpp )
-target_link_libraries (detector shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})
+add_executable (detector DifferenceDetector2D.cpp HSVDetector2D.cpp main.cpp )
+target_link_libraries (detector shmem datatypes ${OpenCV_LIBS} ${Boost_LIBRARIES})

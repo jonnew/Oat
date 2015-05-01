@@ -208,22 +208,17 @@ void PGGigECam::configure(std::string config_file, std::string key) {
                     exit(EXIT_FAILURE);
                 }
 
+                
                 undistort_image = true;
                 fs["camera_matrix"] >> camera_matrix;
                 fs["distortion_coefficients"] >> distortion_coefficients;
                 
-                frame_sink.set_world_coords_valid(true);
-                cv::Point2f origin;
-                fs["xy_origin_in_px"] >> origin;
-                frame_sink.set_xy_origin_in_px(origin);
-                
-                float temp;
-                fs["mm_per_px_x"] >> temp;
-                frame_sink.set_worldunits_per_px_x(temp);
-                
-                fs["mm_per_px_y"] >> temp;
-                frame_sink.set_worldunits_per_px_y(temp);
+                cv::Mat temp_mat; 
+                fs["homography"] >> temp_mat;
+                cv::Matx33d temp2((double*)temp_mat.clone().ptr());
+                homography = temp2;
 
+                frame_sink.set_homography(homography);
                 fs.release();
             }
 

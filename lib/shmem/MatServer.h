@@ -46,11 +46,13 @@ public:
     bool is_running(void) { return running; };
     void set_running(bool value) { running = value; } 
     std::string get_name(void) { return name; }
+
+    void set_homography(const cv::Matx33f& value) {
+        homography_valid = true;
+        homography = value;
+    }
     
-    void set_world_coords_valid(bool value) { shared_mat_header->world_coords_valid = value; }
-    void set_xy_origin_in_px(cv::Point2f value) { shared_mat_header->xy_origin_in_px = value; }
-    void set_worldunits_per_px_x(float value) { shared_mat_header->worldunits_per_px_x = value; }
-    void set_worldunits_per_px_y(float value) { shared_mat_header->worldunits_per_px_y = value; }
+    bool is_shared_object_created(void) { return shared_object_created; }
     
 private:
     
@@ -72,6 +74,10 @@ private:
     
     const std::string shmem_name, shobj_name;
     boost::interprocess::managed_shared_memory shared_memory; 
+    
+    // Homography from pixels->world
+    bool homography_valid;
+    cv::Matx33d homography;
     
     /**
      * Synchronized shared memory publication.

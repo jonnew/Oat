@@ -38,17 +38,15 @@ namespace shmem {
         size_t client_read_count;
         
         // Used to get world coordinates from image
-        // TODO: Replace with homography transformation matrix
-        bool world_coords_valid;
-        cv::Point2f xy_origin_in_px;
-        float worldunits_per_px_x;
-        float worldunits_per_px_y;
+        bool homography_valid;
+        cv::Matx33f homography;
 
         void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, const cv::Mat& model);
         void attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat);
         
         // Accessors
-        void set_value(const cv::Mat& mat);    // Server
+        void set_homography(const cv::Matx33f& value);
+        void set_mat(const cv::Mat& value);    // Server
         
     private:
         
@@ -56,7 +54,7 @@ namespace shmem {
         int type;
         void* data_ptr;
         int data_size_in_bytes;
-        
+
         boost::interprocess::managed_shared_memory::handle_t handle;
     };
 }
