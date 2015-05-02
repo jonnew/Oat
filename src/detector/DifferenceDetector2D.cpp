@@ -87,6 +87,7 @@ void DifferenceDetector2D::siftBlobs() {
     cv::Mat thresh_cpy = threshold_image.clone();
     std::vector< std::vector < cv::Point > > contours;
     std::vector< cv::Vec4i > hierarchy;
+    cv::Rect objectBoundingRectangle;
 
     //these two vectors needed for output of findContours
     //find contours of filtered image using openCV findContours function
@@ -108,40 +109,38 @@ void DifferenceDetector2D::siftBlobs() {
 
         //make a bounding rectangle around the largest contour then find its centroid
         //this will be the object's final estimated position.
-        cv::Rect objectBoundingRectangle = cv::boundingRect(largestContourVec.at(0));
+        objectBoundingRectangle = cv::boundingRect(largestContourVec.at(0));
         object_position.position.x = objectBoundingRectangle.x + 0.5 * objectBoundingRectangle.width;
         object_position.position.y = objectBoundingRectangle.y + 0.5 * objectBoundingRectangle.height;
+    }
 
-        if (tuning_on) {
+    if (tuning_on) {
 
-            std::string msg;
- 
-            // Plot a circle representing found object
-            if (object_position.position_valid) {
-                cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
-                cv::rectangle(threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
+        std::string msg = cv::format("Object not found"); // TODO: This default msg will not show up. I have no idea why.
 
-                // Tell object position
-                if (object_position.homography_valid) {
-                    datatypes::Position2D convert_pos = object_position.convertToWorldCoordinates();
-                    msg = cv::format("(%.3f, %.3f) world units", convert_pos.position.x, convert_pos.position.y);
+        // Plot a circle representing found object
+        if (object_position.position_valid) {
+            cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
+            cv::rectangle(threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
 
-                } else {
-                    msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
+            // Tell object position
+            if (object_position.homography_valid) {
+                datatypes::Position2D convert_pos = object_position.convertToWorldCoordinates();
+                msg = cv::format("(%.3f, %.3f) world units", convert_pos.position.x, convert_pos.position.y);
 
-                }
             } else {
-                msg = "Object not found";
+                msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
 
             }
-
-            int baseline = 0;
-            cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
-            cv::Point text_origin(
-                    threshold_image.cols - 2 * textSize.width - 10,
-                    threshold_image.rows - 2 * baseline - 10);
-            cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
         }
+
+        int baseline = 0;
+        cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
+        cv::Point text_origin(
+                threshold_image.cols - textSize.width - 10,
+                threshold_image.rows - 2 * baseline - 10);
+
+        cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
     }
 }
 

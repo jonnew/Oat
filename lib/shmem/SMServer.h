@@ -46,14 +46,8 @@ namespace shmem {
 
 
         // Accessors
-
-        bool is_running(void) {
-            return running;
-        };
-
-        void set_running(bool value) {
-            running = value;
-        }
+        bool is_running(void) { return running; }
+        void set_running(bool value) { running = value;}
 
     private:
 

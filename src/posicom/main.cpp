@@ -16,19 +16,17 @@
 
 #include "PositionCombiner.h"
 
+#include <unordered_map>
 #include <signal.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
+#include "MeanPosition2D.h"
+
 namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
-bool running = true;
-
-void term(int) {
-    done = 1;
-}
 
 void run(PositionCombiner* combiner) {
     
@@ -38,23 +36,27 @@ void run(PositionCombiner* combiner) {
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: combiner [OPTIONS]\n";
-    std::cout << "   or: combiner ANTERIOR_SOURCE POSTERIOR_SOURCE SINK\n"; //TODO: N sources
-    std::cout << "Combine positional information from two SMServer<Position2D> SOURCEs.\n";
-    std::cout << "Publish processed object positions to a SMServer<Position2D> SINK.\n";
-    std::cout << options << "\n";
+    std::cout << "Usage: combiner [OPTIONS]\n"
+              << "   or: combiner TYPE SOURCES SINK\n"
+              << "Combine positional information from two or more SMServer<Position> SOURCES.\n"
+              << "Publish processed object positions to a SMServer<Position> SINK.\n\n"
+              << "TYPE\n"
+              << "  \'mean\': Geometric mean of SOURCE positions\n"
+              << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
 
-    signal(SIGINT, term);
-    
-    std::string ant_source, pos_source;
+    std::vector<std::string> sources;
     std::string sink;
+    std::string type;
+    po::options_description options("OPTIONS");
+    
+    std::unordered_map<std::string, char> type_hash;
+    type_hash["mean"] = 'a';
 
     try {
 
-        po::options_description options("OPTIONS");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -62,18 +64,15 @@ int main(int argc, char *argv[]) {
         
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("anterior", po::value<std::string>(&ant_source),
-                "The name of the ANTERIOR_SOURCE that supplies Position2D objects defining the anterior position.")
-                ("posterior", po::value<std::string>(&pos_source),
-                "The name of the POSTERIOR_SOURCE that supplies Position2D objects defining the posterior position.")
+                ("sources", po::value< std::vector<std::string> >(),
+                "The names the SOURCES supplying the Position2D objects to be combined.")
                 ("sink", po::value<std::string>(&sink),
                 "The name of the SINK to which combined position Position2D objects will be published.")
                 ;
 
         po::positional_options_description positional_options;
-        positional_options.add("anterior", 1);
-        positional_options.add("posterior", 1);
-        positional_options.add("sink", 1);
+        positional_options.add("type", 1);
+        positional_options.add("sources", -1); // If not overridend by explicit --sink, last positional argument is sink.
 
         po::options_description all_options("ALL OPTIONS");
         all_options.add(options).add(hidden);
@@ -98,23 +97,25 @@ int main(int argc, char *argv[]) {
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
-
-        if (!variable_map.count("anterior")) {
+        
+        if (!variable_map.count("type")) {
             printUsage(options);
-            std::cout << "Error: an ANTERIOR_SOURCE must be specified. Exiting.\n";
+            std::cout << "Error: a TYPE must be specified. Exiting.\n";
             return -1;
         }
         
-        if (!variable_map.count("posterior")) {
+        if (!variable_map.count("sources")) {
             printUsage(options);
-            std::cout << "Error: a POSTERIOR_SOURCE must be specified. Exiting.\n";
+            std::cout << "Error: at least two SOURCES and a SINK must be specified. Exiting.\n";
             return -1;
-        }   
+        }
+        sources = variable_map["sources"].as< std::vector<std::string> >();
         
         if (!variable_map.count("sink")) {
-            printUsage(options);
-            std::cout << "Error: a SINK name must be specified. Exiting.\n";
-            return -1;
+            
+            // If not overridden by explicit --sink, last positional argument is the sink.
+            sink = sources.back();
+            sources.pop_back(); 
         }
 
     } catch (std::exception& e) {
@@ -125,7 +126,20 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    PositionCombiner combiner(ant_source, pos_source, sink);
+    PositionCombiner* combiner; //(ant_source, pos_source, sink);
+    switch (type_hash[type]) {
+        case 'a':
+        {
+            combiner = new MeanPosition2D(sources, sink);
+            break;
+        }
+        default:
+        {
+            printUsage(options);
+            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            return -1;
+        }
+    }
     
     std::cout << "Position combiner named \"" + sink + "\" has started.\n";
     std::cout << "COMMANDS:\n";
@@ -134,7 +148,7 @@ int main(int argc, char *argv[]) {
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &combiner));
+    thread_group.create_thread(boost::bind(&run, combiner));
     sleep(1);
 
     while (!done) {
@@ -146,6 +160,7 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
+                combiner->stop();
                 break;
             }
             default:
@@ -156,6 +171,11 @@ int main(int argc, char *argv[]) {
     
     // TODO: Exit gracefully and ensure all shared resources are cleaned up!
     thread_group.join_all();
+    
+    // Free heap memory allocated to combiner
+    delete combiner;
+    
+    std::cout << "Position combiner named \"" + sink + "\" is exiting." << std::endl;
 
     // Exit
     return 0;

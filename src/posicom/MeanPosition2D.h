@@ -20,8 +20,8 @@
 #include "PositionCombiner.h"
 
 class MeanPosition2D : public PositionCombiner {
-
-    public:    
+    
+public:
     MeanPosition2D(std::vector<std::string> position_source_names, std::string sink_name);
 
     void combineAndServePosition(void);

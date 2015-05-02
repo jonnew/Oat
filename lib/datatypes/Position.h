@@ -25,12 +25,8 @@ namespace datatypes {
 
     struct Position {
     
-        
-        Position(const std::string position_label) : label(position_label) { }
+        Position(std::string position_label) : label(position_label) { }
       
-        // Position label (e.g. 'anterior')
-        const std::string label;
-
         // Positions use one of two coordinate systems 
         // PIXELS - units are referenced to the sensory array of the digital camera. 
         //          origin in the upper left hand corner.
@@ -43,8 +39,14 @@ namespace datatypes {
         //virtual Position convertToWorldCoordinates(void) = 0;
         // TODO: why can't this base class use the more general Position type instead
         // of Position2D etc?
+        
+        //Accessors
+        std::string get_label(void) { return label; }
 
-
+    private:
+        
+        // Position label (e.g. 'anterior')
+        std::string label;
     };
 } // namespace datatypes
 

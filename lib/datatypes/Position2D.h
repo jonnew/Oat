@@ -30,7 +30,8 @@ namespace datatypes {
 
     struct Position2D : public Position {
         
-        Position2D(const std::string position_label) :
+        Position2D() : Position("default") { } ;
+        Position2D(std::string position_label) :
            Position(position_label) { };
         
         // Unless manually changed, we are using pixels as our unit of measure

@@ -35,6 +35,7 @@ namespace shmem {
         , number_of_clients(0)
         , client_read_count(0) { }
 
+        // Semaphores used to synchronize access to the shared object
         boost::interprocess::interprocess_semaphore mutex;
         boost::interprocess::interprocess_semaphore write_barrier;
         boost::interprocess::interprocess_semaphore read_barrier;
@@ -43,15 +44,12 @@ namespace shmem {
         size_t number_of_clients;
         size_t client_read_count;
 
-        void set_value(T value) {
-            object = value;
-        }
-
-        T get_value(void) {
-            return object;
-        }
+        void set_value(T value) { object = value; }
+        T get_value(void) { return object; }
 
     private:
+        
+        // Shared object
         T object;
 
     };
@@ -59,7 +57,6 @@ namespace shmem {
 
 // Explicit instantiations
 template class shmem::SyncSharedMemoryObject<datatypes::Position2D>;
-
 
 #endif	/* SYNCSHAREDMEMORYOBJECT_H */
 

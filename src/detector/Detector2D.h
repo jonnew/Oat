@@ -39,6 +39,7 @@ public:
     Detector2D(std::string image_source_name, std::string position_sink_name) :
     image_source(image_source_name)
     , position_sink(position_sink_name)
+    , object_position(position_sink_name)
     , tuning_image_title(position_sink_name + "_tuning")
     , slider_title(position_sink_name + "_sliders")
     , tuning_windows_created(false)

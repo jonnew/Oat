@@ -37,12 +37,13 @@ public:
     , combined_position(sink_name)
     , position_sink(sink_name)
     , client_idx(0) {
-          
-//        for(std::vector<int>::size_type i = 0; i != = position_source_names.size(); i++) {
-//            position_sources.push_back(shmem::SMClient<datatypes::Position2D>(position_source_names[i]));
-//            source_positions.push_back(datatypes::Position2D(position_source_names.[i]));
-//            position_sources[i].findSharedObject();
-//        }
+         
+        for(auto &name : position_source_names) {
+            
+            position_sources.push_back(shmem::SMClient<datatypes::Position2D>(name));
+            source_positions.push_back(datatypes::Position2D(name));
+            position_sources.back().findSharedObject();    
+        }
     }
 
     // All position combiners must implement a method to combine positions and
@@ -58,7 +59,7 @@ protected:
 
     // For multi-source processing, we need to keep track of all the sources
     // we have finished reading from each processing step
-    int client_idx;
+    std::vector<shmem::SMClient<datatypes::Position2D> >::size_type client_idx;
 
     // Positions to be combined
     std::vector<datatypes::Position2D > source_positions;
