@@ -40,9 +40,9 @@ public:
          
         for (auto &name : position_source_names) {
             
-            position_sources.push_back(shmem::SMClient<datatypes::Position2D>(name));
-            source_positions.push_back(datatypes::Position2D(name));
-            position_sources.back().findSharedObject();    
+            position_sources.push_back(new shmem::SMClient<datatypes::Position2D>(name));
+            source_positions.push_back(new datatypes::Position2D(name));
+            position_sources.back()->findSharedObject();    
         }
     }
 
@@ -62,8 +62,8 @@ protected:
     std::vector<shmem::SMClient<datatypes::Position2D> >::size_type client_idx;
 
     // Positions to be combined
-    std::vector<datatypes::Position2D > source_positions;
-    std::vector<shmem::SMClient<datatypes::Position2D> > position_sources;
+    std::vector<datatypes::Position2D* > source_positions;
+    std::vector<shmem::SMClient<datatypes::Position2D>* > position_sources;
 
     // Combined position server
     datatypes::Position2D combined_position;

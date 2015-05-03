@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "MeanPosition2D.h"
-#include "../../lib/datatypes/Position2D.h"
 
 MeanPosition2D::MeanPosition2D(std::vector<std::string> position_source_names, std::string sink_name) :
   PositionCombiner(position_source_names, sink_name) { }
@@ -25,9 +24,9 @@ MeanPosition2D::MeanPosition2D(std::vector<std::string> position_source_names, s
 void MeanPosition2D::combineAndServePosition() {
 
     // Get the current image
-    
     while (client_idx < position_sources.size()) {
-        if (!position_sources[client_idx].getSharedObject(source_positions[client_idx])) {
+        
+        if (!position_sources[client_idx]->getSharedObject(*source_positions[client_idx])) {
             return;
         }
         client_idx++;
@@ -53,10 +52,10 @@ void MeanPosition2D::combinePositions() {
     // Averaging operation
     for (auto pos : source_positions) {
         combined_position.position_valid = 
-                all_positions_valid && pos.position_valid;
+                all_positions_valid && pos->position_valid;
         combined_position.velocity += 
-                denominator * pos.velocity;
+                denominator * pos->velocity;
         combined_position.head_direction += 
-                denominator * pos.head_direction;
+                denominator * pos->head_direction;
     }
 }

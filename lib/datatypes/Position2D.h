@@ -39,7 +39,7 @@ namespace datatypes {
 
         // Used to get world coordinates from image
         bool homography_valid = false;
-        cv::Matx33f homography;  
+        cv::Matx33d homography;  
         
         bool position_valid = false;
         Point2D position;
@@ -87,4 +87,4 @@ namespace datatypes {
     };
 } // namespace datatypes
 
-#endif	/* POSITION_H */
+#endif	/* POSITION2D_H */

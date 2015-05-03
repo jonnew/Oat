@@ -30,6 +30,7 @@
  * Abstract base class by and Test Position class within the Simple Tracker project.
  * @param position_sink_name Name of the SINK to which test positions will be sent
  */
+template <class T>
 class TestPosition  {
     
 public:
@@ -52,7 +53,7 @@ protected:
     std::string name;
 
     // The test position SINK
-    shmem::SMServer<datatypes::Position> position_sink;
+    shmem::SMServer<T> position_sink;
     
 };
 

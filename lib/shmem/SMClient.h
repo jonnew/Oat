@@ -59,12 +59,7 @@ namespace shmem {
     , shmem_name(source_name + "_sh_mem")
     , shobj_name(source_name + "_sh_obj")
     , shared_object_found(false)
-    , read_barrier_passed(false) {
-    }
-
-    template<class T, template <typename> class SharedMemType>
-    SMClient<T, SharedMemType>::SMClient(const SMClient<T, SharedMemType>& orig) {
-    }
+    , read_barrier_passed(false) { }
 
     template<class T, template <typename> class SharedMemType>
     SMClient<T, SharedMemType>::~SMClient() {

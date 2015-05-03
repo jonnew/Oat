@@ -64,11 +64,14 @@ int main(int argc, char *argv[]) {
         
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
+                ("type", po::value<std::string>(&type), 
+                "Type of test position combiner to use.")
                 ("sources", po::value< std::vector<std::string> >(),
                 "The names the SOURCES supplying the Position2D objects to be combined.")
                 ("sink", po::value<std::string>(&sink),
                 "The name of the SINK to which combined position Position2D objects will be published.")
                 ;
+        
 
         po::positional_options_description positional_options;
         positional_options.add("type", 1);

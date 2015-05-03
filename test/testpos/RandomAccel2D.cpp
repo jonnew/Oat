@@ -26,7 +26,7 @@
 #include "../../lib/shmem/MatServer.h"
 
 RandomAccel2D::RandomAccel2D(std::string position_sink_name) :
-  TestPosition(position_sink_name) 
+  TestPosition<datatypes::Position2D>(position_sink_name) 
 , accel_distribution(0.0, 5.0) {
 
     position_sink.createSharedObject();

@@ -21,6 +21,7 @@
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
+#include <boost/any.hpp>
 
 #include "TestPosition.h"
 #include "RandomAccel2D.h"
@@ -48,7 +49,7 @@ void printUsage(po::options_description options) {
 
 // Processing thread
 
-void run(TestPosition* test_position) {
+void run(TestPosition<datatypes::Position2D>* test_position) {
 
     while (!done) {
         test_position->simulateAndServePosition();
@@ -160,7 +161,10 @@ int main(int argc, char *argv[]) {
     }
 
     // Create the specified TYPE of detector
-    TestPosition* test_position;
+    // TODO: Right now I need to use datatypes::Position2D as a template parameter
+    // because otherwise this is no longer a valid base class for RandomAccel2D whose
+    // base class is indeed TestPosition<datatypes::Position2D>
+    TestPosition<datatypes::Position2D>* test_position;
     
     switch (type_hash[type]) {
         case 'a':
