@@ -14,35 +14,31 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef POSITION2D_H
-#define	POSITION2D_H
+#ifndef POSITION3D_H
+#define	POSITION3D_H
 
 #include <opencv2/core/mat.hpp>
+#include <opencv2/imgproc.hpp>
 
-namespace shmem {
+#include "Position.h"
+
+namespace datatypes {
     
-    enum {PIXELS=0, WORLD=1};
-    typedef cv::Point3f Position3D;
-    typedef cv::Point3f Velocity3D;
-    typedef cv::Point3f UnitVector3D;
+    typedef cv::Point3d Point3D;
+    typedef cv::Point3d Velocity3D;
+    typedef cv::Point3d UnitVector3D;
 
-    struct Position {
+    struct Position3D : public Position {
         
         // Unless manually changed, we are using pixels as our unit of measure
         int coord_system = PIXELS;
         
         // Used to get world coordinates from image
         bool homography_valid = false;
-        cv::Matx33f homography;  
+        cv::Matx44d homography;  
         
         bool position_valid = false;
-        Position3D position;
- 
-        bool anterior_valid = false;
-        Position3D anterior;
-        
-        bool posterior_valid = false;
-        Position3D posterior;
+        Point3D position;
 
         bool velocity_valid = false;
         Velocity3D velocity; 
@@ -50,28 +46,44 @@ namespace shmem {
         bool head_direction_valid = false;
         UnitVector3D head_direction; 
         
-        Position3D convertToWorldCoords(const Position3D& position) {
+        Position3D convertToWorldCoordinates() {
             
             if (coord_system == PIXELS && homography_valid) {
-                Position3D world_position; 
-            cv::perspectiveTransform(position, world_position, homography); 
-            } else {
+                Position2D world_position = *this; 
                 
+                // Position transforms
+                std::vector<Point3D> in_positions;
+                std::vector<Point3D> out_positions;
+                in_positions.push_back(position);
+                // TODO: 3D Transform??
+                //cv::perspectiveTransform(in_positions, out_positions, homography);
+                //world_position.position = out_positions[0];
+                
+                // Velocity transform
+                std::vector<Velocity3D> in_velocities;
+                std::vector<Velocity3D> out_velocities;
+                cv::Matx44d vel_homo = homography;
+                vel_homo(0,2) = 0.0; // offsets to not apply to velocity
+                vel_homo(1,2) = 0.0; // offsets to not apply to velocity
+                in_velocities.push_back(velocity);
+                
+                // TODO: 3D Transform??
+                //cv::perspectiveTransform(in_velocities, out_velocities, vel_homo);
+                //world_position.velocity = out_velocities[0];
+                
+                // Head direction is normalized and unit-free, and therefore
+                // does not require conversion
+                
+                // Return value uses world coordinates
+                world_position.coord_system = WORLD;
+                
+                return world_position;
+                
+            } else {
+                return *this;
             }
-            return world_position;
-        }
-        
-        Position3D convertVelocityToWorldCoords(Velocity3D velocity) {
-            
-            Position3D world_velocity;
-            
-            world_velocity.x = velocity.x * worldunits_per_px_x;
-            world_velocity.y = velocity.y * worldunits_per_px_y;
-            world_velocity.z = velocity.z * worldunits_per_px_z;
-            
-            return world_velocity;
-        }
+        }  
     };
-}
+} // namespace datatypes
 
-#endif	/* POSITION_H */
+#endif	/* POSITION3D_H */

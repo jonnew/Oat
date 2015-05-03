@@ -72,8 +72,8 @@ protected:
 
     // Camera matrix and distortion coefficients. Use to undistort image
     bool undistort_image;
-    cv::Mat camera_matrix;
-    cv::Mat distortion_coefficients;
+    cv::Mat camera_matrix; // TODO: change to Matx
+    cv::Mat distortion_coefficients; // TODO: change to Matx
     
     // camera->wold homography
     bool homography_valid;

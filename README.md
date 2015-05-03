@@ -49,6 +49,11 @@ sudo ./b2 install
     - pixel -> cm transformation information
     - Sample number
 - [ ] Camera class should implement distortion correction (see [this example](https://github.com/Itseez/opencv/blob/6df1198e8b1ea4925cbce943a1dc6549f27d8be2/modules/calib3d/test/test_fisheye.cpp))
+- [ ] Cmake improvments
+    - Global build script to make all of the programs in the project
+	- CMake managed versioning
+- [ ] Travis CI
+    - Get it building using the improvements to CMake stated in last TODO item
 
 ### Passing positional data to the client process 
 

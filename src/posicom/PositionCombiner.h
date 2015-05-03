@@ -29,7 +29,7 @@
  * @param position_sources A vector of position SOURCE names
  * @param sink Combined position SINK name
  */
-class PositionCombiner {
+class PositionCombiner { // TODO: Position2D -> Position somehow
 public:
 
     PositionCombiner(std::vector<std::string> position_source_names, std::string sink_name) :
@@ -38,7 +38,7 @@ public:
     , position_sink(sink_name)
     , client_idx(0) {
          
-        for(auto &name : position_source_names) {
+        for (auto &name : position_source_names) {
             
             position_sources.push_back(shmem::SMClient<datatypes::Position2D>(name));
             source_positions.push_back(datatypes::Position2D(name));

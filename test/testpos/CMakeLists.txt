@@ -10,5 +10,5 @@ link_directories (${Boost_LIBRARY_DIR})
 add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (testpos TestPosition.cpp main.cpp )
+add_executable (testpos RandomAccel2D.cpp main.cpp )
 target_link_libraries (testpos shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})

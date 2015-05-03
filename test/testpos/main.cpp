@@ -14,15 +14,16 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "TestPosition.h"
-
+#include <unordered_map>
 #include <time.h>
 #include <signal.h>
 #include <memory>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
-#include <unordered_map>
+
+#include "TestPosition.h"
+#include "RandomAccel2D.h"
 
 namespace po = boost::program_options;
 
@@ -36,10 +37,13 @@ void term(int) {
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: testpos [OPTIONS]\n";
-    std::cout << "   or: testpos SINK [CONFIGURATION]\n";
-    std::cout << "Publish test positions to a SMSserver<Position2D> SINK.\n\n";
-    std::cout << options << "\n";
+    std::cout << "Usage: testpos [OPTIONS]\n"
+              << "   or: testpos TYPE SINK [CONFIGURATION]\n"
+              << "Publish test positions to a SMSserver<Position> SINK.\n\n"
+              << "TYPE\n"
+              << "  'rand2D': Randomly accelerating 2D Position\n"
+              << "  'rand3D': Randomly accelerating 3D Position (W.I.P.)\n\n"
+              << options << "\n";
 }
 
 // Processing thread
@@ -60,17 +64,23 @@ int main(int argc, char *argv[]) {
     delay.tv_nsec = (int)(DT * 1.0e9);
 
     // Base options
-    po::options_description options("OPTIONS");
+    po::options_description visible_options("VISIBLE OPTIONS");
 
-    std::string source;
     std::string sink;
     std::string type;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
+    
+    
+    std::unordered_map<std::string, char> type_hash;
+    type_hash["rand2D"] = 'a';
+    //TODO: type_hash["rand3D"] = 'b';  
+
 
     try {
 
+        po::options_description options("OPTIONS");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -84,11 +94,14 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
+                ("type", po::value<std::string>(&type), 
+                "Type of test position to serve.")
                 ("sink", po::value<std::string>(&sink),
                 "The name of the SINK to which position background subtracted images will be served.")
                 ;
 
         po::positional_options_description positional_options;
+        positional_options.add("type", 1);
         positional_options.add("sink", 1);
 
         po::options_description visible_options("VISIBLE OPTIONS");
@@ -112,14 +125,20 @@ int main(int argc, char *argv[]) {
         }
 
         if (variable_map.count("version")) {
-            std::cout << "Simple-Tracker Test Position Server version 1.0\n"; //TODO: Cmake managed versioning
-            std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
-            std::cout << "Licensed under the GPL3.0.\n";
+            std::cout << "Simple-Tracker Test Position Server version 1.0\n" 
+                      << "Written by Jonathan P. Newman in the MWL@MIT.\n"
+                      << "Licensed under the GPL3.0.\n";
             return 0;
+        }
+        
+        if (!variable_map.count("type")) {
+            printUsage(visible_options);
+            std::cout << "Error: a TYPE name must be specified. Exiting.\n";
+            return -1;
         }
 
         if (!variable_map.count("sink")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: a SINK name must be specified. Exiting.\n";
             return -1;
         }
@@ -141,20 +160,34 @@ int main(int argc, char *argv[]) {
     }
 
     // Create the specified TYPE of detector
-    TestPosition test_position(sink);
-
+    TestPosition* test_position;
+    
+    switch (type_hash[type]) {
+        case 'a':
+        {
+            test_position = new RandomAccel2D(sink);
+            break;
+        }
+        default:
+        {
+            printUsage(visible_options);
+            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            return -1;
+        }
+    }
+    
     //if (config_used)
     //test_position->configure(config_file, config_key);
     
-    std::cout << "Test Position has begun publishing to sink \"" + sink + "\".\n\n";
-    std::cout << "COMMANDS:\n";
-    std::cout << "  p: Pause/unpause.\n";
-    std::cout << "  x: Exit.\n";
+    std::cout << "Test Position has begun publishing to sink \"" + sink + "\".\n\n"
+              << "COMMANDS:\n"
+              << "  p: Pause/unpause.\n"
+              << "  x: Exit.\n\n";
 
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &test_position));
+    thread_group.create_thread(boost::bind(&run, test_position));
     sleep(1);
 
     while (!done) {
@@ -172,7 +205,7 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
-                test_position.stop(); 
+                test_position->stop(); 
                 break;
             }
             default:
@@ -181,9 +214,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // TODO: Exit gracefully and ensure all shared resources are cleaned up!
+    // Exit gracefully and ensure all shared resources are cleaned up!
     thread_group.join_all();
-
+    
+    // Free heap memory allocated to test_position 
+    delete test_position;
 
     std::cout << "Test Position is exiting.\n";
 

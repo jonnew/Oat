@@ -25,6 +25,7 @@ namespace datatypes {
 
     struct Position {
     
+        Position() : label("default") { }
         Position(std::string position_label) : label(position_label) { }
       
         // Positions use one of two coordinate systems 

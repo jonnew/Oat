@@ -14,36 +14,31 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "Detector2D.h"
-#include "HSVDetector2D.h"
-#include "DifferenceDetector2D.h"
-
-
+#include <unordered_map>
 #include <signal.h>
 #include <memory>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
-#include <unordered_map>
+
+#include "Detector2D.h"
+#include "HSVDetector2D.h"
+#include "DifferenceDetector2D.h"
 
 namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
 bool running = true;
 
-void term(int) {
-    done = 1;
-}
-
 void printUsage(po::options_description options) {
-    std::cout << "Usage: detector [OPTIONS]\n";
-    std::cout << "   or: detector TYPE SOURCE SINK [CONFIGURATION]\n";
-    std::cout << "Perform TYPE object detection on images from SMServer<SharedCVMatHeader> SOURCE.\n";
-    std::cout << "Publish detected object positions to a SMSserver<Position2D> SINK.\n\n";
-    std::cout << "TYPE\n";
-    std::cout << "  diff: Difference detector (grey-scale)\n";
-    std::cout << "  hsv: HSV detector (color)\n\n";
-    std::cout << options << "\n";
+    std::cout << "Usage: detector [OPTIONS]\n"
+              << "   or: detector TYPE SOURCE SINK [CONFIGURATION]\n"
+              << "Perform TYPE object detection on images from SMServer<SharedCVMatHeader> SOURCE.\n"
+              << "Publish detected object positions to a SMSserver<Position2D> SINK.\n\n"
+              << "TYPE\n"
+              << "  'diff': Difference detector (grey-scale)\n"
+              << "  'hsv' : HSV detector (color)\n\n"
+              << options << "\n";
 }
 
 // Processing thread
@@ -59,8 +54,6 @@ void run(Detector2D* detector) {
 // IO thread
 
 int main(int argc, char *argv[]) {
-
-    signal(SIGINT, term);
 
     // Base options
     po::options_description options("OPTIONS");

@@ -21,43 +21,38 @@
 #include <random>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/Position.h"
+#include "../../lib/datatypes/Position.h"
 #include "../../lib/shmem/SMServer.h"
 
 #define DT 0.02 // TODO: Config
 
+/**
+ * Abstract base class by and Test Position class within the Simple Tracker project.
+ * @param position_sink_name Name of the SINK to which test positions will be sent
+ */
 class TestPosition  {
     
 public:
     
-    TestPosition(std::string pos_sink_name);
+    TestPosition(std::string position_sink_name) : 
+      position_sink(position_sink_name)
+    , name(position_sink_name) { }
 
-    // Use a configuration file to specify parameters
-    void configure(std::string file_name, std::string key);
+    // Test Positions can use a configuration file to specify parameters
+    //virtual void configure(std::string file_name, std::string key) = 0;
     
-    // Simulate object position motion and publish to shared memory
-    void simulateAndServePosition(void);
+    // Test Positions simulate object position motion and publish to shared memory
+    virtual void simulateAndServePosition(void) = 0;
     
     void stop(void) { position_sink.set_running(false); }
     
-private:
+protected:
     
-    // Random number generator
-    std::default_random_engine accel_generator;
-    std::normal_distribution<float> accel_distribution;
-    
-    // Simulated 3D position
-    cv::Mat state;
-    cv::Mat accel_vec;
-    
-    // STM and input matrix
-    cv::Mat state_transition_mat;
-    cv::Mat input_mat;
-    
-    shmem::SMServer<shmem::Position> position_sink;
-    
-    void createStaticMatracies(void);
-    void simulateMotion(void);
+    // Test position SINK name
+    std::string name;
+
+    // The test position SINK
+    shmem::SMServer<datatypes::Position> position_sink;
     
 };
 

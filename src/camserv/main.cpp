@@ -48,14 +48,14 @@ void run(Camera* camera) {
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: camserv_ge [OPTIONS]\n";
-    std::cout << "   or: camserv_ge TYPE SINK [CONFIGURATION]\n";
-    std::cout << "Serve images captured by the camera to SINK\n\n";
-    std::cout << "TYPE\n";
-    std::cout << "  \'wcam\': Onboard or USB webcam.\n";
-    std::cout << "  \'gige\': Point Grey GigE camera.\n";
-    std::cout << "  \'file\': Stream video from file.\n\n";
-    std::cout << options << "\n";
+    std::cout << "Usage: camserv_ge [OPTIONS]\n"
+              << "   or: camserv_ge TYPE SINK [CONFIGURATION]\n"
+              << "Serve images captured by the camera to SINK\n\n"
+              << "TYPE\n"
+              << "  \'wcam\': Onboard or USB webcam.\n"
+              << "  \'gige\': Point Grey GigE camera.\n"
+              << "  \'file\': Stream video from file.\n\n"
+              << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
@@ -197,10 +197,10 @@ int main(int argc, char *argv[]) {
     else
         camera->configure();
 
-    std::cout << "Camera named \"" + sink + "\" has started.\n";
-    std::cout << "COMMANDS:\n";
-    std::cout << "  p: Pause/unpause.\n";
-    std::cout << "  x: Exit.\n";
+    std::cout << "Camera named \"" + sink + "\" has started.\n"
+              << "COMMANDS:\n"
+              << "  p: Pause/unpause.\n"
+              << "  x: Exit.\n";
 
     // Two threads - one for user interaction, the other
     // for executing the processor
