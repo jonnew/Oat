@@ -15,6 +15,7 @@
 //******************************************************************************
 
 #include <vector>
+#include <cmath>
 
 #include "MeanPosition2D.h"
 
@@ -26,9 +27,10 @@ void MeanPosition2D::combineAndServePosition() {
     // Get the current image
     while (client_idx < position_sources.size()) {
         
-        if (!position_sources[client_idx]->getSharedObject(*source_positions[client_idx])) {
+        if (!(position_sources[client_idx]->getSharedObject(*source_positions[client_idx]))) {
             return;
         }
+        
         client_idx++;
     }
 
@@ -43,19 +45,42 @@ void MeanPosition2D::combineAndServePosition() {
  */
 void MeanPosition2D::combinePositions() {
 
-    bool all_positions_valid = true;
-    double denominator = 1.0/(double) source_positions.size();
+    double mean_denom = 1.0/(double) source_positions.size(); 
     combined_position.position = datatypes::Point2D(0,0);
     combined_position.velocity = datatypes::Velocity2D(0,0);
     combined_position.head_direction = datatypes::UnitVector2D(0,0);
     
     // Averaging operation
     for (auto pos : source_positions) {
-        combined_position.position_valid = 
-                all_positions_valid && pos->position_valid;
-        combined_position.velocity += 
-                denominator * pos->velocity;
-        combined_position.head_direction += 
-                denominator * pos->head_direction;
+        
+        // Position
+        if (pos->position_valid)
+            combined_position.position += mean_denom * pos->position;
+        else
+            combined_position.position_valid = false;
+        
+        // Velocity
+        if (pos->velocity_valid)
+            combined_position.velocity += mean_denom * pos->velocity;
+        else
+            combined_position.velocity_valid = false;
+        
+        // Head direction
+        if (pos->head_direction_valid)
+            combined_position.head_direction += pos->head_direction;
+        else
+           combined_position.head_direction_valid = false; 
+        
+    }
+    
+    // Renormalize head-direction unit vector
+    if (combined_position.head_direction_valid)
+    {
+        double mag = std::sqrt(
+                std::pow(combined_position.head_direction.x, 2.0) +
+                std::pow(combined_position.head_direction.y, 2.0));
+
+        combined_position.head_direction = 
+                combined_position.head_direction/mag;
     }
 }

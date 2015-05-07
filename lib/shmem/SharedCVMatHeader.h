@@ -24,32 +24,34 @@
 namespace shmem {
 
     class SharedCVMatHeader {
-        
     public:
-        
+
         SharedCVMatHeader();
-        
+
         boost::interprocess::interprocess_semaphore mutex;
         boost::interprocess::interprocess_semaphore write_barrier;
         boost::interprocess::interprocess_semaphore read_barrier;
         boost::interprocess::interprocess_semaphore new_data_barrier;
-        
+
         size_t number_of_clients;
         size_t client_read_count;
         
         // Used to get world coordinates from image
         bool homography_valid;
-        cv::Matx33f homography;
+        cv::Matx33d homography;
 
+        // Time keeping
+        unsigned int sample_number; // Sample number of this mat datum, respecting buffer overruns
+        unsigned int sample_index;  // Order index of this mat datum, disrespecting buffer overruns
+        
         void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, const cv::Mat& model);
         void attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat);
-        
+
         // Accessors
-        void set_homography(const cv::Matx33f& value);
-        void set_mat(const cv::Mat& value);    // Server
-        
+        void set_mat(const cv::Mat& value); // Server
+
     private:
-        
+
         cv::Size mat_size;
         int type;
         void* data_ptr;

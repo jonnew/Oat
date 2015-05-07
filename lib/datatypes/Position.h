@@ -17,6 +17,12 @@
 #ifndef POSITION_H
 #define	POSITION_H
 
+// TODO: I would like Positions to have an associated labe, but std::string's
+// allocator is not appropriate for shmem. I need to use the boost IP versions
+// of the string container, but its quite complicated
+//#include <boost/interprocess/allocators/allocator.hpp>
+//#include <boost/interprocess/containers/string.hpp>
+
 namespace datatypes {
 
     enum coordinate_system_type {
@@ -24,15 +30,19 @@ namespace datatypes {
     };
 
     struct Position {
-    
-        Position() : label("default") { }
-        Position(std::string position_label) : label(position_label) { }
+
+        Position() { }   
+        virtual ~Position() = 0;
       
         // Positions use one of two coordinate systems 
         // PIXELS - units are referenced to the sensory array of the digital camera. 
         //          origin in the upper left hand corner.
         // WORLD  - Defined by the homography matrix.
         int coord_system = PIXELS;
+        
+        // Time keeping
+        unsigned int time_stamp; // Time-stamp of this position, respecting buffer overruns
+        unsigned int index;      // Order index of this position, disrespecting buffer overruns
 
         // Positions must be able to convert themselves to world
         // coordinate system if they contain the appropriate
@@ -40,16 +50,20 @@ namespace datatypes {
         //virtual Position convertToWorldCoordinates(void) = 0;
         // TODO: why can't this base class use the more general Position type instead
         // of Position2D etc?
-        
-        //Accessors
-        std::string get_label(void) { return label; }
 
     private:
         
         // Position label (e.g. 'anterior')
-        std::string label;
+        // std::string
     };
+    
+    // Required since this a base class w/ pure virtual destructor 
+    // (Meyers, Effective C++, 2nd Ed. pg. 63)
+    inline Position::~Position() {} 
+    
 } // namespace datatypes
+
+
 
 
 #endif	/* POSITION_H */

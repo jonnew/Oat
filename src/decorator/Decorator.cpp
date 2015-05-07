@@ -23,7 +23,7 @@
 Decorator::Decorator(std::string position_source_name,
         std::string frame_source_name,
         std::string frame_sink_name) :
-frame_source(frame_source_name)
+  frame_source(frame_source_name)
 , position_source(position_source_name)
 , frame_sink(frame_sink_name)
 , current_processing_stage(0) {
@@ -75,8 +75,7 @@ void Decorator::drawSymbols() {
 
 void Decorator::drawPosition() {
     if (position.position_valid) {
-        cv::Point2f pos(position.position.x, position.position.y);
-        cv::circle(image, pos, position_circle_radius, cv::Scalar(0, 0, 255), 2);
+        cv::circle(image, position.position, position_circle_radius, cv::Scalar(0, 0, 255), 2);
     }
 }
 
@@ -84,9 +83,9 @@ void Decorator::drawPosition() {
 
 void Decorator::drawHeadDirection() {
     if (position.position_valid && position.head_direction_valid) {
-        cv::Point3f start = position.position - (head_dir_line_length * position.head_direction);
-        cv::Point3f end = position.position + (head_dir_line_length * position.head_direction);
-        cv::line(image, cv::Point2f(start.x, start.y), cv::Point2f(end.x, end.y), cv::Scalar(255, 255, 255), 2, 8);
+        cv::Point2d start = position.position - (head_dir_line_length * position.head_direction);
+        cv::Point2d end = position.position + (head_dir_line_length * position.head_direction);
+        cv::line(image, start, end, cv::Scalar(255, 255, 255), 2, 8);
     }
 }
 
@@ -94,8 +93,7 @@ void Decorator::drawHeadDirection() {
 
 void Decorator::drawVelocity() {
     if (position.velocity_valid && position.position_valid) {
-        cv::Point3f end = position.position + (velocity_scale_factor * position.velocity);
-        cv::Point2f pos(position.position.x, position.position.y);
-        cv::line(image, pos, cv::Point2f(end.x, end.y), cv::Scalar(0, 255, 0), 2, 8);
+        cv::Point2d end = position.position + (velocity_scale_factor * position.velocity);
+        cv::line(image, position.position, end, cv::Scalar(0, 255, 0), 2, 8);
     }
 }

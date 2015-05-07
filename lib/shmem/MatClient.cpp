@@ -28,7 +28,10 @@ name(source_name)
 , shobj_name(source_name + "_sh_obj")
 , shared_object_found(false)
 , mat_attached_to_header(false)
-, read_barrier_passed(false) {
+, read_barrier_passed(false) { 
+
+    // Use shmem_name and shobj_name to get find (or create) the requested shared cvmat
+    findSharedMat();
 }
 
 MatClient::~MatClient() {
@@ -36,17 +39,14 @@ MatClient::~MatClient() {
     detachFromShmem();
 }
 
-int MatClient::findSharedMat() {
-
-
-    int client_num;
-    // TODO: Wrap in a named guard of some sort.
-
-    // Remove_shared_memory on object destruction
-    //shared_memory_object::remove(shmem_name.c_str());
+/**
+ * 
+ * @return 
+ */
+void MatClient::findSharedMat() {
 
     try {
-
+        
         // If the client creates the shared memory, it does not allocate room for the cv::Mat data
         // The server will need to resize the shared memory to make room.
         //size_t total_bytes = sizeof (shmem::SharedCVMatHeader) + 1024; 
@@ -69,15 +69,10 @@ int MatClient::findSharedMat() {
     // has joined
     shared_mat_header->mutex.wait();
     shared_mat_header->number_of_clients++;
-    client_num = shared_mat_header->number_of_clients;
+    number_of_clients = shared_mat_header->number_of_clients;
     shared_mat_header->mutex.post();
 
-    return client_num;
-
 }
-
-// TODO: All users need to deal with the false return value by skipping
-// whatever processing they had in mind
 
 /**
  * Get the cv::Mat object from shared memory
@@ -107,12 +102,16 @@ bool MatClient::getSharedMat(cv::Mat& value) {
         shared_mat_header->mutex.wait();
 
         if (!mat_attached_to_header) {
-            // Cannot do this until the server has called build header. 
-            shared_mat_header->attachMatToHeader(shared_memory, mat);
+            // Cannot do this until the server has called build header, which is 
+            // why it is here, instead of in constructor
+            shared_mat_header->attachMatToHeader(shared_memory, shared_cvmat);
             mat_attached_to_header = true;
         }
 
-        value = mat.clone();
+        // Assign the latest cv::Mat and get its timestamp and write index
+        value = shared_cvmat.clone();
+        current_index = shared_mat_header->sample_index;
+        current_time_stamp = shared_mat_header->sample_number;
 
         // Now that this client has finished its read, update the count
         shared_mat_header->client_read_count++;

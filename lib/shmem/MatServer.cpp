@@ -25,10 +25,12 @@
 using namespace boost::interprocess;
 
 MatServer::MatServer(const std::string sink_name) :
-  name(sink_name)
+name(sink_name)
 , shmem_name(sink_name + "_sh_mem")
 , shobj_name(sink_name + "_sh_obj")
 , shared_object_created(false)
+, current_sample(0)
+, write_index(0)
 , running(true) {
 
     // Start the server thread
@@ -101,13 +103,13 @@ void MatServer::createSharedMat(const cv::Mat& model) {
     }
 
     shared_mat_header->buildHeader(shared_memory, model);
-    
+
     // If supplied with valid homography info, then set that
     if (homography_valid) {
         shared_mat_header->homography_valid = true;
         shared_mat_header->homography = homography;
     }
-    
+
     shared_object_created = true;
 }
 
@@ -115,9 +117,11 @@ void MatServer::pushMat(const cv::Mat& mat) {
 
     // Push data onto ring buffer
     mat_buffer.push(mat.clone());
+    tick_buffer.push(current_sample++);
 
 #ifndef NDEBUG
-    std::cout << "Buffer count: " + std::to_string(mat_buffer.read_available()) + "\n";
+    std::cout << "Buffer count: " + std::to_string(mat_buffer.read_available())
+              << ". Sample no. : " + std::to_string(current_sample - 1) + "\n";
 #endif
 
     // notify server thread that data is available
@@ -144,8 +148,10 @@ void MatServer::serveMatFromBuffer() {
             /* START CRITICAL SECTION */
             shared_mat_header->mutex.wait();
 
-            // Perform write in shared memory 
+            // Perform writes in shared memory 
             shared_mat_header->set_mat(mat);
+            tick_buffer.pop(shared_mat_header->sample_number); 
+            shared_mat_header->sample_index = write_index++;
 
             // Tell each client they can proceed
             for (int i = 0; i < shared_mat_header->number_of_clients; ++i) {

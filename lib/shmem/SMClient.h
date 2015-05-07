@@ -34,9 +34,6 @@ namespace shmem {
         SMClient(const SMClient& orig);
         virtual ~SMClient();
 
-        // Find shared object
-        int findSharedObject(void);
-
         // Read the object value
         bool getSharedObject(T& value);
 
@@ -50,16 +47,23 @@ namespace shmem {
         bool read_barrier_passed;
         bip::managed_shared_memory shared_memory;
 
+        // Find shared object in shmem
+        int findSharedObject(void);
+        
+        // Decrement the number of clients in shmem
         void detachFromShmem(void);
     };
 
     template<class T, template <typename> class SharedMemType>
     SMClient<T, SharedMemType>::SMClient(std::string source_name) :
-    name(source_name)
+      name(source_name)
     , shmem_name(source_name + "_sh_mem")
     , shobj_name(source_name + "_sh_obj")
     , shared_object_found(false)
-    , read_barrier_passed(false) { }
+    , read_barrier_passed(false) { 
+    
+        findSharedObject();
+    }
 
     template<class T, template <typename> class SharedMemType>
     SMClient<T, SharedMemType>::~SMClient() {

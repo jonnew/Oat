@@ -31,19 +31,17 @@ public:
     MatClient(const std::string server_name);
     virtual ~MatClient();
     
-    // Find cv::Mat object in shared memory
-    int findSharedMat(void);
-    
     // get cv::Mat out of shared memory
     bool getSharedMat(cv::Mat& value);
      
     // Accessors
     std::string get_name(void) { return name; }
-    
+    int get_number_of_clients(void) { return number_of_clients; }
     bool is_homography_valid(void) { return shared_mat_header->homography_valid;}
-    cv::Matx33f get_homography(void) { return shared_mat_header->homography; }
-    
+    cv::Matx33d get_homography(void) { return shared_mat_header->homography; }
     bool is_shared_object_found(void) { return shared_object_found; }
+    unsigned int get_current_index(void) { return current_index; }
+    unsigned int get_current_time_stamp(void) { return current_time_stamp; }
     
 private:
     
@@ -54,11 +52,22 @@ private:
     int data_size; // Size of raw mat data in bytes
 
     // Shared mat object, constructed from the shared_mat_header
-    cv::Mat mat;
-
+    cv::Mat shared_cvmat;
     const std::string shmem_name, shobj_name;
     boost::interprocess::managed_shared_memory shared_memory;
+
+    // Number of clients, including *this, attached to the shared memory indicated
+    // by shmem_name
+    size_t number_of_clients;
     
+    // Time keeping
+    unsigned int current_index;
+    unsigned int current_time_stamp;
+    
+    // Find cv::Mat object in shared memory
+    void findSharedMat(void);
+    
+    // Decrement the number of clients in shared memory
     void detachFromShmem(void);
 };
 

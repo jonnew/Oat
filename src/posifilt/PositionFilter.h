@@ -21,7 +21,7 @@
 
 #include "../../lib/shmem/SMServer.h"
 #include "../../lib/shmem/SMClient.h"
-#include "../../lib/shmem/Position.h"
+#include "../../lib/datatypes/Position.h"
 
 
 class PositionFilter {
@@ -95,7 +95,7 @@ protected:
     virtual void serveFilteredPosition(void) = 0;
     
     // Draw the position on a cv::Mat for tuning purposes
-    virtual void drawPosition(cv::Mat& canvas, const shmem::Position& position) = 0;
+    virtual void drawPosition(cv::Mat& canvas, const datatypes::Position& position) = 0;
 };
 
 #endif	/* POSITIONFILTER_H */

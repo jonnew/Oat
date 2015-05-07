@@ -34,14 +34,13 @@ public:
 
     PositionCombiner(std::vector<std::string> position_source_names, std::string sink_name) :
       name(sink_name)
-    , combined_position(sink_name)
     , position_sink(sink_name)
     , client_idx(0) {
          
         for (auto &name : position_source_names) {
             
             position_sources.push_back(new shmem::SMClient<datatypes::Position2D>(name));
-            source_positions.push_back(new datatypes::Position2D(name));
+            source_positions.push_back(new datatypes::Position2D);
             position_sources.back()->findSharedObject();    
         }
     }

@@ -21,7 +21,7 @@
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
-#include "KalmanFilter.h"
+#include "KalmanFilter3D.h"
 
 namespace po = boost::program_options;
 
@@ -58,6 +58,9 @@ int main(int argc, char *argv[]) {
 
     std::unordered_map<std::string, char> type_hash;
     type_hash["kalman"] = 'a';
+    //TODO: there should be a runtime decision, based on the types of positions
+    //from the source, whether or not to use the 2D or 3D filter. Or, these types
+    //of filter should be able to handle 2D or 3D positions
 
     try {
         
@@ -149,7 +152,7 @@ int main(int argc, char *argv[]) {
     switch (type_hash[type]) {
         case 'a':
         {
-            position_filter = new KalmanFilter(source, sink);
+            position_filter = new KalmanFilter2D(source, sink);
             break;
         }
         default:

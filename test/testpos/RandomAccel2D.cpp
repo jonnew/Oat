@@ -46,7 +46,7 @@ void RandomAccel2D::simulateAndServePosition() {
     simulateMotion(); 
     
     // Transform into datatype::Position2D type
-    datatypes::Position2D pos(name);
+    datatypes::Position2D pos;
     
     // Simulated position info
     pos.position_valid = true;

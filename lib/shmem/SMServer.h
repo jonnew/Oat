@@ -28,8 +28,6 @@
 
 #include "SyncSharedMemoryObject.h"
 
-#define SMSERVER_BUFFER_SIZE 100
-
 namespace shmem {
 
     namespace bip = boost::interprocess;
@@ -47,7 +45,7 @@ namespace shmem {
 
         // Accessors
         bool is_running(void) { return running; }
-        void set_running(bool value) { running = value;}
+        void set_running(bool value) { running = value; }
 
     private:
 
@@ -55,7 +53,15 @@ namespace shmem {
         std::string name;
 
         // Buffer
-        boost::lockfree::spsc_queue<T, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > buffer;
+        static const int SMSERVER_BUFFER_SIZE = 100;
+        boost::lockfree::spsc_queue
+        <T, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > buffer;
+        boost::lockfree::spsc_queue
+        <unsigned int, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > tick_buffer;
+
+        // Timestamp
+        unsigned int current_sample;
+        unsigned int write_index;
 
         // Server threading
         std::thread server_thread;
@@ -139,9 +145,11 @@ namespace shmem {
 
         // Push data onto ring buffer
         buffer.push(value);
+        tick_buffer.push(current_sample++);
 
 #ifndef NDEBUG
-        std::cout << "Buffer count: " + std::to_string(buffer.read_available()) + "\n";
+        std::cout << "Buffer count: " + std::to_string(buffer.read_available())
+                  << ". Sample no. : " + std::to_string(current_sample - 1) + "\n";
 #endif
 
         // notify server thread that data is available
@@ -168,8 +176,10 @@ namespace shmem {
                 /* START CRITICAL SECTION */
                 shared_object->mutex.wait();
 
-                // Perform write in shared memory 
+                // Perform writes in shared memory 
                 shared_object->set_value(value);
+                tick_buffer.pop(shared_object->time_stamp); 
+                shared_object->index = write_index++;
 
                 shared_object->mutex.post();
                 /* END CRITICAL SECTION */

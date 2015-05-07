@@ -26,13 +26,12 @@
 using namespace boost::interprocess;
 
 Viewer::Viewer(std::string source_name) :
-frame_source(source_name)
+  frame_source(source_name)
 , name(source_name + "_viewer") {
 
-    // Find the shard cv::Mat
-    int client_num = frame_source.findSharedMat();
-    name = name + std::to_string(client_num);
-
+    // Name *this according the the source name and the client number
+    // to keep it unique
+    name = name + std::to_string(frame_source.get_number_of_clients());
     cv::namedWindow(name);
 }
 
@@ -57,8 +56,3 @@ void Viewer::showImage(const std::string title) {
         }
     }
 }
-
-//void Viewer::stop() {
-//
-//    frame_source.notifySelf();
-//}

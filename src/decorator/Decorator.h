@@ -22,6 +22,7 @@
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
+#include "../../lib/datatypes/Position2D.h"
 
 class Decorator {
    
@@ -44,13 +45,13 @@ private:
     int current_processing_stage;
     
     // Current position
-    shmem::Position position;
+    datatypes::Position2D position;
     
     // Mat client object for receiving frames
     MatClient frame_source;
     
     // Position client for getting current position info
-    shmem::SMClient<shmem::Position> position_source;
+    shmem::SMClient<datatypes::Position2D> position_source;
     
     // Mat server for sending decorated frames
     MatServer frame_sink;

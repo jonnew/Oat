@@ -29,8 +29,6 @@
 
 #include "SharedCVMatHeader.h"
 
-#define MATSERVER_BUFFER_SIZE 100
-
 // TODO: Find a why to integrate this with the must much general purpose SMServer
 class MatServer {
     
@@ -60,7 +58,15 @@ private:
     std::string name;
     
     // Buffer
-    boost::lockfree::spsc_queue<cv::Mat, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
+    static const int MATSERVER_BUFFER_SIZE = 100;
+    boost::lockfree::spsc_queue
+      <cv::Mat, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
+    boost::lockfree::spsc_queue
+      <unsigned int, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > tick_buffer;
+    
+    // Timestamp
+    unsigned int current_sample;
+    unsigned int write_index;
     
     // Server threading
     std::thread server_thread;

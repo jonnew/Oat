@@ -21,6 +21,7 @@
 
 #include "../datatypes/Position.h"
 #include "../datatypes/Position2D.h"
+//#include "../datatypes/Position3D.h"
 
 namespace shmem {
 
@@ -34,7 +35,9 @@ namespace shmem {
         , read_barrier(0)
         , new_data_barrier(0)
         , number_of_clients(0)
-        , client_read_count(0) { }
+        , client_read_count(0)
+        , sample_number(0)
+        , sample_index(0) { }
 
         // Semaphores used to synchronize access to the shared object
         boost::interprocess::interprocess_semaphore mutex;
@@ -44,6 +47,10 @@ namespace shmem {
         
         size_t number_of_clients;
         size_t client_read_count;
+        
+        // Time keeping
+        unsigned int sample_number; // Sample number of this position, respecting buffer overruns
+        unsigned int sample_index;  // Order index of this position, disrespecting buffer overruns
 
         void set_value(T value) { object = value; }
         T get_value(void) { return object; }
@@ -57,8 +64,8 @@ namespace shmem {
 }
 
 // Explicit instantiations
-template class shmem::SyncSharedMemoryObject<datatypes::Position>;
 template class shmem::SyncSharedMemoryObject<datatypes::Position2D>;
+//template class shmem::SyncSharedMemoryObject<datatypes::Position3D>;
 
 #endif	/* SYNCSHAREDMEMORYOBJECT_H */
 

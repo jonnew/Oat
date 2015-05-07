@@ -14,17 +14,17 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef KALMANFILTER_H
-#define	KALMANFILTER_H
+#ifndef KALMANFILTER2D_H
+#define	KALMANFILTER2D_H
 
 #include <string>
 #include <opencv2/opencv.hpp>
 
 #include "PositionFilter.h"
 
-class KalmanFilter : public PositionFilter {
+class KalmanFilter2D : public PositionFilter {
 public:
-    KalmanFilter(std::string position_source_name, std::string position_sink_name);
+    KalmanFilter2D(std::string position_source_name, std::string position_sink_name);
 
     bool grabPosition(void);
     void filterPosition(void);
@@ -40,7 +40,8 @@ public:
 
 private:
     // Kalman state estimate and measurement vectors
-    cv::Mat kf_predicted_state, kf_meas;
+    cv::Matx41d kf_predicted_state;
+    cv::Matx21d kf_meas;
 
     // Sample period
     float dt;
@@ -70,5 +71,5 @@ private:
     void drawPosition(cv::Mat& canvas, const shmem::Position& position);
 };
 
-#endif	/* KALMANFILTER_H */
+#endif	/* KALMANFILTER2D_H */
 
