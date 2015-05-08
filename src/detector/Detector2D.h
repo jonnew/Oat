@@ -37,16 +37,12 @@ class Detector2D {
 public:
 
     Detector2D(std::string image_source_name, std::string position_sink_name) :
-    image_source(image_source_name)
+      image_source(image_source_name)
     , position_sink(position_sink_name)
-    , object_position(position_sink_name)
     , tuning_image_title(position_sink_name + "_tuning")
     , slider_title(position_sink_name + "_sliders")
     , tuning_windows_created(false)
-    , tuning_on(false) {
-
-        image_source.findSharedMat();
-    }
+    , tuning_on(false) { }
 
     // Detector must be able to find an object
     virtual void findObjectAndServePosition(void) = 0;
@@ -54,6 +50,7 @@ public:
     // Detectors must be configurable via file
     virtual void configure(std::string file_name, std::string config_key) = 0;
 
+    // Accessible from UI thread
     void set_tune_mode(bool value) {
         tuning_mutex.lock();
         tuning_on = value;
@@ -67,10 +64,7 @@ public:
     }
 
     // Detectors must be interruptable
-
-    void stop(void) {
-        position_sink.set_running(false);
-    }
+    void stop(void) { position_sink.set_running(false); }
 
 protected:
 

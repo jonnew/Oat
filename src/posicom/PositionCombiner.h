@@ -40,8 +40,7 @@ public:
         for (auto &name : position_source_names) {
             
             position_sources.push_back(new shmem::SMClient<datatypes::Position2D>(name));
-            source_positions.push_back(new datatypes::Position2D);
-            position_sources.back()->findSharedObject();    
+            source_positions.push_back(new datatypes::Position2D); 
         }
     }
 
@@ -49,7 +48,7 @@ public:
     // publish the result
     virtual void combineAndServePosition(void) = 0;
 
-    std::string get_name(void) { return name; }
+    std::string get_name(void) const { return name; }
     void stop(void) {position_sink.set_running(false); }
 
 protected:

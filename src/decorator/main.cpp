@@ -25,11 +25,6 @@
 namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
-bool running = true;
-
-void term(int) {
-    done = 1;
-}
 
 void run(Decorator* decorator) {
 
@@ -40,21 +35,16 @@ void run(Decorator* decorator) {
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: decorate [OPTIONS]\n";
-    std::cout << "   or: decorate POSITION_SOURCE IMAGE_SOURCE IMAGE_SINK\n";
-    std::cout << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCE.\n";
+    std::cout << "   or: decorate POSITION_SOURCES IMAGE_SOURCE IMAGE_SINK\n";
+    std::cout << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCES.\n";
     std::cout << "Publish decorated image to IMAGE_SINK.\n";
     std::cout << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
 
-    // If ctrl-c is pressed, handle the signal with the term routine, which
-    // will attempt to clean up the shared memory before exiting by calling
-    // the object that is using shmem's destructor
-    signal(SIGINT, term);
-
     // The image source to which the viewer will be attached
-    std::string position_source;
+    std::vector<std::string> sources;
     std::string image_source;
     std::string sink;
 
@@ -68,9 +58,9 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("positionsource", po::value<std::string>(&position_source),
-                "The name of the server that supplies object position information."
-                "The server must be of type SMServer<Position2D>\n")
+                ("positionsources", po::value< std::vector<std::string> >(),
+                "The name of the server(s) that supply object position information."
+                "The server(s) must be of type SMServer<Position>\n")
                 ("imagesource", po::value<std::string>(&image_source),
                 "The name of the server that supplies images to decorate."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
@@ -80,9 +70,10 @@ int main(int argc, char *argv[]) {
                 ;
 
         po::positional_options_description positional_options;
-        positional_options.add("positionsource", 1);
-        positional_options.add("imagesource", 1);
-        positional_options.add("sink", 1);
+        
+        // If not overridden by explicit --imagesource or --sink, 
+        // last positional arguments are imagesource and sink in that order
+        positional_options.add("positionsources", -1); 
 
         po::options_description all_options("ALL OPTIONS");
         all_options.add(options).add(hidden);
@@ -108,24 +99,30 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        if (!variable_map.count("positionsource")) {
+        if (!variable_map.count("positionsources")) {
             printUsage(options);
-            std::cout << "Error: a POSITION_SOURCE must be specified. Exiting.\n";
+            std::cout << "Error: at least a single POSITION_SOURCE must be specified. Exiting.\n";
             return -1;
         }
-
-        if (!variable_map.count("imagesource")) {
-            printUsage(options);
-            std::cout << "Error: a IMAGE_SOURCE must be specified. Exiting.\n";
-            return -1;
+        
+        // May contain imagesource and sink information!
+        sources = variable_map["positionsources"].as< std::vector<std::string> >(); 
+        
+        if (!variable_map.count("imagesource") && !variable_map.count("sink")) {
+            sink = sources.back();
+            sources.pop_back(); 
+            
+            image_source = sources.back();
+            sources.pop_back(); 
         }
-
-        if (!variable_map.count("sink")) {
-            printUsage(options);
-            std::cout << "Error: a IMAGE_SINK must be specified. Exiting.\n";
-            return -1;
+        else if (variable_map.count("imagesource") && !variable_map.count("sink")) {
+            sink = sources.back();
+            sources.pop_back(); 
         }
-
+        else if (!variable_map.count("imagesource") && variable_map.count("sink")) {
+            image_source = sources.back();
+            sources.pop_back();
+        }
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -138,11 +135,11 @@ int main(int argc, char *argv[]) {
     std::cout << "COMMANDS:\n";
     std::cout << "  x: Exit.\n";
 
-    // Make the viewer
-    Decorator decorator(position_source, image_source, sink);
+    // Make the decorator
+    Decorator decorator(sources, image_source, sink);
 
     // Two threads - one for user interaction, the other
-    // for executing the processor
+    // for processing
     boost::thread_group thread_group;
     thread_group.create_thread(boost::bind(&run, &decorator));
     sleep(1);
@@ -157,6 +154,7 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
+                decorator.stop();
                 break;
             }
             default:
@@ -167,6 +165,8 @@ int main(int argc, char *argv[]) {
 
     // Join processing and UI threads
     thread_group.join_all();
+    
+    std::cout << "Decorator named \"" + decorator.get_name() + "\" is exiting." << std::endl;
 
     // Exit
     return 0;

@@ -24,7 +24,7 @@
 
 using namespace boost::interprocess;
 
-MatServer::MatServer(const std::string sink_name) :
+MatServer::MatServer(const std::string& sink_name) :
 name(sink_name)
 , shmem_name(sink_name + "_sh_mem")
 , shobj_name(sink_name + "_sh_obj")

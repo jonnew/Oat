@@ -24,45 +24,49 @@
 #include "../../lib/shmem/MatServer.h"
 #include "../../lib/datatypes/Position2D.h"
 
-class Decorator {
-   
+class Decorator { // TODO: Position2D -> Position somehow
+    
 public:
-    Decorator(std::string position_source_name, 
-              std::string frame_source_name,             
-              std::string frame_sink_name);
+    
+    Decorator(const std::vector<std::string>& position_source_names,
+              const std::string& frame_source_name,
+              const std::string& frame_sink_name);
+
     
     void decorateAndServeImage(void);
+    void stop(void) { frame_sink.set_running(false); }
     
-    void stop(void) {frame_sink.set_running(false); }
-   
+    //Accessors
+    std::string get_name(void) const { return name; }
+
 private:
-    
+
+    std::string name;
+
     // Image data
     cv::Mat image;
-    
-    // For multi-server processing, we need to keep track of all the servers
-    // we have finished reading from each processing step
-    int current_processing_stage;
-    
-    // Current position
-    datatypes::Position2D position;
-    
+
     // Mat client object for receiving frames
+    bool have_current_frame;
     MatClient frame_source;
-    
-    // Position client for getting current position info
-    shmem::SMClient<datatypes::Position2D> position_source;
-    
+
+    // For multi-source processing, we need to keep track of all the sources
+    // we have finished reading from each processing step
+    std::vector<shmem::SMClient<datatypes::Position2D> >::size_type client_idx;
+
+    // Positions to be added to the image stream
+    std::vector<datatypes::Position2D* > source_positions;
+    std::vector<shmem::SMClient<datatypes::Position2D>* > position_sources;
+
     // Mat server for sending decorated frames
     MatServer frame_sink;
-    
+
     // Drawing constants 
-    // TODO: These will need to change if image information
-    // starts coming in world-value units
+    // TODO: These may need to become a bit more sophisticated or user defined
     const float position_circle_radius = 5.0;
     const float head_dir_line_length = 25.0;
     const float velocity_scale_factor = 0.1;
-    
+
     void drawPosition();
     void drawHeadDirection();
     void drawVelocity();

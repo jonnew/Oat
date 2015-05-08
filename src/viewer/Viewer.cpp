@@ -42,8 +42,6 @@ void Viewer::showImage() {
 
 void Viewer::showImage(const std::string title) {
 
-    cv::Mat current_frame;
-
     // If we are able to aquire the current frame, 
     // show it.
     if (frame_source.getSharedMat(current_frame)) {

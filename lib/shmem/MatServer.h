@@ -33,7 +33,7 @@
 class MatServer {
     
 public:
-    MatServer(const std::string sink_name);
+    MatServer(const std::string& sink_name);
     MatServer(const MatServer& orig);
     virtual ~MatServer();
     

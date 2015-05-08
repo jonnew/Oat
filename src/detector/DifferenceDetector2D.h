@@ -14,12 +14,10 @@ class DifferenceDetector2D : public Detector2D {
 public:
     DifferenceDetector2D(std::string image_source_name, std::string position_sink_name);
     
-    void findObjectAndServePosition(void);
-    void servePosition(void);
+    // Detector2D's public interface
     void configure(std::string file_name, std::string key);
-    
-    void set_blur_size(int value);
-    
+    void findObjectAndServePosition(void);
+
 private:
     
     // Intermediate variables
@@ -34,12 +32,16 @@ private:
     int difference_intensity_threshold;
     cv::Size blur_size;
     bool blur_on;
-
+    
+    
     void applyThreshold(void);
+    void set_blur_size(int value);
     void siftBlobs(void);
+    void servePosition(void);
 
     void tune(void);
     void createTuningWindows(void);
+    
     static void blurSliderChangedCallback(int, void*);
 };
 

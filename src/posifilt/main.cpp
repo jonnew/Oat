@@ -21,7 +21,7 @@
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
-#include "KalmanFilter3D.h"
+#include "KalmanFilter2D.h"
 
 namespace po = boost::program_options;
 

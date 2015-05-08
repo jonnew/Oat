@@ -24,7 +24,7 @@
 
 class KalmanFilter3D : public PositionFilter {
 public:
-    KalmanFilter3D(std::string position_source_name, std::string position_sink_name);
+    KalmanFilter3D(const std::string& position_source_name, const std::string& position_sink_name);
 
     bool grabPosition(void);
     void filterPosition(void);
@@ -36,7 +36,7 @@ public:
      * @param config_key Configuration file key specifying the table used to
      * configure the Kalman filter.
      */
-    void configure(std::string config_file, std::string config_key);
+    void configure(const std::string& config_file, const std::string& config_key);
 
 private:
     // Kalman state estimate and measurement vectors
@@ -46,8 +46,8 @@ private:
     float dt;
 
     // Standard deviation of assumed random accelerations.
-    float sig_accel;
-    float sig_measure_noise;
+    double sig_accel;
+    double sig_measure_noise;
 
     // Parameter tuning
     bool tuning_windows_created;
@@ -67,7 +67,7 @@ private:
     void initializeFilter(void);
     void initializeStaticMatracies(void);
     void createTuningWindows(void);
-    void drawPosition(cv::Mat& canvas, const shmem::Position& position);
+    void drawPosition(cv::Mat& canvas, const datatypes::Position3D& position);
 };
 
 #endif	/* KALMANFILTER_H */

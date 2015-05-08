@@ -23,14 +23,13 @@
 using namespace boost::interprocess;
 
 MatClient::MatClient(const std::string source_name) :
-name(source_name)
+  name(source_name)
 , shmem_name(source_name + "_sh_mem")
 , shobj_name(source_name + "_sh_obj")
 , shared_object_found(false)
 , mat_attached_to_header(false)
 , read_barrier_passed(false) { 
 
-    // Use shmem_name and shobj_name to get find (or create) the requested shared cvmat
     findSharedMat();
 }
 
@@ -40,7 +39,7 @@ MatClient::~MatClient() {
 }
 
 /**
- * 
+ * Use shmem_name and shobj_name to find (or create) the requested shared cvmat
  * @return 
  */
 void MatClient::findSharedMat() {

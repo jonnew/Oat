@@ -48,12 +48,13 @@ namespace shmem {
         size_t number_of_clients;
         size_t client_read_count;
         
-        // Time keeping
+        // Time keeping TODO: use accessors!
         unsigned int sample_number; // Sample number of this position, respecting buffer overruns
         unsigned int sample_index;  // Order index of this position, disrespecting buffer overruns
 
+        // Write/read access to shared object
         void set_value(T value) { object = value; }
-        T get_value(void) { return object; }
+        T get_value(void) const { return object; } // Read-only (for clients)
 
     private:
         

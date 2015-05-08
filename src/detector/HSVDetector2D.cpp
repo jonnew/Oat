@@ -129,13 +129,8 @@ void HSVDetector2D::siftBlobs() {
     }
 
     if (tuning_on) {
-
-        std::string msg;
-        int baseline = 0;
-        cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
-        cv::Point text_origin(
-                threshold_image.cols - 2 * textSize.width - 10,
-                threshold_image.rows - 2 * baseline - 10);
+        
+        std::string msg = cv::format("Object not found"); // TODO: This default msg will not show up. I have no idea why.
 
         // Plot a circle representing found object
         if (object_position.position_valid) {
@@ -143,21 +138,26 @@ void HSVDetector2D::siftBlobs() {
             cv::Point center;
             center.x = object_position.position.x;
             center.y = object_position.position.y;
-            cv::circle(threshold_image, center, radius, cv::Scalar(0, 0, 255), 2);
+            cv::circle(hsv_image, center, radius, cv::Scalar(0, 0, 255), 2);
 
             // Tell object position
             if (object_position.homography_valid) {
                 datatypes::Position2D convert_pos = object_position.convertToWorldCoordinates();
-                msg = cv::format("(%f, %f) world units", (float) convert_pos.position.x, (float) convert_pos.position.y);
-                cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+                msg = cv::format("(%.3f, %.3f) world units", convert_pos.position.x, convert_pos.position.y);
+
             } else {
                 msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
-                cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+
             }
-        } else {
-            msg = "Object not found";
-            cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
         }
+
+        int baseline = 0;
+        cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
+        cv::Point text_origin(
+                hsv_image.cols - textSize.width - 10,
+                hsv_image.rows - 2 * baseline - 10);
+
+        cv::putText(hsv_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
     }
 }
 
@@ -253,7 +253,7 @@ void HSVDetector2D::tune() {
         if (!tuning_windows_created) {
             createTuningWindows();
         }
-        cv::imshow(tuning_image_title, threshold_image);
+        cv::imshow(tuning_image_title, hsv_image);
         cv::waitKey(1);
     } else if (!tuning_on && tuning_windows_created) {
         // Destroy the tuning windows

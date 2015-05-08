@@ -172,13 +172,14 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    // TODO: Exit gracefully and ensure all shared resources are cleaned up!
+    // Join the processing and UI threads
     thread_group.join_all();
+    
+
+    std::cout << "Position combiner named \"" + combiner->get_name() + "\" is exiting." << std::endl;
     
     // Free heap memory allocated to combiner
     delete combiner;
-    
-    std::cout << "Position combiner named \"" + sink + "\" is exiting." << std::endl;
 
     // Exit
     return 0;

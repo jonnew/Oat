@@ -24,7 +24,7 @@ MeanPosition2D::MeanPosition2D(std::vector<std::string> position_source_names, s
 
 void MeanPosition2D::combineAndServePosition() {
 
-    // Get the current image
+    // Get current positions
     while (client_idx < position_sources.size()) {
         
         if (!(position_sources[client_idx]->getSharedObject(*source_positions[client_idx]))) {

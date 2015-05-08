@@ -28,23 +28,14 @@
 namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
-volatile bool running = true;
-
-void term(int) {
-    done = 1;
-}
 
 void run(Camera* camera) {
 
     while (!done) { // !done
-        if (running) {
             camera->grabMat();
             camera->undistortMat();
             camera->serveMat();
-        }
     }
-    
-    camera->stop();
 }
 
 void printUsage(po::options_description options) {
@@ -59,11 +50,6 @@ void printUsage(po::options_description options) {
 }
 
 int main(int argc, char *argv[]) {
-
-    // If ctrl-c is pressed, handle the signal with the term routine, which
-    // will attempt to clean up the shared memory before exiting by calling
-    // the object that is using shmem's destructor
-    signal(SIGINT, term);
 
     std::string sink;
     std::string type;
@@ -199,7 +185,6 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Camera named \"" + sink + "\" has started.\n"
               << "COMMANDS:\n"
-              << "  p: Pause/unpause.\n"
               << "  x: Exit.\n";
 
     // Two threads - one for user interaction, the other
@@ -215,11 +200,6 @@ int main(int argc, char *argv[]) {
 
         switch (user_input) {
 
-            case 'p':
-            {
-                running = !running;
-                break;
-            }
             case 'x':
             {
                 done = true;

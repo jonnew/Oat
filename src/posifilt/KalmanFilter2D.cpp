@@ -25,12 +25,12 @@
  * @param position_source_name The position measure SOURCE
  * @param position_sink_name The filtered position SINK
  */
-KalmanFilter2D::KalmanFilter2D(std::string position_source_name, std::string position_sink_name) :
+KalmanFilter2D::KalmanFilter2D(const std::string& position_source_name, const std::string& position_sink_name) :
 PositionFilter(position_source_name, position_sink_name)
 , dt(0.02)
-, kf(6, 3, 0)
-//, kf_predicted_state(6, 1, CV_32F)
-//, kf_meas(3, 1, CV_32F)
+, kf(4, 2, 0, CV_64F)
+, kf_predicted_state(4, 1, CV_64F)
+, kf_meas(2, 1, CV_64F)
 , found(false)
 , not_found_count_threshold(100) // TODO: good idea?
 , sig_accel(5.0)
@@ -48,8 +48,8 @@ bool KalmanFilter2D::grabPosition() {
 
         // Transform raw position into kf_meas vector
         if (raw_position.position_valid) {
-            kf_meas(0) = raw_position.position.x;
-            kf_meas(1) = raw_position.position.y;
+            kf_meas.at<double>(0) = raw_position.position.x;
+            kf_meas.at<double>(1) = raw_position.position.y;
             not_found_count = 0;
 
             // We are coming from a time step where there were no measurements for a
@@ -91,10 +91,10 @@ void KalmanFilter2D::filterPosition() {
 void KalmanFilter2D::serveFilteredPosition() {
 
     // Create a new Position object from the kf_state
-    filtered_position.position.x = kf_predicted_state(0);
-    filtered_position.velocity.x = kf_predicted_state(1);
-    filtered_position.position.y = kf_predicted_state(2);
-    filtered_position.velocity.y = kf_predicted_state(3);
+    filtered_position.position.x = kf_predicted_state.at<double>(0);
+    filtered_position.velocity.x = kf_predicted_state.at<double>(1);
+    filtered_position.position.y = kf_predicted_state.at<double>(2);
+    filtered_position.velocity.y = kf_predicted_state.at<double>(3);
 
     // This Position is only valid if the not_found_count_threshold has not
     // be exceeded
@@ -113,7 +113,7 @@ void KalmanFilter2D::serveFilteredPosition() {
     position_sink.pushObject(filtered_position);
 }
 
-void KalmanFilter2D::configure(std::string config_file, std::string config_key) {
+void KalmanFilter2D::configure(const std::string& config_file, const std::string& config_key) {
 
     cpptoml::table config;
 
@@ -140,11 +140,11 @@ void KalmanFilter2D::configure(std::string config_file, std::string config_key) 
             }
 
             if (this_config.contains("sigma_accel")) {
-                sig_accel = (float) (*this_config.get_as<double>("sigma_accel"));
+                sig_accel =  *this_config.get_as<double>("sigma_accel");
             }
 
             if (this_config.contains("sigma_noise")) {
-                sig_measure_noise = (float) (*this_config.get_as<double>("sigma_noise"));
+                sig_measure_noise = *this_config.get_as<double>("sigma_noise");
             }
 
             if (this_config.contains("tune")) {
@@ -176,10 +176,11 @@ void KalmanFilter2D::initializeFilter(void) {
     // The state is
     // [ x  x'  y  y']^T, where ' denotes the time derivative
     // Initialize the state using the current measurement
-    kf.statePre.at<float>(0) = kf_meas.at<float>(0);
-    kf.statePre.at<float>(1) = 0.0;
-    kf.statePre.at<float>(2) = kf_meas.at<float>(1);
-    kf.statePre.at<float>(3) = 0.0;
+    kf.statePre.at<double>(0) = kf_meas.at<double>(0);
+    kf.statePre.at<double>(1) = 0.0;
+    kf.statePre.at<double>(2) = kf_meas.at<double>(1);
+    kf.statePre.at<double>(3) = 0.0;
+}
 
 void KalmanFilter2D::initializeStaticMatracies() {
 
@@ -189,42 +190,42 @@ void KalmanFilter2D::initializeStaticMatracies() {
     // [ 0  0  1  dt ]
     // [ 0  0  0  1  ]
     cv::setIdentity(kf.transitionMatrix);
-    kf.transitionMatrix.at<float>(0, 1) = dt;
-    kf.transitionMatrix.at<float>(2, 3) = dt;
-    kf.transitionMatrix.at<float>(4, 5) = dt;
+    kf.transitionMatrix.at<double>(0, 1) = dt;
+    kf.transitionMatrix.at<double>(2, 3) = dt;
+    kf.transitionMatrix.at<double>(4, 5) = dt;
 
 
     // Observation Matrix (can only see position directly)
     // [ 1  0  0  0 ]
     // [ 0  0  1  0 ]
     cv::Mat::zeros(3, 6, CV_32F);
-    kf.measurementMatrix.at<float>(0, 0) = 1.0;
-    kf.measurementMatrix.at<float>(1, 2) = 1.0;
+    kf.measurementMatrix.at<double>(0, 0) = 1.0;
+    kf.measurementMatrix.at<double>(1, 2) = 1.0;
 
     // Noise covariance matrix (see pp13-15 of MWL.JPN.105.02.002 for derivation)
     // [ dt^4/2 dt^2/3 		     ] 
     // [ dt^2/3 dt^2   		     ]
     // [               dt^4/2 dt^2/3 ] * sigma_accel^2
     // [               dt^2/3 dt^2   ] 
-    kf.processNoiseCov.at<float>(0, 0) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
-    kf.processNoiseCov.at<float>(0, 1) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<float>(0, 2) = 0.0;
-    kf.processNoiseCov.at<float>(0, 3) = 0.0;
+    kf.processNoiseCov.at<double>(0, 0) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
+    kf.processNoiseCov.at<double>(0, 1) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<double>(0, 2) = 0.0;
+    kf.processNoiseCov.at<double>(0, 3) = 0.0;
     
-    kf.processNoiseCov.at<float>(1, 0) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<float>(1, 1) = sig_accel * sig_accel * (dt * dt);
-    kf.processNoiseCov.at<float>(1, 2) = 0.0;
-    kf.processNoiseCov.at<float>(1, 3) = 0.0;
+    kf.processNoiseCov.at<double>(1, 0) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<double>(1, 1) = sig_accel * sig_accel * (dt * dt);
+    kf.processNoiseCov.at<double>(1, 2) = 0.0;
+    kf.processNoiseCov.at<double>(1, 3) = 0.0;
     
-    kf.processNoiseCov.at<float>(2, 0) = 0.0;
-    kf.processNoiseCov.at<float>(2, 1) = 0.0;
-    kf.processNoiseCov.at<float>(2, 2) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
-    kf.processNoiseCov.at<float>(2, 3) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<double>(2, 0) = 0.0;
+    kf.processNoiseCov.at<double>(2, 1) = 0.0;
+    kf.processNoiseCov.at<double>(2, 2) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
+    kf.processNoiseCov.at<double>(2, 3) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
     
-    kf.processNoiseCov.at<float>(3, 0) = 0.0;
-    kf.processNoiseCov.at<float>(3, 1) = 0.0;
-    kf.processNoiseCov.at<float>(3, 2) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<float>(3, 3) = sig_accel * sig_accel * (dt * dt);
+    kf.processNoiseCov.at<double>(3, 0) = 0.0;
+    kf.processNoiseCov.at<double>(3, 1) = 0.0;
+    kf.processNoiseCov.at<double>(3, 2) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf.processNoiseCov.at<double>(3, 3) = sig_accel * sig_accel * (dt * dt);
     
     // Measurement noise covariance
     // [ sig_x^2  0 ]
@@ -242,8 +243,8 @@ void KalmanFilter2D::tune() {
         }
 
         // Use the new parameters to create new static filter matracies
-        sig_accel = ((float) sig_accel_tune);
-        sig_measure_noise = ((float) sig_measure_noise_tune);
+        sig_accel = ((double) sig_accel_tune);
+        sig_measure_noise = ((double) sig_measure_noise_tune);
         initializeStaticMatracies();
 
         cv::Mat tuning_canvas(canvas_hw, canvas_hw, CV_8UC3);
@@ -279,7 +280,7 @@ void KalmanFilter2D::createTuningWindows() {
     tuning_windows_created = true;
 }
 
-void KalmanFilter2D::drawPosition(cv::Mat& canvas, const shmem::Position& position) {
+void KalmanFilter2D::drawPosition(cv::Mat& canvas, const datatypes::Position2D& position) {
 
     float x = position.position.x * draw_scale + (float) canvas_hw / 2.0;
     float y = position.position.y * draw_scale + (float) canvas_hw / 2.0;

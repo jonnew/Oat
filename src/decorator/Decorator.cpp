@@ -20,49 +20,53 @@
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <opencv2/opencv.hpp>
 
-Decorator::Decorator(std::string position_source_name,
-        std::string frame_source_name,
-        std::string frame_sink_name) :
-  frame_source(frame_source_name)
-, position_source(position_source_name)
+Decorator::Decorator(const std::vector<std::string>& position_source_names,
+                     const std::string& frame_source_name,
+                     const std::string& frame_sink_name) :
+  name(frame_sink_name)
+, frame_source(frame_source_name)
 , frame_sink(frame_sink_name)
-, current_processing_stage(0) {
+, have_current_frame(false) {
 
-    frame_source.findSharedMat();
-    position_source.findSharedObject();
+    for (auto &source_name : position_source_names) {
+
+        position_sources.push_back(new shmem::SMClient<datatypes::Position2D>(source_name));
+        source_positions.push_back(new datatypes::Position2D);
+    }
 }
 
 void Decorator::decorateAndServeImage() {
 
-    // Get the current image
-    switch (current_processing_stage) {
-        case 0:
-
-            if (!frame_source.getSharedMat(image)) {
-                return;
-            }
-
-            // Fall through
-            current_processing_stage = 1;
-
-        case 1:
-            // Get the current position
-            if (!position_source.getSharedObject(position)) {
-                return;
-            }
-
-            // Fall through
-            current_processing_stage = 0;
+    // Get the image to be decorated
+    // TODO: for some reason, this must come before reading the current positions.
+    // If it comes, after, a deadlock will result. I don't know why, which is not
+    // good.
+    if (!frame_source.getSharedMat(image) && !have_current_frame) {
+        return;
     }
+    have_current_frame = true;
+    
+    
+    // Get the current positions
+    while (client_idx < position_sources.size()) {
+
+        if (!(position_sources[client_idx]->getSharedObject(*source_positions[client_idx]))) {
+            return;
+        }
+
+        client_idx++;
+    }
+
+    // Reset the position client read counter
+    client_idx = 0;
+    have_current_frame = false;
 
     // Decorated image
     drawSymbols();
-    
+
     // Serve the finished product
     frame_sink.pushMat(image);
-    
 }
-
 
 void Decorator::drawSymbols() {
 
@@ -74,26 +78,33 @@ void Decorator::drawSymbols() {
 // TODO: project 3rd dimension
 
 void Decorator::drawPosition() {
-    if (position.position_valid) {
-        cv::circle(image, position.position, position_circle_radius, cv::Scalar(0, 0, 255), 2);
+
+    for (auto position : source_positions) {
+        if (position->position_valid) {
+            cv::circle(image, position->position, position_circle_radius, cv::Scalar(0, 0, 255), 2);
+        }
     }
 }
 
 // TODO: project 3rd dimension
 
 void Decorator::drawHeadDirection() {
-    if (position.position_valid && position.head_direction_valid) {
-        cv::Point2d start = position.position - (head_dir_line_length * position.head_direction);
-        cv::Point2d end = position.position + (head_dir_line_length * position.head_direction);
-        cv::line(image, start, end, cv::Scalar(255, 255, 255), 2, 8);
+    for (auto position : source_positions) {
+        if (position->position_valid && position->head_direction_valid) {
+            cv::Point2d start = position->position - (head_dir_line_length * position->head_direction);
+            cv::Point2d end = position->position + (head_dir_line_length * position->head_direction);
+            cv::line(image, start, end, cv::Scalar(255, 255, 255), 2, 8);
+        }
     }
 }
 
 // TODO: project 3rd dimension
 
 void Decorator::drawVelocity() {
-    if (position.velocity_valid && position.position_valid) {
-        cv::Point2d end = position.position + (velocity_scale_factor * position.velocity);
-        cv::line(image, position.position, end, cv::Scalar(0, 255, 0), 2, 8);
+    for (auto position : source_positions) {
+        if (position->velocity_valid && position->position_valid) {
+            cv::Point2d end = position->position + (velocity_scale_factor * position->velocity);
+            cv::line(image, position->position, end, cv::Scalar(0, 255, 0), 2, 8);
+        }
     }
 }

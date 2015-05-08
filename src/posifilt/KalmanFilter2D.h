@@ -23,8 +23,9 @@
 #include "PositionFilter.h"
 
 class KalmanFilter2D : public PositionFilter {
+    
 public:
-    KalmanFilter2D(std::string position_source_name, std::string position_sink_name);
+    KalmanFilter2D(const std::string& position_source_name, const std::string& position_sink_name);
 
     bool grabPosition(void);
     void filterPosition(void);
@@ -36,19 +37,19 @@ public:
      * @param config_key Configuration file key specifying the table used to
      * configure the Kalman filter.
      */
-    void configure(std::string config_file, std::string config_key);
+    void configure(const std::string& config_file, const std::string& config_key);
 
 private:
     // Kalman state estimate and measurement vectors
-    cv::Matx41d kf_predicted_state;
-    cv::Matx21d kf_meas;
+    cv::Mat kf_predicted_state;
+    cv::Mat kf_meas;
 
     // Sample period
-    float dt;
+    double dt;
 
     // Standard deviation of assumed random accelerations.
-    float sig_accel;
-    float sig_measure_noise;
+    double sig_accel;
+    double sig_measure_noise;
 
     // Parameter tuning
     bool tuning_windows_created;
@@ -68,7 +69,7 @@ private:
     void initializeFilter(void);
     void initializeStaticMatracies(void);
     void createTuningWindows(void);
-    void drawPosition(cv::Mat& canvas, const shmem::Position& position);
+    void drawPosition(cv::Mat& canvas, const datatypes::Position2D& position);
 };
 
 #endif	/* KALMANFILTER2D_H */

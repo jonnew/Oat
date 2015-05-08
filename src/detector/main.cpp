@@ -47,7 +47,6 @@ void run(Detector2D* detector) {
 
     while (!done) {
         detector->findObjectAndServePosition();
-        
     }
 }
 

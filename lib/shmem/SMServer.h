@@ -178,8 +178,8 @@ namespace shmem {
 
                 // Perform writes in shared memory 
                 shared_object->set_value(value);
-                tick_buffer.pop(shared_object->time_stamp); 
-                shared_object->index = write_index++;
+                tick_buffer.pop(shared_object->sample_number); 
+                shared_object->sample_index = write_index++;
 
                 shared_object->mutex.post();
                 /* END CRITICAL SECTION */

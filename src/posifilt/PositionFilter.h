@@ -21,23 +21,20 @@
 
 #include "../../lib/shmem/SMServer.h"
 #include "../../lib/shmem/SMClient.h"
-#include "../../lib/datatypes/Position.h"
+#include "../../lib/datatypes/Position2D.h"
 
 
-class PositionFilter {
+class PositionFilter { // TODO: datatypes::Position2D -> Position
 public:
 
-    PositionFilter(std::string position_source_name, std::string position_sink_name) :
+    PositionFilter(const std::string& position_source_name, const std::string& position_sink_name) :
     name(position_sink_name)
     , position_source(position_source_name)
     , position_sink(position_sink_name)
     , canvas_hw(500.0)
     , canvas_border(100.0)
     , tuning_image_title(position_sink_name + "_tuning")
-    , slider_title(position_sink_name + "_sliders") {
-
-        position_source.findSharedObject();
-    }
+    , slider_title(position_sink_name + "_sliders") { }
 
     // Execute filtering operation
 
@@ -50,7 +47,7 @@ public:
     }
 
     // Position filters must be configurable via file
-    virtual void configure(std::string config_file, std::string config_key) = 0;
+    virtual void configure(const std::string& config_file, const std::string&  config_key) = 0;
 
     // Accessors
 
@@ -74,10 +71,10 @@ protected:
     const float canvas_border;
 
     std::string name;
-    shmem::SMClient<shmem::Position> position_source;
-    shmem::Position raw_position;
-    shmem::SMServer<shmem::Position> position_sink;
-    shmem::Position filtered_position;
+    shmem::SMClient<datatypes::Position2D> position_source;
+    datatypes::Position2D raw_position;
+    shmem::SMServer<datatypes::Position2D> position_sink;
+    datatypes::Position2D filtered_position;
 
     // tuning on or off
     std::string tuning_image_title, slider_title;
@@ -95,7 +92,7 @@ protected:
     virtual void serveFilteredPosition(void) = 0;
     
     // Draw the position on a cv::Mat for tuning purposes
-    virtual void drawPosition(cv::Mat& canvas, const datatypes::Position& position) = 0;
+    virtual void drawPosition(cv::Mat& canvas, const datatypes::Position2D& position) = 0;
 };
 
 #endif	/* POSITIONFILTER_H */
