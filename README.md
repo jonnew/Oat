@@ -9,11 +9,9 @@ cd boost_1_58_0
 ./bootstrap.sh
 sudo ./b2 install
 ```
-####Terminator (for running scripts in playpen)
+###Terminator (for running scripts in playpen)
 ```bash
 sudo apt-get install python-keybindings terminator
-mkdir /home/<user>/.config/terminator/
-touch /home/<user>/.config/terminator/config
 terminator
 ```
 - Right click terminator window and select `preferences` and then under the `global` tab make sure `DBus server` is ticked.
