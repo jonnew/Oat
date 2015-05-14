@@ -26,10 +26,6 @@ namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
 
-void term(int) {
-    done = 1;
-}
-
 void run(Viewer* viewer) {
  
     while (!done) {
@@ -38,21 +34,19 @@ void run(Viewer* viewer) {
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: viewer [OPTIONS]\n";
-    std::cout << "   or: viewer SOURCE\n";
-    std::cout << "View the output of a SOURCE of type SMServer<SharedCVMatHeader>\n";
-    std::cout << options << "\n";
+    std::cout << "Usage: viewer [OPTIONS]\n"
+    		  << "   or: viewer [CONFIGURATION] SOURCE\n"
+    		  << "View the output of a SOURCE of type SMServer<SharedCVMatHeader>\n"
+    		  << "Optionally, save the video stream to a file.\n"
+    		  << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
 
-    // If ctrl-c is pressed, handle the signal with the term routine, which
-    // will attempt to clean up the shared memory before exiting by calling
-    // the object that is using shmem's destructor
-    signal(SIGINT, term);
-
     // The image source to which the viewer will be attached
     std::string source;
+    std::string file_name;
+    bool append_date;
     
     try {
 
@@ -62,7 +56,15 @@ int main(int argc, char *argv[]) {
                 ("version,v", "Print version information.")
                 ;
         
-        po::options_description hidden("HIDDEN OPTIONS");
+        po::options_description hidden("CONFIGURATION");
+        hidden.add_options()
+                ("file,f", po::value<std::string>(&file_name),
+                "The path to save the video stream to."
+                ("date,d", po::value<std::string>(&append_date),
+                "If specifed, YYYY-MM-DD-HH-mm-ss_ will be prepended to the filename.")
+               ;
+
+		po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
                 ("source", po::value<std::string>(&source),
                 "The name of the server that supplies images to view."

@@ -34,11 +34,12 @@ void run(Decorator* decorator) {
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: decorate [OPTIONS]\n";
-    std::cout << "   or: decorate POSITION_SOURCES IMAGE_SOURCE IMAGE_SINK\n";
-    std::cout << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCES.\n";
-    std::cout << "Publish decorated image to IMAGE_SINK.\n";
-    std::cout << options << "\n";
+    std::cout << "Usage: decorate [OPTIONS]\n"
+    		  << "   or: decorate [CONFIGURATION] POSITION_SOURCES IMAGE_SOURCE IMAGE_SINK\n"
+    		  << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCES.\n"
+    		  << "Optionally publish decorated image to IMAGE_SINK.\n"
+    		  << "Optionally save video and position stream to file.\n"
+    		  << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
@@ -47,6 +48,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> sources;
     std::string image_source;
     std::string sink;
+    std::string save_path;
+    bool append_date;
 
     try {
 
@@ -55,6 +58,14 @@ int main(int argc, char *argv[]) {
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
+
+        po::options_description hidden("CONFIGURATION");
+        hidden.add_options()
+                ("file,f", po::value<std::string>(&save_path)
+                "The path to which the video stream and position information will be saved.")
+                ("date,d", po::value<bool>(&append_date),
+                "If specifed, YYYY-MM-DD-HH-mm-ss_ will be prepended to the filename.")
+               ;
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
