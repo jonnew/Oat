@@ -22,20 +22,18 @@
 #include "../../lib/datatypes/Position2D.h"
 
 class Recorder {     
-
 public:
-    
+
     Recorder(const std::vector<std::string>& save_path, bool append_date);
 
-    void writeFrameToVideo(const cv::Mat&); 
-    void writePositionsToFile(const std::vector<datatypes::Position2D>&); 
+    void writeFrameToVideo(const cv::Mat&);
+    void writePositionsToFile(const std::vector<datatypes::Position2D>&);
 
 private:
 
-	std::string full_path;
+    std::string full_path;
 
-	void openFile(const std::vector<std::string>& save_path, bool append_date);
-;
+    void openFile(const std::vector<std::string>& save_path, bool append_date);
 };
 
 // RECORDER_H

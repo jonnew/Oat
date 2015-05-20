@@ -1,7 +1,27 @@
 ##Installation
 
-###Boost
+###Flycapture SDK (If point-grey camera is used)
+- Go to [point-grey website](www.ptgrey.com)
+- Download the FlyCapture2 SDK (version > 2.7.3)
+- Extract the archive and use the `install_flycapture.sh` script to install the SDK on your computer.
 
+#### Connecting to point-grey PGE camera in Linux
+- First you must assign your camera a static IP address. The easiest way to do this is to use a Windows machine to run the 
+- The ipv4 method should be set to manual.
+- Finally, you must the PG POE gigabit interface to (1) have the same network prefix and (2) be on the same subnet as your Gigabit camera. For instance, assume that your camera was assigned the following private ipv4 configuration:
+  - Camera IP: 192.168.0.1
+  - Subnet mask: 255.255.255.0
+  In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
+  - POE gigabit card IP: 192.168.0.100
+  - Subnet mask: 255.255.255.0
+- Not that if you want to add another network interface for another camera, it must exist on a separate subnet! For instance, we could repeat the above configuration steps using the following settings:
+  - Camera IP: 192.168.1.1
+  - Subnet mask: 255.255.255.0
+In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
+  - POE gigabit card IP: 192.168.1.100
+  - Subnet mask: 255.255.255.0
+
+###Boost
 ```bash
 wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
 tar -xf download
@@ -9,6 +29,26 @@ cd boost_1_58_0
 ./bootstrap.sh
 sudo ./b2 install
 ```
+
+###OpenCV
+```bash
+wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
+unzip opencv.zip -d opencv
+cd opencv 
+mkdir release
+cd release
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
+make
+sudo make install
+```
+
+####RapidJSON and cpptoml
+Starting in the simple-tracker root directory,
+```bash
+cd lib
+./updatelibs.sh
+```
+
 ###Terminator (for running scripts in playpen)
 ```bash
 sudo apt-get install python-keybindings terminator
@@ -73,19 +113,4 @@ terminator
   - Shared memory (no good for remote tracker)
   - TCP/IP with thread for each client 
 
-### Connecting to point-grey PGE camera in Linux
 
-- First you must assign your camera a static IP address. The easiest way to do this is to use a Windows machine to run the 
-- The ipv4 method should be set to manual.
-- Finally, you must the PG POE gigabit interface to (1) have the same network prefix and (2) be on the same subnet as your Gigabit camera. For instance, assume that your camera was assigned the following private ipv4 configuration:
-  - Camera IP: 192.168.0.1
-  - Subnet mask: 255.255.255.0
-  In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
-  - POE gigabit card IP: 192.168.0.100
-  - Subnet mask: 255.255.255.0
-- Not that if you want to add another network interface for another camera, it must exist on a separate subnet! For instance, we could repeat the above configuration steps using the following settings:
-  - Camera IP: 192.168.1.1
-  - Subnet mask: 255.255.255.0
-In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
-  - POE gigabit card IP: 192.168.1.100
-  - Subnet mask: 255.255.255.0

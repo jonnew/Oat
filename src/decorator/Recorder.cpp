@@ -20,12 +20,12 @@
 
 Recorder::Recorder(const std::vector<std::string>& save_path, bool append_date) {
 
-	openFile(save_path, append_date);
+    openFile(save_path, append_date);
 }
 
-Recorder::writeFrameToVideo(const cv::Mat&); 
-Recorder::writePositionsToFile(const std::vector<datatypes::Position2D>&); 
+Recorder::writeFrameToVideo(const cv::Mat&);
+Recorder::writePositionsToFile(const std::vector<datatypes::Position2D>&);
 
 Recorder::openFile() {
-	//full_path = ...	
+    //full_path = ...	
 }

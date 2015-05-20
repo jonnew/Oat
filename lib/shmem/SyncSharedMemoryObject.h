@@ -54,7 +54,7 @@ namespace shmem {
 
         // Write/read access to shared object
         void set_value(T value) { object = value; }
-        T get_value(void) const { return object; } // Read-only (for clients)
+        T get_value(void) const { return object; } // Read-only (for clients, forces copy if they want to mess with object)
 
     private:
         

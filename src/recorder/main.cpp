@@ -14,7 +14,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "Decorator.h"
+#include "Recorder.h"
 
 #include <string>
 #include <signal.h>
@@ -26,30 +26,27 @@ namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
 
-void run(Decorator* decorator) {
+void run(Recorder* recorder) {
 
     while (!done) {
-        decorator->decorateAndServeImage();
+        recorder->writeStreams();
     }
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: decorate [OPTIONS]\n"
-              << "   or: decorate [CONFIGURATION] POSITION_SOURCES IMAGE_SOURCE IMAGE_SINK\n"
-              << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCES.\n"
-              << "Optionally publish decorated image to IMAGE_SINK.\n"
-              << "Optionally save video and position stream to file.\n"
+    std::cout << "Usage: record [OPTIONS]\n"
+              << "   or: record [CONFIGURATION]\n"
+              << "Record frame or position streams.\n"
               << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
 
     // The image source to which the viewer will be attached
-    std::vector<std::string> sources;
-    std::string image_source;
-    std::string sink;
+    std::vector<std::string> frame_sources;
+    std::vector<std::string> position_sources;
     std::string save_path;
-    bool append_date;
+    bool append_date = false;
 
     try {
 
@@ -61,45 +58,31 @@ int main(int argc, char *argv[]) {
 
         po::options_description configuration("CONFIGURATION");
         configuration.add_options()
-                ("file,f", po::value<std::string>(&save_path)
-                "The path to which the video stream and position information will be saved.")
-                ("date,d", po::value<bool>(&append_date),
+                ("folder,f", po::value<std::string>(&save_path),
+                "The path to the folder to which the video stream and position information will be saved.")
+                ("date,d",
                 "If specified, YYYY-MM-DD-HH-mm-ss_ will be prepended to the filename.")
-                ;
-
-        po::options_description hidden("HIDDEN OPTIONS");
-        hidden.add_options()
-                ("positionsources", po::value< std::vector<std::string> >(),
+                ("positionsources,p", po::value< std::vector<std::string> >(),
                 "The name of the server(s) that supply object position information."
                 "The server(s) must be of type SMServer<Position>\n")
-                ("imagesource", po::value<std::string>(&image_source),
-                "The name of the server that supplies images to decorate."
-                "The server must be of type SMServer<SharedCVMatHeader>\n")
-                ("sink", po::value<std::string>(&sink),
-                "The name of the sink to which decorated images will be published."
+                ("imagesources,i", po::value< std::vector<std::string> >(),
+                "The name of the server(s) that supplies images to save to video."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
                 ;
 
-        po::positional_options_description positional_options;
-
-        // If not overridden by explicit --imagesource or --sink, 
-        // last positional arguments are imagesource and sink in that order
-        positional_options.add("positionsources", -1);
-
         po::options_description all_options("ALL OPTIONS");
-        all_options.add(options).add(configuration).add(hidden);
+        all_options.add(options).add(configuration);
 
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
                 .options(all_options)
-                .positional(positional_options)
                 .run(),
                 variable_map);
         po::notify(variable_map);
 
         // Use the parsed options
         if (variable_map.count("help")) {
-            printUsage(options);
+            printUsage(all_options);
             return 0;
         }
 
@@ -110,28 +93,29 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        if (!variable_map.count("positionsources")) {
-            printUsage(options);
-            std::cout << "Error: at least a single POSITION_SOURCE must be specified. Exiting.\n";
+        if (!variable_map.count("positionsources") && !variable_map.count("imagesources")) {
+            printUsage(all_options);
+            std::cout << "Error: at least a single POSITION_SOURCE or FRAME_SOURCE must be specified. Exiting.\n";
             return -1;
         }
 
-        // May contain imagesource and sink information!
-        sources = variable_map["positionsources"].as< std::vector<std::string> >();
-
-        if (!variable_map.count("imagesource") && !variable_map.count("sink")) {
-            sink = sources.back();
-            sources.pop_back();
-
-            image_source = sources.back();
-            sources.pop_back();
-        } else if (variable_map.count("imagesource") && !variable_map.count("sink")) {
-            sink = sources.back();
-            sources.pop_back();
-        } else if (!variable_map.count("imagesource") && variable_map.count("sink")) {
-            image_source = sources.back();
-            sources.pop_back();
+        if (!variable_map.count("folder") ) {
+            save_path = ".";
+            std::cout << "Warning: saving files to the current directory.\n";
         }
+
+        // May contain imagesource and sink information!]
+        if (variable_map.count("positionsources")) {
+            position_sources = variable_map["positionsources"].as< std::vector<std::string> >();
+        }
+        
+        if (variable_map.count("imagesources")) {
+            frame_sources = variable_map["imagesources"].as< std::vector<std::string> >();
+        }
+        
+        if (variable_map.count("date")) {
+            append_date = true;
+        } 
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -140,17 +124,17 @@ int main(int argc, char *argv[]) {
         std::cerr << "Exception of unknown type! " << std::endl;
     }
 
-    std::cout << "Decorator named \"" + sink + "\" has started.\n";
+    std::cout << "Recorder started.\n";
     std::cout << "COMMANDS:\n";
     std::cout << "  x: Exit.\n";
 
     // Make the decorator
-    Decorator decorator(sources, image_source, sink);
+    Recorder recorder(position_sources, frame_sources, save_path, append_date);
 
     // Two threads - one for user interaction, the other
     // for processing
     boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &decorator));
+    thread_group.create_thread(boost::bind(&run, &recorder));
     sleep(1);
 
     // Start the user interface
@@ -163,7 +147,6 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
-                decorator.stop();
                 break;
             }
             default:
@@ -175,7 +158,7 @@ int main(int argc, char *argv[]) {
     // Join processing and UI threads
     thread_group.join_all();
 
-    std::cout << "Decorator named \"" + decorator.get_name() + "\" is exiting." << std::endl;
+    std::cout << "Recorder is exiting." << std::endl;
 
     // Exit
     return 0;

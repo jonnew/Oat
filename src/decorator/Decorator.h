@@ -23,6 +23,7 @@
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/rapidjson/"
 
 class Decorator { // TODO: Position2D -> Position somehow
     
@@ -32,6 +33,7 @@ public:
               const std::string& frame_source_name,
               const std::string& frame_sink_name);
 
+    ~Decorator(void);
     
     void decorateAndServeImage(void);
     void stop(void) { frame_sink.set_running(false); }

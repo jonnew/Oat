@@ -27,7 +27,7 @@ namespace po = boost::program_options;
 volatile sig_atomic_t done = 0;
 
 void run(Viewer* viewer) {
- 
+
     while (!done) {
         viewer->showImage();
     }
@@ -35,10 +35,10 @@ void run(Viewer* viewer) {
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: viewer [OPTIONS]\n"
-    		  << "   or: viewer [CONFIGURATION] SOURCE\n"
-    		  << "View the output of a SOURCE of type SMServer<SharedCVMatHeader>\n"
-    		  << "Optionally, save the video stream to a file.\n"
-    		  << options << "\n";
+            << "   or: viewer [CONFIGURATION] SOURCE\n"
+            << "View the output of a SOURCE of type SMServer<SharedCVMatHeader>\n"
+            << "Optionally, save the video stream to a file.\n"
+            << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     std::string source;
     std::string file_name;
     bool append_date;
-    
+
     try {
 
         po::options_description options("OPTIONS");
@@ -55,25 +55,25 @@ int main(int argc, char *argv[]) {
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
-        
-        po::options_description hidden("CONFIGURATION");
-        hidden.add_options()
-                ("file,f", po::value<std::string>(&file_name),
-                "The path to save the video stream to."
-                ("date,d", po::value<std::string>(&append_date),
-                "If specifed, YYYY-MM-DD-HH-mm-ss_ will be prepended to the filename.")
-               ;
 
-		po::options_description hidden("HIDDEN OPTIONS");
+        po::options_description config("CONFIGURATION");
+        config.add_options()
+                ("file,f", po::value<std::string>(&file_name),
+                "The path to save the video stream to.")
+                ("date,d", po::value<bool>(&append_date),
+                "If specified, YYYY-MM-DD-HH-mm-ss_ will be prepended to the filename.")
+                ;
+
+        po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
                 ("source", po::value<std::string>(&source),
                 "The name of the server that supplies images to view."
                 "The server must be of type server<SharedCVMatHeader>\n")
                 ;
-        
+
         po::positional_options_description positional_options;
         positional_options.add("source", -1);
-        
+
         po::options_description all_options("ALL OPTIONS");
         all_options.add(options).add(hidden);
 
@@ -103,28 +103,28 @@ int main(int argc, char *argv[]) {
             std::cout << "Error: a SOURCE must be specified. Exiting.\n";
             return -1;
         }
-        
-        
+
+
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     } catch (...) {
         std::cerr << "Exception of unknown type! " << std::endl;
     }
-    
+
     // Make the viewer
     Viewer viewer(source);
-    
+
     std::cout << "Viewer has begun listening to source \"" + source + "\".\n";
     std::cout << "COMMANDS:\n";
     std::cout << "  x: Exit.\n";
-    
+
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
     thread_group.create_thread(boost::bind(&run, &viewer));
     sleep(1);
-    
+
     // Start the user interface
     while (!done) {
 

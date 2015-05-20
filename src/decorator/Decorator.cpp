@@ -21,17 +21,26 @@
 #include <opencv2/opencv.hpp>
 
 Decorator::Decorator(const std::vector<std::string>& position_source_names,
-                     const std::string& frame_source_name,
-                     const std::string& frame_sink_name) :
-  name(frame_sink_name)
+        const std::string& frame_source_name,
+        const std::string& frame_sink_name) :
+name(frame_sink_name)
 , frame_source(frame_source_name)
 , frame_sink(frame_sink_name)
+, client_idx(0)
 , have_current_frame(false) {
 
     for (auto &source_name : position_source_names) {
 
         position_sources.push_back(new shmem::SMClient<datatypes::Position2D>(source_name));
         source_positions.push_back(new datatypes::Position2D);
+    }
+}
+
+Decorator::~Decorator() {
+
+    // Release resources
+    for (auto &position_source : position_sources) {
+        delete position_source;
     }
 }
 
@@ -45,8 +54,8 @@ void Decorator::decorateAndServeImage() {
         return;
     }
     have_current_frame = true;
-    
-    
+
+
     // Get the current positions
     while (client_idx < position_sources.size()) {
 
