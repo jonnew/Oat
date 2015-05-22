@@ -29,72 +29,87 @@
 
 #include "SharedCVMatHeader.h"
 
-// TODO: Find a why to integrate this with the must much general purpose SMServer
-class MatServer {
-    
-public:
-    MatServer(const std::string& sink_name);
-    MatServer(const MatServer& orig);
-    virtual ~MatServer();
-    
-    void createSharedMat(const cv::Mat& model); 
-    void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
+namespace shmem {
 
-    // Accessors  // TODO: Assess whether you really need these and get rid of them if not. 
-    bool is_running(void) { return running; };
-    void set_running(bool value) { running = value; } 
-    std::string get_name(void) { return name; }
+    // TODO: Find a why to integrate this with the must much general purpose SMServer
 
-    void set_homography(const cv::Matx33f& value) {
-        homography_valid = true;
-        homography = value;
-    }
-    
-    bool is_shared_object_created(void) { return shared_object_created; }
-    
-private:
-    
-    // Name of this server
-    std::string name;
-    
-    // Buffer
-    static const int MATSERVER_BUFFER_SIZE = 100;
-    boost::lockfree::spsc_queue
-      <cv::Mat, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
-    boost::lockfree::spsc_queue
-      <unsigned int, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > tick_buffer;
+    class MatServer {
+    public:
+        MatServer(const std::string& sink_name);
+        MatServer(const MatServer& orig);
+        virtual ~MatServer();
 
-    // Server threading
-    std::thread server_thread;
-    std::mutex server_mutex;
-    std::condition_variable serve_condition;
-    std::atomic<bool> running; // Server running, can be accessed from multiple threads
-    shmem::SharedCVMatHeader* shared_mat_header;
-    bool shared_object_created;
+        void createSharedMat(const cv::Mat& model);
+        void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
 
-    int data_size; // Size of raw mat data in bytes
-    
-    const std::string shmem_name, shobj_name;
-    boost::interprocess::managed_shared_memory shared_memory; 
-    
-    // Homography from pixels->world
-    bool homography_valid;
-    cv::Matx33d homography;
-    
-    /**
-     * Synchronized shared memory publication.
-     * @param mat
-     */
-    void serveMatFromBuffer(void);
-    
-    /**
-     * Auto post to this servers own semaphore.wait() to allow threads to unblock
-     * in order to ensure proper object destruction.
-     * @param mat
-     */
-    void notifySelf(void);
+        // Accessors  // TODO: Assess whether you really need these and get rid of them if not. 
 
-};
+        bool is_running(void) {
+            return running;
+        };
+
+        void set_running(bool value) {
+            running = value;
+        }
+
+        std::string get_name(void) {
+            return name;
+        }
+
+        void set_homography(const cv::Matx33f& value) {
+            homography_valid = true;
+            homography = value;
+        }
+
+        bool is_shared_object_created(void) {
+            return shared_object_created;
+        }
+
+    private:
+
+        // Name of this server
+        std::string name;
+
+        // Buffer
+        static const int MATSERVER_BUFFER_SIZE = 100;
+        boost::lockfree::spsc_queue
+        <cv::Mat, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
+        boost::lockfree::spsc_queue
+        <unsigned int, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > tick_buffer;
+
+        // Server threading
+        std::thread server_thread;
+        std::mutex server_mutex;
+        std::condition_variable serve_condition;
+        std::atomic<bool> running; // Server running, can be accessed from multiple threads
+        shmem::SharedCVMatHeader* shared_mat_header;
+        bool shared_object_created;
+
+        int data_size; // Size of raw mat data in bytes
+
+        const std::string shmem_name, shobj_name;
+        boost::interprocess::managed_shared_memory shared_memory;
+
+        // Homography from pixels->world
+        bool homography_valid;
+        cv::Matx33d homography;
+
+        /**
+         * Synchronized shared memory publication.
+         * @param mat
+         */
+        void serveMatFromBuffer(void);
+
+        /**
+         * Auto post to this servers own semaphore.wait() to allow threads to unblock
+         * in order to ensure proper object destruction.
+         * @param mat
+         */
+        void notifySelf(void);
+
+    };
+
+} // namespace shmem
 
 #endif	/* MATSERVER_H */
 

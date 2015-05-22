@@ -49,4 +49,4 @@ namespace shmem {
         mat.create(mat_size, type);
         mat.data = static_cast<uchar*> (shared_mem.get_address_from_handle(handle));
     }
-}
+} // namespace shmem

@@ -20,131 +20,134 @@
 #include <boost/thread/thread_time.hpp>
 #include <boost/thread.hpp>
 
-using namespace boost::interprocess;
+namespace shmem {
 
-MatClient::MatClient(const std::string source_name) :
-  name(source_name)
-, shmem_name(source_name + "_sh_mem")
-, shobj_name(source_name + "_sh_obj")
-, shared_object_found(false)
-, mat_attached_to_header(false)
-, read_barrier_passed(false) { 
+     namespace bip = boost::interprocess;
 
-    findSharedMat();
-}
+    MatClient::MatClient(const std::string source_name) :
+      name(source_name)
+    , shmem_name(source_name + "_sh_mem")
+    , shobj_name(source_name + "_sh_obj")
+    , shared_object_found(false)
+    , mat_attached_to_header(false)
+    , read_barrier_passed(false) {
 
-MatClient::~MatClient() {
-
-    detachFromShmem();
-}
-
-/**
- * Use shmem_name and shobj_name to find (or create) the requested shared cvmat
- * @return 
- */
-void MatClient::findSharedMat() {
-
-    try {
-        
-        // If the client creates the shared memory, it does not allocate room for the cv::Mat data
-        // The server will need to resize the shared memory to make room.
-        //size_t total_bytes = sizeof (shmem::SharedCVMatHeader) + 1024; 
-
-        // TODO: This is a complete HACK until I can figure out how to resize 
-        // the managed shared memory segment on the server side without 
-        // causing seg faults due to bad pointers on the client side.
-        size_t total_bytes = 1024e4;
-
-        shared_memory = managed_shared_memory(open_or_create, shmem_name.c_str(), total_bytes);
-        shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
-        shared_object_found = true;
-
-    } catch (interprocess_exception& ex) {
-        std::cerr << ex.what() << '\n';
-        exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
+        findSharedMat();
     }
 
-    // Make sure everyone using this shared memory knows that another client
-    // has joined
-    shared_mat_header->mutex.wait();
-    shared_mat_header->number_of_clients++;
-    number_of_clients = shared_mat_header->number_of_clients;
-    shared_mat_header->mutex.post();
+    MatClient::~MatClient() {
 
-}
+        detachFromShmem();
+    }
 
-/**
- * Get the cv::Mat object from shared memory
- * @param value The cv::Mat object to be copied from shared memory
- * @return True if the result is (1) valid and (2) successfully obeyed all 
- * interprocess synchronization mechanisms. False if there were timeouts during
- * wait() calls, meaning that the cv::Mat objects has possibly not been assigned
- * or that proceeding to process in a loop that will recall this function may result
- * in server/client desynchronization.
- */
-bool MatClient::getSharedMat(cv::Mat& value) {
+    /**
+     * Use shmem_name and shobj_name to find (or create) the requested shared cvmat
+     * @return 
+     */
+    void MatClient::findSharedMat() {
 
-    boost::system_time timeout =
-            boost::get_system_time() + boost::posix_time::milliseconds(100);
+        try {
 
-    if (!read_barrier_passed) {
+            // If the client creates the shared memory, it does not allocate room for the cv::Mat data
+            // The server will need to resize the shared memory to make room.
+            //size_t total_bytes = sizeof (shmem::SharedCVMatHeader) + 1024; 
 
-        if (!shared_mat_header->read_barrier.timed_wait(timeout)) {
+            // TODO: This is a complete HACK until I can figure out how to resize 
+            // the managed shared memory segment on the server side without 
+            // causing seg faults due to bad pointers on the client side.
+            size_t total_bytes = 1024e4;
+
+            shared_memory = bip::managed_shared_memory(bip::open_or_create, shmem_name.c_str(), total_bytes);
+            shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
+            shared_object_found = true;
+
+        } catch (bip::interprocess_exception& ex) {
+            std::cerr << ex.what() << '\n';
+            exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
+        }
+
+        // Make sure everyone using this shared memory knows that another client
+        // has joined
+        shared_mat_header->mutex.wait();
+        shared_mat_header->number_of_clients++;
+        number_of_clients = shared_mat_header->number_of_clients;
+        shared_mat_header->mutex.post();
+
+    }
+
+    /**
+     * Get the cv::Mat object from shared memory
+     * @param value The cv::Mat object to be copied from shared memory
+     * @return True if the result is (1) valid and (2) successfully obeyed all 
+     * interprocess synchronization mechanisms. False if there were timeouts during
+     * wait() calls, meaning that the cv::Mat objects has possibly not been assigned
+     * or that proceeding to process in a loop that will recall this function may result
+     * in server/client desynchronization.
+     */
+    bool MatClient::getSharedMat(cv::Mat& value) {
+
+        boost::system_time timeout =
+                boost::get_system_time() + boost::posix_time::milliseconds(100);
+
+        if (!read_barrier_passed) {
+
+            if (!shared_mat_header->read_barrier.timed_wait(timeout)) {
+                return false;
+            }
+
+            // Write down that we made it past the read_barrier in case the
+            // new_data_barrier times out.
+            read_barrier_passed = true;
+
+            /* START CRITICAL SECTION */
+            shared_mat_header->mutex.wait();
+
+            if (!mat_attached_to_header) {
+                // Cannot do this until the server has called build header, which is 
+                // why it is here, instead of in constructor
+                shared_mat_header->attachMatToHeader(shared_memory, shared_cvmat);
+                mat_attached_to_header = true;
+            }
+
+            // Assign the latest cv::Mat and get its timestamp and write index
+            value = shared_cvmat.clone();
+            current_time_stamp = shared_mat_header->sample_number;
+
+            // Now that this client has finished its read, update the count
+            shared_mat_header->client_read_count++;
+
+            // If all clients have read, signal the barrier
+            if (shared_mat_header->client_read_count == shared_mat_header->number_of_clients) {
+                shared_mat_header->write_barrier.post();
+                shared_mat_header->client_read_count = 0;
+            }
+
+            shared_mat_header->mutex.post();
+            /* END CRITICAL SECTION */
+        }
+
+        if (!shared_mat_header->new_data_barrier.timed_wait(timeout)) {
             return false;
         }
 
-        // Write down that we made it past the read_barrier in case the
-        // new_data_barrier times out.
-        read_barrier_passed = true;
-
-        /* START CRITICAL SECTION */
-        shared_mat_header->mutex.wait();
-
-        if (!mat_attached_to_header) {
-            // Cannot do this until the server has called build header, which is 
-            // why it is here, instead of in constructor
-            shared_mat_header->attachMatToHeader(shared_memory, shared_cvmat);
-            mat_attached_to_header = true;
-        }
-
-        // Assign the latest cv::Mat and get its timestamp and write index
-        value = shared_cvmat.clone();
-        current_time_stamp = shared_mat_header->sample_number;
-
-        // Now that this client has finished its read, update the count
-        shared_mat_header->client_read_count++;
-
-        // If all clients have read, signal the barrier
-        if (shared_mat_header->client_read_count == shared_mat_header->number_of_clients) {
-            shared_mat_header->write_barrier.post();
-            shared_mat_header->client_read_count = 0;
-        }
-
-        shared_mat_header->mutex.post();
-        /* END CRITICAL SECTION */
+        read_barrier_passed = false;
+        return true; // Result is valid and all waits have operated without timeout
     }
 
-    if (!shared_mat_header->new_data_barrier.timed_wait(timeout)) {
-        return false;
-    }
+    void MatClient::detachFromShmem() {
 
-    read_barrier_passed = false;
-    return true; // Result is valid and all waits have operated without timeout
-}
+        if (shared_object_found) {
 
-void MatClient::detachFromShmem() {
-
-    if (shared_object_found) {
-
-        // Make sure nobody is going to wait on a disposed object
-        shared_mat_header->mutex.wait();
-        shared_mat_header->number_of_clients--;
-        shared_mat_header->mutex.post();
+            // Make sure nobody is going to wait on a disposed object
+            shared_mat_header->mutex.wait();
+            shared_mat_header->number_of_clients--;
+            shared_mat_header->mutex.post();
 
 #ifndef NDEBUG
-        std::cout << "Number of clients in \'" + shmem_name + "\' was decremented.\n";
+            std::cout << "Number of clients in \'" + shmem_name + "\' was decremented.\n";
 #endif
 
+        }
     }
-}
 
+} // namespace shmem

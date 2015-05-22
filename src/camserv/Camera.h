@@ -62,7 +62,7 @@ public:
 protected:
     
     // cv::Mat server for sending frames to shared memory
-    MatServer frame_sink;
+    shmem::MatServer frame_sink;
     std::string name;
     
     // Cameras have a region of interest to crop images

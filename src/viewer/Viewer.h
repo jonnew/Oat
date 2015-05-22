@@ -46,7 +46,7 @@ private:
     cv::Mat current_frame;;
 
     // Mat client object for receiving frames
-    MatClient frame_source;
+    shmem::MatClient frame_source;
 };
 
 #endif //VIEWER_H
