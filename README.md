@@ -1,3 +1,6 @@
+# Real-time position tracker for animal behavior
+Simple tracker consists of a set of programs for processing images, extracting position information, and streaming data to disk and the network that communicate through shared memory. This model enables quick, scripted construction of complex data processing chains without relying on a complicated GUI or plugin architecture.
+
 ##Installation
 
 ###Flycapture SDK (If point-grey camera is used)
@@ -56,10 +59,6 @@ terminator
 ```
 - Right click terminator window and select `preferences` and then under the `global` tab make sure `DBus server` is ticked.
 
-##Simple soft real-time position tracker for animal behavior
-
-- Example applications using the flycapture SDK are available in /usr/src/flycapture/src
-
 ### TODO
 - [x] Interprocess data processing synchronization
     - Whatever is chosen, all subsequent processing must propagate in accordance with the frame captured by the base image server(s).
@@ -81,7 +80,7 @@ terminator
 - [x] IPC method?
     - ~~UPD, TCP,~~ **shared memory**, ~~pipe?~~
 - [ ] Networked communication with clients that use extracted positional information
-- [ ] General C++ coding practice
+- [x] General C++ coding practice
     - Pass by const ref whenever possible. Especially relevant when passing derived objects to prevent slicing.
     - const member properties can be initialized in the initialization list, rather than assigned in the constructor body. Take advantage.
 - [ ] Implement pure intensity based detector (now color conversion, just saturation on raw image)
@@ -89,11 +88,12 @@ terminator
 - [ ] Implement recorder (Position and images? Viewer can also record?)
 - [x] Camera configuration should specify frame capture due to digital pulses on a user selected GPIO line or free running.
 - [x] To simplify IPC, clients should copy data in guarded sections. This limits the amount of time locks are engaged and likely, esp for cv::mat's make up for the copy in the increased amount of code that can be executed in parallel.
-- [ ] Can image metadata be packaged with shared cv::mats?
+- [x] Can image metadata be packaged with shared cv::mats?
     - Frame rate
     - pixel -> cm transformation information
     - Sample number
-- [ ] Camera class should implement distortion correction (see [this example](https://github.com/Itseez/opencv/blob/6df1198e8b1ea4925cbce943a1dc6549f27d8be2/modules/calib3d/test/test_fisheye.cpp))
+- [x] Camera class should implement distortion correction (see [this example](https://github.com/Itseez/opencv/blob/6df1198e8b1ea4925cbce943a1dc6549f27d8be2/modules/calib3d/test/test_fisheye.cpp))
+    - Ended up just hacking together a dedicated excecutable to produce the camera matrix and distortion parameters. Its called calibrate and its in the camserv project.
 - [ ] Cmake improvments
     - Global build script to make all of the programs in the project
 	- CMake managed versioning
