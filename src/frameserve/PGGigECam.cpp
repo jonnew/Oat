@@ -46,7 +46,8 @@ PGGigECam::PGGigECam(std::string frame_sink_name) : Camera(frame_sink_name)
 , use_software_trigger(false)
 , trigger_polarity(true)
 , trigger_mode(14)
-, trigger_source_pin(0) {
+, trigger_source_pin(0)
+, frames_per_second(30) {
 
     // Initialize the frame size
     frame_size = cv::Size(728, 728);
@@ -194,6 +195,11 @@ void PGGigECam::configure(std::string config_file, std::string key) {
             } else {
                 use_trigger = false;
             }
+            
+            if (camera_config.contains("fps")) {
+                frames_per_second = *camera_config.get_as<double>("fps");
+            }
+            
             setupTrigger();
 
             if (camera_config.contains("calibration_file")) {
@@ -650,7 +656,15 @@ int PGGigECam::setupTrigger() {
         printError(error);
         exit(EXIT_FAILURE);
     }
-
+    
+    //TODO: Custom frame rate
+//    // In the case where the trigger is not used, the config can specify a frame
+//    // rate
+//    VideoMode videoMode;
+//    FrameRate frameRate;
+//    camera.GetVideoModeAndFrameRate ( &videoMode, FRAMERATE_30);
+    
+    
     // TODO: This hangs...
     //Poll to ensure camera is ready
     //    if (use_trigger) { // If false, camera will free run

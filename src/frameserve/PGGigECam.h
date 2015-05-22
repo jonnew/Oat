@@ -51,7 +51,7 @@ private:
     bool use_software_trigger;
     int trigger_polarity, trigger_mode, trigger_source_pin;
     int white_bal_red, white_bal_blue;
-    
+    double frames_per_second;
     
     // GigE Camera interface
     FlyCapture2::GigECamera camera;
