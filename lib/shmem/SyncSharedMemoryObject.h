@@ -36,8 +36,7 @@ namespace shmem {
         , new_data_barrier(0)
         , number_of_clients(0)
         , client_read_count(0)
-        , sample_number(0)
-        , sample_index(0) { }
+        , sample_number(0) { }
 
         // Semaphores used to synchronize access to the shared object
         boost::interprocess::interprocess_semaphore mutex;
@@ -49,8 +48,7 @@ namespace shmem {
         size_t client_read_count;
         
         // Time keeping TODO: use accessors!
-        unsigned int sample_number; // Sample number of this position, respecting buffer overruns
-        unsigned int sample_index;  // Order index of this position, disrespecting buffer overruns
+        uint32_t sample_number; // Sample number of this position, respecting buffer overruns
 
         // Write/read access to shared object
         void set_value(T value) { object = value; }

@@ -109,7 +109,6 @@ bool MatClient::getSharedMat(cv::Mat& value) {
 
         // Assign the latest cv::Mat and get its timestamp and write index
         value = shared_cvmat.clone();
-        current_index = shared_mat_header->sample_index;
         current_time_stamp = shared_mat_header->sample_number;
 
         // Now that this client has finished its read, update the count

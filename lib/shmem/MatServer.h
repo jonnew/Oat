@@ -38,7 +38,7 @@ public:
     virtual ~MatServer();
     
     void createSharedMat(const cv::Mat& model); 
-    void pushMat(const cv::Mat& mat);
+    void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
 
     // Accessors  // TODO: Assess whether you really need these and get rid of them if not. 
     bool is_running(void) { return running; };
@@ -63,11 +63,7 @@ private:
       <cv::Mat, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
     boost::lockfree::spsc_queue
       <unsigned int, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > tick_buffer;
-    
-    // Timestamp
-    unsigned int current_sample;
-    unsigned int write_index;
-    
+
     // Server threading
     std::thread server_thread;
     std::mutex server_mutex;

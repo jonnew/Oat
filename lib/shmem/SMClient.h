@@ -34,8 +34,18 @@ namespace shmem {
         SMClient(const SMClient& orig);
         virtual ~SMClient();
 
-        // Read the object value
+        /**
+         * Get the object from shared memory
+         * @param value Reference to which assign the shared object
+         * @return true if assignment was successful, false if assignment timed out.
+         */
         bool getSharedObject(T& value);
+
+        /**
+         * Get the current sample number
+         * @return current sample
+         */
+        uint32_t get_current_time_stamp(void) { return current_time_stamp; }
 
     private:
 
@@ -47,21 +57,25 @@ namespace shmem {
         bool read_barrier_passed;
         bip::managed_shared_memory shared_memory;
 
+        // Time keeping
+        uint32_t current_time_stamp;
+
         // Find shared object in shmem
         int findSharedObject(void);
-        
+
         // Decrement the number of clients in shmem
         void detachFromShmem(void);
     };
 
     template<class T, template <typename> class SharedMemType>
     SMClient<T, SharedMemType>::SMClient(std::string source_name) :
-      name(source_name)
+    name(source_name)
     , shmem_name(source_name + "_sh_mem")
     , shobj_name(source_name + "_sh_obj")
     , shared_object_found(false)
-    , read_barrier_passed(false) { 
-    
+    , read_barrier_passed(false)
+    , current_time_stamp(0) {
+
         findSharedObject();
     }
 
@@ -132,6 +146,7 @@ namespace shmem {
             shared_object->mutex.wait();
 
             value = shared_object->get_value();
+            current_time_stamp = shared_object->sample_number;
 
             // Now that this client has finished its read, update the count
             shared_object->client_read_count++;

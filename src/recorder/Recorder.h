@@ -32,7 +32,7 @@ public: // TODO: Implement position saving as JSON file
             const std::vector<std::string>& frame_source_names,
             const std::string& save_path,
             const bool& append_date,
-            const int& frames_per_second=25);
+            const int& frames_per_second = 25);
 
     //    // Positions only
     //    Recorder(const std::vector<std::string>& position_source_names,
@@ -57,8 +57,8 @@ public: // TODO: Implement position saving as JSON file
 private:
 
     // General file name formatting
-    const bool append_date;
     const std::string save_path;
+    const bool append_date;
 
     // Video files
     const int frames_per_second;
@@ -73,16 +73,16 @@ private:
     std::vector<MatClient*> frame_sources;
     std::vector<cv::Mat*> frames;
 
-    void writeFramesToFile(void);
-    //void writePositionToFile(const std::vector<datatypes::Position2D>&);
+    void openFiles(const std::vector<std::string>& save_path,
+            const bool& save_positions,
+            const bool& save_images);
 
     void initializeWriter(cv::VideoWriter& writer,
             const std::string& file_name,
             const cv::Mat& image);
-
-    void openFiles(const std::vector<std::string>& save_path,
-            const bool& save_positions,
-            const bool& save_images);
+    
+    void writeFramesToFile(void);
+    
 };
 
 #endif // RECORDER_H

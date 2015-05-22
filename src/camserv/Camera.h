@@ -33,7 +33,8 @@ public:
     Camera(std::string image_sink_name) : 
       name(image_sink_name)
     , frame_sink(image_sink_name)
-    , undistort_image(false) { }
+    , undistort_image(false)
+    , current_sample(0) { }
     
     // Cameras must be able to serve cv::Mat frames
     virtual void serveMat(void) = 0;
@@ -69,6 +70,9 @@ protected:
     
     // Currently acquired frame
     cv::Mat current_frame;
+    
+    // Current sample number  ( this does account for missed hardware triggers)
+    uint32_t current_sample;
 
     // Camera matrix and distortion coefficients. Use to undistort image
     bool undistort_image;

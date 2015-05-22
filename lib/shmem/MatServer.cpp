@@ -29,8 +29,6 @@ name(sink_name)
 , shmem_name(sink_name + "_sh_mem")
 , shobj_name(sink_name + "_sh_obj")
 , shared_object_created(false)
-, current_sample(0)
-, write_index(0)
 , running(true) {
 
     // Start the server thread
@@ -113,15 +111,21 @@ void MatServer::createSharedMat(const cv::Mat& model) {
     shared_object_created = true;
 }
 
-void MatServer::pushMat(const cv::Mat& mat) {
+/**
+ * Push a deep copy of cv::Mat object to shared memory along with sample number.
+ * @param mat cv::Mat to push to shared memory
+ * @param sample_number sample number of cv::Mat
+ */
+void MatServer::pushMat(const cv::Mat& mat, const uint32_t& sample_number) {
 
     // Push data onto ring buffer
     mat_buffer.push(mat.clone());
-    tick_buffer.push(current_sample++);
+    tick_buffer.push(sample_number);
+
 
 #ifndef NDEBUG
     std::cout << "Buffer count: " + std::to_string(mat_buffer.read_available())
-              << ". Sample no. : " + std::to_string(current_sample - 1) + "\n";
+            << ". Sample no. : " + std::to_string(sample_number) + "\n";
 #endif
 
     // notify server thread that data is available
@@ -150,8 +154,7 @@ void MatServer::serveMatFromBuffer() {
 
             // Perform writes in shared memory 
             shared_mat_header->set_mat(mat);
-            tick_buffer.pop(shared_mat_header->sample_number); 
-            shared_mat_header->sample_index = write_index++;
+            tick_buffer.pop(shared_mat_header->sample_number);
 
             // Tell each client they can proceed
             for (int i = 0; i < shared_mat_header->number_of_clients; ++i) {

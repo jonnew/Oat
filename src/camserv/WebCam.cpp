@@ -28,7 +28,8 @@ void WebCam::grabMat() {
 }
 
 void WebCam::serveMat() {
-    frame_sink.pushMat(current_frame);
+    frame_sink.pushMat(current_frame, current_sample);
+    current_sample++;
 }
 
 void WebCam::configure() {

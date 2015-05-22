@@ -40,7 +40,7 @@ namespace shmem {
         virtual ~SMServer();
 
         void createSharedObject(void);
-        void pushObject(T value);
+        void pushObject(T value, uint32_t sample_number);
 
 
         // Accessors
@@ -58,10 +58,6 @@ namespace shmem {
         <T, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > buffer;
         boost::lockfree::spsc_queue
         <unsigned int, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > tick_buffer;
-
-        // Timestamp
-        unsigned int current_sample;
-        unsigned int write_index;
 
         // Server threading
         std::thread server_thread;
@@ -141,15 +137,15 @@ namespace shmem {
     }
 
     template<class T, template <typename> class SharedMemType>
-    void SMServer<T, SharedMemType>::pushObject(T value) {
+    void SMServer<T, SharedMemType>::pushObject(T value, uint32_t sample_number) {
 
         // Push data onto ring buffer
         buffer.push(value);
-        tick_buffer.push(current_sample++);
+        tick_buffer.push(sample_number);
 
 #ifndef NDEBUG
         std::cout << "Buffer count: " + std::to_string(buffer.read_available())
-                  << ". Sample no. : " + std::to_string(current_sample - 1) + "\n";
+                  << ". Sample no. : " + std::to_string(sample_number) + "\n";
 #endif
 
         // notify server thread that data is available
@@ -179,7 +175,6 @@ namespace shmem {
                 // Perform writes in shared memory 
                 shared_object->set_value(value);
                 tick_buffer.pop(shared_object->sample_number); 
-                shared_object->sample_index = write_index++;
 
                 shared_object->mutex.post();
                 /* END CRITICAL SECTION */

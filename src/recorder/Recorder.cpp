@@ -31,11 +31,14 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 , frames_per_second(frames_per_second)
 , frame_client_idx(0) {
 
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
-    // TODO: Only supported in gcc 5.0, need work around
-    // std::string date_now = std::put_time(&tm, "%Y-$m-%d-%H-%M-%S_");
-    std::string date_now = "00";
+    std::time_t raw_time;
+    struct tm * time_info;
+    char buffer[80];
+
+    std::time(&raw_time);
+    time_info = std::localtime(&raw_time);
+    std::strftime(buffer, 80, "%F-%H-%M-%S_", time_info); 
+    std::string date_now = std::string(buffer);
 
     // TODO: Create a single position file
 

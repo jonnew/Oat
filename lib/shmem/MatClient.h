@@ -40,8 +40,7 @@ public:
     bool is_homography_valid(void) { return shared_mat_header->homography_valid;}
     cv::Matx33d get_homography(void) { return shared_mat_header->homography; }
     bool is_shared_object_found(void) { return shared_object_found; }
-    unsigned int get_current_index(void) { return current_index; }
-    unsigned int get_current_time_stamp(void) { return current_time_stamp; }
+    uint32_t get_current_time_stamp(void) { return current_time_stamp; }
     
 private:
     
@@ -61,8 +60,7 @@ private:
     size_t number_of_clients;
     
     // Time keeping
-    unsigned int current_index;
-    unsigned int current_time_stamp;
+    uint32_t current_time_stamp;
     
     // Find cv::Mat object in shared memory
     void findSharedMat(void);

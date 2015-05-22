@@ -110,7 +110,7 @@ void KalmanFilter2D::serveFilteredPosition() {
     tune();
 
     // Publish filtered position
-    position_sink.pushObject(filtered_position);
+    position_sink.pushObject(filtered_position, position_source.get_current_time_stamp());
 }
 
 void KalmanFilter2D::configure(const std::string& config_file, const std::string& config_key) {

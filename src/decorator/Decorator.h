@@ -23,7 +23,6 @@
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/rapidjson/"
 
 class Decorator { // TODO: Position2D -> Position somehow
     
@@ -46,11 +45,12 @@ private:
     std::string name;
 
     // Image data
-    cv::Mat image;
+    cv::Mat current_frame;
 
     // Mat client object for receiving frames
-    bool have_current_frame;
     MatClient frame_source;
+    cv::Size frame_size;
+    bool have_current_frame;
 
     // For multi-source processing, we need to keep track of all the sources
     // we have finished reading from each processing step
@@ -65,14 +65,21 @@ private:
 
     // Drawing constants 
     // TODO: These may need to become a bit more sophisticated or user defined
+    bool decorate_position;
     const float position_circle_radius = 5.0;
     const float head_dir_line_length = 25.0;
     const float velocity_scale_factor = 0.1;
+    const double font_scale = 1.0; 
+    const cv::Scalar font_color;
+    const int encode_bit_size = 5;
 
-    void drawPosition();
-    void drawHeadDirection();
-    void drawVelocity();
-    void drawSymbols();
+    void drawPosition(void);
+    void drawHeadDirection(void);
+    void drawVelocity(void);
+    void drawSymbols(void);
+    void printTimeStamp(void); // TODO: configure position of timestamp text
+    void printSampleNumber(void);  // TODO: configure position of sample number text
+    void encodeSampleNumber(void);
 };
 
 #endif //VIEWER_H

@@ -35,12 +35,11 @@
 
 using namespace FlyCapture2;
 
-PGGigECam::PGGigECam(std::string frame_sink_name) :
-Camera(frame_sink_name)
+PGGigECam::PGGigECam(std::string frame_sink_name) : Camera(frame_sink_name)
 , num_cameras(0)
 , index(0)
-, shutter_ms(0)
 , gain_dB(0)
+, shutter_ms(0)
 , exposure_EV(0)
 , aquisition_started(false)
 , use_trigger(false)
@@ -501,7 +500,6 @@ int PGGigECam::setupDefaultImageFormat() {
     imageSettings.height = frame_size.height;
     imageSettings.width = frame_size.width;
     imageSettings.pixelFormat = PIXEL_FORMAT_RAW12;
-    //imageSettings.pixelFormat = PIXEL_FORMAT_MONO8;
 
     std::cout << "Setting GigE image settings...\n";
 
@@ -727,7 +725,8 @@ void PGGigECam::serveMat() {
 
     // Write frame to shared memory and notify all client processes
     // that a new frame is available. Do not block, though.
-    frame_sink.pushMat(current_frame);
+    frame_sink.pushMat(current_frame, current_sample);
+    current_sample++;
 }
 
 // PRIVATE

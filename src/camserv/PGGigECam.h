@@ -36,8 +36,6 @@ public:
     void serveMat(void);
     void fireSoftwareTrigger(void);
 
-    // Accessors
-
 private:
 
     // Camera name
@@ -46,15 +44,16 @@ private:
     // Size and offset of the image to aquire
     cv::Size frame_size, frame_offset;
 
+    unsigned int num_cameras, index;
+    float gain_dB, shutter_ms, exposure_EV;
     bool aquisition_started;
     bool use_trigger;
     bool use_software_trigger;
-    int trigger_polarity;
-    int trigger_mode;
-    int trigger_source_pin;
-    unsigned int num_cameras, index;
-    float gain_dB, shutter_ms, exposure_EV;
+    int trigger_polarity, trigger_mode, trigger_source_pin;
     int white_bal_red, white_bal_blue;
+    
+    
+    // GigE Camera interface
     FlyCapture2::GigECamera camera;
 
     // Camera and control state info
