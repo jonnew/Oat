@@ -60,7 +60,7 @@ namespace shmem {
         T object;
 
     };
-}
+} // namespace shmem
 
 // Explicit instantiations
 template class shmem::SyncSharedMemoryObject<datatypes::Position2D>;

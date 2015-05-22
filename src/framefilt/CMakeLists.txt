@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (BackSubtractor)
+project (FrameFilt)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
@@ -11,5 +11,5 @@ add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
 
-add_executable (backsub BackgroundSubtractor.cpp main.cpp )
-target_link_libraries (backsub shmem ${OpenCV_LIBS} ${OpenCV_LIBS} ${Boost_LIBRARIES})
+add_executable (framefilt BackgroundSubtractor.cpp main.cpp )
+target_link_libraries (framefilt shmem ${OpenCV_LIBS} ${OpenCV_LIBS} ${Boost_LIBRARIES})

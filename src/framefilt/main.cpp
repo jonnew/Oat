@@ -45,7 +45,7 @@ void run(BackgroundSubtractor* background_subtractor, std::string source, std::s
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: backsub [OPTIONS]\n";
-    std::cout << "   or: backsub SOURCE SINK\n";
+    std::cout << "   or: backsub SOURCE SINK\n"; // TODO: TYPE
     std::cout << "Perform background subtraction on images from SOURCE.\n";
     std::cout << "Publish background-subtracted images to SMServer<SharedCVMatHeader> SINK.\n";
     std::cout << options << "\n";
