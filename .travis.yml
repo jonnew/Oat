@@ -6,6 +6,7 @@ install:
   - cd ..
   - sudo cp -r boost* /opt
   - cd opt/boost*/
+  - sudo ./bootstrap.sh
   - sudo ./b2 --with-program_options --with_system --with_thread
   - sudo apt-get update
   - sudo apt-get install libopencv-dev
