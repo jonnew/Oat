@@ -26,6 +26,9 @@ Simple tracker consists of a set of programs for processing images, extracting p
     - POE gigabit card IP: 192.168.__1__.100
     - Subnet mask: 255.255.255.0
     - DNS server IP: 192.168.1.1
+- Finally, you must enable jumbo frames on the network interface
+  - Assume that the camera is using eth2
+  - `sudo ifconfig eth2 mtu 9000` 
 
 ###Boost
 ```bash
