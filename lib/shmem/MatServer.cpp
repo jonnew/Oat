@@ -16,6 +16,7 @@
 
 #include "MatServer.h"
 
+#include <iostream>
 #include <chrono>
 #include <boost/interprocess/managed_shared_memory.hpp>
 

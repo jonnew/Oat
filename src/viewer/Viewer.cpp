@@ -16,6 +16,7 @@
 
 #include "Viewer.h"
 
+#include <iostream>
 #include <string>
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <opencv2/core/core.hpp>
@@ -32,7 +33,7 @@ Viewer::Viewer(std::string source_name) :
     // Name *this according the the source name and the client number
     // to keep it unique
     name = name + std::to_string(frame_source.get_number_of_clients());
-    cv::namedWindow(name);
+    cv::namedWindow(name, cv::WINDOW_NORMAL);
 }
 
 void Viewer::showImage() {
