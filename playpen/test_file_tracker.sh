@@ -1,16 +1,5 @@
 #!/bin/bash         
 
-#shutdown() {
-#	# Get our process group id
-#	PGID=$(ps -o pgid= $$ | grep -o [0-9]*)
-#
-#	# Kill it in a new new process group
-#	setsid kill -- -$PGID
-#	exit 0
-#}
-#
-#trap "shutdown" SIGINT SIGTERM
-
 terminator \
 	--fullscreen \
 	--title="Viewer" \
@@ -19,7 +8,12 @@ terminator \
 sleep 1
 terminator \
 	--new-tab \
-	-x sh -c "./bin/decorate filt vid final; bash" &
+	-x sh -c "./bin/record -i final -f ~/Desktop -d; bash" &
+
+sleep 1
+terminator \
+	--new-tab \
+	-x sh -c "./bin/decorate -p filt vid final; bash" &
 
 sleep 1
 terminator \
@@ -33,5 +27,5 @@ terminator \
 sleep 1
 terminator \
 	--new-tab \
- 	-x sh -c "./bin/camserv file vid -c test_file_tracker_config.toml -k file_cam -f test_mouse.mpg; bash" &
+ 	-x sh -c "./bin/frameserve file vid -c test_file_tracker_config.toml -k file_cam -f test_mouse.mpg; bash" &
 

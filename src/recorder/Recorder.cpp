@@ -55,7 +55,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         // TODO: if the file exists, append a numeral
 
         video_file_names.push_back(this_fid);
-        frame_sources.push_back(new MatClient(frame_source_name));
+        frame_sources.push_back(new shmem::MatClient(frame_source_name));
         frames.push_back(new cv::Mat);
         video_writers.push_back(new cv::VideoWriter());
     }
@@ -122,7 +122,7 @@ void Recorder::initializeWriter(cv::VideoWriter& writer,
         const cv::Mat& image) {
 
     // Initialize writer using the first frame taken from server
-    int fourcc = CV_FOURCC('H', '2', '6', '4'); //TODO: Which format to use?
+    int fourcc = CV_FOURCC('H', '2', '6', '4');
     writer.open(file_name, fourcc, frames_per_second, image.size());
 
 }

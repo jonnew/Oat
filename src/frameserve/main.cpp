@@ -39,8 +39,8 @@ void run(Camera* camera) {
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: camserv_ge [OPTIONS]\n"
-              << "   or: camserv_ge TYPE SINK [CONFIGURATION]\n"
+    std::cout << "Usage: frameserve [OPTIONS]\n"
+              << "   or: frameserve TYPE SINK [CONFIGURATION]\n"
               << "Serve images captured by the camera to SINK\n\n"
               << "TYPE\n"
               << "  \'wcam\': Onboard or USB webcam.\n"

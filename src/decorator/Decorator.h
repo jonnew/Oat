@@ -48,7 +48,7 @@ private:
     cv::Mat current_frame;
 
     // Mat client object for receiving frames
-    MatClient frame_source;
+    shmem::MatClient frame_source;
     cv::Size frame_size;
     bool have_current_frame;
 
@@ -61,7 +61,7 @@ private:
     std::vector<shmem::SMClient<datatypes::Position2D>* > position_sources;
 
     // Mat server for sending decorated frames
-    MatServer frame_sink;
+    shmem::MatServer frame_sink;
 
     // Drawing constants 
     // TODO: These may need to become a bit more sophisticated or user defined

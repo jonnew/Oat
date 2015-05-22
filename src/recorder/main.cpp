@@ -16,6 +16,7 @@
 
 #include "Recorder.h"
 
+#include <algorithm>
 #include <string>
 #include <signal.h>
 #include <boost/thread.hpp>
@@ -107,10 +108,27 @@ int main(int argc, char *argv[]) {
         // May contain imagesource and sink information!]
         if (variable_map.count("positionsources")) {
             position_sources = variable_map["positionsources"].as< std::vector<std::string> >();
+            
+            // Assert that all positions sources are unique. If not, remove duplicates, and issue warning.
+            std::vector<std::string>::iterator it;
+            it = std::unique (position_sources.begin(), position_sources.end());   
+            if (it != position_sources.end()) {
+                position_sources.resize(std::distance(position_sources.begin(),it)); 
+                std::cout << "Warning: duplicate position sources have been removed.\n";
+            }
+            
         }
         
         if (variable_map.count("imagesources")) {
             frame_sources = variable_map["imagesources"].as< std::vector<std::string> >();
+            
+            // Assert that all positions sources are unique. If not, remove duplicates, and issue warning.
+            std::vector<std::string>::iterator it;
+            it = std::unique (frame_sources.begin(), frame_sources.end());   
+            if (it != frame_sources.end()) {
+                frame_sources.resize(std::distance(frame_sources.begin(),it)); 
+                std::cout << "Warning: duplicate frame sources have been removed.\n";
+            }
         }
         
         if (variable_map.count("date")) {

@@ -44,10 +44,10 @@ private:
     cv::Mat background_img;
     
     // Mat client object for receiving frames
-    MatClient frame_source;
+    shmem::MatClient frame_source;
     
     // Mat server for sending processed frames
-    MatServer frame_sink;
+    shmem::MatServer frame_sink;
 
 };
 

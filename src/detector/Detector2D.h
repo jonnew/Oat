@@ -91,7 +91,7 @@ protected:
     datatypes::Position2D object_position;
 
     // The image source (Client side)
-    MatClient image_source;
+    shmem::MatClient image_source;
 
     // The detected object position destination (Server side)
     shmem::SMServer<datatypes::Position2D> position_sink;

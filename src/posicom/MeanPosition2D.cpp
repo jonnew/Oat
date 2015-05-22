@@ -37,7 +37,7 @@ void MeanPosition2D::combineAndServePosition() {
     client_idx = 0;
     combinePositions();
 
-    position_sink.pushObject(combined_position);
+    position_sink.pushObject(combined_position, position_sources[0]->get_current_time_stamp());
 }
 
 /**

@@ -76,7 +76,7 @@ void HSVDetector2D::findObjectAndServePosition() {
         siftBlobs();
         tune();
 
-        position_sink.pushObject(object_position);
+        position_sink.pushObject(object_position, image_source.get_current_time_stamp());
     }
 }
 

@@ -34,18 +34,6 @@ public: // TODO: Implement position saving as JSON file
             const bool& append_date,
             const int& frames_per_second = 25);
 
-    //    // Positions only
-    //    Recorder(const std::vector<std::string>& position_source_names,
-    //            const std::string& save_path,
-    //            const bool& append_date,
-    //            const int& frames_per_second);
-    //
-    //    // Images only
-    //    Recorder(const std::vector<std::string>& frame_source_names,
-    //            const std::string& save_path,
-    //            const bool& append_date,
-    //            const int& frames_per_second);
-
     ~Recorder();
 
     // Recorder must be configurable
@@ -67,10 +55,10 @@ private:
 
     // For multi-source processing, we need to keep track of all the sources
     // we have finished reading from each processing step
-    std::vector<MatClient>::size_type frame_client_idx;
+    std::vector<shmem::MatClient>::size_type frame_client_idx;
 
     // Image sources
-    std::vector<MatClient*> frame_sources;
+    std::vector<shmem::MatClient*> frame_sources;
     std::vector<cv::Mat*> frames;
 
     void openFiles(const std::vector<std::string>& save_path,
