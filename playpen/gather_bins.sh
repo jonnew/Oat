@@ -1,11 +1,11 @@
 #!/bin/bash          
 
-cp ../src/frameserve/build/frameserve ./bin
-cp ../src/frameserve/build/calibrate ./bin
-cp ../src/detector/build/detector ./bin
-cp ../src/viewer/build/viewer ./bin
-cp ../src/framefilt/build/framefilt ./bin
-cp ../src/decorator/build/decorate ./bin
-cp ../src/posicom/build/posicom ./bin
-cp ../src/posifilt/build/posifilt ./bin
-cp ../src/recorder/build/record ./bin
+cp ../src/bin/frameserve ./
+cp ../src/bin/calibrate ./
+cp ../src/bin/detector ./
+cp ../src/bin/viewer ./
+cp ../src/bin/framefilt ./
+cp ../src/bin/decorate ./
+cp ../src/bin/posicom ./
+cp ../src/bin/posifilt ./
+cp ../src/bin/record ./
