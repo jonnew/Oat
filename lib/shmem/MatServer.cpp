@@ -127,8 +127,28 @@ namespace shmem {
 
 
 #ifndef NDEBUG
-        std::cout << "Buffer count: " + std::to_string(mat_buffer.read_available())
-                << ". Sample no. : " + std::to_string(sample_number) + "\n";
+        
+        
+        std::cout << "[";
+        
+        int progress = BAR_WIDTH * 
+            (mat_buffer.read_available() / MATSERVER_BUFFER_SIZE);
+        int remaining = BAR_WIDTH - progress;
+        
+        for (int i = 0; i < progress; ++i) {
+            std::cout << "=";
+        }
+        for (int i = 0; i < remaining; ++i) {
+            std::cout << " ";
+        }
+        
+        std::cout << "] "
+                  << std::to_string(mat_buffer.read_available()) + "/" + std::to_string(MATSERVER_BUFFER_SIZE)
+                  << ", sample: " + std::to_string(sample_number)
+                  << "\r";
+                
+       std::cout.flush();         
+                  
 #endif
 
         // notify server thread that data is available

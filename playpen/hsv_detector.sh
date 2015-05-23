@@ -14,7 +14,7 @@ tmux select-layout tiled
 
 # Pane 1: viewer
 tmux select-pane -t 5
-tmux send-keys "./record -i final -f ~/Desktop -d" C-m
+#tmux send-keys "./record -i final -f ~/Desktop -d" C-m
 
 # Pane 1: viewer
 tmux select-pane -t 4

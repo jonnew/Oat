@@ -107,6 +107,10 @@ namespace shmem {
          */
         void notifySelf(void);
 
+#ifndef NDEBUG
+        const int BAR_WIDTH = 50;
+#endif
+
     };
 
 } // namespace shmem

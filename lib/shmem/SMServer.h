@@ -74,6 +74,10 @@ namespace shmem {
         void createSharedObject(size_t bytes);
         void serveFromBuffer(void);
         void notifySelf(void);
+        
+#ifndef NDEBUG
+        const int BAR_WIDTH = 50;
+#endif
 
     };
 
@@ -144,9 +148,29 @@ namespace shmem {
         tick_buffer.push(sample_number);
 
 #ifndef NDEBUG
-        std::cout << "Buffer count: " + std::to_string(buffer.read_available())
-                  << ". Sample no. : " + std::to_string(sample_number) + "\n";
+
+        std::cout << "[";
+        
+        int progress = BAR_WIDTH * 
+            (buffer.read_available() / SMSERVER_BUFFER_SIZE);
+        int remaining = BAR_WIDTH - progress;
+        
+        for (int i = 0; i < progress; ++i) {
+            std::cout << "=";
+        }
+        for (int i = 0; i < remaining; ++i) {
+            std::cout << " ";
+        }
+        
+        std::cout << "] "
+                  << std::to_string(buffer.read_available()) + "/" + std::to_string(SMSERVER_BUFFER_SIZE)
+                  << ", sample: " + std::to_string(sample_number)
+                  << "\r";
+                
+       std::cout.flush();         
+                  
 #endif
+
 
         // notify server thread that data is available
         serve_condition.notify_one();
