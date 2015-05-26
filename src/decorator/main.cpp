@@ -47,6 +47,9 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> position_sources;
     std::string frame_source;
     std::string frame_sink;
+	bool print_timestamp = false;
+	bool print_sample_number = false;
+	bool encode_sample_number = false;
 
     try {
 
@@ -61,7 +64,10 @@ int main(int argc, char *argv[]) {
                 ("positionsources,p", po::value< std::vector<std::string> >(),
                 "The name of the server(s) that supply object position information."
                 "The server(s) must be of type SMServer<Position>\n")
-                ;
+                ("timestamp,t", "Write the current date and time on each frame.\n")
+                ("sample,s", "Write the frame sample number on each frame.\n")
+                ("samplecode,S", "Write the binary encoded sample on each frame.\n")
+				;
 
         po::options_description hidden("POSITIONAL OPTIONS");
         hidden.add_options() ("framesource", po::value<std::string>(&frame_source),
@@ -117,7 +123,19 @@ int main(int argc, char *argv[]) {
             std::cout << "Error: at least a single FRAME_SINK must be specified. Exiting.\n";
             return -1;
         }
-//
+
+        if (variable_map.count("timestamp")) {
+			print_timestamp = true;
+		}
+		
+		if (variable_map.("sample")) {
+			print_sample_number = true;
+		}
+
+		if (variable_map.count("samplecode")) {
+			encode_sample_number = true;
+		}
+			/
 //        // Sources may contain both imagesource and sink information!
 //        if (variable_map.count("positionsources")) {
 //            position_sources = variable_map["positionsources"].as< std::vector<std::string> >();
@@ -150,6 +168,9 @@ int main(int argc, char *argv[]) {
 
     // Make the decorator
     Decorator decorator(position_sources, frame_source, frame_sink);
+	decorator->set_print_timestamp(print_timestamp);
+	decorator->set_print_sample_number(print_sample_number);
+	decorator->set_encode_sample_number(encode_sample_number);
 
     // Two threads - one for user interaction, the other
     // for processing

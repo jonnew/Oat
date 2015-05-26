@@ -38,6 +38,9 @@ public:
     void stop(void) { frame_sink.set_running(false); }
     
     //Accessors
+	void set_print_timestamp(bool value) { print_timestamp = value; }
+	void set_print_sample_number(bool value) { print_sample_number = value; }
+	void set_encode_sample_number(bool value) { encode_sample_number = value; }
     std::string get_name(void) const { return name; }
 
 private:
@@ -66,6 +69,9 @@ private:
     // Drawing constants 
     // TODO: These may need to become a bit more sophisticated or user defined
     bool decorate_position;
+    bool print_timestamp;
+    bool print_sample_number;
+    bool encode_sample_number;
     const float position_circle_radius = 5.0;
     const float head_dir_line_length = 25.0;
     const float velocity_scale_factor = 0.1;
@@ -77,8 +83,8 @@ private:
     void drawHeadDirection(void);
     void drawVelocity(void);
     void drawSymbols(void);
-    void printTimeStamp(void); // TODO: configure position of timestamp text
-    void printSampleNumber(void);  // TODO: configure position of sample number text
+    void printTimeStamp(void); 
+    void printSampleNumber(void);  
     void encodeSampleNumber(void);
 };
 

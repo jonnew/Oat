@@ -28,8 +28,11 @@ Decorator::Decorator(const std::vector<std::string>& position_source_names,
 , frame_source(frame_source_name)
 , have_current_frame(false)
 , client_idx(0)
-, decorate_position(true)
 , frame_sink(frame_sink_name)
+, decorate_position(true)
+, print_timestamp(false)
+, print_sample_number(false)
+, encode_sample_number(false)
 , font_color(0, 255, 0) {
 
     if (!position_source_names.empty()) {
@@ -91,9 +94,17 @@ void Decorator::drawSymbols() {
         drawVelocity();
     }
 
-    printTimeStamp();
-    printSampleNumber();
-    encodeSampleNumber();
+	if (print_timestamp) {
+   		printTimeStamp();
+	}
+
+	if (print_sample_number) {
+    	printSampleNumber();
+	}
+
+	if (encode_sample_number) {
+    	encodeSampleNumber();
+	}
 }
 
 // TODO: project 3rd dimension
