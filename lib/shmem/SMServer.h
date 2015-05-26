@@ -151,8 +151,7 @@ namespace shmem {
 
         std::cout << "[";
         
-        int progress = BAR_WIDTH * 
-            (buffer.read_available() / SMSERVER_BUFFER_SIZE);
+        int progress = (BAR_WIDTH * buffer.read_available()) / SMSERVER_BUFFER_SIZE;
         int remaining = BAR_WIDTH - progress;
         
         for (int i = 0; i < progress; ++i) {

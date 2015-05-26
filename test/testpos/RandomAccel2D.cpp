@@ -59,7 +59,9 @@ void RandomAccel2D::simulateAndServePosition() {
     pos.velocity.y = state(3);
 
     // Publish simulated position
-    position_sink.pushObject(pos);
+    position_sink.pushObject(pos, sample);
+    
+    ++sample;
     
 }
 

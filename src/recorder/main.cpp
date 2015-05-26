@@ -44,6 +44,7 @@ void printUsage(po::options_description options) {
 int main(int argc, char *argv[]) {
 
     // The image source to which the viewer will be attached
+    std::string file_name;
     std::vector<std::string> frame_sources;
     std::vector<std::string> position_sources;
     std::string save_path;
@@ -59,10 +60,12 @@ int main(int argc, char *argv[]) {
 
         po::options_description configuration("CONFIGURATION");
         configuration.add_options()
+                ("filename,n", po::value<std::string>(&file_name),
+                "The base file name to which to source name will be appended")
                 ("folder,f", po::value<std::string>(&save_path),
                 "The path to the folder to which the video stream and position information will be saved.")
                 ("date,d",
-                "If specified, YYYY-MM-DD-HH-mm-ss_ will be prepended to the filename.")
+                "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the filename.")
                 ("positionsources,p", po::value< std::vector<std::string> >(),
                 "The name of the server(s) that supply object position information."
                 "The server(s) must be of type SMServer<Position>\n")
@@ -103,6 +106,11 @@ int main(int argc, char *argv[]) {
         if (!variable_map.count("folder") ) {
             save_path = ".";
             std::cout << "Warning: saving files to the current directory.\n";
+        }
+        
+        if (!variable_map.count("filename") ) {
+            file_name = "";
+            std::cout << "Warning: no base filename was provided.\n";
         }
 
         // May contain imagesource and sink information!]
@@ -147,7 +155,7 @@ int main(int argc, char *argv[]) {
     std::cout << "  x: Exit.\n";
 
     // Make the decorator
-    Recorder recorder(position_sources, frame_sources, save_path, append_date);
+    Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date);
 
     // Two threads - one for user interaction, the other
     // for processing

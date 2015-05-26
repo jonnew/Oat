@@ -22,12 +22,8 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "../../lib/shmem/MatClient.h"
-#include "../../lib/shmem/MatServer.h"
-
 BackgroundSubtractor::BackgroundSubtractor(const std::string source_name, const std::string sink_name) :
-frame_source(source_name)
-, frame_sink(sink_name) { }
+  FrameFilt(source_name, sink_name) { }
 
 /**
  * Set the background image to be used during subsequent subtraction operations.
@@ -45,7 +41,7 @@ void BackgroundSubtractor::setBackgroundImage() {
  * the output matrix.
  * 
  */
-void BackgroundSubtractor::subtractBackground() {
+void BackgroundSubtractor::filterAndServe() {
     
     // Only proceed with processing if we are getting a valid frame
     if (frame_source.getSharedMat(current_frame)) {

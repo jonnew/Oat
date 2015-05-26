@@ -21,16 +21,20 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
+#include "../../lib/rapidjson/filewritestream.h"
+#include "../../lib/rapidjson/prettywriter.h"
 #include "../../lib/shmem/MatClient.h"
+#include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position2D.h"
 
 class Recorder {
-public: // TODO: Implement position saving as JSON file
+public: 
 
     // Both positions and images
     Recorder(const std::vector<std::string>& position_source_names,
             const std::vector<std::string>& frame_source_names,
-            const std::string& save_path,
+            std::string& save_path,
+            std::string& file_name,
             const bool& append_date,
             const int& frames_per_second = 25);
 
@@ -45,21 +49,31 @@ public: // TODO: Implement position saving as JSON file
 private:
 
     // General file name formatting
-    const std::string save_path;
+    std::string save_path;
+    std::string file_name;
     const bool append_date;
 
     // Video files
     const int frames_per_second;
     std::vector<std::string> video_file_names;
     std::vector<cv::VideoWriter*> video_writers;
-
-    // For multi-source processing, we need to keep track of all the sources
-    // we have finished reading from each processing step
-    std::vector<shmem::MatClient>::size_type frame_client_idx;
+    
+    // Position file
+    FILE* position_fp;
+    char position_write_buffer[65536];
+    rapidjson::FileWriteStream file_stream;
+    rapidjson::Writer<rapidjson::FileWriteStream> json_writer;
 
     // Image sources
     std::vector<shmem::MatClient*> frame_sources;
     std::vector<cv::Mat*> frames;
+    std::vector<shmem::MatClient>::size_type frame_client_idx;
+    
+    // Position sources
+    std::vector<shmem::SMClient<datatypes::Position2D>* > position_sources;
+    std::vector<datatypes::Position2D* > source_positions;
+    std::vector<shmem::SMClient<datatypes::Position2D> >::size_type position_client_idx;
+    std::vector<std::string> position_labels;
 
     void openFiles(const std::vector<std::string>& save_path,
             const bool& save_positions,
@@ -68,9 +82,12 @@ private:
     void initializeWriter(cv::VideoWriter& writer,
             const std::string& file_name,
             const cv::Mat& image);
-    
+
+    bool checkFile(std::string& file);
+
     void writeFramesToFile(void);
-    
+    void writePositionsToFile(void);
+
 };
 
 #endif // RECORDER_H

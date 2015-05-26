@@ -17,24 +17,17 @@
 #ifndef BACKGROUNDSUBTRACTOR_H
 #define	BACKGROUNDSUBTRACTOR_H
 
-#include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/MatClient.h"
-#include "../../lib/shmem/MatServer.h"
+#include "FrameFilt.h"
 
-class BackgroundSubtractor {
-    
+class BackgroundSubtractor : public FrameFilt {
 public:
-    
+
     BackgroundSubtractor(const std::string source_name, const std::string sink_name);
 
     void setBackgroundImage(void);
-    void subtractBackground(void);
     
-    // Detectors must be interruptable
-    void stop(void) { frame_sink.set_running(false); }
-
 private:
 
     // The background image used for subtraction
@@ -42,12 +35,6 @@ private:
     cv::Mat current_frame;
     cv::Mat current_raw_frame;
     cv::Mat background_img;
-    
-    // Mat client object for receiving frames
-    shmem::MatClient frame_source;
-    
-    // Mat server for sending processed frames
-    shmem::MatServer frame_sink;
 
 };
 

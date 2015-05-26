@@ -40,21 +40,8 @@ namespace datatypes {
         // WORLD  - Defined by the homography matrix.
         int coord_system = PIXELS;
         
-        // Time keeping
-        unsigned int time_stamp; // Time-stamp of this position, respecting buffer overruns
-        unsigned int index;      // Order index of this position, disrespecting buffer overruns
-
-        // Positions must be able to convert themselves to world
-        // coordinate system if they contain the appropriate
-        // homography matracies
-        //virtual Position convertToWorldCoordinates(void) = 0;
-        // TODO: why can't this base class use the more general Position type instead
-        // of Position2D etc?
-
-    private:
-        
         // Position label (e.g. 'anterior')
-        // std::string
+        //std::string label;
     };
     
     // Required since this a base class w/ pure virtual destructor 
@@ -62,9 +49,6 @@ namespace datatypes {
     inline Position::~Position() {} 
     
 } // namespace datatypes
-
-
-
 
 #endif	/* POSITION_H */
 

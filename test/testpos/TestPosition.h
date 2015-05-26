@@ -37,7 +37,8 @@ public:
     
     TestPosition(std::string position_sink_name) : 
       position_sink(position_sink_name)
-    , name(position_sink_name) { }
+    , name(position_sink_name)
+    , sample(0) { }
 
     // Test Positions can use a configuration file to specify parameters
     //virtual void configure(std::string file_name, std::string key) = 0;
@@ -54,6 +55,9 @@ protected:
 
     // The test position SINK
     shmem::SMServer<T> position_sink;
+    
+    // Test position sample number
+    uint32_t sample;
     
 };
 

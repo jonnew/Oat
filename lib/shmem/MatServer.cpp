@@ -131,8 +131,7 @@ namespace shmem {
         
         std::cout << "[";
         
-        int progress = BAR_WIDTH * 
-            (mat_buffer.read_available() / MATSERVER_BUFFER_SIZE);
+        int progress = (BAR_WIDTH * mat_buffer.read_available()) / MATSERVER_BUFFER_SIZE;
         int remaining = BAR_WIDTH - progress;
         
         for (int i = 0; i < progress; ++i) {

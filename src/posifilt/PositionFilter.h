@@ -36,8 +36,9 @@ public:
     , tuning_image_title(position_sink_name + "_tuning")
     , slider_title(position_sink_name + "_sliders") { }
 
-    // Execute filtering operation
+    virtual ~PositionFilter() { }
 
+    // Execute filtering operation
     void filterPositionAndServe(void) {
 
         if (grabPosition()) {

@@ -18,43 +18,83 @@
 #include <chrono>
 #include <iomanip>
 #include <ctime>
+#include <sys/stat.h>
+#include <boost/filesystem.hpp>
 
 #include "Recorder.h"
 
+namespace bfs = boost::filesystem;
+
 Recorder::Recorder(const std::vector<std::string>& position_source_names,
         const std::vector<std::string>& frame_source_names,
-        const std::string& save_path,
+        std::string& save_path,
+        std::string& file_name,
         const bool& append_date,
         const int& frames_per_second) :
   save_path(save_path)
+, file_name(file_name)
 , append_date(append_date)
 , frames_per_second(frames_per_second)
-, frame_client_idx(0) {
+, file_stream(position_fp, position_write_buffer, sizeof(position_write_buffer))
+, frame_client_idx(0)
+, position_client_idx(0)
+, position_labels(position_source_names) {
+
+    // First check that the save_path is valid
+    bfs::path path(save_path.c_str());
+    if (!bfs::exists(path) || !bfs::is_directory(path)) {
+        std::cout << "Warning: " + save_path + "does not exist, or is not a valid directory.\n";
+        save_path = "";
+    }
 
     std::time_t raw_time;
     struct tm * time_info;
-    char buffer[80];
+    char buffer[100];
 
     std::time(&raw_time);
     time_info = std::localtime(&raw_time);
-    std::strftime(buffer, 80, "%F-%H-%M-%S_", time_info); 
+    std::strftime(buffer, 80, "%F-%H-%M-%S_", time_info);
     std::string date_now = std::string(buffer);
 
-    // TODO: Create a single position file
+    // Setup position sources
+    if (!position_source_names.empty()) {
+
+        for (auto &name : position_source_names) {
+
+            position_sources.push_back(new shmem::SMClient<datatypes::Position2D>(name));
+            source_positions.push_back(new datatypes::Position2D);
+        }
+
+        // Create a single position file
+        std::string posi_fid;
+        if (append_date)
+            posi_fid = save_path + "/" + date_now;
+        else
+            posi_fid = save_path + "/" + "position";
+
+        posi_fid = posi_fid + ".json";
+
+        checkFile(posi_fid);
+
+        position_fp = fopen(posi_fid.c_str(), "wb");
+        json_writer.Reset(file_stream);
+    }
 
     // Create a video writer and file for each image stream
     for (auto &frame_source_name : frame_source_names) {
 
         // Generate file name for this video
-        std::string this_fid;
+        std::string frame_fid;
         if (append_date)
-            this_fid = save_path + "/" + date_now + frame_source_name + ".avi";
+            frame_fid = save_path + "/" + date_now + frame_source_name;
         else
-            this_fid = save_path + "/" + frame_source_name + ".avi";
+            frame_fid = save_path + "/" + frame_source_name;
 
-        // TODO: if the file exists, append a numeral
+        frame_fid = frame_fid + ".avi";
 
-        video_file_names.push_back(this_fid);
+        checkFile(frame_fid);
+
+        video_file_names.push_back(frame_fid);
         frame_sources.push_back(new shmem::MatClient(frame_source_name));
         frames.push_back(new cv::Mat);
         video_writers.push_back(new cv::VideoWriter());
@@ -76,12 +116,17 @@ Recorder::~Recorder() {
         writer->release();
         delete writer;
     }
-
+    
+    for (auto &position_source : position_sources) {
+        delete position_source;
+    }
+    
+    file_stream.Flush();
 }
 
 void Recorder::writeStreams() {
 
-    // Get the current positions
+    // Get current frames
     while (frame_client_idx < frame_sources.size()) {
 
         if (!(frame_sources[frame_client_idx]->getSharedMat(*frames[frame_client_idx]))) {
@@ -90,12 +135,24 @@ void Recorder::writeStreams() {
 
         frame_client_idx++;
     }
+    
+    // Get current positions
+    while (position_client_idx < position_sources.size()) {
+        
+        if (!(position_sources[position_client_idx]->getSharedObject(*source_positions[position_client_idx]))) {
+            return;
+        }
+        
+        position_client_idx++;
+    }
 
     // Reset the position client read counter
     frame_client_idx = 0;
+    position_client_idx = 0;
 
     // Write the frames to file
     writeFramesToFile();
+    writePositionsToFile();
 
 }
 
@@ -113,8 +170,25 @@ void Recorder::writeFramesToFile() {
             writer->write(*frames[idx]);
         }
 
-        idx++;
+        ++idx;
     }
+}
+
+void Recorder::writePositionsToFile() {
+    
+    json_writer.StartObject();
+    
+    json_writer.String("sample");
+    json_writer.Uint(position_sources[0]->get_current_time_stamp());
+    
+    int idx = 0;
+    for (auto pos : source_positions) {
+        
+        pos->Serialize(json_writer, position_labels[idx]);
+        ++idx;
+    }
+    
+    json_writer.EndObject();
 }
 
 void Recorder::initializeWriter(cv::VideoWriter& writer,
@@ -125,4 +199,36 @@ void Recorder::initializeWriter(cv::VideoWriter& writer,
     int fourcc = CV_FOURCC('H', '2', '6', '4');
     writer.open(file_name, fourcc, frames_per_second, image.size());
 
+}
+
+bool Recorder::checkFile(std::string& file) {
+
+    int i = 0;
+    std::string original_file = file;
+    bool file_exists = false;
+
+    while (bfs::exists(file.c_str())) {
+
+        ++i;
+        bfs::path path(file.c_str());
+        bfs::path root_path = path.root_path();
+        bfs::path stem = path.stem();
+        bfs::path extension = path.extension();
+
+        std::string append = "_" + std::to_string(i);
+        stem += append.c_str();
+
+        // Recreate file name
+        file = std::string(root_path.generic_string()) +
+                std::string(stem.generic_string()) +
+                std::string(extension.generic_string());
+    }
+
+    if (i != 0) {
+        std::cout << "Warning: " + original_file + " exists.\n"
+                << "Renamed to: " + file;
+        file_exists = true;
+    }
+
+    return file_exists;
 }
