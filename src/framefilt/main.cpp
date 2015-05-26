@@ -134,21 +134,21 @@ int main(int argc, char *argv[]) {
     // Start the user interface
     while (!done) {
 
-        int user_input;
+        char user_input;
         std::cout << "Select an action:\n";
-        std::cout << " [2]: Set background image to current\n";
-        std::cout << " [3]: Exit\n";
+        std::cout << " b: Set background image to current\n";
+        std::cout << " x: Exit\n";
         std::cout << ">> ";
 
         std::cin >> user_input;
 
         switch (user_input) {
-            case 2:
+            case 'b':
             {
                 background_subtractor.setBackgroundImage();
                 break;
             }
-            case 3:
+            case 'x':
             {
                 done = true;
                 break;

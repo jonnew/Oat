@@ -1,9 +1,9 @@
-# Real-time position tracker for animal behavior
+## Real-time position tracker for animal behavior
 Simple tracker consists of a set of programs for processing images, extracting position information, and streaming data to disk and the network that communicate through shared memory. This model enables quick, scripted construction of complex data processing chains without relying on a complicated GUI or plugin architecture.
 
-##Installation
+###Installation
 
-###Flycapture SDK (If point-grey camera is used)
+####Flycapture SDK (If point-grey camera is used)
 - Go to [point-grey website](www.ptgrey.com)
 - Download the FlyCapture2 SDK (version > 2.7.3)
 - Extract the archive and use the `install_flycapture.sh` script to install the SDK on your computer.
@@ -30,7 +30,7 @@ Simple tracker consists of a set of programs for processing images, extracting p
   - Assume that the camera is using eth2
   - `sudo ifconfig eth2 mtu 9000` 
 
-###Boost
+####Boost
 ```bash
 wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
 tar -xf download
@@ -40,7 +40,7 @@ sudo ./bootstrap.sh
 sudo ./b2 --with-program_options --with_system --with_thread
 ```
 
-###OpenCV
+####OpenCV
 ```bash
 wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
 unzip opencv.zip -d opencv
@@ -59,12 +59,10 @@ cd lib
 ./updatelibs.sh
 ```
 
-###Terminator (for running scripts in playpen)
+###tmux (for running scripts in playpen)
 ```bash
-sudo apt-get install python-keybindings terminator
-terminator
+sudo apt-get install tmux 
 ```
-- Right click terminator window and select `preferences` and then under the `global` tab make sure `DBus server` is ticked.
 
 ### TODO
 - [x] Interprocess data processing synchronization
@@ -87,6 +85,12 @@ terminator
 - [x] IPC method?
     - ~~UPD, TCP,~~ **shared memory**, ~~pipe?~~
 - [ ] Networked communication with clients that use extracted positional information
+    - Wire format: per packet, one time-stamp and N frames labeled by camera serial number. Frames encoded to something like rgb8 char array
+        - Strongly prefer to consume JSON over something ad hoc, opaque and untyped
+    - Multiple clients
+        - Broadcast over UDP
+        - Shared memory (no good for remote tracker)
+        - TCP/IP with thread for each client 
 - [x] General C++ coding practice
     - Pass by const ref whenever possible. Especially relevant when passing derived objects to prevent slicing.
     - const member properties can be initialized in the initialization list, rather than assigned in the constructor body. Take advantage.
@@ -106,18 +110,30 @@ terminator
 	- CMake managed versioning
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
+- [ ] Dealing with dropped frames
+    - Right now, I poll the camera for frames. This is fine for a file, but not nessesarly for a physical camera whose acqusitions is governed by an external, asychronous clock
+	- Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number to prevent offsets from occuring.
+	-
+### Manual
 
-### Passing positional data to the client process 
+#### frameserve
 
-#### Ideas...
-- Wire format: per packet, one time-stamp and N frames labeled by camera serial number. Frames encoded to something like rgb8 char array
-  - Strongly prefer to consume JSON over something ad hoc, opaque and untyped
-  - There will need to be some encoding/decoding steps if we use JSON, which has not native support for binary data blocks.
-  - Using an JSON array of JSON numbers or JSON strings to represent RGB values will result in unreasonably inefficient encoding of data, and packing and parsing will be slow.
-  - Using a Base64 scheme, we can trick a JSON string into holding a binary data block representing the image. It will still be a named property of the object.
-- Multiple clients
-  - Broadcast over UDP
-  - Shared memory (no good for remote tracker)
-  - TCP/IP with thread for each client 
+##### Usage
+```bash
+frameserve TYPE SINK [CONFIG]
+```
+For example
+```bash
+frameserve gige raw -c config.toml -k camera0
+```
+
+##### Configuration
+- __index__ Camera index
+- __exposure__ Exposure setting. Automatically adjust both shutter and gain to achieve given exposure
+- __shutter__
+- __gain__
+- __white_bal__
+
+
 
 

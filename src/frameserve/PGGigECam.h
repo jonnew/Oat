@@ -99,6 +99,9 @@ private:
     int printCameraInfo(void);
     int printBusInfo(void);
     void printStreamChannelInfo(FlyCapture2::GigEStreamChannel *stream_channel);
+    
+    // TODO: Grabbed frame callback
+    // void onGrabbedImage(FlyCapture2::Image* pImage, const void* pCallbackData);
 
 
 };

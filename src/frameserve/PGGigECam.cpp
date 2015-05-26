@@ -657,6 +657,19 @@ int PGGigECam::setupTrigger() {
         exit(EXIT_FAILURE);
     }
     
+    // Setup frame buffering
+    FC2Config flyCapConfig;
+    error = camera.GetConfiguration(&flyCapConfig);
+    flyCapConfig.grabMode = BUFFER_FRAMES;
+    flyCapConfig.highPerformanceRetrieveBuffer = true;
+    flyCapConfig.numBuffers = 10;
+    
+    error = camera.SetConfiguration(&flyCapConfig);
+    if (error != PGRERROR_OK) {
+        printError(error);
+        exit(EXIT_FAILURE);
+    }
+    
     //TODO: Custom frame rate
 //    // In the case where the trigger is not used, the config can specify a frame
 //    // rate
@@ -697,6 +710,15 @@ int PGGigECam::setupTrigger() {
 
     return 0;
 }
+
+// TODO: event driven acquisition.
+//void PGGigECam::onGrabbedImage(Image* pImage, const void* pCallbackData) {
+//    
+//    &raw_image = pImage;
+//    current_frame = imageToMat();
+//    serveMat();
+//    
+//}
 
 void PGGigECam::grabImage() {
 

@@ -274,7 +274,7 @@ static void saveCameraParams(const string& filename,
         }
         fs << "image_points" << imagePtMat;
     }
-    
+
     if (homography_valid) {
         fs << "homography" << homography2D;
     }
@@ -306,7 +306,7 @@ static bool runAndSave(const string& outputFilename,
         Mat& distCoeffs,
         bool writeExtrinsics,
         bool writePoints,
-        bool homography_valid, 
+        bool homography_valid,
         cv::Mat homography2D) {
     vector<Mat> rvecs, tvecs;
     vector<float> reprojErrs;
@@ -333,7 +333,7 @@ static bool runAndSave(const string& outputFilename,
             writeExtrinsics ? reprojErrs : vector<float>(),
             writePoints ? imagePoints : vector<vector<Point2f> >(),
             totalAvgErr,
-            homography_valid, 
+            homography_valid,
             homography2D);
     return ok;
 }
@@ -369,10 +369,10 @@ int main(int argc, char** argv) {
     bool config_used = false;
     float standard_distance_in_world_units;
     bool show_world_coords = false;
-    
+
     bool homography_valid = false;
     cv::Mat homography2D;
-  
+
 
     bool flipVertical = false;
     bool showUndistorted = false;
@@ -528,7 +528,7 @@ int main(int argc, char** argv) {
                     boardSize, pattern, squareSize, aspectRatio,
                     flags, cameraMatrix, distCoeffs,
                     writeExtrinsics, writePoints,
-                    homography_valid, 
+                    homography_valid,
                     homography2D);
             break;
         }
@@ -605,7 +605,7 @@ int main(int argc, char** argv) {
             mode = CAPTURING;
             imagePoints.clear();
         }
-        
+
         putText(view, msg, textOrigin, 1, 1,
                 mode != CALIBRATED ? Scalar(0, 0, 255) : Scalar(0, 255, 0));
 
@@ -655,7 +655,7 @@ int main(int argc, char** argv) {
                 std::vector<cv::Point2f> dst_points;
 
                 bool done = false;
-                
+
                 while (!done) {
 
                     // Plot the current mouse click position
@@ -714,29 +714,35 @@ int main(int argc, char** argv) {
                         case 'a':
                         {
 
-                            float x, y;
-                            cv::Point2f src_pt;
-                            cv::Point2f dst_pt;
+                            try {
+                                float x, y;
+                                cv::Point2f src_pt;
+                                cv::Point2f dst_pt;
 
-                            std::string input_coords;
+                                std::string input_coords;
 
-                            std::cout << "Enter X world coordinate:\n";
-                            std::cin >> input_coords;
-                            x = std::stof(input_coords);
+                                std::cout << "Enter X world coordinate:\n";
+                                std::cin >> input_coords;
+                                x = std::stof(input_coords);
 
-                            std::cout << "Enter Y world coordinate:\n";
-                            std::cin >> input_coords;
-                            y = std::stof(input_coords);
+                                std::cout << "Enter Y world coordinate:\n";
+                                std::cin >> input_coords;
+                                y = std::stof(input_coords);
 
-                            src_pt.x = (float) mouse_pt.x;
-                            src_pt.y = (float) mouse_pt.y;
-                            dst_pt.x = x;
-                            dst_pt.y = y;
+                                src_pt.x = (float) mouse_pt.x;
+                                src_pt.y = (float) mouse_pt.y;
+                                dst_pt.x = x;
+                                dst_pt.y = y;
 
-                            src_points.push_back(src_pt);
-                            dst_points.push_back(dst_pt);
+                                src_points.push_back(src_pt);
+                                dst_points.push_back(dst_pt);
 
-                            std::cout << "Point added to map. Select another action:\n";
+                                std::cout << "Point added to map. Select another action:\n";
+
+                            } catch (std::invalid_argument ex) {
+                                std::cout << "Invalid input.\n";
+                            }
+
                             std::cout << "Hot keys:"
                                     << "  'x' - exit homography generation routine and attempt to calculate translation matrix.\n"
                                     << "  'c' - calculate homography matrix using current points.\n"
@@ -748,7 +754,7 @@ int main(int argc, char** argv) {
                             break;
                     }
                 }
-                
+
                 if (homography_valid) {
 
                     runAndSave(outputFilename, imagePoints, imageSize,
@@ -758,7 +764,7 @@ int main(int argc, char** argv) {
                             homography_valid,
                             homography2D);
                 }
-                        
+
                 mode = CALIBRATED;
             }
         }
