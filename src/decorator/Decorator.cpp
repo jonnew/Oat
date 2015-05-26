@@ -94,17 +94,17 @@ void Decorator::drawSymbols() {
         drawVelocity();
     }
 
-	if (print_timestamp) {
-   		printTimeStamp();
-	}
+    if (print_timestamp) {
+        printTimeStamp();
+    }
 
-	if (print_sample_number) {
-    	printSampleNumber();
-	}
+    if (print_sample_number) {
+        printSampleNumber();
+    }
 
-	if (encode_sample_number) {
-    	encodeSampleNumber();
-	}
+    if (encode_sample_number) {
+        encodeSampleNumber();
+    }
 }
 
 // TODO: project 3rd dimension

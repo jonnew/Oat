@@ -47,9 +47,9 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> position_sources;
     std::string frame_source;
     std::string frame_sink;
-	bool print_timestamp = false;
-	bool print_sample_number = false;
-	bool encode_sample_number = false;
+    bool print_timestamp = false;
+    bool print_sample_number = false;
+    bool encode_sample_number = false;
 
     try {
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
                 ("timestamp,t", "Write the current date and time on each frame.\n")
                 ("sample,s", "Write the frame sample number on each frame.\n")
                 ("samplecode,S", "Write the binary encoded sample on each frame.\n")
-				;
+                ;
 
         po::options_description hidden("POSITIONAL OPTIONS");
         hidden.add_options() ("framesource", po::value<std::string>(&frame_source),
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
         // last positional arguments are imagesource and sink in that order
         positional_options.add("framesource", 1);
         positional_options.add("framesink", 1);
-        
+
         po::options_description visible_options("OPTIONS");
         visible_options.add(options).add(configuration);
 
@@ -117,43 +117,28 @@ int main(int argc, char *argv[]) {
             std::cout << "Error: at least a single FRAME_SOURCE must be specified. Exiting.\n";
             return -1;
         }
-        
+
         if (!variable_map.count("framesink")) {
             printUsage(options);
             std::cout << "Error: at least a single FRAME_SINK must be specified. Exiting.\n";
             return -1;
         }
+        
+        if (variable_map.count("positionsources")) {
+            position_sources = variable_map["positionsources"].as< std::vector<std::string> >();
+        }
 
         if (variable_map.count("timestamp")) {
-			print_timestamp = true;
-		}
-		
-		if (variable_map.("sample")) {
-			print_sample_number = true;
-		}
+            print_timestamp = true;
+        }
 
-		if (variable_map.count("samplecode")) {
-			encode_sample_number = true;
-		}
-			/
-//        // Sources may contain both imagesource and sink information!
-//        if (variable_map.count("positionsources")) {
-//            position_sources = variable_map["positionsources"].as< std::vector<std::string> >();
-//        }
-//
-//        if (!variable_map.count("imagesource") && !variable_map.count("sink")) {
-//            frame_sink = position_sources.back();
-//            position_sources.pop_back();
-//
-//            frame_source = position_sources.back();
-//            position_sources.pop_back();
-//        } else if (variable_map.count("imagesource") && !variable_map.count("sink")) {
-//            frame_sink = position_sources.back();
-//            position_sources.pop_back();
-//        } else if (!variable_map.count("imagesource") && variable_map.count("sink")) {
-//            frame_source = position_sources.back();
-//            position_sources.pop_back();
-//        }
+        if (variable_map.count("sample")) {
+            print_sample_number = true;
+        }
+
+        if (variable_map.count("samplecode")) {
+            encode_sample_number = true;
+        }
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -168,9 +153,9 @@ int main(int argc, char *argv[]) {
 
     // Make the decorator
     Decorator decorator(position_sources, frame_source, frame_sink);
-	decorator->set_print_timestamp(print_timestamp);
-	decorator->set_print_sample_number(print_sample_number);
-	decorator->set_encode_sample_number(encode_sample_number);
+    decorator.set_print_timestamp(print_timestamp);
+    decorator.set_print_sample_number(print_sample_number);
+    decorator.set_encode_sample_number(encode_sample_number);
 
     // Two threads - one for user interaction, the other
     // for processing
