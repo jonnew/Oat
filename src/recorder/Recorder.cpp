@@ -35,7 +35,6 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 , file_name(file_name)
 , append_date(append_date)
 , frames_per_second(frames_per_second)
-, file_stream(position_fp, position_write_buffer, sizeof(position_write_buffer))
 , frame_client_idx(0)
 , position_client_idx(0)
 , position_labels(position_source_names) {
@@ -77,7 +76,8 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         checkFile(posi_fid);
 
         position_fp = fopen(posi_fid.c_str(), "wb");
-        json_writer.Reset(file_stream);
+        file_stream = new rapidjson::FileWriteStream(position_fp, position_write_buffer, sizeof (position_write_buffer));
+        json_writer.Reset(*file_stream);
     }
 
     // Create a video writer and file for each image stream
@@ -116,12 +116,14 @@ Recorder::~Recorder() {
         writer->release();
         delete writer;
     }
-    
+
     for (auto &position_source : position_sources) {
         delete position_source;
     }
-    
-    file_stream.Flush();
+    if (position_fp) {
+        file_stream->Flush();
+        delete file_stream;
+    }
 }
 
 void Recorder::writeStreams() {
@@ -135,14 +137,14 @@ void Recorder::writeStreams() {
 
         frame_client_idx++;
     }
-    
+
     // Get current positions
     while (position_client_idx < position_sources.size()) {
-        
+
         if (!(position_sources[position_client_idx]->getSharedObject(*source_positions[position_client_idx]))) {
             return;
         }
-        
+
         position_client_idx++;
     }
 
@@ -152,7 +154,7 @@ void Recorder::writeStreams() {
 
     // Write the frames to file
     writeFramesToFile();
-    writePositionsToFile();
+    //writePositionsToFile();
 
 }
 
@@ -175,19 +177,19 @@ void Recorder::writeFramesToFile() {
 }
 
 void Recorder::writePositionsToFile() {
-    
+
     json_writer.StartObject();
-    
+
     json_writer.String("sample");
     json_writer.Uint(position_sources[0]->get_current_time_stamp());
-    
+
     int idx = 0;
     for (auto pos : source_positions) {
-        
+
         pos->Serialize(json_writer, position_labels[idx]);
         ++idx;
     }
-    
+
     json_writer.EndObject();
 }
 

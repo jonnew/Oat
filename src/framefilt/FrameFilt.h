@@ -38,12 +38,12 @@ public:
     virtual void filterAndServe(void) = 0;
 
     // Frame filters must be configurable
-    virtual void configure(std::string config_file, std::string config_key) = 0;
+    //virtual void configure(std::string config_file, std::string config_key) = 0;
 
     // Frame filters must be interruptable
     void stop(void) { frame_sink.set_running(false); }
 
-private:
+protected:
 
     // Frame filters have Mat client object for receiving frames
     shmem::MatClient frame_source;

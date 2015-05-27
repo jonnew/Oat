@@ -30,9 +30,9 @@ BackgroundSubtractor::BackgroundSubtractor(const std::string source_name, const 
  * The frame_source must have previously populated the the shared cv::Mat object.
  * 
  */
-void BackgroundSubtractor::setBackgroundImage() {
+void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
 
-    background_img = current_raw_frame.clone();
+    background_img = frame.clone();
     background_set = true;
 }
 
@@ -46,8 +46,6 @@ void BackgroundSubtractor::filterAndServe() {
     // Only proceed with processing if we are getting a valid frame
     if (frame_source.getSharedMat(current_frame)) {
 
-        current_raw_frame = current_frame.clone();
-        
         if (background_set) {
 
             try {
@@ -61,7 +59,7 @@ void BackgroundSubtractor::filterAndServe() {
         } else {
 
             // First image is always used as the default background image
-            setBackgroundImage();
+            setBackgroundImage(current_frame);
         }
 
         // Push filtered frame forward, along with frame_source sample number

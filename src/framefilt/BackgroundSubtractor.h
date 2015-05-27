@@ -26,14 +26,14 @@ public:
 
     BackgroundSubtractor(const std::string source_name, const std::string sink_name);
 
-    void setBackgroundImage(void);
+    void setBackgroundImage(const cv::Mat&);
+    void filterAndServe(void);
     
 private:
 
     // The background image used for subtraction
     bool background_set = false;
     cv::Mat current_frame;
-    cv::Mat current_raw_frame;
     cv::Mat background_img;
 
 };

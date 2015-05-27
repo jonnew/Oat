@@ -61,7 +61,7 @@ private:
     // Position file
     FILE* position_fp;
     char position_write_buffer[65536];
-    rapidjson::FileWriteStream file_stream;
+    rapidjson::FileWriteStream * file_stream;
     rapidjson::Writer<rapidjson::FileWriteStream> json_writer;
 
     // Image sources

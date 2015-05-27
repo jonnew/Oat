@@ -37,7 +37,7 @@ void run(BackgroundSubtractor* background_subtractor, std::string source, std::s
 
     while (!done) {
 
-        background_subtractor->subtractBackground();
+        background_subtractor->filterAndServe();
     }
 
     std::cout << "Background subtractor is exiting.\n";
@@ -136,18 +136,18 @@ int main(int argc, char *argv[]) {
 
         char user_input;
         std::cout << "Select an action:\n";
-        std::cout << " b: Set background image to current\n";
+        //std::cout << " b: Set background image to current\n";
         std::cout << " x: Exit\n";
         std::cout << ">> ";
 
         std::cin >> user_input;
 
         switch (user_input) {
-            case 'b':
-            {
-                background_subtractor.setBackgroundImage();
-                break;
-            }
+//            case 'b':
+//            {
+//                background_subtractor.setBackgroundImage();
+//                break;
+//            }
             case 'x':
             {
                 done = true;
