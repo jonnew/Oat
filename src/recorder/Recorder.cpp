@@ -27,8 +27,8 @@ namespace bfs = boost::filesystem;
 
 Recorder::Recorder(const std::vector<std::string>& position_source_names,
         const std::vector<std::string>& frame_source_names,
-        std::string& save_path,
-        std::string& file_name,
+        std::string save_path,
+        std::string file_name,
         const bool& append_date,
         const int& frames_per_second) :
   save_path(save_path)
@@ -67,9 +67,9 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         // Create a single position file
         std::string posi_fid;
         if (append_date)
-            posi_fid = save_path + "/" + date_now;
+            posi_fid = save_path + "/" + date_now + "_" + file_name;
         else
-            posi_fid = save_path + "/" + "position";
+            posi_fid = save_path + "/" + "_" + position_source_names[0];
 
         posi_fid = posi_fid + ".json";
 
@@ -86,9 +86,9 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         // Generate file name for this video
         std::string frame_fid;
         if (append_date)
-            frame_fid = save_path + "/" + date_now + frame_source_name;
+            frame_fid = save_path + "/" + date_now + "_" + file_name + "_" + frame_source_name;
         else
-            frame_fid = save_path + "/" + frame_source_name;
+            frame_fid = save_path + "/" + file_name + "_" + frame_source_name;
 
         frame_fid = frame_fid + ".avi";
 
@@ -212,7 +212,7 @@ bool Recorder::checkFile(std::string& file) {
     while (bfs::exists(file.c_str())) {
 
         ++i;
-        bfs::path path(file.c_str());
+        bfs::path path(original_file.c_str());
         bfs::path root_path = path.root_path();
         bfs::path stem = path.stem();
         bfs::path extension = path.extension();

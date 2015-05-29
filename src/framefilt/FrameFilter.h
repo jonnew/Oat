@@ -25,23 +25,24 @@
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
 
-class FrameFilt {
+class FrameFilter {
 public:
 
-    FrameFilt(const std::string source_name, const std::string sink_name) :
+    FrameFilter(const std::string& source_name, const std::string& sink_name) :
       frame_source(source_name)
-    , frame_sink(sink_name) { }
+    , frame_sink(sink_name)
+    , use_roi_mask(false) { }
     
-    virtual ~FrameFilt() { }
+    virtual ~FrameFilter() { }
 
     // Frame filters must be able to receive, filter, and serve frames
     virtual void filterAndServe(void) = 0;
 
     // Frame filters must be configurable
-    //virtual void configure(std::string config_file, std::string config_key) = 0;
-
+    virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
+    
     // Frame filters must be interruptable
-    void stop(void) { frame_sink.set_running(false); }
+    void stop(void) { frame_sink.set_running(false); }   
 
 protected:
 
@@ -50,6 +51,10 @@ protected:
 
     // Frame filters have Mat server for sending processed frames
     shmem::MatServer frame_sink;
+    
+    // All frame filters must be able to mask frames with an arbitrary ROI
+    bool use_roi_mask;
+    cv::Mat roi_mask;
 
 };
 

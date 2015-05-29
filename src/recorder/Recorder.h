@@ -33,9 +33,9 @@ public:
     // Both positions and images
     Recorder(const std::vector<std::string>& position_source_names,
             const std::vector<std::string>& frame_source_names,
-            std::string& save_path,
-            std::string& file_name,
-            const bool& append_date,
+            std::string save_path = ".",
+            std::string file_name = "",
+            const bool& append_date = false,
             const int& frames_per_second = 25);
 
     ~Recorder();
@@ -52,7 +52,7 @@ private:
     std::string save_path;
     std::string file_name;
     const bool append_date;
-
+    
     // Video files
     const int frames_per_second;
     std::vector<std::string> video_file_names;

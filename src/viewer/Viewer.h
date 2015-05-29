@@ -25,17 +25,16 @@
 
 class Viewer {
 public:
-    Viewer(std::string server_name);
+    Viewer(const std::string& frame_source_name, 
+           std::string& save_path,
+           const std::string& file_name);
 
     void showImage(void);
     void showImage(std::string title);
     void stop(void);
 
     // Accessors
-
-    std::string get_name(void) {
-        return name;
-    }
+    std::string get_name(void) { return name; }
     
 private:
 
@@ -47,6 +46,15 @@ private:
 
     // Mat client object for receiving frames
     shmem::MatClient frame_source;
+    
+    // Used to request a snapshot of the current image, saved to disk
+    std::string frame_fid;
+    std::string save_path;
+    std::string file_name;
+    bool append_date;
+    std::vector<int> compression_params;
+    
+    std::string makeFileName(void);
 };
 
 #endif //VIEWER_H

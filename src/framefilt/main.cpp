@@ -14,60 +14,73 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "BackgroundSubtractor.h"
-
+#include <unordered_map>
 #include <signal.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
+#include "FrameFilter.h"
+#include "BackgroundSubtractor.h"
+
 namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
-bool running = true;
 
-void term(int) {
-    done = 1;
-}
+void run(FrameFilter* filter, std::string source, std::string sink) {
 
-void run(BackgroundSubtractor* background_subtractor, std::string source, std::string sink) {
-
-    std::cout << "Background subtractor has begun listening to source \"" + source + "\".\n";
-    std::cout << "Background subtractor has begun steaming to sink \"" + sink + "\".\n";
+    std::cout << "Frame filter has begun listening to source \"" + source + "\".\n";
+    std::cout << "Frame filter has begun steaming to sink \"" + sink + "\".\n";
 
     while (!done) {
-
-        background_subtractor->filterAndServe();
+        filter->filterAndServe();
     }
 
-    std::cout << "Background subtractor is exiting.\n";
+    std::cout << "Frame filter is exiting.\n";
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: backsub [OPTIONS]\n";
-    std::cout << "   or: backsub SOURCE SINK\n"; // TODO: TYPE
-    std::cout << "Perform background subtraction on images from SOURCE.\n";
-    std::cout << "Publish background-subtracted images to SMServer<SharedCVMatHeader> SINK.\n";
-    std::cout << options << "\n";
+    std::cout << "Usage: framefilt [OPTIONS]\n"
+              << "   or: framefilt TYPE SOURCE SINK [CONFIG]\n"
+              << "Perform background subtraction on images from SOURCE.\n"
+              << "Publish background-subtracted images to SMServer<SharedCVMatHeader> SINK.\n\n"
+              << "TYPE\n"
+              << "  \'bsub\': Background subtraction\n\n"
+              // TODO: << "  \'mask\': Binary mask\n"
+              << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
 
-    signal(SIGINT, term);
-
+    std::string type;
     std::string source;
     std::string sink;
+    std::string config_file;
+    std::string config_key;
+    bool config_used = false;
+    po::options_description visible_options("OPTIONS");
+    
+    std::unordered_map<std::string, char> type_hash;
+    type_hash["bsub"] = 'a';
 
     try {
 
-        po::options_description options("OPTIONS");
+        po::options_description options("META");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
+        
+        po::options_description config("CONFIGURATION");
+        config.add_options()
+                ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
+                ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
+                ;
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
+                ("type", po::value<std::string>(&type), 
+                "Type of frame filter to use.\n")
                 ("source", po::value<std::string>(&source),
                 "The name of the SOURCE that supplies images on which to perform background subtraction."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
@@ -76,11 +89,14 @@ int main(int argc, char *argv[]) {
                 ;
 
         po::positional_options_description positional_options;
+         positional_options.add("type", 1);
         positional_options.add("source", 1);
-        positional_options.add("sink", 2);
+        positional_options.add("sink", 1);
+        
+        visible_options.add(options).add(config);
 
         po::options_description all_options("All options");
-        all_options.add(options).add(hidden);
+        all_options.add(options).add(config).add(hidden);
 
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
@@ -92,7 +108,7 @@ int main(int argc, char *argv[]) {
 
         // Use the parsed options
         if (variable_map.count("help")) {
-            printUsage(options);
+            printUsage(visible_options);
             return 0;
         }
 
@@ -104,15 +120,24 @@ int main(int argc, char *argv[]) {
         }
 
         if (!variable_map.count("source")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: a SOURCE must be specified. Exiting.\n";
             return -1;
         }
 
         if (!variable_map.count("sink")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: a SINK name must be specified. Exiting.\n";
             return -1;
+        }
+        
+        if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
+                (!variable_map.count("config-file") && variable_map.count("config-key"))) {
+            printUsage(visible_options);
+            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+            return -1;
+        } else if (variable_map.count("config-file")) {
+            config_used = true;
         }
 
 
@@ -123,14 +148,30 @@ int main(int argc, char *argv[]) {
         std::cerr << "Exception of unknown type! " << std::endl;
     }
 
-    BackgroundSubtractor background_subtractor(source, sink);
+    FrameFilter* filter; //(ant_source, pos_source, sink);
+    switch (type_hash[type]) {
+        case 'a':
+        {
+            filter = new BackgroundSubtractor(source, sink);
+            break;
+        }
+        default:
+        {
+            printUsage(visible_options);
+            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            return -1;
+        }
+    }
+
+    if (config_used)
+        filter->configure(config_file, config_key);
 
     // Two threads - one for user interaction, the other
     // for executing the processor
     boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &background_subtractor, source, sink));
+    thread_group.create_thread(boost::bind(&run, filter, source, sink));
     sleep(1);
-
+    
     // Start the user interface
     while (!done) {
 
@@ -145,7 +186,7 @@ int main(int argc, char *argv[]) {
         switch (user_input) {
 //            case 'b':
 //            {
-//                background_subtractor.setBackgroundImage();
+//                filter->setBackgroundImage();
 //                break;
 //            }
             case 'x':

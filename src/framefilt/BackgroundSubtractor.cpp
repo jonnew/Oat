@@ -18,12 +18,57 @@
 
 #include <string>
 #include <iostream>
-
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 
-BackgroundSubtractor::BackgroundSubtractor(const std::string source_name, const std::string sink_name) :
-  FrameFilt(source_name, sink_name) { }
+#include "../../lib/cpptoml/cpptoml.h"
+
+BackgroundSubtractor::BackgroundSubtractor(const std::string& source_name, const std::string& sink_name) :
+  FrameFilter(source_name, sink_name) { 
+
+    cv::namedWindow("test", cv::WINDOW_NORMAL);
+
+}
+
+void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
+    
+    cpptoml::table config;
+
+    try {
+        config = cpptoml::parse_file(config_file);
+    } catch (const cpptoml::parse_exception& e) {
+        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
+    }
+
+    try {
+        // See if a camera configuration was provided
+        if (config.contains(config_key)) {
+
+            auto this_config = *config.get_table(config_key);
+
+            std::string mask_path;
+            if (this_config.contains("roi_mask")) {
+                mask_path = *this_config.get_as<std::string>("roi_mask");
+            }
+            
+            try {
+                roi_mask = cv::imread(mask_path, CV_LOAD_IMAGE_GRAYSCALE);
+                use_roi_mask = true;
+            } catch (cv::Exception& e) {
+                std::cout << "CV Exception: " << e.what() << "\n";
+                std::cout << "ROI mask will not be used.\n";
+                use_roi_mask = false;
+            }
+
+        } else {
+            std::cerr << "No background subtraction configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
+}
 
 /**
  * Set the background image to be used during subsequent subtraction operations.
@@ -35,7 +80,6 @@ void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
     background_img = frame.clone();
     background_set = true;
 }
-
 /**
  * Subtract a previously set background image from an input image to produce
  * the output matrix.
@@ -53,13 +97,24 @@ void BackgroundSubtractor::filterAndServe() {
                 current_frame = current_frame - background_img;
             } catch (cv::Exception& e) {
                 std::cout << "CV Exception: " << e.what() << "\n";
-                exit(EXIT_FAILURE);
             }
 
         } else {
 
             // First image is always used as the default background image
             setBackgroundImage(current_frame);
+        }
+
+
+        if (use_roi_mask) {
+
+            try {
+                CV_Assert(current_frame.size() == roi_mask.size());
+                current_frame.setTo(0, roi_mask == 0);
+                
+            } catch (cv::Exception& e) {
+                std::cout << "CV Exception: " << e.what() << "\n";
+            }
         }
 
         // Push filtered frame forward, along with frame_source sample number

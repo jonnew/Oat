@@ -41,7 +41,7 @@ void printUsage(po::options_description options) {
               << "Combine positional information from two or more SMServer<Position> SOURCES.\n"
               << "Publish processed object positions to a SMServer<Position> SINK.\n\n"
               << "TYPE\n"
-              << "  \'mean\': Geometric mean of SOURCE positions\n"
+              << "  \'mean\': Geometric mean of SOURCE positions\n\n"
               << options << "\n";
 }
 

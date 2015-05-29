@@ -19,14 +19,15 @@
 
 #include <opencv2/core/mat.hpp>
 
-#include "FrameFilt.h"
+#include "FrameFilter.h"
 
-class BackgroundSubtractor : public FrameFilt {
+class BackgroundSubtractor : public FrameFilter {
 public:
 
-    BackgroundSubtractor(const std::string source_name, const std::string sink_name);
+    BackgroundSubtractor(const std::string& source_name, const std::string& sink_name);
 
     void setBackgroundImage(const cv::Mat&);
+    void configure(const std::string& config_file, const std::string& config_key);
     void filterAndServe(void);
     
 private:

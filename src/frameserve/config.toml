@@ -1,23 +1,29 @@
-# Example camera configuration file
-# - Every viable option is listed with a reasonable value
-# - Some options are mutualy exclusive (e.g. Camera exposure, shutter, and gain),
-# and therefore will be overriden if more than one is specified.
-# - Commented options revert to their default state, ususuall "off"
-# - Invalid parameters are ignored (TODO: with a warning)
+# Example configuration file for the frameserve component
+# Configuration options for each component TYPE are shown
+# To use them:
+#
+# ``` bash
+# ./frameserve TYPE SINK -c config.toml -k TYPE
+# ```
 
-# Camera (gige) -------------------------
-
-[camera]
-index = 0 							# Index of camera on the bus
-exposure = -2.0							# EV
+[gige]
+roi_mask = "mask.png"
+index = 0 								# Index of camera on the bus
+exposure = 0.0							# EV
 shutter = 3 							# ms (ignored if exposure on)
-gain = 0 							# dB (ignored if exposure on)
-#white_bal = {red = 500, blue = 800}                            # If not supplied, defaults to "off"
-#roi = {x_offset = 0, y_offset = 0, width = 728, height = 728}  # Region of interest, pixels
-fps = 30.0                                                      # Frames per second in free run trigger mode
+gain = 0 								# dB (ignored if exposure on)
+#white_bal = {red = 500, blue = 800}	# Defaults to "off"
+roi = {x_offset = 300, y_offset = 0, width = 728, height = 728} # Region of interest, pixels
 trigger_on = false						# If false, free run
-trigger_polarity = 1                                            # Rising edge active
+trigger_polarity = 1					# Rising edge active
 trigger_mode = 14						# 14 = Overlapped Exposure/Readout Mode (see Camera manual)
-                                                                # 7  = Software trigger
+										# 7  = Software trigger
 trigger_source = 0						# GPIO pin that trigger will be sent to
-calibration_file = "calibration.yml"
+#calibration_file = "calibration.yml" 	# Camera matrix, distorition coefficients for lens correction
+
+[file]
+frame_rate = 50.0                       # Hz 
+#roi = {x_offset = 125, y_offset = 30, width = 490, height = 420} # Region of interest, pixels
+
+[wcam]
+

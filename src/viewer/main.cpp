@@ -37,20 +37,20 @@ void printUsage(po::options_description options) {
     std::cout << "Usage: viewer [OPTIONS]\n"
             << "   or: viewer [CONFIGURATION] SOURCE\n"
             << "View the output of a SOURCE of type SMServer<SharedCVMatHeader>\n"
-            << "Optionally, save the video stream to a file.\n"
             << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
 
-    // The image source to which the viewer will be attached
     std::string source;
     std::string file_name;
-    bool append_date;
+    std::string save_path;
+    bool append_date = false;
+    po::options_description visible_options("OPTIONS");
 
     try {
 
-        po::options_description options("OPTIONS");
+        po::options_description options("META");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -58,10 +58,12 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
-                ("file,f", po::value<std::string>(&file_name),
-                "The path to save the video stream to.")
-                ("date,d", po::value<bool>(&append_date),
-                "If specified, YYYY-MM-DD-HH-mm-ss_ will be prepended to the filename.")
+                ("filename,n", po::value<std::string>(&file_name),
+                "The base snapshot file name.\n"
+                " - The the name of the SOURCE for this viewer will be appended to this name.\n"
+                " - The timestamp of the snapshot will be prepended to this name.")
+                ("folder,f", po::value<std::string>(&save_path),
+                "The path to the folder to which the video stream and position information will be saved.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -76,6 +78,8 @@ int main(int argc, char *argv[]) {
 
         po::options_description all_options("ALL OPTIONS");
         all_options.add(options).add(hidden);
+        
+        visible_options.add(options).add(config);
 
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
@@ -87,7 +91,7 @@ int main(int argc, char *argv[]) {
 
         // Use the parsed options
         if (variable_map.count("help")) {
-            printUsage(options);
+            printUsage(visible_options);
             return 0;
         }
 
@@ -99,11 +103,24 @@ int main(int argc, char *argv[]) {
         }
 
         if (!variable_map.count("source")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: a SOURCE must be specified. Exiting.\n";
             return -1;
         }
-
+        
+        if (!variable_map.count("folder") ) {
+            save_path = ".";
+            std::cout << "Warning: saving files to the current directory.\n";
+        }
+        
+        if (!variable_map.count("filename") ) {
+            file_name = "";
+            std::cout << "Warning: no base filename was provided.\n";
+        }
+        
+        if (variable_map.count("date")) {
+            append_date = true;
+        } 
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -113,10 +130,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Make the viewer
-    Viewer viewer(source);
+    Viewer viewer(source, save_path, file_name);
 
     std::cout << "Viewer has begun listening to source \"" + source + "\".\n";
     std::cout << "COMMANDS:\n";
+    std::cout << "  s: Take snapshot.\n";
     std::cout << "  x: Exit.\n";
 
     // Two threads - one for user interaction, the other
@@ -144,10 +162,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // TODO: If the server exits before the client, the client is blocked due
-    // to the wait() call and therefore the done condition is never evaluated
-    // and therefore the thread is never available for joining and therefore
-    // this call hangs.
     thread_group.join_all();
 
     // Exit

@@ -43,10 +43,9 @@ void printUsage(po::options_description options) {
 
 int main(int argc, char *argv[]) {
 
-    // The image source to which the viewer will be attached
-    std::string file_name;
     std::vector<std::string> frame_sources;
     std::vector<std::string> position_sources;
+    std::string file_name;
     std::string save_path;
     bool append_date = false;
 
