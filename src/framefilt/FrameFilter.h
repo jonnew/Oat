@@ -21,6 +21,7 @@
 #define	FRAMEFILT_H
 
 #include <string>
+#include <opencv2/core/mat.hpp>
 
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
@@ -30,8 +31,7 @@ public:
 
     FrameFilter(const std::string& source_name, const std::string& sink_name) :
       frame_source(source_name)
-    , frame_sink(sink_name)
-    , use_roi_mask(false) { }
+    , frame_sink(sink_name) { }
     
     virtual ~FrameFilter() { }
 
@@ -47,15 +47,12 @@ public:
 protected:
 
     // Frame filters have Mat client object for receiving frames
+    cv::Mat current_frame;
     shmem::MatClient frame_source;
 
     // Frame filters have Mat server for sending processed frames
     shmem::MatServer frame_sink;
-    
-    // All frame filters must be able to mask frames with an arbitrary ROI
-    bool use_roi_mask;
-    cv::Mat roi_mask;
-
+   
 };
 
 #endif	/* FRAMEFILT_H */

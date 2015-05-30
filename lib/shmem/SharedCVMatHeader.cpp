@@ -32,6 +32,7 @@ namespace shmem {
     , homography_valid(false) { }
 
     void SharedCVMatHeader::set_mat(const cv::Mat& value) {
+        
         memcpy(data_ptr, value.data, data_size_in_bytes);
     }
     
@@ -42,7 +43,6 @@ namespace shmem {
         mat_size = model.size();
         type = model.type();
         handle = shared_mem.get_handle_from_address(data_ptr);
-
     }
 
     void SharedCVMatHeader::attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat) {

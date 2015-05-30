@@ -42,8 +42,10 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
     // First check that the save_path is valid
     bfs::path path(save_path.c_str());
     if (!bfs::exists(path) || !bfs::is_directory(path)) {
-        std::cout << "Warning: " + save_path + "does not exist, or is not a valid directory.\n";
-        save_path = "";
+        std::cout << "Warning: requested snapshot save path, " + save_path + ", "
+                  << "does not exist, or is not a valid directory.\n"
+                  << "Using the current directory instead.\n";
+        save_path = ".";
     }
 
     std::time_t raw_time;
@@ -52,7 +54,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
     std::time(&raw_time);
     time_info = std::localtime(&raw_time);
-    std::strftime(buffer, 80, "%F-%H-%M-%S_", time_info);
+    std::strftime(buffer, 80, "%F-%H-%M-%S", time_info);
     std::string date_now = std::string(buffer);
 
     // Setup position sources
@@ -69,7 +71,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         if (append_date)
             posi_fid = save_path + "/" + date_now + "_" + file_name;
         else
-            posi_fid = save_path + "/" + "_" + position_source_names[0];
+            posi_fid = save_path + "/" + position_source_names[0];
 
         posi_fid = posi_fid + ".json";
 
@@ -154,7 +156,7 @@ void Recorder::writeStreams() {
 
     // Write the frames to file
     writeFramesToFile();
-    //writePositionsToFile();
+    writePositionsToFile();
 
 }
 
@@ -182,6 +184,8 @@ void Recorder::writePositionsToFile() {
 
     json_writer.String("sample");
     json_writer.Uint(position_sources[0]->get_current_time_stamp());
+    
+    json_writer.StartArray();
 
     int idx = 0;
     for (auto pos : source_positions) {
@@ -189,6 +193,8 @@ void Recorder::writePositionsToFile() {
         pos->Serialize(json_writer, position_labels[idx]);
         ++idx;
     }
+    
+    json_writer.EndArray();
 
     json_writer.EndObject();
 }
@@ -211,6 +217,7 @@ bool Recorder::checkFile(std::string& file) {
 
     while (bfs::exists(file.c_str())) {
 
+        
         ++i;
         bfs::path path(original_file.c_str());
         bfs::path root_path = path.root_path();
@@ -224,11 +231,12 @@ bool Recorder::checkFile(std::string& file) {
         file = std::string(root_path.generic_string()) +
                 std::string(stem.generic_string()) +
                 std::string(extension.generic_string());
+        
     }
 
     if (i != 0) {
         std::cout << "Warning: " + original_file + " exists.\n"
-                << "Renamed to: " + file;
+                  << "Renamed to: " + file;
         file_exists = true;
     }
 

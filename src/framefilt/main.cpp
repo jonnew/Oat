@@ -22,6 +22,7 @@
 
 #include "FrameFilter.h"
 #include "BackgroundSubtractor.h"
+#include "FrameMasker.h"
 
 namespace po = boost::program_options;
 
@@ -46,7 +47,7 @@ void printUsage(po::options_description options) {
               << "Publish background-subtracted images to SMServer<SharedCVMatHeader> SINK.\n\n"
               << "TYPE\n"
               << "  \'bsub\': Background subtraction\n\n"
-              // TODO: << "  \'mask\': Binary mask\n"
+              << "  \'mask\': Binary mask\n"
               << options << "\n";
 }
 
@@ -58,10 +59,12 @@ int main(int argc, char *argv[]) {
     std::string config_file;
     std::string config_key;
     bool config_used = false;
+    bool invert_mask = false;
     po::options_description visible_options("OPTIONS");
     
     std::unordered_map<std::string, char> type_hash;
     type_hash["bsub"] = 'a';
+    type_hash["mask"] = 'b';
 
     try {
 
@@ -75,6 +78,7 @@ int main(int argc, char *argv[]) {
         config.add_options()
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
                 ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
+                ("invert-mask,m", "If using TYPE=mask, invert the mask before applying")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -131,6 +135,18 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         
+        
+        if (variable_map.count("invert-mask")) {
+
+            if (type_hash[type] != 'b') {
+                std::cout << "Warning: invert-mask was requested, but this is the wrong filter TYPE for that option.\n "
+                        << "invert-mask option was ignored.\n";
+            } else {
+                invert_mask = true;
+            }
+        }
+        
+        
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
@@ -155,6 +171,11 @@ int main(int argc, char *argv[]) {
             filter = new BackgroundSubtractor(source, sink);
             break;
         }
+        case 'b':
+        {
+            filter = new FrameMasker(source, sink, invert_mask);
+            break;
+        }
         default:
         {
             printUsage(visible_options);
@@ -177,18 +198,12 @@ int main(int argc, char *argv[]) {
 
         char user_input;
         std::cout << "Select an action:\n";
-        //std::cout << " b: Set background image to current\n";
         std::cout << " x: Exit\n";
         std::cout << ">> ";
 
         std::cin >> user_input;
 
         switch (user_input) {
-//            case 'b':
-//            {
-//                filter->setBackgroundImage();
-//                break;
-//            }
             case 'x':
             {
                 done = true;

@@ -7,6 +7,10 @@
 # ```
 
 [bsub]
-roi_mask = "mask.png"
+background = "background.png"
+
+[mask]
+mask = "mask.png"
+
 
 

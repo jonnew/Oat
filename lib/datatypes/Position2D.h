@@ -87,6 +87,7 @@ namespace datatypes {
 
         template <typename Writer>
         void Serialize(Writer& writer, const std::string& label) const {
+            
             writer.StartObject();
 
             // Name

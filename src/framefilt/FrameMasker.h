@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   FrameMasker.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -14,27 +17,37 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef BACKGROUNDSUBTRACTOR_H
-#define	BACKGROUNDSUBTRACTOR_H
+#ifndef FRAMEMASKER_H
+#define	FRAMEMASKER_H
 
 #include "FrameFilter.h"
 
-class BackgroundSubtractor : public FrameFilter {
+class FrameMasker : public FrameFilter {
 public:
-
-    BackgroundSubtractor(const std::string& source_name, const std::string& sink_name);
-
-    void setBackgroundImage(const cv::Mat&);
-    void configure(const std::string& config_file, const std::string& config_key);
+    
+    FrameMasker(const std::string& source_name, 
+                const std::string& sink_name, 
+                bool invert_mask=false);
+    
     void filterAndServe(void);
+    void configure(const std::string& config_file, const std::string& config_key);
+    
+    // Accessors
+    void set_invert_mask(bool value) { invert_mask = value; }
     
 private:
-
-    // The background image used for subtraction
-    bool background_set = false;
-    cv::Mat background_img;
+    
+    // Should the mask be inverted?
+    // This value can be accessed from the UI thread
+    std::atomic<bool> invert_mask;
+    
+    // Do we have a mask to work with
+    bool mask_set = false;
+    
+    // Mask frames with an arbitrary ROI
+    cv::Mat roi_mask;
 
 };
 
-#endif	/* BACKGROUNDSUBTRACTOR_H */
+#endif	/* FRAMEMASKER_H */
 
