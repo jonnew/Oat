@@ -94,9 +94,12 @@ sudo apt-get install tmux
 - [x] General C++ coding practice
     - Pass by const ref whenever possible. Especially relevant when passing derived objects to prevent slicing.
     - const member properties can be initialized in the initialization list, rather than assigned in the constructor body. Take advantage.
-- [ ] Implement pure intensity based detector (now color conversion, just saturation on raw image)
+- [x] Implement pure intensity based detector (now color conversion, just saturation on raw image)
+    - EDIT: This is just a special case of the already implemented H<b>S</b>V detector.
 - [x] Implement position Filter (Kalman is first implementation)
 - [ ] Implement recorder (Position and images? Viewer can also record?)
+   - Viewer can record snapshots using keystroke. True recording would be a side effect.
+   - Recorder will record up to N positions and N video streams. Of course, recorders can be paralleled to decrease computation burden on any single instance.
 - [x] Camera configuration should specify frame capture due to digital pulses on a user selected GPIO line or free running.
 - [x] To simplify IPC, clients should copy data in guarded sections. This limits the amount of time locks are engaged and likely, esp for cv::mat's make up for the copy in the increased amount of code that can be executed in parallel.
 - [x] Can image metadata be packaged with shared cv::mats?
@@ -104,36 +107,96 @@ sudo apt-get install tmux
     - pixel -> cm transformation information
     - Sample number
 - [x] Camera class should implement distortion correction (see [this example](https://github.com/Itseez/opencv/blob/6df1198e8b1ea4925cbce943a1dc6549f27d8be2/modules/calib3d/test/test_fisheye.cpp))
-    - Ended up just hacking together a dedicated excecutable to produce the camera matrix and distortion parameters. Its called calibrate and its in the camserv project.
-- [ ] Cmake improvments
+    - Ended up just hacking together a dedicated executable to produce the camera matrix and distortion parameters. Its called calibrate and its in the camserv project.
+- [ ] Cmake improvements
     - Global build script to make all of the programs in the project
 	- CMake managed versioning
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Dealing with dropped frames
-    - Right now, I poll the camera for frames. This is fine for a file, but not nessesarly for a physical camera whose acqusitions is governed by an external, asychronous clock
-	- Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number to prevent offsets from occuring.
+    - Right now, I poll the camera for frames. This is fine for a file, but not necessarily for a physical camera whose acquisitions is governed by an external, asynchronous clock
+	- Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number to prevent offsets from occurring.
 	-
 ### Manual
 
+Simple tracker consists of a set of programs that communicate through shared memory to capture, process, and record video streams. Simple tracker works with two basic data types: `frames` and `positions`. 
+
+* `frame`: a thread safe, shared-memory abstraction of a [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
+* `position`: a thread safe 2D position object.
+
+Each component of the simple-tracker project is an executable defined by its input/output signature. Here is each component, with a corresponding IO signature. Below, the signature, usage information, example usage, and configuration options are provided for each component.
+
 #### frameserve
+Video frame server. Serves video streams to named shard memory from physical devices (e.g. webcam or gige camera) or from disk.
+
+##### Signature
+```
+<center>
+┌────────────┐          
+│ frameserve │ ──> frame
+└────────────┘          
+</center>
+```
 
 ##### Usage
-```bash
-frameserve TYPE SINK [CONFIG]
 ```
-For example
+Usage: frameserve [OPTIONS]
+   or: frameserve TYPE SINK [CONFIGURATION]
+
+SINK
+  The name of the memory segment to stream to.
+
+TYPE
+  'wcam': Onboard or USB webcam.
+  'gige': Point Grey GigE camera.
+  'file': Stream video from file.
+
+OPTIONS:
+  --help                    Produce help message.
+  -v [ --version ]          Print version information.
+
+CONFIGURATION:
+  -c [ --config-file ] arg  Configuration file.
+  -k [ --config-key ] arg   Configuration key.
+  -f [ --video-file ] arg   Path to video file if 'file' is selected as the 
+                            server TYPE.
+```
+
+##### Example
 ```bash
-frameserve gige raw -c config.toml -k camera0
+# For example
+frameserve wcam wraw 
+frameserve gige graw -c config.toml -k gige_config
+frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ```
 
 ##### Configuration
-- __index__ Camera index
-- __exposure__ Exposure setting. Automatically adjust both shutter and gain to achieve given exposure
-- __shutter__
-- __gain__
-- __white_bal__
 
+`TYPE=gige`
 
+- `index [+int]` User specified camera index. Useful in multi-camera imaging configurations.
+- `exposure [float]` Automatically adjust both shutter and gain to achieve given exposure. Specified in dB.
+- `shutter [+int]` Shutter time in milliseconds. Specifying `exposure` overrides this option.
+- `gain [float]` Sensor gain value. Specifying `exposure` overrides this option.
+- `white_bal [{+int, +int}]`
+- `roi [{+int, +int, +int, +int}]`
+- `trigger_on [bool]`
+- `triger_polarity [bool]`
+- `trigger_mode [+int]`
 
+`TYPE=file`
+
+- `frame_rate [float]` Frame rate in frames per second
+
+#### viewer
+Video frame viewer. Displays video stream from named shard memory.
+
+##### Signature
+```
+<center>
+          ┌────────┐          
+frame ──> │ viewer │          
+		  └────────┘          
+</center>
+```
 
