@@ -62,11 +62,9 @@ Video frame server. Serves video streams to named shard memory from physical dev
 
 ##### Signature
 ```
-<div align="center">
 ┌────────────┐          
 │ frameserve │ ──> frame
 └────────────┘          
-</div>
 ```
 
 ##### Usage
@@ -124,11 +122,29 @@ Video frame viewer. Displays video stream from named shard memory.
 
 ##### Signature
 ```
-<div align="center">
           ┌────────┐          
 frame ──> │ viewer │          
 		  └────────┘          
-</div>
+```
+
+#### posidet
+Position detector. Detects object position within a frame stream using one of several methods.
+
+##### Signature
+```
+          ┌─────────┐          
+frame ──> │ posidet │ ──> position
+		  └─────────┘          
+```
+
+#### posifilt
+Position filter. Filters positional information to, for example, remove discontinuities due to transient inaccuracies in position detection. 
+
+##### Signature
+```
+             ┌──────────┐          
+position ──> │ posifilt │ ──> position
+		     └──────────┘          
 ```
 
 ### TODO
