@@ -74,7 +74,7 @@ detect hsv filt pos &
 decorate -p pos raw dec &
 
 # View the 'dec' stream
-viewer dec &
+view dec &
 
 # Record the 'dec' stream to the current directory
 record -i dec -f ./
