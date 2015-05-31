@@ -59,22 +59,22 @@ Simple tracker components can be chained together to execute data processing pip
 ```bash
 
 # Serve frames from a video file to the 'raw' stream
-<b>frameserve</b> file raw -f ./video.mpg
+frameserve file raw -f ./video.mpg
 
 # Perform background subtraction on the 'raw' stream 
 # Serve the result to the 'filt' stream
-<b>framefilt</b> bsub raw filt
+framefilt bsub raw filt
 
 # Perform HSV-based object detection on the 'filt' stream
 # Serve the object positionto the 'pos' stream
-<b>detect</b> hsv filt pos
+detect hsv filt pos
 
 # Decorate the `raw` stream with the detected position form the `pos` stream
 # Serve the decorated images to the 'dec' strea,
-<b>decorate</b> -p pos raw dec
+decorate -p pos raw dec
 
 # View the 'dec' stream
-<b>viewer</b> dec
+viewer dec
 
 # Record the 'dec' stream to the current directory
 record -i dec -f ./
@@ -83,8 +83,8 @@ record -i dec -f ./
 This script has the following graphical representation:
 ```
 frameserve ──> framefilt ──> detect ──> decorate ───> viewer
-           ╲                              ╱          ╲
-	         ────────────────────────────              ─> record   	
+           ╲                           ╱         ╲
+	         ─────────────────────────             ─> record   	
 ```
 
 Each component of the simple-tracker project is an executable defined by its input/output signature. Here is each component, with a corresponding IO signature. Below, the signature, usage information, example usage, and configuration options are provided for each component.
