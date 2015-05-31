@@ -52,29 +52,29 @@ sudo apt-get install tmux
 
 Simple tracker consists of a set of programs that communicate through shared memory to capture, process, and record video streams. Simple tracker works with two basic data types: `frames` and `positions`. 
 
-* `frame`: a thread safe, shared-memory abstraction of a [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
-* `position`: a thread safe 2D position object.
+* `frame` - a thread safe, shared-memory abstraction of a [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
+* `position` - a thread safe 2D position object.
 
-Simple tracker components can be chained together to execute data processing pipelines, with individual components executing largely in parallel. For example, a script to detect a single object in a field might look like this:
+Simple tracker components can be chained together to execute complicate data processing pipelines, with individual components executing largely in parallel. Data processing pipelines can be split and merged while maintaining thread-saftey and sample synchronization. For example, a script to detect a single object in a field might look like this:
 ```bash
 
 # Serve frames from a video file to the 'raw' stream
-frameserve file raw -f ./video.mpg
+frameserve file raw -f ./video.mpg &
 
 # Perform background subtraction on the 'raw' stream 
 # Serve the result to the 'filt' stream
-framefilt bsub raw filt
+framefilt bsub raw filt &
 
 # Perform HSV-based object detection on the 'filt' stream
 # Serve the object positionto the 'pos' stream
-detect hsv filt pos
+detect hsv filt pos &
 
-# Decorate the `raw` stream with the detected position form the `pos` stream
-# Serve the decorated images to the 'dec' strea,
-decorate -p pos raw dec
+# Decorate the 'raw' stream with the detected position form the `pos` stream
+# Serve the decorated images to the 'dec' stream
+decorate -p pos raw dec &
 
 # View the 'dec' stream
-viewer dec
+viewer dec &
 
 # Record the 'dec' stream to the current directory
 record -i dec -f ./
