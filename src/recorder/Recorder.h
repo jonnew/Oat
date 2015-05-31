@@ -36,7 +36,7 @@ public:
             std::string save_path = ".",
             std::string file_name = "",
             const bool& append_date = false,
-            const int& frames_per_second = 25);
+            const int& frames_per_second = 30);
 
     ~Recorder();
 

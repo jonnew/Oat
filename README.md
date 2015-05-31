@@ -1,9 +1,9 @@
 ## Real-time position tracker for animal behavior
 Simple tracker consists of a set of programs for processing images, extracting position information, and streaming data to disk and the network that communicate through shared memory. This model enables quick, scripted construction of complex data processing chains without relying on a complicated GUI or plugin architecture.
 
-###Installation
+### Installation
 
-####Flycapture SDK (If point-grey camera is used)
+#### Flycapture SDK (If point-grey camera is used)
 - Go to [point-grey website](www.ptgrey.com)
 - Download the FlyCapture2 SDK (version > 2.7.3)
 - Extract the archive and use the `install_flycapture.sh` script to install the SDK on your computer.
@@ -14,7 +14,7 @@ cd flycapture
 sudo ./install_flycapture
 ```
 
-#### Boost
+#### [Boost](http://www.boost.org/)
 ```bash
 wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
 tar -xf download
@@ -24,7 +24,7 @@ sudo ./bootstrap.sh
 sudo ./b2 --with-program_options --with_system --with_thread
 ```
 
-####OpenCV
+#### [OpenCV](http://opencv.org/)
 ```bash
 wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
 unzip opencv.zip -d opencv
@@ -36,14 +36,14 @@ make
 sudo make install
 ```
 
-####RapidJSON and cpptoml
+#### [RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)
 Starting in the simple-tracker root directory,
 ```bash
 cd lib
 ./updatelibs.sh
 ```
 
-###tmux (for running scripts in playpen)
+#### [tmux](http://tmux.sourceforge.net/) (for running scripts in playpen)
 ```bash
 sudo apt-get install tmux 
 ```
@@ -54,6 +54,38 @@ Simple tracker consists of a set of programs that communicate through shared mem
 
 * `frame`: a thread safe, shared-memory abstraction of a [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
 * `position`: a thread safe 2D position object.
+
+Simple tracker components can be chained together to execute data processing pipelines, with individual components executing largely in parallel. For example, a script to detect a single object in a field might look like this:
+```bash
+
+# Serve frames from a video file to the 'raw' stream
+<b>frameserve</b> file raw -f ./video.mpg
+
+# Perform background subtraction on the 'raw' stream 
+# Serve the result to the 'filt' stream
+<b>framefilt</b> bsub raw filt
+
+# Perform HSV-based object detection on the 'filt' stream
+# Serve the object positionto the 'pos' stream
+<b>detect</b> hsv filt pos
+
+# Decorate the `raw` stream with the detected position form the `pos` stream
+# Serve the decorated images to the 'dec' strea,
+<b>decorate</b> -p pos raw dec
+
+# View the 'dec' stream
+<b>viewer</b> dec
+
+# Record the 'dec' stream to the current directory
+record -i dec -f ./
+
+```
+This script has the following graphical representation:
+```
+frameserve ──> framefilt ──> detect ──> decorate ───> viewer
+           ╲                              ╱          ╲
+	         ────────────────────────────              ─> record   	
+```
 
 Each component of the simple-tracker project is an executable defined by its input/output signature. Here is each component, with a corresponding IO signature. Below, the signature, usage information, example usage, and configuration options are provided for each component.
 
@@ -93,14 +125,17 @@ CONFIGURATION:
 
 ##### Example
 ```bash
-# For example
+# Serve from a webcam using the default camera bus 
 frameserve wcam wraw 
+
+# Stream from a point-grey GIGE camera
 frameserve gige graw -c config.toml -k gige_config
+
+# Serve from a previously recorded file
 frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ```
 
 ##### Configuration
-
 `TYPE=gige`
 
 - `index [+int]` User specified camera index. Useful in multi-camera imaging configurations.
@@ -150,12 +185,6 @@ position ──> │ posifilt │ ──> position
 ### TODO
 - [x] Interprocess data processing synchronization
     - Whatever is chosen, all subsequent processing must propagate in accordance with the frame captured by the base image server(s).
-    - e.g.
-```
-        Camera --> Background Subtract --> Detector --> Decorator --> Viewer
-               ╲                                      ╱          ╲
-	             ------------------------------------              -> Recorder    	
-```
     - In this case, Decorator must block until Detector provides a result. However, Camera _may_ have produced another image in the meantime causing the Detector result and the image used by the Decorator to be out of sync. I need to find an intelligent way to deal with this.
     - **Edit**: Ended up using several autonomous semaphores which (1) keep track of the number of clients attached to each server and (2) enforce synchronized publication and read events on the server and client(s) respectively. These semaphores implement two canonical synchronization patters: the `rendezvous point` and the `turnstile`.
 - [x] Start synchronization. The data processing chain should be initialized and waiting before the first image get sent.
