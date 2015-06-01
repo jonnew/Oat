@@ -54,22 +54,13 @@ cd ..
 cd ..
 
 # Move each component to the release dir 
-mkdir bin
-mv ./release/frameserve/frameserve ./bin
-mv ./release/frameserve/calibrate ./bin
-mv ./release/framefilt/framefilt ./bin
-mv ./release/viewer/viewer ./bin
-mv ./release/detector/detector ./bin
-mv ./release/posicom/posicom ./bin
-mv ./release/decorator/decorate ./bin
-mv ./release/posifilt/posifilt ./bin
-mv ./release/recorder/record ./bin
+mv ./release/frameserve/oat-frameserve  ../sub/libexec
+mv ./release/frameserve/oat-calibrate 	../sub/libexec
+mv ./release/framefilt/oat-framefilt 	../sub/libexec
+mv ./release/viewer/oat-viewer 			../sub/libexec
+mv ./release/detector/oat-detector 		../sub/libexec
+mv ./release/posicom/oat-posicom 		../sub/libexec
+mv ./release/decorator/oat-decorate 	../sub/libexec
+mv ./release/posifilt/oat-posifilt 		../sub/libexec
+mv ./release/recorder/oat-record 		../sub/libexec
 
-#make -C ./camserve/bin
-#make -C ./backsubtractor/bin
-#make -C ./viewer/bin/
-#make -C ./detector/bin
-#make -C ./posicom/bin
-#make -C ./decorator/bin
-#make -C ./posifilt/bin
-#make -C ./recorder/bin

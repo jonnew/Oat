@@ -10,6 +10,6 @@ link_directories (${Boost_LIBRARY_DIR})
 add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (posifilt KalmanFilter2D.cpp main.cpp )
-target_link_libraries (posifilt shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
+add_executable (oat-posifilt KalmanFilter2D.cpp main.cpp )
+target_link_libraries (oat-posifilt shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
 

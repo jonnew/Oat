@@ -1,0 +1,13 @@
+# Unignore the bin directory which contains a symlink
+# to the base oat command in libexec. This is needed
+# for easy installation of the whole subcommand arch.
+!sub/bin
+
+libexec/*
+!libexec/oat
+!libexec/oat-commands
+!libexec/oat-init
+!libexec/oat-completions
+!libexec/oat-help
+!libexec/oat-sh-shell
+

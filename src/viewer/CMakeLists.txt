@@ -10,6 +10,7 @@ link_directories (${Boost_LIBRARY_DIR})
 add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (viewer Viewer.cpp main.cpp )
-target_link_libraries (viewer shmem ${OpenCV_LIBS} ${Boost_LIBRARIES} profiler)
+add_executable (oat-view Viewer.cpp main.cpp)
+target_link_libraries (oat-view shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})
+
 

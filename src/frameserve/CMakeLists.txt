@@ -14,8 +14,8 @@ add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
 
-add_executable (frameserve PGGigECam.cpp WebCam.cpp FileReader.cpp main.cpp )
-target_link_libraries (frameserve shmem ${OpenCV_LIBS} ${FLYCAPTURE2} ${Boost_LIBRARIES})
+add_executable (oat-frameserve PGGigECam.cpp WebCam.cpp FileReader.cpp main.cpp )
+target_link_libraries (oat-frameserve shmem ${OpenCV_LIBS} ${FLYCAPTURE2} ${Boost_LIBRARIES})
 
-add_executable (calibrate PGGigECam.cpp WebCam.cpp FileReader.cpp calibrate.cpp)
-target_link_libraries (calibrate shmem ${OpenCV_LIBS} ${FLYCAPTURE2} )
+add_executable (oat-calibrate PGGigECam.cpp WebCam.cpp FileReader.cpp calibrate.cpp)
+target_link_libraries (oat-calibrate shmem ${OpenCV_LIBS} ${FLYCAPTURE2} )

@@ -11,5 +11,5 @@ add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
 
-add_executable (framefilt BackgroundSubtractor.cpp FrameMasker.cpp main.cpp )
-target_link_libraries (framefilt shmem ${OpenCV_LIBS} ${OpenCV_LIBS} ${Boost_LIBRARIES})
+add_executable (rat-framefilt BackgroundSubtractor.cpp FrameMasker.cpp main.cpp )
+target_link_libraries (rat-framefilt shmem ${OpenCV_LIBS} ${OpenCV_LIBS} ${Boost_LIBRARIES})

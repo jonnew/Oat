@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
 project (Decorator)
 
+set(SUB_NAME decorate)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
 set (BOOST_ROOT /opt/boost_1_57_0 )
@@ -10,6 +11,7 @@ link_directories (${Boost_LIBRARY_DIR})
 add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (decorate Decorator.cpp main.cpp )
-target_link_libraries (decorate shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
+add_executable (oat-decorate Decorator.cpp main.cpp )
+target_link_libraries (oat-decorate shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
+	
 

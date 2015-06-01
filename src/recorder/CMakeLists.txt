@@ -10,6 +10,6 @@ link_directories (${Boost_LIBRARY_DIR})
 add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (record Recorder.cpp main.cpp )
-target_link_libraries (record shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
+add_executable (oat-record Recorder.cpp main.cpp )
+target_link_libraries (oat-record shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
 

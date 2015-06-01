@@ -31,6 +31,7 @@
 # All bin directories
 bin/ 
 build/
+!sub/bin
 
 # Ignore video/image files
 *.avi
