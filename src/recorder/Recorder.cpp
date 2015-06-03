@@ -42,10 +42,10 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
     // First check that the save_path is valid
     bfs::path path(save_path.c_str());
     if (!bfs::exists(path) || !bfs::is_directory(path)) {
-        std::cout << "Warning: requested snapshot save path, " + save_path + ", "
+        std::cout << "Warning: requested recording path, " + save_path + ", "
                   << "does not exist, or is not a valid directory.\n"
-                  << "Using the current directory instead.\n";
-        save_path = ".";
+                  << "attempting to use the current directory instead.\n";
+        save_path = bfs::current_path().c_str();
     }
 
     std::time_t raw_time;
@@ -78,8 +78,14 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         checkFile(posi_fid);
 
         position_fp = fopen(posi_fid.c_str(), "wb");
+        if (!position_fp) {
+            std::cerr << "Error: unable to open, " + posi_fid + ". Exiting." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        
         file_stream = new rapidjson::FileWriteStream(position_fp, position_write_buffer, sizeof (position_write_buffer));
         json_writer.Reset(*file_stream);
+        json_writer.StartArray();
     }
 
     // Create a video writer and file for each image stream
@@ -123,6 +129,7 @@ Recorder::~Recorder() {
         delete position_source;
     }
     if (position_fp) {
+        json_writer.EndArray();
         file_stream->Flush();
         delete file_stream;
     }
@@ -185,6 +192,8 @@ void Recorder::writePositionsToFile() {
     json_writer.String("sample");
     json_writer.Uint(position_sources[0]->get_current_time_stamp());
     
+    json_writer.String("positions");
+    
     json_writer.StartArray();
 
     int idx = 0;
@@ -217,10 +226,9 @@ bool Recorder::checkFile(std::string& file) {
 
     while (bfs::exists(file.c_str())) {
 
-        
         ++i;
         bfs::path path(original_file.c_str());
-        bfs::path root_path = path.root_path();
+        bfs::path parent_path = path.parent_path();
         bfs::path stem = path.stem();
         bfs::path extension = path.extension();
 
@@ -228,15 +236,16 @@ bool Recorder::checkFile(std::string& file) {
         stem += append.c_str();
 
         // Recreate file name
-        file = std::string(root_path.generic_string()) +
-                std::string(stem.generic_string()) +
-                std::string(extension.generic_string());
+        file = std::string(parent_path.generic_string()) +
+               "/" +
+               std::string(stem.generic_string()) +
+               std::string(extension.generic_string());
         
     }
 
     if (i != 0) {
         std::cout << "Warning: " + original_file + " exists.\n"
-                  << "Renamed to: " + file;
+                  << "File renamed to: " + file + ".\n";
         file_exists = true;
     }
 

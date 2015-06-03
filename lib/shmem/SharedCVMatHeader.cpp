@@ -46,6 +46,7 @@ namespace shmem {
     }
 
     void SharedCVMatHeader::attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat) {
+        
         mat.create(mat_size, type);
         mat.data = static_cast<uchar*> (shared_mem.get_address_from_handle(handle));
     }
