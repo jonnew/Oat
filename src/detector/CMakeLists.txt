@@ -11,5 +11,5 @@ add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 add_subdirectory("../../lib/datatypes" "${CMAKE_CURRENT_BINARY_DIR}/datatypes_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (detector DifferenceDetector2D.cpp HSVDetector2D.cpp main.cpp )
-target_link_libraries (detector shmem datatypes ${OpenCV_LIBS} ${Boost_LIBRARIES})
+add_executable (oat-detect DifferenceDetector2D.cpp HSVDetector2D.cpp main.cpp )
+target_link_libraries (oat-detect shmem datatypes ${OpenCV_LIBS} ${Boost_LIBRARIES})

@@ -11,5 +11,5 @@ add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
 add_subdirectory("../../lib/datatypes" "${CMAKE_CURRENT_BINARY_DIR}/datatypes_build")
 
 find_package (OpenCV REQUIRED)
-add_executable (posicom MeanPosition2D.cpp main.cpp)
-target_link_libraries (posicom shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})
+add_executable (oat-posicom MeanPosition2D.cpp main.cpp)
+target_link_libraries (oat-posicom shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})
