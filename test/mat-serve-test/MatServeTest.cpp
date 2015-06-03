@@ -18,14 +18,12 @@
 
 #include <string>
 #include <opencv2/core/core.hpp>
-//#include "cpptoml.h"
 
-//#include "MatServer.h"
-#include "../../lib/shmem/SharedMat.h"
 #include "../../lib/shmem/MatServer.h"
-#include "../../lib/shmem/MatServer.cpp"
 
-MatServeTest::MatServeTest(std::string server_name) : MatServer(server_name) { }
+MatServeTest::MatServeTest(std::string server_name) : 
+  mat_source(server_name)
+, sample(0) { }
 
 int MatServeTest::openVideo(const std::string fid) {
 
@@ -43,8 +41,8 @@ int MatServeTest::serveMat() {
     }
     
     // Thread-safe set to shared mat object
-    set_shared_mat(mat);
-    
+    mat_source.pushMat(mat, ++sample);
+
     return 1;
 
 }

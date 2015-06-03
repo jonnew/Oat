@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
     MatServeTest server(argv[1]);
     server.openVideo(argv[2]);
 
-    
     while (server.serveMat()) {
         std::cout << "Sent frame." << std::endl;
     }

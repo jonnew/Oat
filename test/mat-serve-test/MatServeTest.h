@@ -21,10 +21,9 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "../../lib/shmem/SharedMat.h"
 #include "../../lib/shmem/MatServer.h"
 
-class MatServeTest : public MatServer {
+class MatServeTest {
    
 public:
     MatServeTest(std::string server_name);
@@ -40,6 +39,10 @@ private:
     
     // Image data
     cv::Mat mat;
+    
+    // Shmem server
+    uint32_t sample;
+    shmem::MatServer mat_source;
 
 };
 
