@@ -187,12 +187,12 @@ void Recorder::writeFramesToFile() {
 
 void Recorder::writePositionsToFile() {
 
-    json_writer.StartObject();
+    json_writer.StartArray();
 
-    json_writer.String("sample");
+    //json_writer.String("sample");
     json_writer.Uint(position_sources[0]->get_current_time_stamp());
     
-    json_writer.String("positions");
+    //json_writer.String("positions");
     
     json_writer.StartArray();
 
@@ -204,8 +204,7 @@ void Recorder::writePositionsToFile() {
     }
     
     json_writer.EndArray();
-
-    json_writer.EndObject();
+    json_writer.EndArray();
 }
 
 void Recorder::initializeWriter(cv::VideoWriter& writer,

@@ -182,6 +182,77 @@ position ──> │ posifilt │ ──> position
 		     └──────────┘          
 ```
 
+#### `record`
+Stream recorder. Saves frame and positions streams to disk. 
+
+* `frame` streams are compressed and saved as individual video files (H.264 compression format avi file).
+* `position` streams are combined into a single JSON file. Each position source is saved as an element in an array with corresponding sample number and metadata including homography transformation.
+
+All streams saved with a single recorder have the same base file name and save location (see usage). Of course, multiple recorders can be used in parallel to (1) parallelize the computational load of video streaming, which tends to be quite intense and (2) save to multiple locations simultaneously.
+
+##### Signature
+```
+               ┌────────┐     
+position 0 ──> │        │
+position 1 ──> │        │
+  :		       │        │	
+position N ──> │        │
+               │ record │
+   frame 0 ──> │        │
+   frame 1 ──> │        │
+     :         │        │
+   frame N ──> │        │
+		       └────────┘
+          
+```
+
+##### Usage
+```
+Usage: record [OPTIONS]
+   or: record [CONFIGURATION]
+
+OPTIONS:
+  --help                        Produce help message.
+  -v [ --version ]              Print version information.
+
+CONFIGURATION:
+  -n [ --filename ] arg         The base file name to which to source name will
+                                be appended
+  -f [ --folder ] arg           The path to the folder to which the video 
+                                stream and position information will be saved.
+  -d [ --date ]                 If specified, YYYY-MM-DD-hh-mm-ss_ will be 
+                                prepended to the filename.
+  -p [ --positionsources ] arg  The name of the server(s) that supply object 
+                                position information.The server(s) must be of 
+                                type SMServer<Position>
+                                
+  -i [ --imagesources ] arg     The name of the server(s) that supplies images 
+                                to save to video.The server must be of type 
+                                SMServer<SharedCVMatHeader>
+
+```
+
+##### Example
+```bash
+# Save positional stream 'pos' to current directory
+oat record -p pos 
+
+# Save positional stream 'pos1' and 'pos2' to current directory
+oat record -p pos1 pos2
+
+# Save positional stream 'pos1' and 'pos2' to Desktop directory and 
+# prepend the timestamp to the file name
+oat record -p pos1 pos2 -d -f ~/Desktop
+
+# Save frame stream 'raw' to current directory
+oat record -i raw
+
+# Save frame stream 'raw' and positional stream 'pos' to Desktop 
+# directory and prepend the timestamp and 'my_data' to each filename
+oat record -i raw -p pos -d -f ~/Desktop -n my_data
+
+```
+
 ### TODO
 - [x] Interprocess data processing synchronization
     - Whatever is chosen, all subsequent processing must propagate in accordance with the frame captured by the base image server(s).
@@ -209,8 +280,8 @@ position ──> │ posifilt │ ──> position
 - [x] Implement pure intensity based detector (now color conversion, just saturation on raw image)
     - EDIT: This is just a special case of the already implemented H<b>S</b>V detector.
 - [x] Implement position Filter (Kalman is first implementation)
-- [ ] Implement recorder (Position and images? Viewer can also record?)
-   - Viewer can record snapshots using keystroke. True recording would be a side effect.
+- [x] Implement recorder (Position and images? Viewer can also record?)
+   - Viewer can record snapshots using keystroke. True video recording would be to much of a side effect for this component.
    - Recorder will record up to N positions and N video streams. Of course, recorders can be paralleled to decrease computation burden on any single instance.
 - [x] Camera configuration should specify frame capture due to digital pulses on a user selected GPIO line or free running.
 - [x] To simplify IPC, clients should copy data in guarded sections. This limits the amount of time locks are engaged and likely, esp for cv::mat's make up for the copy in the increased amount of code that can be executed in parallel.
@@ -227,7 +298,7 @@ position ──> │ posifilt │ ──> position
     - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Dealing with dropped frames
     - Right now, I poll the camera for frames. This is fine for a file, but not necessarily for a physical camera whose acquisitions is governed by an external, asynchronous clock
-    - Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number to prevent offsets from occurring.
+    - Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number, even if it does not serve the frame, to prevent offsets from occurring.
 
 #### Connecting to point-grey PGE camera in Linux
 - First you must assign your camera a static IP address. 
