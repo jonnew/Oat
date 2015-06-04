@@ -31,10 +31,12 @@ public:
 
     RandomAccel2D(std::string position_sink_name);
 
-    //void configure(std::string file_name, std::string key);
+    void configure(const std::string& file_name, const std::string& key);
     void simulateAndServePosition(void);
 
 private:
+    
+    // Sam
 
     // Random number generator
     std::default_random_engine accel_generator;

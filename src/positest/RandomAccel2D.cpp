@@ -40,6 +40,35 @@ RandomAccel2D::RandomAccel2D(std::string position_sink_name) :
 
 }
 
+void RandomAccel2D::configure(const std::string& config_file, const std::string& config_key) {
+    
+    cpptoml::table config;
+
+    try {
+        config = cpptoml::parse_file(config_file);
+    } catch (const cpptoml::parse_exception& e) {
+        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
+    }
+
+    try {
+        // See if a camera configuration was provided
+        if (config.contains(config_key)) {
+
+            auto this_config = *config.get_table(config_key);
+
+            if (this_config.contains("dt")) {
+                sample_period_in_seconds = (float) (*this_config.get_as<double>("dt"));
+            }
+
+        } else {
+            std::cerr << "No Position Test configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
+}
+
 void RandomAccel2D::simulateAndServePosition() {
     
     // Simulate one step of random, but smooth, motion
@@ -79,7 +108,7 @@ void RandomAccel2D::createStaticMatracies() {
     
     // State transition matrix
     state_transition_mat(0, 0) = 1.0;
-    state_transition_mat(0, 1) = DT;
+    state_transition_mat(0, 1) = sample_period_in_seconds;
     state_transition_mat(0, 2) = 0.0;
     state_transition_mat(0, 3) = 0.0;
     
@@ -91,7 +120,7 @@ void RandomAccel2D::createStaticMatracies() {
     state_transition_mat(2, 0) = 0.0;
     state_transition_mat(2, 1) = 0.0;
     state_transition_mat(2, 2) = 1.0;
-    state_transition_mat(2, 3) = DT;
+    state_transition_mat(2, 3) = sample_period_in_seconds;
     
     state_transition_mat(3, 0) = 0.0;
     state_transition_mat(3, 1) = 0.0;
@@ -99,16 +128,16 @@ void RandomAccel2D::createStaticMatracies() {
     state_transition_mat(3, 3) = 1.0;
     
     // Input Matrix
-    input_mat(0, 0) = (DT*DT)/2;
+    input_mat(0, 0) = (sample_period_in_seconds*sample_period_in_seconds)/2;
     input_mat(0, 1) = 0.0;
 
-    input_mat(1, 0) = DT;
+    input_mat(1, 0) = sample_period_in_seconds;
     input_mat(1, 1) = 0.0;
 
     input_mat(2, 0) = 0.0;
-    input_mat(2, 1) = (DT*DT)/2;
+    input_mat(2, 1) = (sample_period_in_seconds*sample_period_in_seconds)/2;
     
     input_mat(3, 0) = 0.0;
-    input_mat(3, 1) = DT;
+    input_mat(3, 1) = sample_period_in_seconds;
    
 }

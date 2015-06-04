@@ -19,7 +19,7 @@ trigger_polarity = 1					# Rising edge active
 trigger_mode = 14						# 14 = Overlapped Exposure/Readout Mode (see Camera manual)
 										# 7  = Software trigger
 trigger_source = 0						# GPIO pin that trigger will be sent to
-#calibration_file = "calibration.yml" 	# Camera matrix, distorition coefficients for lens correction
+calibration_file = "calibration.yml" 	# Camera matrix, distorition coefficients for lens correction
 
 [file]
 frame_rate = 50.0                       # Hz 

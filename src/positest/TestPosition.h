@@ -24,8 +24,6 @@
 #include "../../lib/datatypes/Position.h"
 #include "../../lib/shmem/SMServer.h"
 
-#define DT 0.02 // TODO: Config
-
 /**
  * Abstract base class by and Test Position class within the Simple Tracker project.
  * @param position_sink_name Name of the SINK to which test positions will be sent
@@ -38,15 +36,19 @@ public:
     TestPosition(std::string position_sink_name) : 
       position_sink(position_sink_name)
     , name(position_sink_name)
-    , sample(0) { }
+    , sample(0)
+    , sample_period_in_seconds(0.02) { }
 
     // Test Positions can use a configuration file to specify parameters
-    //virtual void configure(std::string file_name, std::string key) = 0;
+    virtual void configure(const std::string& file_name, const std::string& key) = 0;
     
     // Test Positions simulate object position motion and publish to shared memory
     virtual void simulateAndServePosition(void) = 0;
     
     void stop(void) { position_sink.set_running(false); }
+    
+    // Accessors
+    double get_sample_period(void) { return sample_period_in_seconds; }
     
 protected:
     
@@ -58,6 +60,9 @@ protected:
     
     // Test position sample number
     uint32_t sample;
+    
+    // Test positions update period
+    double sample_period_in_seconds;
     
 };
 

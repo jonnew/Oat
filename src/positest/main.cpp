@@ -32,11 +32,6 @@ volatile sig_atomic_t done = 0;
 bool running = true;
 struct timespec delay = {0};
 
-
-void term(int) {
-    done = 1;
-}
-
 void printUsage(po::options_description options) {
     std::cout << "Usage: testpos [OPTIONS]\n"
               << "   or: testpos TYPE SINK [CONFIGURATION]\n"
@@ -48,7 +43,6 @@ void printUsage(po::options_description options) {
 }
 
 // Processing thread
-
 void run(TestPosition<datatypes::Position2D>* test_position) {
 
     while (!done) {
@@ -58,11 +52,7 @@ void run(TestPosition<datatypes::Position2D>* test_position) {
 }
 
 // IO thread
-
 int main(int argc, char *argv[]) {
-
-    delay.tv_sec = 0;
-    delay.tv_nsec = (int)(DT * 1.0e9);
 
     // Base options
     po::options_description visible_options("VISIBLE OPTIONS");
@@ -166,10 +156,12 @@ int main(int argc, char *argv[]) {
     // base class is indeed TestPosition<datatypes::Position2D>
     TestPosition<datatypes::Position2D>* test_position;
     
+    
     switch (type_hash[type]) {
         case 'a':
         {
             test_position = new RandomAccel2D(sink);
+            
             break;
         }
         default:
@@ -180,9 +172,13 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    //if (config_used)
-    //test_position->configure(config_file, config_key);
+    if (config_used)
+       test_position->configure(config_file, config_key);
     
+    // Set the test position sample frequency
+    delay.tv_sec = 0;
+    delay.tv_nsec = (int)(test_position->get_sample_period() * 1.0e9);
+
     std::cout << "Test Position has begun publishing to sink \"" + sink + "\".\n\n"
               << "COMMANDS:\n"
               << "  p: Pause/unpause.\n"
