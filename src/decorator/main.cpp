@@ -35,9 +35,9 @@ void run(Decorator* decorator) {
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: decorate [META]\n"
-            << "   or: decorate [OPTIONS] FRAME_SOURCE FRAME_SINK\n"
+            << "   or: decorate FRAME_SOURCE FRAME_SINK [CONFIGURATION]\n"
             << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCES.\n"
-            << "Publish decorated image to IMAGE_SINK.\n"
+            << "Publish decorated image to IMAGE_SINK.\n\n"
             << options << "\n";
 }
 

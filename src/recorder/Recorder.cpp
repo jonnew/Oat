@@ -69,9 +69,13 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         // Create a single position file
         std::string posi_fid;
         if (append_date)
-            posi_fid = save_path + "/" + date_now + "_" + file_name;
+            posi_fid = file_name.empty() ? 
+                       (save_path + "/" + date_now  + "_" + position_source_names[0]) : 
+                       (save_path + "/" + date_now + "_" + file_name);
         else
-            posi_fid = save_path + "/" + position_source_names[0];
+            posi_fid = file_name.empty() ? 
+                       (save_path + "/"  + position_source_names[0]) : 
+                       (save_path + "/"  + file_name);
 
         posi_fid = posi_fid + ".json";
 
@@ -94,9 +98,13 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         // Generate file name for this video
         std::string frame_fid;
         if (append_date)
-            frame_fid = save_path + "/" + date_now + "_" + file_name + "_" + frame_source_name;
+            frame_fid = file_name.empty() ? 
+                        (save_path + "/" + date_now + "_" + frame_source_name) :
+                        (save_path + "/" + date_now + "_" + file_name + "_" + frame_source_name);
         else
-            frame_fid = save_path + "/" + file_name + "_" + frame_source_name;
+            frame_fid = file_name.empty() ? 
+                        (save_path + "/" + frame_source_name) :
+                        (save_path + "/" + file_name + "_" + frame_source_name);
 
         frame_fid = frame_fid + ".avi";
 
@@ -187,24 +195,26 @@ void Recorder::writeFramesToFile() {
 
 void Recorder::writePositionsToFile() {
 
-    json_writer.StartArray();
+    if (position_fp) {
+        json_writer.StartArray();
 
-    //json_writer.String("sample");
-    json_writer.Uint(position_sources[0]->get_current_time_stamp());
-    
-    //json_writer.String("positions");
-    
-    json_writer.StartArray();
+        //json_writer.String("sample");
+        json_writer.Uint(position_sources[0]->get_current_time_stamp());
 
-    int idx = 0;
-    for (auto pos : source_positions) {
+        //json_writer.String("positions");
 
-        pos->Serialize(json_writer, position_labels[idx]);
-        ++idx;
+        json_writer.StartArray();
+
+        int idx = 0;
+        for (auto pos : source_positions) {
+
+            pos->Serialize(json_writer, position_labels[idx]);
+            ++idx;
+        }
+
+        json_writer.EndArray();
+        json_writer.EndArray();
     }
-    
-    json_writer.EndArray();
-    json_writer.EndArray();
 }
 
 void Recorder::initializeWriter(cv::VideoWriter& writer,

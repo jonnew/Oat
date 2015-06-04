@@ -32,9 +32,9 @@ volatile sig_atomic_t done = 0;
 void run(Camera* camera) {
 
     while (!done) { // !done
-            camera->grabMat();
-            camera->undistortMat();
-            camera->serveMat();
+        camera->grabMat();
+        camera->undistortMat();
+        camera->serveMat();
     }
 }
 

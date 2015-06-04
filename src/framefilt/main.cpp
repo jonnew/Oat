@@ -46,8 +46,8 @@ void printUsage(po::options_description options) {
               << "Perform background subtraction on images from SOURCE.\n"
               << "Publish background-subtracted images to SMServer<SharedCVMatHeader> SINK.\n\n"
               << "TYPE\n"
-              << "  \'bsub\': Background subtraction\n\n"
-              << "  \'mask\': Binary mask\n"
+              << "  \'bsub\': Background subtraction\n"
+              << "  \'mask\': Binary mask\n\n"
               << options << "\n";
 }
 
@@ -217,6 +217,9 @@ int main(int argc, char *argv[]) {
 
     // Join processing and UI threads
     thread_group.join_all();
+    
+    // Free heap memory allocated to filter
+    delete filter;
 
     // Exit
     return 0;

@@ -155,8 +155,7 @@ int main(int argc, char *argv[]) {
     // because otherwise this is no longer a valid base class for RandomAccel2D whose
     // base class is indeed TestPosition<datatypes::Position2D>
     TestPosition<datatypes::Position2D>* test_position;
-    
-    
+
     switch (type_hash[type]) {
         case 'a':
         {
