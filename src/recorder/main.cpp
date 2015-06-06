@@ -37,7 +37,7 @@ void run(Recorder* recorder) {
 void printUsage(po::options_description options) {
     std::cout << "Usage: record [OPTIONS]\n"
               << "   or: record [CONFIGURATION]\n"
-              << "Record frame or position streams.\n"
+              << "Record frame or position streams.\n\n"
               << options << "\n";
 }
 

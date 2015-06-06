@@ -55,7 +55,6 @@ private:
     bool tuning_windows_created;
     int sig_accel_tune;
     int sig_measure_noise_tune;
-    std::string slider_title;
     bool tuning_on;
     float draw_scale;
 

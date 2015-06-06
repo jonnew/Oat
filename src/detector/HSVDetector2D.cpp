@@ -161,19 +161,6 @@ void HSVDetector2D::siftBlobs() {
     }
 }
 
-//void HSVDetector::decorateFeed(cv::Mat& display_img, const cv::Scalar& color) { //const cv::Scalar& color
-//
-//    // Add an image of the 
-//    if (object_position.position_valid) {
-//
-//        // Get the radius of the object
-//        int rad = sqrt(object_area / PI);
-//        cv::circle(display_img, object_position.position, rad, color, 2);
-//    } else {
-//        cv::putText(display_img, status_text, cv::Point(5, 35), 2, 1, cv::Scalar(255, 255, 255), 2);
-//    }
-//}
-
 void HSVDetector2D::configure(std::string file_name, std::string key) {
 
     cpptoml::table config;
@@ -256,9 +243,10 @@ void HSVDetector2D::tune() {
         cv::imshow(tuning_image_title, hsv_image);
         cv::waitKey(1);
     } else if (!tuning_on && tuning_windows_created) {
+        
+        // TODO: Window will not actually close!!
         // Destroy the tuning windows
         cv::destroyWindow(tuning_image_title);
-        cv::destroyWindow(slider_title);
         tuning_windows_created = false;
     }
 }
@@ -266,17 +254,17 @@ void HSVDetector2D::tune() {
 void HSVDetector2D::createTuningWindows() {
 
     // Create window for sliders
-    cv::namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
+    cv::namedWindow(tuning_image_title, cv::WINDOW_AUTOSIZE);
 
     // Create sliders and insert them into window
-    cv::createTrackbar("H_MIN", slider_title, &h_min, 256);
-    cv::createTrackbar("H_MAX", slider_title, &h_max, 256);
-    cv::createTrackbar("S_MIN", slider_title, &s_min, 256);
-    cv::createTrackbar("S_MAX", slider_title, &s_max, 256);
-    cv::createTrackbar("V_MIN", slider_title, &v_min, 256);
-    cv::createTrackbar("V_MAX", slider_title, &v_max, 256);
-    cv::createTrackbar("ERODE", slider_title, &erode_px, 50, &HSVDetector2D::erodeSliderChangedCallback, this);
-    cv::createTrackbar("DILATE", slider_title, &dilate_px, 50, &HSVDetector2D::dilateSliderChangedCallback, this);
+    cv::createTrackbar("H_MIN", tuning_image_title, &h_min, 256);
+    cv::createTrackbar("H_MAX", tuning_image_title, &h_max, 256);
+    cv::createTrackbar("S_MIN", tuning_image_title, &s_min, 256);
+    cv::createTrackbar("S_MAX", tuning_image_title, &s_max, 256);
+    cv::createTrackbar("V_MIN", tuning_image_title, &v_min, 256);
+    cv::createTrackbar("V_MAX", tuning_image_title, &v_max, 256);
+    cv::createTrackbar("ERODE", tuning_image_title, &erode_px, 50, &HSVDetector2D::erodeSliderChangedCallback, this);
+    cv::createTrackbar("DILATE", tuning_image_title, &dilate_px, 50, &HSVDetector2D::dilateSliderChangedCallback, this);
 
     tuning_windows_created = true;
 }

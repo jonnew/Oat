@@ -33,8 +33,7 @@ public:
     , position_sink(position_sink_name)
     , canvas_hw(500.0)
     , canvas_border(100.0)
-    , tuning_image_title(position_sink_name + "_tuning")
-    , slider_title(position_sink_name + "_sliders") { }
+    , tuning_image_title(position_sink_name + "_tuning") { }
 
     virtual ~PositionFilter() { }
 
@@ -78,7 +77,7 @@ protected:
     datatypes::Position2D filtered_position;
 
     // tuning on or off
-    std::string tuning_image_title, slider_title;
+    std::string tuning_image_title;
     bool tuning_on; // This is a shared resource and must be synchronized
     boost::mutex tuning_mutex; // Sync IO and processing thread, which can both manipulate the tuning state
     

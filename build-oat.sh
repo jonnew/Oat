@@ -9,6 +9,7 @@ mkdir ./release/decorator
 mkdir ./release/posifilt 
 mkdir ./release/recorder
 mkdir ./release/positest
+mkdir ./release/cleaner
 
 # Create makefiles and build
 cd ./release/
@@ -57,6 +58,11 @@ cmake ../../src/positest
 make
 cd ..
 
+cd ./clean/ 
+cmake ../../src/cleaner
+make
+cd ..
+
 cd ..
 
 # Move each component to the release dir 
@@ -70,4 +76,5 @@ mv ./release/decorator/oat-decorate 	./oat/libexec
 mv ./release/posifilt/oat-posifilt 		./oat/libexec
 mv ./release/recorder/oat-record 		./oat/libexec
 mv ./release/positest/oat-positest 		./oat/libexec
+mv ./release/clean/oat-clean 			./oat/libexec
 

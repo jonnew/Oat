@@ -38,8 +38,8 @@ PositionFilter(position_source_name, position_sink_name)
 , tuning_windows_created(false)
 , draw_scale(10.0) {
 
-    sig_accel_tune = (int) (sig_measure_noise * 10.0);
-    sig_measure_noise_tune = (int) (sig_measure_noise * 10.0);
+    sig_accel_tune = (int) (sig_measure_noise);
+    sig_measure_noise_tune = (int) (sig_measure_noise);
 }
 
 bool KalmanFilter2D::grabPosition() {
@@ -170,7 +170,7 @@ void KalmanFilter2D::initializeFilter(void) {
 
     // Error covariance matrix (initialize with large value to indicate a lack
     // of trust in the model)
-    cv::setIdentity(kf.errorCovPre, 10.0);
+    cv::setIdentity(kf.errorCovPre, 1000.0);
 
     // TODO: Add head direction?
     // The state is
@@ -194,7 +194,6 @@ void KalmanFilter2D::initializeStaticMatracies() {
     kf.transitionMatrix.at<double>(2, 3) = dt;
     kf.transitionMatrix.at<double>(4, 5) = dt;
 
-
     // Observation Matrix (can only see position directly)
     // [ 1  0  0  0 ]
     // [ 0  0  1  0 ]
@@ -203,8 +202,8 @@ void KalmanFilter2D::initializeStaticMatracies() {
     kf.measurementMatrix.at<double>(1, 2) = 1.0;
 
     // Noise covariance matrix (see pp13-15 of MWL.JPN.105.02.002 for derivation)
-    // [ dt^4/2 dt^2/3 		     ] 
-    // [ dt^2/3 dt^2   		     ]
+    // [ dt^4/4 dt^3/2 		     ] 
+    // [ dt^3/2 dt^2   		     ]
     // [               dt^4/2 dt^2/3 ] * sigma_accel^2
     // [               dt^2/3 dt^2   ] 
     kf.processNoiseCov.at<double>(0, 0) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
@@ -254,11 +253,19 @@ void KalmanFilter2D::tune() {
 
         // Draw the result, update sliders
         cv::imshow(tuning_image_title, tuning_canvas);
-        cv::waitKey(1);
+        
+        // If user hits escape, close the tuning windows
+        char user_input;
+        user_input = cv::waitKey(1);
+        if (user_input == 27) { // Capture 'ESC' key
+            tuning_on = false;
+        }
 
     } else if (!tuning_on && tuning_windows_created) {
         // Destroy the tuning windows
-        cv::destroyWindow(slider_title);
+        
+        // TODO: Window will not actually close!!
+        cv::destroyWindow(tuning_image_title);
         tuning_windows_created = false;
 
     }
@@ -269,13 +276,13 @@ void KalmanFilter2D::tune() {
 void KalmanFilter2D::createTuningWindows() {
 
     // Create window for sliders
-    cv::namedWindow(slider_title, cv::WINDOW_AUTOSIZE);
+    cv::namedWindow(tuning_image_title, cv::WINDOW_AUTOSIZE);
 
     // Create sliders and insert them into window
     sig_accel_tune = (int)sig_accel;
     sig_measure_noise_tune = (int)sig_measure_noise;
-    cv::createTrackbar("SIGMA ACCEL.", slider_title, &sig_accel_tune, 100);
-    cv::createTrackbar("SIGMA NOISE", slider_title, &sig_measure_noise_tune, 100);
+    cv::createTrackbar("SIGMA ACCEL.", tuning_image_title, &sig_accel_tune, 1000);
+    cv::createTrackbar("SIGMA NOISE", tuning_image_title, &sig_measure_noise_tune, 10);
 
     tuning_windows_created = true;
 }

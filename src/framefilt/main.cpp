@@ -40,7 +40,7 @@ void run(FrameFilter* filter, std::string source, std::string sink) {
     std::cout << "Frame filter is exiting.\n";
 }
 
-void printUsage(po::options_description options) {
+void printUsage(po::options_description options){
     std::cout << "Usage: framefilt [OPTIONS]\n"
               << "   or: framefilt TYPE SOURCE SINK [CONFIG]\n"
               << "Perform background subtraction on images from SOURCE.\n"

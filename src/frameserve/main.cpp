@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
     std::string sink;
     std::string type;
     std::string video_file;
+    double frames_per_second = 30;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
@@ -78,6 +79,8 @@ int main(int argc, char *argv[]) {
                 ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
                 ("video-file,f", po::value<std::string>(&video_file),
                 "Path to video file if \'file\' is selected as the server TYPE.")
+                ("fps,r", po::value<double>(&frames_per_second),
+                 "Frames per second. Overriden by information in configuration file if provided.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -167,7 +170,7 @@ int main(int argc, char *argv[]) {
         }
         case 'c':
         {
-            camera = new FileReader(video_file, sink);
+            camera = new FileReader(video_file, sink, frames_per_second);
             break;
         }
         default:

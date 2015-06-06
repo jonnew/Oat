@@ -37,6 +37,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 , frames_per_second(frames_per_second)
 , frame_client_idx(0)
 , position_client_idx(0)
+, frame_read_success(false)
 , position_labels(position_source_names) {
 
     // First check that the save_path is valid
@@ -92,29 +93,35 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         json_writer.StartArray();
     }
 
-    // Create a video writer and file for each image stream
-    for (auto &frame_source_name : frame_source_names) {
+    // Create a video writer, file, and buffer for each image stream
+    if (!frame_source_names.empty()) {
+        
+        for (auto &frame_source_name : frame_source_names) {
 
-        // Generate file name for this video
-        std::string frame_fid;
-        if (append_date)
-            frame_fid = file_name.empty() ? 
-                        (save_path + "/" + date_now + "_" + frame_source_name) :
-                        (save_path + "/" + date_now + "_" + file_name + "_" + frame_source_name);
-        else
-            frame_fid = file_name.empty() ? 
-                        (save_path + "/" + frame_source_name) :
-                        (save_path + "/" + file_name + "_" + frame_source_name);
+            // Generate file name for this video
+            std::string frame_fid;
+            if (append_date)
+                frame_fid = file_name.empty() ?
+                (save_path + "/" + date_now + "_" + frame_source_name) :
+                (save_path + "/" + date_now + "_" + file_name + "_" + frame_source_name);
+            else
+                frame_fid = file_name.empty() ?
+                (save_path + "/" + frame_source_name) :
+                (save_path + "/" + file_name + "_" + frame_source_name);
 
-        frame_fid = frame_fid + ".avi";
+            frame_fid = frame_fid + ".avi";
 
-        checkFile(frame_fid);
+            checkFile(frame_fid);
 
-        video_file_names.push_back(frame_fid);
-        frame_sources.push_back(new shmem::MatClient(frame_source_name));
-        frames.push_back(new cv::Mat);
-        video_writers.push_back(new cv::VideoWriter());
+            video_file_names.push_back(frame_fid);
+            frame_sources.push_back(new shmem::MatClient(frame_source_name));
+            frames.push_back(new cv::Mat);
+            video_writers.push_back(new cv::VideoWriter());
+        }
+    } else {
+        frame_read_success = true;
     }
+
 }
 
 Recorder::~Recorder() {
@@ -144,15 +151,14 @@ Recorder::~Recorder() {
 }
 
 void Recorder::writeStreams() {
-
-    // Get current frames
+        
     while (frame_client_idx < frame_sources.size()) {
 
-        if (!(frame_sources[frame_client_idx]->getSharedMat(*frames[frame_client_idx]))) {
-            return;
+        if (!(frame_read_success = (frame_sources[frame_client_idx]->getSharedMat(*frames[frame_client_idx])))) {
+            break;
+        } else {
+            frame_client_idx++;
         }
-
-        frame_client_idx++;
     }
 
     // Get current positions
@@ -165,6 +171,10 @@ void Recorder::writeStreams() {
         position_client_idx++;
     }
 
+    if (!frame_read_success) {
+        return;
+    }
+    
     // Reset the position client read counter
     frame_client_idx = 0;
     position_client_idx = 0;
@@ -202,7 +212,6 @@ void Recorder::writePositionsToFile() {
         json_writer.Uint(position_sources[0]->get_current_time_stamp());
 
         //json_writer.String("positions");
-
         json_writer.StartArray();
 
         int idx = 0;

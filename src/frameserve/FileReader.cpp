@@ -17,25 +17,26 @@
 #include "FileReader.h"
 
 #include <string>
-#include <opencv2/opencv.hpp>
+#include <opencv2/videoio.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
 
-FileReader::FileReader(std::string file_name_in, std::string image_sink_name) :
+FileReader::FileReader(std::string file_name_in, std::string image_sink_name, const double& frames_per_second) :
 Camera(image_sink_name)
 , file_name(file_name_in)
 , file_reader(file_name_in)
 , use_roi(false)
-, frame_rate_in_hz(24) {
+, frame_rate_in_hz(frames_per_second) {
 
     // Default config
     configure();
 }
 
 void FileReader::grabMat() {
+    
     file_reader >> current_frame;
     
-    // Crop if nessesary
+    // Crop if necessary
     if (use_roi) {
         current_frame = current_frame(region_of_interest);
     }

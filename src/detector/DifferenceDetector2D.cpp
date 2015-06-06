@@ -176,9 +176,11 @@ void DifferenceDetector2D::tune() {
         cv::waitKey(1);
 
     } else if (!tuning_on && tuning_windows_created) {
+        
+        // TODO: Window will not actually close!!
+        
         // Destroy the tuning windows
         cv::destroyWindow(tuning_image_title);
-        cv::destroyWindow(slider_title);
         tuning_windows_created = false;
     }
 
@@ -187,15 +189,12 @@ void DifferenceDetector2D::tune() {
 
 void DifferenceDetector2D::createTuningWindows() {
 
-    //cv::startWindowThread();
-
     // Create window for sliders
-    cv::namedWindow(tuning_image_title);
-    cv::namedWindow(slider_title, cv::WINDOW_NORMAL);
+    cv::namedWindow(tuning_image_title, cv::WINDOW_NORMAL);
 
     // Create sliders and insert them into window
-    cv::createTrackbar("THRESH", slider_title, &difference_intensity_threshold, 256);
-    cv::createTrackbar("BLUR", slider_title, &blur_size.height, 50, &DifferenceDetector2D::blurSliderChangedCallback, this);
+    cv::createTrackbar("THRESH", tuning_image_title, &difference_intensity_threshold, 256);
+    cv::createTrackbar("BLUR", tuning_image_title, &blur_size.height, 50, &DifferenceDetector2D::blurSliderChangedCallback, this);
 
     tuning_windows_created = true;
 }

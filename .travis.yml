@@ -1,3 +1,5 @@
+before_install:
+  - sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
 install:
   - wget http://sourceforge.net/projects/boost/files/latest/download?source=files
   - tar -xf download
@@ -8,7 +10,11 @@ install:
   - cd opt/boost*/
   - sudo ./bootstrap.sh
   - sudo ./b2 --with-program_options --with_system --with_thread
-  - sudo apt-get update
-  - sudo apt-get install libopencv-dev
-  - cd src/backsubtractor
-  - g++ BackgroundSubtractor.cpp main.cpp `pkg-config opencv --cflags --libs` -o test
+  - wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
+  - unzip opencv.zip -d opencv
+  - cd opencv/opencv-3.0.0-rc1 
+  - mkdir release
+  - cd release
+  - cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
+  - make
+  - sudo make install

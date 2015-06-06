@@ -40,7 +40,6 @@ public:
       image_source(image_source_name)
     , position_sink(position_sink_name)
     , tuning_image_title(position_sink_name + "_tuning")
-    , slider_title(position_sink_name + "_sliders")
     , tuning_windows_created(false)
     , tuning_on(false) { }
 
@@ -75,7 +74,7 @@ protected:
     boost::mutex tuning_mutex; // Sync IO and processing thread, which can both manipulate the tuning state
     bool tuning_on; // This is a shared resource and must be synchronized
     bool tuning_windows_created;
-    const std::string tuning_image_title, slider_title;
+    const std::string tuning_image_title;
     cv::Mat tune_image;
     virtual void tune(void) = 0;
     virtual void createTuningWindows(void) = 0;

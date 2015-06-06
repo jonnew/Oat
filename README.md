@@ -26,6 +26,10 @@ sudo ./b2 --with-program_options --with_system --with_thread
 
 #### [OpenCV](http://opencv.org/)
 ```bash
+# Install dependencies
+sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+
+# Install OpenCV
 wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
 unzip opencv.zip -d opencv
 cd opencv/opencv-3.0.0-rc1 
@@ -35,6 +39,7 @@ cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
 make
 sudo make install
 ```
+__Note__: OpenCV must be installed with ffmpeg support in order for offline analysis of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreamer will be used to serve from video files at the rate the files were recorded.
 
 #### [RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)
 Starting in the simple-tracker root directory,

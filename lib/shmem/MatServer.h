@@ -71,7 +71,7 @@ namespace shmem {
         std::string name;
 
         // Buffer
-        static const int MATSERVER_BUFFER_SIZE = 100;
+        static const int MATSERVER_BUFFER_SIZE = 1024;
         boost::lockfree::spsc_queue
         <cv::Mat, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
         boost::lockfree::spsc_queue

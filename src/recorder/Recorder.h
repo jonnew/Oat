@@ -20,6 +20,7 @@
 #include <string>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include <boost/lockfree/spsc_queue.hpp>
 
 #include "../../lib/rapidjson/filewritestream.h"
 #include "../../lib/rapidjson/prettywriter.h"
@@ -68,6 +69,11 @@ private:
     std::vector<shmem::MatClient*> frame_sources;
     std::vector<cv::Mat*> frames;
     std::vector<shmem::MatClient>::size_type frame_client_idx;
+    bool frame_read_success;
+    static const int frame_write_buffer_size = 100;
+    std::vector< boost::lockfree::spsc_queue
+               < cv::Mat, boost::lockfree::capacity
+               < frame_write_buffer_size> > > frame_write_buffer;
     
     // Position sources
     std::vector<shmem::SMClient<datatypes::Position2D>* > position_sources;

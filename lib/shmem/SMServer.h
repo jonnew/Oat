@@ -53,7 +53,7 @@ namespace shmem {
         std::string name;
 
         // Buffer
-        static const int SMSERVER_BUFFER_SIZE = 100;
+        static const int SMSERVER_BUFFER_SIZE = 1024;
         boost::lockfree::spsc_queue
         <T, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > buffer;
         boost::lockfree::spsc_queue

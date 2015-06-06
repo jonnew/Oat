@@ -24,7 +24,10 @@
 
 class FileReader : public Camera {
 public:
-    FileReader(std::string file_name_in, std::string image_sink_name);
+    
+    FileReader(std::string file_name_in, 
+               std::string image_sink_name, 
+               const double& frames_per_second = 30);
     
     // Implement Camera interface
     void configure(void); 
