@@ -14,10 +14,12 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <string>
 #include <chrono>
-#include <iomanip>
 #include <ctime>
+#include <iomanip>
+#include <mutex>
+#include <string>
+#include <thread>
 #include <sys/stat.h>
 #include <boost/filesystem.hpp>
 
@@ -115,8 +117,18 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
             video_file_names.push_back(frame_fid);
             frame_sources.push_back(new shmem::MatClient(frame_source_name));
-            frames.push_back(new cv::Mat);
+            
+            //frames.push_back(new cv::Mat);
+            
+            
+            frame_write_buffers.push_back(new 
+                    boost::lockfree::spsc_queue
+                    < cv::Mat,  boost::lockfree::capacity < frame_write_buffer_size> > );
             video_writers.push_back(new cv::VideoWriter());
+            
+            // TODO: provide threads with function
+            // frame_write_threads.push_back(new std::thread(&Recorder::writeFramesToFileFromBuffer(writer_index), this)); 
+
         }
     } else {
         frame_read_success = true;
@@ -125,14 +137,17 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 }
 
 Recorder::~Recorder() {
+    
+    // Set running to false to trigger thread join
+    running = false;
+    
+    // TODO: Join all threads
+    
+    // TODO: Free all vectorized resources
 
     // Release all resources
     for (auto &frame_source : frame_sources) {
         delete frame_source;
-    }
-
-    for (auto &frame : frames) {
-        delete frame;
     }
 
     for (auto &writer : video_writers) {
@@ -153,10 +168,18 @@ Recorder::~Recorder() {
 void Recorder::writeStreams() {
         
     while (frame_client_idx < frame_sources.size()) {
-
-        if (!(frame_read_success = (frame_sources[frame_client_idx]->getSharedMat(*frames[frame_client_idx])))) {
+        
+        if (!(frame_read_success = (frame_sources[frame_client_idx]->getSharedMat(current_frame)))) {
             break;
+            
         } else {
+            
+            // Push newest frame into client N's queue
+            frame_write_buffers[frame_client_idx].push(current_frame);
+            
+            // Notify a writer thread that there is new data in the queue
+            frame_write_condition_variables[frame_client_idx].notify_one();
+            
             frame_client_idx++;
         }
     }
@@ -180,26 +203,26 @@ void Recorder::writeStreams() {
     position_client_idx = 0;
 
     // Write the frames to file
-    writeFramesToFile();
+    //writeFramesToBuffer(); TOD: callback on write to buffer.
     writePositionsToFile();
 
 }
 
-void Recorder::writeFramesToFile() {
+void Recorder::writeFramesToFileFromBuffer(std::vector<cv::VideoWriter*>::size_type writer_idx) {
 
-    // Cycle through video writers, write each image source to the corresponding
-    // file
-    int idx = 0;
-    for (auto &writer : video_writers) {
+    while (running) {
 
-        if (writer->isOpened()) {
-            writer->write(*frames[idx]);
-        } else {
-            initializeWriter(*writer, video_file_names.at(idx), *frames[idx]);
-            writer->write(*frames[idx]);
+        std::unique_lock<std::mutex> lk(frame_write_mutexes[writer_idx]);
+        frame_write_condition_variables[writer_idx].wait_for(lk, std::chrono::milliseconds(10));
+
+        if (!video_writers[writer_idx].isOpened()) {
+            initializeWriter(*video_writers[writer_idx],
+                    video_file_names.at(writer_idx),
+                    frame_write_buffers[writer_idx].front());
         }
 
-        ++idx;
+        if (frame_write_buffers[writer_idx].read_available())
+            video_writers[writer_idx]->write(frame_write_buffers[writer_idx].pop());
     }
 }
 

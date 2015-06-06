@@ -170,7 +170,6 @@ namespace shmem {
                   
 #endif
 
-
         // notify server thread that data is available
         serve_condition.notify_one();
 
