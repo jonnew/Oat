@@ -42,14 +42,16 @@ void FileReader::grabMat() {
     }
 }
 
-void FileReader::serveMat() {
+bool FileReader::serveMat() {
     
     if (!current_frame.empty()) {
         frame_sink.pushMat(current_frame, current_sample);
         current_sample++;
         usleep(frame_period_in_us);
+        return false;
     } else {
         frame_sink.set_running(false); //TODO: signal close somehow
+        return true;
     }
 }
 

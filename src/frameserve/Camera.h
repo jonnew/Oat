@@ -17,7 +17,7 @@
 #ifndef CAMERA_H
 #define	CAMERA_H
 
-
+#include <atomic>
 #include <opencv2/opencv.hpp>
 
 #include "../../lib/shmem/MatServer.h"
@@ -36,8 +36,12 @@ public:
     , undistort_image(false)
     , current_sample(0) { }
     
-    // Cameras must be able to serve cv::Mat frames
-    virtual void serveMat(void) = 0;
+    /**
+     * Cameras must be able to serve cv::Mat frames.
+     * @return running state. true = finished (e.g. at end of file). false = not
+     * finished, more to come.
+     */
+    virtual bool serveMat(void) = 0;
     
     // Cameras allow image undistortion if parameters are provided
     void undistortMat(void) {

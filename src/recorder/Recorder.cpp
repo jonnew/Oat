@@ -18,8 +18,7 @@
 #include <ctime>
 #include <iomanip>
 #include <mutex>
-#include <string>
-#include <thread>
+
 #include <sys/stat.h>
 #include <boost/filesystem.hpp>
 
@@ -36,6 +35,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
   save_path(save_path)
 , file_name(file_name)
 , append_date(append_date)
+, running(true)
 , frames_per_second(frames_per_second)
 , frame_client_idx(0)
 , position_client_idx(0)
@@ -46,8 +46,8 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
     bfs::path path(save_path.c_str());
     if (!bfs::exists(path) || !bfs::is_directory(path)) {
         std::cout << "Warning: requested recording path, " + save_path + ", "
-                  << "does not exist, or is not a valid directory.\n"
-                  << "attempting to use the current directory instead.\n";
+                << "does not exist, or is not a valid directory.\n"
+                << "attempting to use the current directory instead.\n";
         save_path = bfs::current_path().c_str();
     }
 
@@ -72,13 +72,13 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         // Create a single position file
         std::string posi_fid;
         if (append_date)
-            posi_fid = file_name.empty() ? 
-                       (save_path + "/" + date_now  + "_" + position_source_names[0]) : 
-                       (save_path + "/" + date_now + "_" + file_name);
+            posi_fid = file_name.empty() ?
+            (save_path + "/" + date_now + "_" + position_source_names[0]) :
+            (save_path + "/" + date_now + "_" + file_name);
         else
-            posi_fid = file_name.empty() ? 
-                       (save_path + "/"  + position_source_names[0]) : 
-                       (save_path + "/"  + file_name);
+            posi_fid = file_name.empty() ?
+            (save_path + "/" + position_source_names[0]) :
+            (save_path + "/" + file_name);
 
         posi_fid = posi_fid + ".json";
 
@@ -89,15 +89,16 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
             std::cerr << "Error: unable to open, " + posi_fid + ". Exiting." << std::endl;
             exit(EXIT_FAILURE);
         }
-        
+
         file_stream = new rapidjson::FileWriteStream(position_fp, position_write_buffer, sizeof (position_write_buffer));
         json_writer.Reset(*file_stream);
         json_writer.StartArray();
     }
 
     // Create a video writer, file, and buffer for each image stream
+    uint32_t idx = 0;
     if (!frame_source_names.empty()) {
-        
+
         for (auto &frame_source_name : frame_source_names) {
 
             // Generate file name for this video
@@ -117,17 +118,15 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
             video_file_names.push_back(frame_fid);
             frame_sources.push_back(new shmem::MatClient(frame_source_name));
-            
-            //frames.push_back(new cv::Mat);
-            
-            
-            frame_write_buffers.push_back(new 
+            frame_write_buffers.push_back(new
                     boost::lockfree::spsc_queue
-                    < cv::Mat,  boost::lockfree::capacity < frame_write_buffer_size> > );
+                    < cv::Mat, boost::lockfree::capacity < frame_write_buffer_size> >);
             video_writers.push_back(new cv::VideoWriter());
-            
+
             // TODO: provide threads with function
-            // frame_write_threads.push_back(new std::thread(&Recorder::writeFramesToFileFromBuffer(writer_index), this)); 
+            frame_write_mutexes.push_back(new std::mutex());
+            frame_write_condition_variables.push_back(new std::condition_variable());
+            frame_write_threads.push_back(new std::thread(&Recorder::writeFramesToFileFromBuffer, this, idx++));
 
         }
     } else {
@@ -137,27 +136,46 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 }
 
 Recorder::~Recorder() {
-    
+
     // Set running to false to trigger thread join
     running = false;
-    
-    // TODO: Join all threads
-    
-    // TODO: Free all vectorized resources
 
-    // Release all resources
-    for (auto &frame_source : frame_sources) {
-        delete frame_source;
+    // Join all threads
+    for (auto &value : frame_write_threads) {
+        value->join();
+        delete value;
     }
 
-    for (auto &writer : video_writers) {
-        writer->release();
-        delete writer;
+    // Free all dynamically allocated resources
+    for (auto &value : frame_sources) {
+        delete value;
     }
 
-    for (auto &position_source : position_sources) {
-        delete position_source;
+    for (auto &value : video_writers) {
+        value->release();
+        delete value;
     }
+
+    for (auto &value : frame_write_threads) {
+        delete &value;
+    }
+
+    for (auto &value : frame_write_mutexes) {
+        delete &value;
+    }
+
+    for (auto &value : frame_write_condition_variables) {
+        delete &value;
+    }
+
+    for (auto &value : frame_write_buffers) {
+        delete value;
+    }
+
+    for (auto &value : position_sources) {
+        delete value;
+    }
+
     if (position_fp) {
         json_writer.EndArray();
         file_stream->Flush();
@@ -166,20 +184,20 @@ Recorder::~Recorder() {
 }
 
 void Recorder::writeStreams() {
-        
+
     while (frame_client_idx < frame_sources.size()) {
-        
+
         if (!(frame_read_success = (frame_sources[frame_client_idx]->getSharedMat(current_frame)))) {
             break;
-            
+
         } else {
-            
+
             // Push newest frame into client N's queue
-            frame_write_buffers[frame_client_idx].push(current_frame);
-            
+            frame_write_buffers[frame_client_idx]->push(current_frame);
+
             // Notify a writer thread that there is new data in the queue
-            frame_write_condition_variables[frame_client_idx].notify_one();
-            
+            frame_write_condition_variables[frame_client_idx]->notify_one();
+
             frame_client_idx++;
         }
     }
@@ -197,7 +215,7 @@ void Recorder::writeStreams() {
     if (!frame_read_success) {
         return;
     }
-    
+
     // Reset the position client read counter
     frame_client_idx = 0;
     position_client_idx = 0;
@@ -208,21 +226,24 @@ void Recorder::writeStreams() {
 
 }
 
-void Recorder::writeFramesToFileFromBuffer(std::vector<cv::VideoWriter*>::size_type writer_idx) {
+void Recorder::writeFramesToFileFromBuffer(uint32_t writer_idx) {
 
     while (running) {
 
-        std::unique_lock<std::mutex> lk(frame_write_mutexes[writer_idx]);
-        frame_write_condition_variables[writer_idx].wait_for(lk, std::chrono::milliseconds(10));
+        std::unique_lock<std::mutex> lk(*frame_write_mutexes[writer_idx]);
+        frame_write_condition_variables[writer_idx]->wait_for(lk, std::chrono::milliseconds(10));
 
-        if (!video_writers[writer_idx].isOpened()) {
-            initializeWriter(*video_writers[writer_idx],
-                    video_file_names.at(writer_idx),
-                    frame_write_buffers[writer_idx].front());
+        if (frame_write_buffers[writer_idx]->read_available()) {
+            if (!video_writers[writer_idx]->isOpened()) {
+                initializeWriter(*video_writers[writer_idx],
+                        video_file_names.at(writer_idx),
+                        frame_write_buffers[writer_idx]->front());
+            }
+
+
+            video_writers[writer_idx]->write(frame_write_buffers[writer_idx]->front());
+            frame_write_buffers[writer_idx]->pop();
         }
-
-        if (frame_write_buffers[writer_idx].read_available())
-            video_writers[writer_idx]->write(frame_write_buffers[writer_idx].pop());
     }
 }
 
@@ -278,15 +299,15 @@ bool Recorder::checkFile(std::string& file) {
 
         // Recreate file name
         file = std::string(parent_path.generic_string()) +
-               "/" +
-               std::string(stem.generic_string()) +
-               std::string(extension.generic_string());
-        
+                "/" +
+                std::string(stem.generic_string()) +
+                std::string(extension.generic_string());
+
     }
 
     if (i != 0) {
         std::cout << "Warning: " + original_file + " exists.\n"
-                  << "File renamed to: " + file + ".\n";
+                << "File renamed to: " + file + ".\n";
         file_exists = true;
     }
 

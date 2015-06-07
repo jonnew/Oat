@@ -17,6 +17,7 @@
 #ifndef VIEWER_H
 #define VIEWER_H
 
+#include <chrono>
 #include <string>
 #include <opencv2/core/mat.hpp>
 
@@ -24,6 +25,10 @@
 #include "../../lib/shmem/MatClient.h"
 
 class Viewer {
+    
+    typedef std::chrono::high_resolution_clock Clock;
+    typedef std::chrono::milliseconds milliseconds;
+    
 public:
     Viewer(const std::string& frame_source_name, 
            std::string& save_path,
@@ -46,6 +51,10 @@ private:
 
     // Mat client object for receiving frames
     shmem::MatClient frame_source;
+    
+    // minimum viewer refresh period
+    Clock::time_point tick, tock;
+    const milliseconds min_update_period;
     
     // Used to request a snapshot of the current image, saved to disk
     std::string frame_fid;

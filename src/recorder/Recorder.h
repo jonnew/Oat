@@ -18,7 +18,9 @@
 #define RECORDER_H
 
 #include <atomic>
+#include <condition_variable>
 #include <string>
+#include <thread>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
@@ -72,18 +74,17 @@ private:
 
     // Image sources
     std::vector<shmem::MatClient*> frame_sources;
-    //std::vector<cv::Mat*> frames;
     cv::Mat current_frame;
     std::vector<shmem::MatClient>::size_type frame_client_idx;
     bool frame_read_success;
     static const int frame_write_buffer_size = 100;
 
-    std::vector< std::thread > frame_write_threads;
-    std::vector< std::mutex > frame_write_mutexes;
-    std::vector< std::condition_variable > frame_write_condition_variables;
+    std::vector< std::thread* > frame_write_threads;
+    std::vector< std::mutex* > frame_write_mutexes;
+    std::vector< std::condition_variable* > frame_write_condition_variables;
     std::vector< boost::lockfree::spsc_queue
                < cv::Mat, boost::lockfree::capacity
-               < frame_write_buffer_size> > > frame_write_buffers;
+               < frame_write_buffer_size> > * > frame_write_buffers;
     
     // Position sources
     std::vector<shmem::SMClient<datatypes::Position2D>* > position_sources;
@@ -101,7 +102,7 @@ private:
 
     bool checkFile(std::string& file);
 
-    void writeFramesToFileFromBuffer(std::vector<cv::VideoWriter*>::size_type writer_idx);
+    void writeFramesToFileFromBuffer(uint32_t writer_idx);
     void writePositionsToFile(void);
 
 };

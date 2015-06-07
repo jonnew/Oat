@@ -34,7 +34,7 @@ public:
     void configure(void); 
     void configure(std::string config_file, std::string key);
     void grabMat(void);
-    void serveMat(void);
+    bool serveMat(void);
 
 private:
     

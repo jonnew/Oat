@@ -28,14 +28,19 @@ namespace bfs = boost::filesystem;
 
 using namespace boost::interprocess;
 
-Viewer::Viewer(const std::string& frame_source_name, 
-               std::string& save_path,
-               const std::string& file_name) :
-  frame_source(frame_source_name)
-, name(frame_source_name + "_viewer")
+Viewer::Viewer(const std::string& frame_source_name,
+        std::string& save_path,
+        const std::string& file_name) :
+
+name(frame_source_name + "_viewer")
+, frame_source(frame_source_name)
+, min_update_period(33)
 , save_path(save_path)
 , file_name(file_name)
 , append_date(append_date) {
+    
+    tick = Clock::now();
+    tock = Clock::now();
 
     // Name *this according the the source name and the client number
     // to keep it unique
@@ -47,12 +52,12 @@ Viewer::Viewer(const std::string& frame_source_name,
     bfs::path path(save_path.c_str());
     if (!bfs::exists(path) || !bfs::is_directory(path)) {
         std::cout << "Warning: requested snapshot save path, " + save_path + ", "
-                  << "does not exist, or is not a valid directory.\n"
-                  << "Using the current directory instead.\n";
-        
+                << "does not exist, or is not a valid directory.\n"
+                << "Using the current directory instead.\n";
+
         save_path = ".";
     }
-    
+
     // Snapshot encoding
     compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
     compression_params.push_back(9);
@@ -69,25 +74,33 @@ void Viewer::showImage(const std::string title) {
     // show it.
     if (frame_source.getSharedMat(current_frame)) {
 
-        try {
-            char command;
-            
-            cv::imshow(title, current_frame);
-            
-            command = cv::waitKey(1);
-            
-            if (command == 's') {
-                cv::imwrite(makeFileName(), current_frame, compression_params);
+        tick = Clock::now();
+
+        milliseconds duration = std::chrono::duration_cast<milliseconds>(tick - tock);
+        if (duration > min_update_period) {
+
+            try {
+
+                char command;
+
+                cv::imshow(title, current_frame);
+                tock = Clock::now();
+
+                command = cv::waitKey(1);
+
+                if (command == 's') {
+                    cv::imwrite(makeFileName(), current_frame, compression_params);
+                }
+
+            } catch (cv::Exception& ex) {
+                std::cerr << ex.what() << "\n";
             }
-            
-        } catch (cv::Exception& ex) {
-            std::cerr << ex.what() << "\n";
         }
     }
 }
 
 std::string Viewer::makeFileName() {
-    
+
     // Create file name
     std::time_t raw_time;
     struct tm * time_info;
@@ -96,15 +109,15 @@ std::string Viewer::makeFileName() {
     time_info = std::localtime(&raw_time);
     std::strftime(buffer, 80, "%F-%H-%M-%S", time_info);
     std::string date_now = std::string(buffer);
-    
+
     // Generate file name for this video
     if (!file_name.empty())
         frame_fid = save_path + "/" + date_now + "_" + file_name + "_" + frame_source.get_name();
     else
         frame_fid = save_path + "/" + date_now + "_" + frame_source.get_name();
-        
+
     frame_fid = frame_fid + ".png";
-    
+
     // Check for existence
     int i = 0;
     std::string file = frame_fid;
@@ -124,7 +137,7 @@ std::string Viewer::makeFileName() {
         file = std::string(root_path.generic_string()) +
                 std::string(stem.generic_string()) +
                 std::string(extension.generic_string());
-        
+
     }
 
     return file;

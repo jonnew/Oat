@@ -757,12 +757,12 @@ void PGGigECam::grabMat() {
     current_frame = imageToMat();
 }
 
-void PGGigECam::serveMat() {
+bool PGGigECam::serveMat() {
 
     // Write frame to shared memory and notify all client processes
     // that a new frame is available. Do not block, though.
-    frame_sink.pushMat(current_frame, current_sample);
-    current_sample++;
+    frame_sink.pushMat(current_frame, current_sample++);
+    return false;
 }
 
 // PRIVATE
