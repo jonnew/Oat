@@ -47,7 +47,9 @@ PGGigECam::PGGigECam(std::string frame_sink_name) : Camera(frame_sink_name)
 , trigger_polarity(true)
 , trigger_mode(14)
 , trigger_source_pin(0)
-, frames_per_second(30) {
+, frames_per_second(30)
+, use_camera_frame_buffer(false)
+, number_transmit_retries(0) {
 
     // Initialize the frame size
     frame_size = cv::Size(728, 728);
@@ -71,6 +73,7 @@ void PGGigECam::configure() {
     setupWhiteBalance(false);
     setupDefaultImageFormat();
     setupTrigger();
+    setupCameraFrameBuffer();
 }
 
 /**
@@ -195,11 +198,11 @@ void PGGigECam::configure(std::string config_file, std::string key) {
             } else {
                 use_trigger = false;
             }
-            
+
             if (camera_config.contains("fps")) {
                 frames_per_second = *camera_config.get_as<double>("fps");
             }
-            
+
             setupTrigger();
 
             if (camera_config.contains("calibration_file")) {
@@ -213,19 +216,32 @@ void PGGigECam::configure(std::string config_file, std::string key) {
                     exit(EXIT_FAILURE);
                 }
 
-                
+
                 undistort_image = true;
                 fs["camera_matrix"] >> camera_matrix;
                 fs["distortion_coefficients"] >> distortion_coefficients;
-                
-                cv::Mat temp_mat; 
+
+                cv::Mat temp_mat;
                 fs["homography"] >> temp_mat;
-                cv::Matx33d temp2((double*)temp_mat.clone().ptr());
+                cv::Matx33d temp2((double*) temp_mat.clone().ptr());
                 homography = temp2;
 
                 frame_sink.set_homography(homography);
                 fs.release();
             }
+
+            if (camera_config.contains("retry")) {
+
+                number_transmit_retries = *camera_config.get_as<int64_t>("retry");
+
+                if (number_transmit_retries > 0) {
+                    use_camera_frame_buffer = true;
+                } else {
+                    use_camera_frame_buffer = false;
+                }
+            }
+
+            setupCameraFrameBuffer();
 
         } else {
             std::cerr << "No camera configuration named \"" + key + "\" was provided. Exiting." << std::endl;
@@ -298,7 +314,7 @@ int PGGigECam::setupStreamChannels() {
             exit(EXIT_FAILURE);
         }
 
-        // TODO: This is not going to valid if cameras are on a switch...
+        // TODO: This is not going to be valid if cameras are on a switch...
         streamChannel.destinationIpAddress.octets[0] = 224;
         streamChannel.destinationIpAddress.octets[1] = 0;
         streamChannel.destinationIpAddress.octets[2] = 0;
@@ -576,6 +592,36 @@ int PGGigECam::setupImageFormat() {
     return 0;
 }
 
+int PGGigECam::setupCameraFrameBuffer() {
+
+    // If requested
+    if (use_camera_frame_buffer) {
+
+        unsigned int image_retransmit_reg;
+        const unsigned int image_retransmit_addr = 0x634;
+
+        Error error = camera.ReadRegister(image_retransmit_addr, &image_retransmit_reg);
+        if (error != PGRERROR_OK) {
+            printError(error);
+            exit(EXIT_FAILURE);
+        }
+
+        std::cout << "Setting up camera frame buffering...\n";
+        // Enable framebuffer
+        image_retransmit_reg |= 1 << 0;
+
+        // Direct image data through frame buffer
+        image_retransmit_reg |= 1 << 1;
+
+        error = camera.WriteRegister(image_retransmit_addr, image_retransmit_reg);
+        if (error != PGRERROR_OK) {
+            std::cout << "Warning: camera frame buffering requested, but this camera does not support frame buffering.\n"
+                    << "Request ignored.\n";
+            use_camera_frame_buffer = false;
+        }
+    }
+}
+
 /**
  * Once connected to the camera, issue power on command.
  * 
@@ -656,28 +702,28 @@ int PGGigECam::setupTrigger() {
         printError(error);
         exit(EXIT_FAILURE);
     }
-    
+
     // Setup frame buffering
     FC2Config flyCapConfig;
     error = camera.GetConfiguration(&flyCapConfig);
     flyCapConfig.grabMode = BUFFER_FRAMES;
     flyCapConfig.highPerformanceRetrieveBuffer = true;
     flyCapConfig.numBuffers = 10;
-    
+
     error = camera.SetConfiguration(&flyCapConfig);
     if (error != PGRERROR_OK) {
         printError(error);
         exit(EXIT_FAILURE);
     }
-    
+
     //TODO: Custom frame rate
-//    // In the case where the trigger is not used, the config can specify a frame
-//    // rate
-//    VideoMode videoMode;
-//    FrameRate frameRate;
-//    camera.GetVideoModeAndFrameRate ( &videoMode, FRAMERATE_30);
-    
-    
+    //    // In the case where the trigger is not used, the config can specify a frame
+    //    // rate
+    //    VideoMode videoMode;
+    //    FrameRate frameRate;
+    //    camera.GetVideoModeAndFrameRate ( &videoMode, FRAMERATE_30);
+
+
     // TODO: This hangs...
     //Poll to ensure camera is ready
     //    if (use_trigger) { // If false, camera will free run

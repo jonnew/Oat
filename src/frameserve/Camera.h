@@ -61,7 +61,8 @@ public:
     // Users should be able to access current frame (without serving)
     cv::Mat getCurrentFrame(void) { return current_frame; }
     
-    // Cameras must be interruptable
+    // Cameras must be interruptable by the user in a way that ensures shemem
+    // is freed
     void stop(void) { frame_sink.set_running(false); }
     
 protected:

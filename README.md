@@ -302,8 +302,13 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Dealing with dropped frames
+	- _Point grey specific_
     - Right now, I poll the camera for frames. This is fine for a file, but not necessarily for a physical camera whose acquisitions is governed by an external, asynchronous clock
     - Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number, even if it does not serve the frame, to prevent offsets from occurring.
+- [ ] Dealing with corrupt data transmissions
+	- _Point grey specific_
+    - I want to enable the hardware-based onboard frame buffer
+	- I want to be able to re-transmit frames in the case that a corrupt frame is detected
 
 #### Connecting to point-grey PGE camera in Linux
 - First you must assign your camera a static IP address. 

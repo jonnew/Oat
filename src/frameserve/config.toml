@@ -19,6 +19,8 @@ trigger_polarity = 1					# Rising edge active
 trigger_mode = 14						# 14 = Overlapped Exposure/Readout Mode (see Camera manual)
 										# 7  = Software trigger
 trigger_source = 0						# GPIO pin that trigger will be sent to
+retry = 1 								# In case of corrupt data transmission, number of transmission
+  										# retries that should be attempted. Default is 0.
 calibration_file = "calibration.yml" 	# Camera matrix, distorition coefficients for lens correction
 
 [file]

@@ -27,14 +27,15 @@
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t done = 0;
+volatile sig_atomic_t user_finished = 0;
+volatile sig_atomic_t server_eof = 0;
 
 void run(Camera* camera) {
 
-    while (!done) { // !done
+    while (!user_finished && !server_eof) { 
         camera->grabMat();
         camera->undistortMat();
-        done = camera->serveMat();
+        server_eof = camera->serveMat();
     }
 }
 
@@ -186,7 +187,7 @@ int main(int argc, char *argv[]) {
     else
         camera->configure();
 
-    std::cout << "Camera named \"" + sink + "\" has started.\n"
+    std::cout << "Frameserver named \"" + sink + "\" has started.\n"
               << "COMMANDS:\n"
               << "  x: Exit.\n";
 
@@ -196,7 +197,7 @@ int main(int argc, char *argv[]) {
     thread_group.create_thread(boost::bind(&run, camera));
     sleep(1);
 
-    while (!done) {
+    while (!user_finished) {
         
         char user_input;
         std::cin >> user_input;
@@ -205,8 +206,8 @@ int main(int argc, char *argv[]) {
 
             case 'x':
             {
-                done = true;
-                camera->stop(); // TODO: Necessary??
+                user_finished = true;
+                camera->stop(); 
                 break;
             }
             default:
@@ -221,7 +222,8 @@ int main(int argc, char *argv[]) {
     // Free heap memory allocated to camera 
     delete camera;
 
-    std::cout << "Camera named \"" + sink + "\" is exiting." << std::endl;
+    // Tell user
+    std::cout << "Frameserver named \"" + sink + "\" is exiting." << std::endl;
 
     // Exit
     return 0;

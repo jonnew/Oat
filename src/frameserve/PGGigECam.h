@@ -52,6 +52,8 @@ private:
     int trigger_polarity, trigger_mode, trigger_source_pin;
     int white_bal_red, white_bal_blue;
     double frames_per_second;
+    bool use_camera_frame_buffer;
+    unsigned int number_transmit_retries;
     
     // GigE Camera interface
     FlyCapture2::GigECamera camera;
@@ -81,6 +83,7 @@ private:
     int setupWhiteBalance(bool is_on);
     int setupImageFormat(void);
     int setupDefaultImageFormat(void);
+    int setupCameraFrameBuffer(void);
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
     //int setupImageBinning(int xBinFactor, int yBinFactor);
     int setupTrigger(void);
