@@ -17,6 +17,7 @@
 #ifndef SYNCSHAREDMEMORYOBJECT_H
 #define	SYNCSHAREDMEMORYOBJECT_H
 
+#include <utility>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 #include "../datatypes/Position.h"
@@ -51,7 +52,13 @@ namespace shmem {
         uint32_t sample_number; // Sample number of this position, respecting buffer overruns
 
         // Write/read access to shared object
-        void set_value(T value) { object = value; }
+        
+        /**
+         * Move object into shared memory slot. 
+         * @param value Value to be moved to shared memory. Value
+         * is left in a valid but unspecified state after this operation.
+         */
+        void set_value(T value) { object = std::move(value); }
         T get_value(void) const { return object; } // Read-only (for clients, forces copy if they want to mess with object)
 
     private:

@@ -18,10 +18,10 @@
 #define	SMSERVER_H
 
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <string>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
@@ -140,6 +140,12 @@ namespace shmem {
         shared_object_created = true;
     }
 
+    /**
+     * Push object into shared memory FIFO buffer.
+     * 
+     * @param value Object to store in shared memory. This object is copied on the FIFO.
+     * @param sample_number The sample number associated with the object copied onto the FIFO.
+     */
     template<class T, template <typename> class SharedMemType>
     void SMServer<T, SharedMemType>::pushObject(T value, uint32_t sample_number) {
 
