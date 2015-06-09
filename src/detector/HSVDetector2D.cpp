@@ -254,7 +254,7 @@ void HSVDetector2D::tune() {
 void HSVDetector2D::createTuningWindows() {
 
     // Create window for sliders
-    cv::namedWindow(tuning_image_title, cv::WINDOW_AUTOSIZE);
+    cv::namedWindow(tuning_image_title, cv::WINDOW_NORMAL);
 
     // Create sliders and insert them into window
     cv::createTrackbar("H_MIN", tuning_image_title, &h_min, 256);

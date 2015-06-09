@@ -312,25 +312,31 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 
 #### Connecting to point-grey PGE camera in Linux
 - First you must assign your camera a static IP address. 
-  - The easiest way to do this is to use a Windows machine to run the the IP configurator program provided by Point Grey.
+    - The easiest way to do this is to use a Windows machine to run the the IP configurator program provided by Point Grey.
 - The ipv4 method should be set to __manual__.
 - Finally, you must the PG POE gigabit interface to (1) have the same network prefix and (2) be on the same subnet as your Gigabit camera. 
-  - For instance, assume that your camera was assigned the following private ipv4 configuration:
-    - Camera IP: 192.168.0.1
-    - Subnet mask: 255.255.255.0
-  - In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
-    - POE gigabit card IP: 192.168.0.100
-    - Subnet mask: 255.255.255.0
-    - DNS server IP: 192.168.1.1
-- Note that if you want to add another network interface for another camera, it must exist on a separate subnet!    - For instance, we could repeat the above configuration steps for the second camera using the following settings:
-    - Camera IP: 192.168.1.1
-    - Subnet mask: 255.255.255.0
-  - In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
-    - POE gigabit card IP: 192.168.__1__.100
-    - Subnet mask: 255.255.255.0
-    - DNS server IP: 192.168.1.1
-- Finally, you must enable jumbo frames on the network interface
-  - Assume that the camera is using eth2
-  - `sudo ifconfig eth2 mtu 9000` 
+    - For instance, assume that your camera was assigned the following private ipv4 configuration:
+        - Camera IP: 192.168.0.1
+        - Subnet mask: 255.255.255.0
+    - In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
+        - POE gigabit card IP: 192.168.0.100
+        - Subnet mask: 255.255.255.0
+        - DNS server IP: 192.168.1.1
+- Note that if you want to add another network interface for another camera, it must exist on a separate subnet!    
+    - For instance, we could repeat the above configuration steps for the second camera using the following settings:
+        - Camera IP: 192.168.1.1
+        - Subnet mask: 255.255.255.0
+    - In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
+        - POE gigabit card IP: 192.168.__1__.100
+        - Subnet mask: 255.255.255.0
+        - DNS server IP: 192.168.1.1
+- Next, you must enable jumbo frames on the network interface
+   - Assume that the camera is using eth2
+   - `sudo ifconfig eth2 mtu 9000` 
+- Finally, increase the amount of memory Linux uses for receive buffers using the sysctl interface
+    - `sudo sysctl -w net.core.rmem_max=1048576 net.core.rmem_default=1048576`
+	- _Note_: In order for these changes to persist after system reboots, the following lines must be manually added to the bottom of the /etc/sysctl.conf file:
+	- net.core.rmem_max=1048576
+	- net.core.rmem_default=1048576
 
 

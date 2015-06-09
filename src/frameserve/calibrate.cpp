@@ -110,7 +110,7 @@ static void help() {
 }
 
 enum {
-    DETECTION = 0, CAPTURING = 1, CALIBRATED = 2, CALIBRATED_WORLDCOORD = 3
+    DETECTION = 0, CAPTURING = 1, CALIBRATED = 2, WORLDCOORD = 3
 };
 
 enum Pattern {
@@ -612,9 +612,8 @@ int main(int argc, char** argv) {
 
         imshow("Image View", view);
 
-
-        if (key == 'w' && mode == CALIBRATED) {
-            mode = CALIBRATED_WORLDCOORD;
+        if (key == 'w') {
+            mode = WORLDCOORD;
         }
 
         if (mode == CAPTURING && imagePoints.size() >= (unsigned) nframes) {
@@ -632,141 +631,141 @@ int main(int argc, char** argv) {
         }
 
         // This is a complete hack for my specific purposes
-        if (mode == CALIBRATED_WORLDCOORD) {
+        if (mode == WORLDCOORD) {
 
             if (!undistortImage) {
-                std::cout << "Error: generating world coordinates in reference to distorted image!!\n";
-                std::cout << "Undistort image before generating the world reference frame.\n";
+                std::cout << "Warning: generating world coordinates in reference to a distorted image!!\n";
+                std::cout << "You might want to undistort the image before generating the world reference frame.\n";
                 mode = CALIBRATED;
 
-            } else {
+            }
 
-                std::cout << "Homography calculation mode started.\n";
-                std::cout << "Hot keys:"
-                        << "  'x' - exit homography generation routine and attempt to calculate translation matrix.\n"
-                        << "  'c' - calculate homography matrix using current points.\n"
-                        << "  'a' - add currently selected pixel position to homography coordinate list.\n\n";
+            std::cout << "Homography calculation mode started.\n";
+            std::cout << "Hot keys:"
+                    << "  'x' - exit homography generation routine and attempt to calculate translation matrix.\n"
+                    << "  'c' - calculate homography matrix using current points.\n"
+                    << "  'a' - add currently selected pixel position to homography coordinate list.\n\n";
 
-                std::cout << "Click a points on the frozen image. You will see the pixel value at the terminal.\n";
-                std::cout << "When you are satisfied with the point's placement, press 'a' to continue...\n";
+            std::cout << "Click a points on the frozen image. You will see the pixel value at the terminal.\n";
+            std::cout << "When you are satisfied with the point's placement, press 'a' to continue...\n";
 
 
-                std::vector<cv::Point2f> src_points;
-                std::vector<cv::Point2f> dst_points;
+            std::vector<cv::Point2f> src_points;
+            std::vector<cv::Point2f> dst_points;
 
-                bool done = false;
+            bool done = false;
 
-                while (!done) {
+            while (!done) {
 
-                    // Plot the current mouse click position
-                    cv::Mat view_with_dot = view.clone();
-                    cv::circle(view_with_dot, mouse_pt, 2, cv::Scalar(0, 0, 255), -1);
+                // Plot the current mouse click position
+                cv::Mat view_with_dot = view.clone();
+                cv::circle(view_with_dot, mouse_pt, 2, cv::Scalar(0, 0, 255), -1);
 
-                    int baseLine = 0;
-                    std::string coord = "(" + std::to_string(mouse_pt.x) + ", " + std::to_string(mouse_pt.y) + ")";
-                    //Size coord_text_size = cv::getTextSize(coord, 1, 1, 1, &baseLine);
-                    Point coord_text_origin(mouse_pt.x + 10.0, mouse_pt.y + 10.0);
-                    putText(view_with_dot, coord, coord_text_origin, 1, 1, Scalar(0, 0, 255));
-
-                    if (homography_valid) {
-
-                        std::vector<cv::Point2f> Q_world;
-                        std::vector<cv::Point2f> q_camera;
-
-                        q_camera.push_back(mouse_pt);
-
-                        cv::perspectiveTransform(q_camera, Q_world, homography2D);
-
-                        std::string coord = "(" + std::to_string(Q_world[0].x)
-                                + ", " + std::to_string(Q_world[0].y) + ")";
-
-                        Point coord_text_origin(mouse_pt.x + 10.0, mouse_pt.y - 10.0);
-                        putText(view_with_dot, coord, coord_text_origin, 1, 1, Scalar(0, 0, 255));
-                    }
-
-                    cv::imshow("Image View", view_with_dot);
-
-                    int key = 0xff & waitKey(50);
-
-                    switch (key) {
-
-                        case 'x':
-                        {
-                            done = true;
-                            break;
-                        }
-
-                        case 'c':
-                        {
-                            if (src_points.size() > 1 && dst_points.size() > 1) {
-                                //homography_transform = cv::findHomography(src_points, dst_points);
-                                homography2D = cv::estimateRigidTransform(src_points, dst_points, true);
-                                cv::Mat row = (Mat_<double>(1, 3) << 0, 0, 1);
-                                homography2D.push_back(row);
-                                std::cout << "T = " << endl << " " << homography2D << "\n\n";
-                                homography_valid = true;
-                            } else {
-                                std::cout << "Add more points to before calculating.\n";
-                            }
-                            break;
-                        }
-
-                        case 'a':
-                        {
-
-                            try {
-                                float x, y;
-                                cv::Point2f src_pt;
-                                cv::Point2f dst_pt;
-
-                                std::string input_coords;
-
-                                std::cout << "Enter X world coordinate:\n";
-                                std::cin >> input_coords;
-                                x = std::stof(input_coords);
-
-                                std::cout << "Enter Y world coordinate:\n";
-                                std::cin >> input_coords;
-                                y = std::stof(input_coords);
-
-                                src_pt.x = (float) mouse_pt.x;
-                                src_pt.y = (float) mouse_pt.y;
-                                dst_pt.x = x;
-                                dst_pt.y = y;
-
-                                src_points.push_back(src_pt);
-                                dst_points.push_back(dst_pt);
-
-                                std::cout << "Point added to map. Select another action:\n";
-
-                            } catch (std::invalid_argument ex) {
-                                std::cout << "Invalid input.\n";
-                            }
-
-                            std::cout << "Hot keys:"
-                                    << "  'x' - exit homography generation routine and attempt to calculate translation matrix.\n"
-                                    << "  'c' - calculate homography matrix using current points.\n"
-                                    << "  'a' - add currently selected pixel position to homography coordinate list.\n\n";
-                            break;
-                        }
-                        default:
-                            //std::cout << "Invalid command. Try again.\n";
-                            break;
-                    }
-                }
+                int baseLine = 0;
+                std::string coord = "(" + std::to_string(mouse_pt.x) + ", " + std::to_string(mouse_pt.y) + ")";
+                //Size coord_text_size = cv::getTextSize(coord, 1, 1, 1, &baseLine);
+                Point coord_text_origin(mouse_pt.x + 10.0, mouse_pt.y + 10.0);
+                putText(view_with_dot, coord, coord_text_origin, 1, 1, Scalar(0, 0, 255));
 
                 if (homography_valid) {
 
-                    runAndSave(outputFilename, imagePoints, imageSize,
-                            boardSize, pattern, squareSize, aspectRatio,
-                            flags, cameraMatrix, distCoeffs,
-                            writeExtrinsics, writePoints,
-                            homography_valid,
-                            homography2D);
+                    std::vector<cv::Point2f> Q_world;
+                    std::vector<cv::Point2f> q_camera;
+
+                    q_camera.push_back(mouse_pt);
+
+                    cv::perspectiveTransform(q_camera, Q_world, homography2D);
+
+                    std::string coord = "(" + std::to_string(Q_world[0].x)
+                            + ", " + std::to_string(Q_world[0].y) + ")";
+
+                    Point coord_text_origin(mouse_pt.x + 10.0, mouse_pt.y - 10.0);
+                    putText(view_with_dot, coord, coord_text_origin, 1, 1, Scalar(0, 0, 255));
                 }
 
-                mode = CALIBRATED;
+                cv::imshow("Image View", view_with_dot);
+
+                int key = 0xff & waitKey(50);
+
+                switch (key) {
+
+                    case 'x':
+                    {
+                        done = true;
+                        break;
+                    }
+
+                    case 'c':
+                    {
+                        if (src_points.size() > 1 && dst_points.size() > 1) {
+                            //homography_transform = cv::findHomography(src_points, dst_points);
+                            homography2D = cv::estimateRigidTransform(src_points, dst_points, true);
+                            cv::Mat row = (Mat_<double>(1, 3) << 0, 0, 1);
+                            homography2D.push_back(row);
+                            std::cout << "T = " << endl << " " << homography2D << "\n\n";
+                            homography_valid = true;
+                        } else {
+                            std::cout << "Add more points to before calculating.\n";
+                        }
+                        break;
+                    }
+
+                    case 'a':
+                    {
+
+                        try {
+                            float x, y;
+                            cv::Point2f src_pt;
+                            cv::Point2f dst_pt;
+
+                            std::string input_coords;
+
+                            std::cout << "Enter X world coordinate:\n";
+                            std::cin >> input_coords;
+                            x = std::stof(input_coords);
+
+                            std::cout << "Enter Y world coordinate:\n";
+                            std::cin >> input_coords;
+                            y = std::stof(input_coords);
+
+                            src_pt.x = (float) mouse_pt.x;
+                            src_pt.y = (float) mouse_pt.y;
+                            dst_pt.x = x;
+                            dst_pt.y = y;
+
+                            src_points.push_back(src_pt);
+                            dst_points.push_back(dst_pt);
+
+                            std::cout << "Point added to map. Select another action:\n";
+
+                        } catch (std::invalid_argument ex) {
+                            std::cout << "Invalid input.\n";
+                        }
+
+                        std::cout << "Hot keys:"
+                                << "  'x' - exit homography generation routine and attempt to calculate translation matrix.\n"
+                                << "  'c' - calculate homography matrix using current points.\n"
+                                << "  'a' - add currently selected pixel position to homography coordinate list.\n\n";
+                        break;
+                    }
+                    default:
+                        //std::cout << "Invalid command. Try again.\n";
+                        break;
+                }
             }
+
+            if (homography_valid) {
+
+                runAndSave(outputFilename, imagePoints, imageSize,
+                        boardSize, pattern, squareSize, aspectRatio,
+                        flags, cameraMatrix, distCoeffs,
+                        writeExtrinsics, writePoints,
+                        homography_valid,
+                        homography2D);
+            }
+
+            mode = CALIBRATED;
+
         }
     }
 

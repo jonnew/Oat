@@ -95,6 +95,40 @@ void FileReader::configure(std::string file_name, std::string key) {
                 
                 use_roi = false;
             }
+            
+            if (this_config.contains("calibration_file")) {
+                
+                std::string calibration_file = (*this_config.get_as<std::string>("calibration_file"));
+
+                cv::FileStorage fs;
+                fs.open(calibration_file, cv::FileStorage::READ);
+
+                if (!fs.isOpened()) {
+                    std::cerr << "Failed to open " << calibration_file << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                // TODO: Exception handling for missing entries
+                // Get calibration info
+                fs["calibration_valid"] >> undistort_image;
+                fs["camera_matrix"] >> camera_matrix;
+                fs["distortion_coefficients"] >> distortion_coefficients;
+                
+                // Get homography info
+                fs["homography_valid"] >> homography_valid;
+
+                if (homography_valid) {
+
+                    cv::Mat temp_mat;
+                    fs["homography"] >> temp_mat;
+                    cv::Matx33d temp2((double*) temp_mat.clone().ptr());
+                    homography = temp2;
+                    frame_sink.set_homography(homography);
+                    
+                }
+                
+                fs.release();
+            }
 
         } else {
             std::cerr << "No HSV detector configuration named \"" + key + "\" was provided. Exiting." << std::endl;

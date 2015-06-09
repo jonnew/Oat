@@ -46,6 +46,7 @@ public:
     // Cameras allow image undistortion if parameters are provided
     void undistortMat(void) {
         if (undistort_image) {
+            cv::Mat undistorted_frame;
             cv::undistort(current_frame, undistorted_frame, camera_matrix, distortion_coefficients);
             current_frame = undistorted_frame;
         }
@@ -76,7 +77,6 @@ protected:
     
     // Currently acquired frame
     cv::Mat current_frame;
-    cv::Mat undistorted_frame;
     
     // Current sample number  ( this does account for missed hardware triggers)
     uint32_t current_sample;
