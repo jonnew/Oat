@@ -38,27 +38,27 @@ namespace shmem {
 
         // Accessors
 
-        std::string get_name(void) {
+        std::string get_name(void) const {
             return name;
         }
 
-        int get_number_of_clients(void) {
+        int get_number_of_clients(void) const {
             return number_of_clients;
         }
 
-        bool is_homography_valid(void) {
-            return shared_mat_header->homography_valid;
+        bool is_homography_valid(void) const {
+            return shared_mat_header->is_homography_valid();
         }
 
-        cv::Matx33d get_homography(void) {
-            return shared_mat_header->homography;
+        cv::Matx33d get_homography(void) const {
+            return shared_mat_header->get_homography();
         }
 
-        bool is_shared_object_found(void) {
+        bool is_shared_object_found(void) const {
             return shared_object_found;
         }
 
-        uint32_t get_current_time_stamp(void) {
+        uint32_t get_current_time_stamp(void) const {
             return current_time_stamp;
         }
 

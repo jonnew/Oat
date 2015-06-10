@@ -111,7 +111,7 @@ namespace shmem {
 
             // Assign the latest cv::Mat and get its timestamp and write index
             value = shared_cvmat.clone();
-            current_time_stamp = shared_mat_header->sample_number;
+            current_time_stamp = shared_mat_header->get_sample_number();
 
             // Now that this client has finished its read, update the count
             shared_mat_header->client_read_count++;

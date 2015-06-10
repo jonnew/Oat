@@ -22,7 +22,7 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 FileReader::FileReader(std::string file_name_in, std::string image_sink_name, const double& frames_per_second) :
-Camera(image_sink_name)
+  Camera(image_sink_name)
 , file_name(file_name_in)
 , file_reader(file_name_in)
 , use_roi(false)
@@ -115,16 +115,15 @@ void FileReader::configure(std::string file_name, std::string key) {
                 fs["distortion_coefficients"] >> distortion_coefficients;
                 
                 // Get homography info
+                bool homography_valid;
                 fs["homography_valid"] >> homography_valid;
 
                 if (homography_valid) {
 
                     cv::Mat temp_mat;
                     fs["homography"] >> temp_mat;
-                    cv::Matx33d temp2((double*) temp_mat.clone().ptr());
-                    homography = temp2;
-                    frame_sink.set_homography(homography);
-                    
+                    cv::Matx33d homography((double*) temp_mat.clone().ptr());
+                    frame_sink.set_homography(homography_valid, homography);
                 }
                 
                 fs.release();

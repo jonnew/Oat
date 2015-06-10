@@ -87,8 +87,8 @@ protected:
     cv::Mat distortion_coefficients; // TODO: change to Matx
     
     // camera->wold homography
-    bool homography_valid;
-    cv::Matx33d homography;
+    //bool homography_valid;
+    //cv::Matx33d homography;
 
 };
 

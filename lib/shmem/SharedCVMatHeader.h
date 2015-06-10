@@ -35,29 +35,37 @@ namespace shmem {
 
         size_t number_of_clients;
         size_t client_read_count;
-        
-        // Used to get world coordinates from image
-        bool homography_valid;
-        cv::Matx33d homography;
 
-        // Time keeping
-        unsigned int sample_number; // Sample number of this mat datum, respecting buffer overruns
-        unsigned int sample_index;  // Order index of this mat datum, disrespecting buffer overruns
-        
         void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, const cv::Mat& model);
         void attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat);
-
+        void writeSample(const uint32_t sample, const cv::Mat& value); // Server
+        
         // Accessors
-        void set_mat(const cv::Mat& value); // Server
+        
+        uint32_t get_sample_number(void) const {return sample_number; }
+        void set_homography_valid(const bool value) { mutex.wait(); homography_valid = value; mutex.post(); }
+        void set_homography(const cv::Matx33d& value) { mutex.wait(); homography = value; mutex.post(); }
+        bool is_homography_valid(void) const { return homography_valid; }
+        cv::Matx33d get_homography(void) const { return homography; }
 
     private:
 
+        // Matrix primatives
         cv::Size mat_size;
         int type;
         void* data_ptr;
         int data_size_in_bytes;
-
+        
+        // Sample number
+        // Should respect buffer overruns
+        uint32_t sample_number;
+        
+        // Used to get world coordinates from image
+        bool homography_valid;
+        cv::Matx33d homography;
+        
         boost::interprocess::managed_shared_memory::handle_t handle;
+        
     };
 }
 

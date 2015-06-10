@@ -31,11 +31,14 @@ namespace shmem {
       name(sink_name)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
+    , running(true)
     , shared_object_created(false)
-    , running(true) {
+    , mat_header_constructed(false) {
 
         // Start the server thread
         server_thread = std::thread(&MatServer::serveMatFromBuffer, this);
+        
+        createSharedMat();
     }
 
     MatServer::MatServer(const MatServer& orig) {
@@ -62,20 +65,16 @@ namespace shmem {
 
     }
 
-    void MatServer::createSharedMat(const cv::Mat& model) {
+    void MatServer::createSharedMat(void) {
+        
+        // TODO: I am currently using a static 10 MB block to store shared
+        // cv::Mat headers and data. This is a bit of a hack  until 
+        // I can figure out how to resize the managed shared memory segment 
+        // on the server side without causing seg faults due to bad pointers on the client side.
 
-        data_size = model.total() * model.elemSize();
-
-        // TODO: Wrap in a named guard of some sort to protect the grow operation, which
-        // is not thread safe
         try {
 
             // Total amount of shared memory to allocated
-            //size_t total_bytes = data_size + sizeof (shmem::SharedCVMatHeader) + 1024;
-
-            // TODO: This is a complete HACK until I can figure out how to resize 
-            // the managed shared memory segment on the server side without 
-            // causing seg faults due to bad pointers on the client side.
             size_t total_bytes = 1024e4;
 
             // Define shared memory
@@ -85,32 +84,11 @@ namespace shmem {
 
             shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
 
-            // Check if client allocated, in which case we need to make room for
-            // the cv::Mat data
-            //        if (shared_memory.get_size() < total_bytes) {
-            //            size_t extra_bytes =  total_bytes - shared_memory.get_size();
-            //            managed_shared_memory::grow(shmem_name.c_str(), extra_bytes);
-            //            shared_memory = managed_shared_memory(open_only, shmem_name.c_str());
-            //            shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
-            //            shared_mat_header->remap_required = true;
-            //        } 
-            //        else {
-            //            shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
-            //        }
-
         } catch (bip::interprocess_exception &ex) {
             std::cerr << ex.what() << '\n';
             exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
         }
-
-        shared_mat_header->buildHeader(shared_memory, model);
-
-        // If supplied with valid homography info, then set that
-        if (homography_valid) {
-            shared_mat_header->homography_valid = true;
-            shared_mat_header->homography = homography;
-        }
-
+        
         shared_object_created = true;
     }
 
@@ -122,9 +100,7 @@ namespace shmem {
     void MatServer::pushMat(const cv::Mat& mat, const uint32_t& sample_number) {
 
         // Push data onto ring buffer
-        mat_buffer.push(mat.clone());
-        tick_buffer.push(sample_number);
-
+        mat_buffer.push(std::make_pair(sample_number, mat.clone()));
 
 #ifndef NDEBUG
         
@@ -163,20 +139,20 @@ namespace shmem {
             serve_condition.wait_for(lk, std::chrono::milliseconds(10));
 
             // Here we must attempt to clear the whole buffer before waiting again.
-            cv::Mat mat;
-            while (mat_buffer.pop(mat) && running) {
+            std::pair<uint32_t, cv::Mat> sample;
+            while (mat_buffer.pop(sample) && running) {
 
                 // Create shared mat object if not done already
-                if (!shared_object_created) {
-                    createSharedMat(mat);
+                if (!mat_header_constructed) {
+                    shared_mat_header->buildHeader(shared_memory, sample.second);
+                    mat_header_constructed = true;
                 }
 
                 /* START CRITICAL SECTION */
                 shared_mat_header->mutex.wait();
 
                 // Perform writes in shared memory 
-                shared_mat_header->set_mat(mat);
-                tick_buffer.pop(shared_mat_header->sample_number);
+                shared_mat_header->writeSample(sample.first, sample.second);
 
                 // Tell each client they can proceed
                 for (int i = 0; i < shared_mat_header->number_of_clients; ++i) {

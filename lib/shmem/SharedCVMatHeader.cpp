@@ -28,12 +28,12 @@ namespace shmem {
     , number_of_clients(0)
     , client_read_count(0)
     , sample_number(0)
-    , sample_index(0)
     , homography_valid(false) { }
 
-    void SharedCVMatHeader::set_mat(const cv::Mat& value) {
+    void SharedCVMatHeader::writeSample(const uint32_t sample, const cv::Mat& value) {
         
         memcpy(data_ptr, value.data, data_size_in_bytes);
+        sample_number = sample;
     }
     
     void SharedCVMatHeader::buildHeader(boost::interprocess::managed_shared_memory& shared_mem, const cv::Mat& model) {

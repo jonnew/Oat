@@ -39,31 +39,29 @@ namespace shmem {
         MatServer(const MatServer& orig);
         virtual ~MatServer();
 
-        void createSharedMat(const cv::Mat& model);
+        void createSharedMat(void);
         void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
 
-        // Accessors  // TODO: Assess whether you really need these and get rid of them if not. 
-
-        bool is_running(void) {
-            return running;
-        };
-
-        void set_running(bool value) {
-            running = value;
+         // TODO: Assess whether you really need these and get rid of them if not. 
+        //bool is_running(void) const { return running; };
+        
+        // Accessors 
+        std::string get_name(void) const { return name; }
+        void set_running(bool value) { running = value; }
+        void set_homography(const bool valid, const cv::Matx33f& value) {
+            if (shared_object_created) {
+                shared_mat_header->mutex.wait(); 
+                shared_mat_header->set_homography_valid(valid);
+                shared_mat_header->set_homography(value);
+                shared_mat_header->mutex.post();
+            }
         }
 
-        std::string get_name(void) {
-            return name;
-        }
-
-        void set_homography(const cv::Matx33f& value) {
-            homography_valid = true;
-            homography = value;
-        }
-
-        bool is_shared_object_created(void) {
-            return shared_object_created;
-        }
+        
+        
+//        bool is_shared_object_created(void) {
+//            return shared_object_created;
+//        }
 
     private:
 
@@ -73,9 +71,9 @@ namespace shmem {
         // Buffer
         static const int MATSERVER_BUFFER_SIZE = 1024;
         boost::lockfree::spsc_queue
-        <cv::Mat, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
-        boost::lockfree::spsc_queue
-        <unsigned int, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > tick_buffer;
+        <std::pair<unsigned int, cv::Mat>, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
+        //boost::lockfree::spsc_queue
+        //<unsigned int, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > tick_buffer;
 
         // Server threading
         std::thread server_thread;
@@ -84,15 +82,12 @@ namespace shmem {
         std::atomic<bool> running; // Server running, can be accessed from multiple threads
         shmem::SharedCVMatHeader* shared_mat_header;
         bool shared_object_created;
+        bool mat_header_constructed;
 
         int data_size; // Size of raw mat data in bytes
 
         const std::string shmem_name, shobj_name;
         boost::interprocess::managed_shared_memory shared_memory;
-
-        // Homography from pixels->world
-        bool homography_valid;
-        cv::Matx33d homography;
 
         /**
          * Synchronized shared memory publication.
