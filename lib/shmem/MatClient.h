@@ -25,7 +25,7 @@
 
 #include "SharedCVMatHeader.h"
 
-namespace shmem {
+namespace oat {
 
     class MatClient {
     public:
@@ -49,7 +49,7 @@ namespace shmem {
     private:
 
         std::string name;
-        shmem::SharedCVMatHeader* shared_mat_header;
+        oat::SharedCVMatHeader* shared_mat_header;
         bool shared_object_found, mat_attached_to_header;
         bool read_barrier_passed;
         int data_size; // Size of raw mat data in bytes

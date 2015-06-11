@@ -65,7 +65,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
         for (auto &name : position_source_names) {
 
-            position_sources.push_back(new shmem::SMClient<oat::Position2D>(name));
+            position_sources.push_back(new oat::SMClient<oat::Position2D>(name));
             source_positions.push_back(new oat::Position2D);
         }
 
@@ -117,7 +117,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
             checkFile(frame_fid);
 
             video_file_names.push_back(frame_fid);
-            frame_sources.push_back(new shmem::MatClient(frame_source_name));
+            frame_sources.push_back(new oat::MatClient(frame_source_name));
             frame_write_buffers.push_back(new
                     boost::lockfree::spsc_queue
                     < cv::Mat, boost::lockfree::capacity < frame_write_buffer_size> >);

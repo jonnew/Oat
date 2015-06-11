@@ -17,22 +17,18 @@
 #ifndef SMSERVER_H
 #define	SMSERVER_H
 
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
 #include <string>
-#include <thread>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 
 #include "SyncSharedMemoryObject.h"
 
-namespace shmem {
+namespace oat {
 
     namespace bip = boost::interprocess;
 
-    template<class T, template <typename> class SharedMemType = shmem::SyncSharedMemoryObject>
+    template<class T, template <typename> class SharedMemType = oat::SyncSharedMemoryObject>
     class SMServer {
     public:
         SMServer(std::string sink_name);
@@ -42,55 +38,30 @@ namespace shmem {
         void createSharedObject(void);
         void pushObject(T value, uint32_t sample_number);
 
-
-        // Accessors
-        bool is_running(void) { return running; }
-        void set_running(bool value) { running = value; }
-
     private:
 
         // Name of this server
         std::string name;
 
-        // Buffer
-        static const int SMSERVER_BUFFER_SIZE = 1024;
-        boost::lockfree::spsc_queue
-        <T, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > buffer;
-        boost::lockfree::spsc_queue
-        <unsigned int, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > tick_buffer;
-
-        // Server threading
-        std::thread server_thread;
-        std::mutex server_mutex;
-        std::condition_variable serve_condition;
-        std::atomic<bool> running; // Server running
-
         // Shared memory and managed object names
-        SharedMemType<T>* shared_object; // Defaults to shmem::SyncSharedMemoryObject<T>
+        SharedMemType<T>* shared_object; // Defaults to oat::SyncSharedMemoryObject<T>
         std::string shmem_name, shobj_name;
         bip::managed_shared_memory shared_memory;
         bool shared_object_created;
 
         void createSharedObject(size_t bytes);
-        void serveFromBuffer(void);
         void notifySelf(void);
-        
-#ifndef NDEBUG
-        const int BAR_WIDTH = 50;
-#endif
 
     };
 
     template<class T, template <typename> class SharedMemType>
     SMServer<T, SharedMemType>::SMServer(std::string sink_name) :
-    name(sink_name)
+      name(sink_name)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
-    , shared_object_created(false)
-    , running(true) {
-
-        // Start the server thread
-        server_thread = std::thread(&SMServer<T, SharedMemType>::serveFromBuffer, this);
+    , shared_object_created(false) {
+        
+        createSharedObject();
     }
 
     template<class T, template <typename> class SharedMemType>
@@ -100,15 +71,7 @@ namespace shmem {
     template<class T, template <typename> class SharedMemType>
     SMServer<T, SharedMemType>::~SMServer() {
 
-        running = false;
-
-        // Make sure we unblock the server thread
-        for (int i = 0; i <= SMSERVER_BUFFER_SIZE; ++i) {
-            notifySelf();
-        }
-
-        // Join the server thread back with the main one
-        server_thread.join();
+        notifySelf();
 
         // Remove_shared_memory on object destruction
         bip::shared_memory_object::remove(shmem_name.c_str());
@@ -149,80 +112,37 @@ namespace shmem {
     template<class T, template <typename> class SharedMemType>
     void SMServer<T, SharedMemType>::pushObject(T value, uint32_t sample_number) {
 
-        // Push data onto ring buffer
-        buffer.push(value);
-        tick_buffer.push(sample_number);
 
 #ifndef NDEBUG
 
-        std::cout << "[";
-        
-        int progress = (BAR_WIDTH * buffer.read_available()) / SMSERVER_BUFFER_SIZE;
-        int remaining = BAR_WIDTH - progress;
-        
-        for (int i = 0; i < progress; ++i) {
-            std::cout << "=";
-        }
-        for (int i = 0; i < remaining; ++i) {
-            std::cout << " ";
-        }
-        
-        std::cout << "] "
-                  << std::to_string(buffer.read_available()) + "/" + std::to_string(SMSERVER_BUFFER_SIZE)
-                  << ", sample: " + std::to_string(sample_number)
-                  << "\r";
-                
-       std::cout.flush();         
-                  
+        std::cout << "sample: " + std::to_string(sample_number) << "\r";
+        std::cout.flush();
+
 #endif
 
-        // notify server thread that data is available
-        serve_condition.notify_one();
+        /* START CRITICAL SECTION */
+        shared_object->mutex.wait();
 
-    }
+        // Perform writes in shared memory 
+        shared_object->writeSample(sample_number, value);
 
-    template<class T, template <typename> class SharedMemType>
-    void SMServer<T, SharedMemType>::serveFromBuffer() {
+        shared_object->mutex.post();
+        /* END CRITICAL SECTION */
 
-        while (running) {
+        // Tell each client they can proceed
+        for (int i = 0; i < shared_object->number_of_clients; ++i) {
+            shared_object->read_barrier.post();
+        }
 
-            // Proceed only if mat_buffer has data
-            std::unique_lock<std::mutex> lk(server_mutex);
-            serve_condition.wait_for(lk, std::chrono::milliseconds(10));
+        // Only wait if there is a client
+        if (shared_object->number_of_clients) {
+            shared_object->write_barrier.wait();
+        }
 
-            T value;
-            while (buffer.pop(value) && running) {
-
-                if (!shared_object_created) {
-                    createSharedObject();
-                }
-
-                /* START CRITICAL SECTION */
-                shared_object->mutex.wait();
-
-                // Perform writes in shared memory 
-                shared_object->set_value(value);
-                tick_buffer.pop(shared_object->sample_number); 
-
-                shared_object->mutex.post();
-                /* END CRITICAL SECTION */
-
-                // Tell each client they can proceed
-                for (int i = 0; i < shared_object->number_of_clients; ++i) {
-                    shared_object->read_barrier.post();
-                }
-
-                // Only wait if there is a client
-                if (shared_object->number_of_clients) {
-                    shared_object->write_barrier.wait();
-                }
-
-                // Tell each client they can proceed now that the write_barrier
-                // has been passed
-                for (int i = 0; i < shared_object->number_of_clients; ++i) {
-                    shared_object->new_data_barrier.post();
-                }
-            }
+        // Tell each client they can proceed now that the write_barrier
+        // has been passed
+        for (int i = 0; i < shared_object->number_of_clients; ++i) {
+            shared_object->new_data_barrier.post();
         }
     }
 
@@ -233,6 +153,6 @@ namespace shmem {
             shared_object->write_barrier.post();
         }
     }
-} // namespace shmem 
+}
 
 #endif	/* SMSERVER_H */

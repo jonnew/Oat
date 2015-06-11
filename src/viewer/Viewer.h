@@ -50,7 +50,7 @@ private:
     cv::Mat current_frame;;
 
     // Mat client object for receiving frames
-    shmem::MatClient frame_source;
+    oat::MatClient frame_source;
     
     // minimum viewer refresh period
     Clock::time_point tick, tock;

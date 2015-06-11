@@ -24,7 +24,7 @@
 #include <cmath>
 
 #include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/shmem/MatServer.h"
+#include "../../lib/shmem/BufferedMatServer.h"
 
 HSVDetector2D::HSVDetector2D(std::string image_source_name, std::string position_sink_name,
         int h_min_in, int h_max_in,

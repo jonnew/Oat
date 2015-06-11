@@ -21,9 +21,9 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 #include "SharedCVMatHeader.h"
-#include "SharedCVMatHeader.cpp" // TODO: Why???
+//#include "SharedCVMatHeader.cpp" // TODO: Why???
 
-namespace shmem {
+namespace oat {
 
     namespace bip = boost::interprocess;
 
@@ -31,33 +31,19 @@ namespace shmem {
       name(sink_name)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
-    , running(true)
     , shared_object_created(false)
     , mat_header_constructed(false) {
 
-        // Start the server thread
-        server_thread = std::thread(&MatServer::serveMatFromBuffer, this);
-        
         createSharedMat();
     }
 
-    MatServer::MatServer(const MatServer& orig) {
-    }
+    MatServer::MatServer(const MatServer& orig) { }
 
     MatServer::~MatServer() {
 
-        running = false;
-
-        // Make sure we unblock the server thread
-        for (int i = 0; i <= MATSERVER_BUFFER_SIZE; ++i) {
-            notifySelf();
-        }
-
-        // Join the server thread back with the main one
-        server_thread.join();
+        notifySelf();
 
         // Remove_shared_memory on object destruction
-
         bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG
         std::cout << "Shared memory \'" + shmem_name + "\' was deallocated.\n";
@@ -82,7 +68,7 @@ namespace shmem {
                     shmem_name.c_str(),
                     total_bytes);
 
-            shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
+            shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
 
         } catch (bip::interprocess_exception &ex) {
             std::cerr << ex.what() << '\n';
@@ -99,81 +85,44 @@ namespace shmem {
      */
     void MatServer::pushMat(const cv::Mat& mat, const uint32_t& sample_number) {
 
-        // Push data onto ring buffer
-        mat_buffer.push(std::make_pair(sample_number, mat.clone()));
-
 #ifndef NDEBUG
-        
-        
-        std::cout << "[";
-        
-        int progress = (BAR_WIDTH * mat_buffer.read_available()) / MATSERVER_BUFFER_SIZE;
-        int remaining = BAR_WIDTH - progress;
-        
-        for (int i = 0; i < progress; ++i) {
-            std::cout << "=";
-        }
-        for (int i = 0; i < remaining; ++i) {
-            std::cout << " ";
-        }
-        
-        std::cout << "] "
-                  << std::to_string(mat_buffer.read_available()) + "/" + std::to_string(MATSERVER_BUFFER_SIZE)
-                  << ", sample: " + std::to_string(sample_number)
-                  << "\r";
-                
-       std::cout.flush();         
-                  
+
+        std::cout << "sample: " + std::to_string(sample_number) << "\r";
+        std::cout.flush();
+
 #endif
 
-        // notify server thread that data is available
-        serve_condition.notify_one();
-    }
-
-    void MatServer::serveMatFromBuffer() {
-
-        while (running) {
-
-            // Proceed only if mat_buffer has data
-            std::unique_lock<std::mutex> lk(server_mutex);
-            serve_condition.wait_for(lk, std::chrono::milliseconds(10));
-
-            // Here we must attempt to clear the whole buffer before waiting again.
-            std::pair<uint32_t, cv::Mat> sample;
-            while (mat_buffer.pop(sample) && running) {
-
-                // Create shared mat object if not done already
-                if (!mat_header_constructed) {
-                    shared_mat_header->buildHeader(shared_memory, sample.second);
-                    mat_header_constructed = true;
-                }
-
-                /* START CRITICAL SECTION */
-                shared_mat_header->mutex.wait();
-
-                // Perform writes in shared memory 
-                shared_mat_header->writeSample(sample.first, sample.second);
-
-                // Tell each client they can proceed
-                for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
-                    shared_mat_header->read_barrier.post();
-                }
-
-                shared_mat_header->mutex.post();
-                /* END CRITICAL SECTION */
-
-                // Only wait if there is a client
-                if (shared_mat_header->get_number_of_clients()) {
-                    shared_mat_header->write_barrier.wait();
-                }
-
-                // Tell each client they can proceed now that the write_barrier
-                // has been passed
-                for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
-                    shared_mat_header->new_data_barrier.post();
-                }
-            }
+        // Create shared mat object if not done already
+        if (!mat_header_constructed) {
+            shared_mat_header->buildHeader(shared_memory, mat);
+            mat_header_constructed = true;
         }
+
+        /* START CRITICAL SECTION */
+        shared_mat_header->mutex.wait();
+
+        // Perform writes in shared memory 
+        shared_mat_header->writeSample(sample_number, mat);
+
+        // Tell each client they can proceed
+        for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
+            shared_mat_header->read_barrier.post();
+        }
+
+        shared_mat_header->mutex.post();
+        /* END CRITICAL SECTION */
+
+        // Only wait if there is a client
+        if (shared_mat_header->get_number_of_clients()) {
+            shared_mat_header->write_barrier.wait();
+        }
+
+        // Tell each client they can proceed now that the write_barrier
+        // has been passed
+        for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
+            shared_mat_header->new_data_barrier.post();
+        }
+
     }
 
     void MatServer::notifySelf() {
@@ -183,4 +132,4 @@ namespace shmem {
         }
     }
 
-} // namespace shmem
+}

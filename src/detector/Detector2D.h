@@ -62,9 +62,6 @@ public:
         tuning_mutex.unlock();
     }
 
-    // Detectors must be interruptable
-    void stop(void) { position_sink.set_running(false); }
-
 protected:
 
     // Detector must implement method  sifting a threshold image to find objects
@@ -83,10 +80,10 @@ protected:
     oat::Position2D object_position;
 
     // The image source (Client side)
-    shmem::MatClient image_source;
+    oat::MatClient image_source;
 
     // The detected object position destination (Server side)
-    shmem::SMServer<oat::Position2D> position_sink;
+    oat::SMServer<oat::Position2D> position_sink;
 
 };
 

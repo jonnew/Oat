@@ -22,9 +22,8 @@
 
 #include "../datatypes/Position.h"
 #include "../datatypes/Position2D.h"
-//#include "../datatypes/Position3D.h"
 
-namespace shmem {
+namespace oat {
 
     template <class T>
     class SyncSharedMemoryObject {
@@ -58,7 +57,7 @@ namespace shmem {
          * @param value Value to be moved to shared memory. Value
          * is left in a valid but unspecified state after this operation.
          */
-        void set_value(T value) { object = std::move(value); }
+        void writeSample(uint32_t sample, T value) { sample_number = sample; object = std::move(value); }
         T get_value(void) const { return object; } // Read-only (for clients, forces copy if they want to mess with object)
 
     private:
@@ -67,11 +66,10 @@ namespace shmem {
         T object;
 
     };
-} // namespace shmem
+}
 
 // Explicit instantiations
-template class shmem::SyncSharedMemoryObject<oat::Position2D>;
-//template class shmem::SyncSharedMemoryObject<datatypes::Position3D>;
+template class oat::SyncSharedMemoryObject<oat::Position2D>;
 
 #endif	/* SYNCSHAREDMEMORYOBJECT_H */
 

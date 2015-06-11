@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   FrameFilt.h
+//* File:   ConfigurationFormatException.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -17,41 +17,21 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef FRAMEFILT_H
-#define	FRAMEFILT_H
+#ifndef OATEXCEPTION_H
+#define	OATEXCEPTION_H
 
-#include <string>
-#include <opencv2/core/mat.hpp>
+#include <exception>
 
-#include "../../lib/shmem/MatClient.h"
-#include "../../lib/shmem/MatServer.h"
+namespace oat {
 
-class FrameFilter {
-public:
+class ConfigurationFormatException: public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "Invalid configuration detected";
+  }
+} configEx;
 
-    FrameFilter(const std::string& source_name, const std::string& sink_name) :
-      frame_source(source_name)
-    , frame_sink(sink_name) { }
-    
-    virtual ~FrameFilter() { }
-
-    // Frame filters must be able to receive, filter, and serve frames
-    virtual void filterAndServe(void) = 0;
-
-    // Frame filters must be configurable
-    virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
-    
-
-protected:
-
-    // Frame filters have Mat client object for receiving frames
-    cv::Mat current_frame;
-    oat::MatClient frame_source;
-
-    // Frame filters have Mat server for sending processed frames
-    oat::MatServer frame_sink;
-   
-};
-
-#endif	/* FRAMEFILT_H */
+}
+#endif	/* OATEXCEPTION_H */
 

@@ -23,7 +23,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/shmem/MatServer.h"
+#include "../../lib/shmem/BufferedMatServer.h"
 
 RandomAccel2D::RandomAccel2D(std::string position_sink_name) :
   TestPosition<oat::Position2D>(position_sink_name) 

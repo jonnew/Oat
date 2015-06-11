@@ -35,7 +35,6 @@ public:
     ~Decorator(void);
     
     void decorateAndServeImage(void);
-    void stop(void) { frame_sink.set_running(false); }
     
     //Accessors
 	void set_print_timestamp(bool value) { print_timestamp = value; }
@@ -51,21 +50,20 @@ private:
     cv::Mat current_frame;
 
     // Mat client object for receiving frames
-    shmem::MatClient frame_source;
+    oat::MatClient frame_source;
     cv::Size frame_size;
-    //bool have_current_frame;
     bool frame_read_success;
 
     // For multi-source processing, we need to keep track of all the sources
     // we have finished reading from each processing step
-    std::vector<shmem::SMClient<oat::Position2D> >::size_type client_idx;
+    std::vector<oat::SMClient<oat::Position2D> >::size_type client_idx;
 
     // Positions to be added to the image stream
     std::vector<oat::Position2D* > source_positions;
-    std::vector<shmem::SMClient<oat::Position2D>* > position_sources;
+    std::vector<oat::SMClient<oat::Position2D>* > position_sources;
 
     // Mat server for sending decorated frames
-    shmem::MatServer frame_sink;
+    oat::MatServer frame_sink;
 
     // Drawing constants 
     // TODO: These may need to become a bit more sophisticated or user defined

@@ -73,9 +73,9 @@ private:
     rapidjson::Writer<rapidjson::FileWriteStream> json_writer;
 
     // Image sources
-    std::vector<shmem::MatClient*> frame_sources;
+    std::vector<oat::MatClient*> frame_sources;
     cv::Mat current_frame;
-    std::vector<shmem::MatClient>::size_type frame_client_idx;
+    std::vector<oat::MatClient>::size_type frame_client_idx;
     bool frame_read_success;
     static const int frame_write_buffer_size = 100;
 
@@ -87,9 +87,9 @@ private:
                < frame_write_buffer_size> > * > frame_write_buffers;
     
     // Position sources
-    std::vector<shmem::SMClient<oat::Position2D>* > position_sources;
+    std::vector<oat::SMClient<oat::Position2D>* > position_sources;
     std::vector<oat::Position2D* > source_positions;
-    std::vector<shmem::SMClient<oat::Position2D> >::size_type position_client_idx;
+    std::vector<oat::SMClient<oat::Position2D> >::size_type position_client_idx;
     std::vector<std::string> position_labels;
 
     void openFiles(const std::vector<std::string>& save_path,

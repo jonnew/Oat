@@ -23,11 +23,11 @@
 
 #include "SyncSharedMemoryObject.h"
 
-namespace shmem {
+namespace oat {
 
     namespace bip = boost::interprocess;
 
-    template<class T, template <typename IOType> class SharedMemType = shmem::SyncSharedMemoryObject>
+    template<class T, template <typename IOType> class SharedMemType = oat::SyncSharedMemoryObject>
     class SMClient {
     public:
         SMClient(std::string source_name);
@@ -49,7 +49,7 @@ namespace shmem {
 
     private:
 
-        SharedMemType<T>* shared_object; // Defaults to shmem::SyncSharedMemoryObject<T>
+        SharedMemType<T>* shared_object; // Defaults to oat::SyncSharedMemoryObject<T>
 
         std::string name;
         std::string shmem_name, shobj_name;

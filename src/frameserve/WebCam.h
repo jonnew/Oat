@@ -24,7 +24,7 @@
 
 #include "Camera.h"
 #include "../../lib/shmem/SharedCVMatHeader.h"
-#include "../../lib/shmem/MatServer.h"
+#include "../../lib/shmem/BufferedMatServer.h"
 
 class WebCam : public Camera {
 public:

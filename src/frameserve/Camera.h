@@ -20,7 +20,7 @@
 #include <atomic>
 #include <opencv2/opencv.hpp>
 
-#include "../../lib/shmem/MatServer.h"
+#include "../../lib/shmem/BufferedMatServer.h"
 
 /**
  * Abstract base class to be implemented by any Camera Server within the Simple
@@ -69,7 +69,7 @@ public:
 protected:
     
     // cv::Mat server for sending frames to shared memory
-    shmem::MatServer frame_sink;
+    oat::BufferedMatServer frame_sink;
     std::string name;
     
     // Cameras have a region of interest to crop images

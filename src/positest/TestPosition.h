@@ -22,7 +22,7 @@
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/datatypes/Position.h"
-#include "../../lib/shmem/SMServer.h"
+#include "../../lib/shmem/BufferedSMServer.h"
 
 /**
  * Abstract base class by and Test Position class within the Simple Tracker project.
@@ -56,7 +56,7 @@ protected:
     std::string name;
 
     // The test position SINK
-    shmem::SMServer<T> position_sink;
+    oat::BufferedSMServer<T> position_sink;
     
     // Test position sample number
     uint32_t sample;

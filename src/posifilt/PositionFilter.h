@@ -23,7 +23,6 @@
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position2D.h"
 
-
 class PositionFilter { // TODO: datatypes::Position2D -> Position
 public:
 
@@ -31,8 +30,6 @@ public:
     name(position_sink_name)
     , position_source(position_source_name)
     , position_sink(position_sink_name)
-//    , canvas_hw(500.0)
-//    , canvas_border(100.0)
     , tuning_image_title(position_sink_name + "_tuning") { }
 
     virtual ~PositionFilter() { }
@@ -53,17 +50,14 @@ public:
     void set_tune_mode(bool value) { tuning_on = value; }
     bool get_tune_mode(void) { return tuning_on; }
     
-    void stop(void) {position_sink.set_running(false); }
+    //void stop(void) {position_sink.set_running(false); }
 
 protected:
     
-    //const float canvas_hw;
-    //const float canvas_border;
-
     std::string name;
-    shmem::SMClient<oat::Position2D> position_source;
+    oat::SMClient<oat::Position2D> position_source;
     oat::Position2D raw_position;
-    shmem::SMServer<oat::Position2D> position_sink;
+    oat::SMServer<oat::Position2D> position_sink;
     oat::Position2D filtered_position;
 
     // tuning on or off
@@ -79,9 +73,7 @@ protected:
 
     // Position filters must be able serve the filtered position
     virtual void serveFilteredPosition(void) = 0;
-    
-    // Draw the position on a cv::Mat for tuning purposes
-    //virtual void drawPosition(cv::Mat& canvas, const datatypes::Position2D& position);
+
 };
 
 #endif	/* POSITIONFILTER_H */

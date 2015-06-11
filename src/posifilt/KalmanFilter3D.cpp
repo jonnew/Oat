@@ -315,7 +315,7 @@ void KalmanFilter3D::createTuningWindows() {
     tuning_windows_created = true;
 }
 
-void KalmanFilter3D::drawPosition(cv::Mat& canvas, const shmem::Position& position) {
+void KalmanFilter3D::drawPosition(cv::Mat& canvas, const oat::Position& position) {
 
     float x = position.position.x * draw_scale + (float) canvas_hw / 2.0;
     float y = position.position.y * draw_scale + (float) canvas_hw / 2.0;

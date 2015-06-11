@@ -14,9 +14,14 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef MATSERVER_H
-#define	MATSERVER_H
+#ifndef BUFFEREDMATSERVER_H
+#define	BUFFEREDMATSERVER_H
 
+#include <atomic>
+#include <string>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
@@ -27,32 +32,48 @@
 namespace oat {
 
     // TODO: Find a why to integrate this with the must much general purpose SMServer
-    class MatServer {
+    class BufferedMatServer {
     public:
-        MatServer(const std::string& sink_name);
-        MatServer(const MatServer& orig);
-        virtual ~MatServer();
+        BufferedMatServer(const std::string& sink_name);
+        BufferedMatServer(const BufferedMatServer& orig);
+        virtual ~BufferedMatServer();
 
         void createSharedMat(void);
         void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
       
         // Accessors 
         std::string get_name(void) const { return name; }
+        void set_running(bool value) { running = value; }
 
     private:
 
         // Name of this server
         std::string name;
 
-        // Shared object control
+        // Buffer
+        static const int MATSERVER_BUFFER_SIZE = 1024;
+        boost::lockfree::spsc_queue
+        <std::pair<unsigned int, cv::Mat>, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
+
+        // Server threading
+        std::thread server_thread;
+        std::mutex server_mutex;
+        std::condition_variable serve_condition;
+        std::atomic<bool> running; // Server running, can be accessed from multiple threads
         oat::SharedCVMatHeader* shared_mat_header;
         bool shared_object_created;
         bool mat_header_constructed;
+
         int data_size; // Size of raw mat data in bytes
 
         const std::string shmem_name, shobj_name;
         boost::interprocess::managed_shared_memory shared_memory;
 
+        /**
+         * Synchronized shared memory publication.
+         * @param mat
+         */
+        void serveMatFromBuffer(void);
 
         /**
          * Auto post to this servers own semaphore.wait() to allow threads to unblock
@@ -61,9 +82,13 @@ namespace oat {
          */
         void notifySelf(void);
 
+#ifndef NDEBUG
+        const int BAR_WIDTH = 50;
+#endif
+
     };
 
-}
+} 
 
-#endif	/* MATSERVER_H */
+#endif	/* BUFFEREDMATSERVER_H */
 

@@ -163,7 +163,6 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
-                combiner->stop();
                 break;
             }
             default:
@@ -174,7 +173,6 @@ int main(int argc, char *argv[]) {
     
     // Join the processing and UI threads
     thread_group.join_all();
-    
 
     std::cout << "Position combiner named \"" + combiner->get_name() + "\" is exiting." << std::endl;
     

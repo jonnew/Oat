@@ -173,7 +173,6 @@ int main(int argc, char *argv[]) {
             case 'x':
             {
                 done = true;
-                decorator.stop();
                 break;
             }
             default:

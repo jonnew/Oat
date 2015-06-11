@@ -18,7 +18,7 @@
 
 #include <opencv2/core/mat.hpp>
 
-namespace shmem {
+namespace oat {
     
     SharedCVMatHeader::SharedCVMatHeader() :
       mutex(1)

@@ -29,7 +29,7 @@
 
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/shmem/SharedCVMatHeader.h"
-#include "../../lib/shmem/MatServer.h"
+#include "../../lib/shmem/BufferedMatServer.h"
 
 #include "stdafx.h"
 

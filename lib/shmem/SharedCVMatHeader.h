@@ -21,7 +21,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <opencv2/core/mat.hpp>
 
-namespace shmem {
+namespace oat {
 
     class SharedCVMatHeader {
     public:
@@ -45,10 +45,6 @@ namespace shmem {
         // Accessors
         size_t get_number_of_clients(void) const { return number_of_clients; }
         uint32_t get_sample_number(void) const {return sample_number; }
-        //void set_homography_valid(const bool value) { mutex.wait(); homography_valid = value; mutex.post(); }
-        //void set_homography(const cv::Matx33d& value) { mutex.wait(); homography = value; mutex.post(); }
-        //bool is_homography_valid(void) const { return homography_valid; }
-        //cv::Matx33d get_homography(void) const { return homography; }
 
     private:
         
@@ -64,10 +60,6 @@ namespace shmem {
         // Sample number
         // Should respect buffer overruns
         uint32_t sample_number;
-        
-        // Used to get world coordinates from image
-        //bool homography_valid;
-        //cv::Matx33d homography;
         
         boost::interprocess::managed_shared_memory::handle_t handle;
         

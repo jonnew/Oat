@@ -20,7 +20,7 @@
 #include <boost/thread/thread_time.hpp>
 #include <boost/thread.hpp>
 
-namespace shmem {
+namespace oat {
 
      namespace bip = boost::interprocess;
 
@@ -52,14 +52,14 @@ namespace shmem {
         // on the server side without causing seg faults due to bad pointers on the client side.
         // If the client creates the shared memory, it does not allocate room for the cv::Mat data
         // The server will need to resize the shared memory to make room.
-        //size_t total_bytes = sizeof (shmem::SharedCVMatHeader) + 1024; 
+        //size_t total_bytes = sizeof (oat::SharedCVMatHeader) + 1024; 
         
         try {
 
             size_t total_bytes = 1024e4;
 
             shared_memory = bip::managed_shared_memory(bip::open_or_create, shmem_name.c_str(), total_bytes);
-            shared_mat_header = shared_memory.find_or_construct<shmem::SharedCVMatHeader>(shobj_name.c_str())();
+            shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
             shared_object_found = true;
 
         } catch (bip::interprocess_exception& ex) {
