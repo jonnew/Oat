@@ -32,7 +32,6 @@
 namespace shmem {
 
     // TODO: Find a why to integrate this with the must much general purpose SMServer
-
     class MatServer {
     public:
         MatServer(const std::string& sink_name);
@@ -41,26 +40,15 @@ namespace shmem {
 
         void createSharedMat(void);
         void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
-
-         // TODO: Assess whether you really need these and get rid of them if not. 
-        //bool is_running(void) const { return running; };
-        
+      
         // Accessors 
         std::string get_name(void) const { return name; }
         void set_running(bool value) { running = value; }
-        void set_homography(const bool valid, const cv::Matx33f& value) {
-            if (shared_object_created) {
-                shared_mat_header->mutex.wait(); 
-                shared_mat_header->set_homography_valid(valid);
-                shared_mat_header->set_homography(value);
-                shared_mat_header->mutex.post();
-            }
-        }
-
-        
-        
-//        bool is_shared_object_created(void) {
-//            return shared_object_created;
+//        void set_homography(const bool valid, const cv::Matx33f& value) {
+//            if (shared_object_created) {
+//                shared_mat_header->set_homography_valid(valid);
+//                shared_mat_header->set_homography(value);
+//            }
 //        }
 
     private:
@@ -72,8 +60,6 @@ namespace shmem {
         static const int MATSERVER_BUFFER_SIZE = 1024;
         boost::lockfree::spsc_queue
         <std::pair<unsigned int, cv::Mat>, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
-        //boost::lockfree::spsc_queue
-        //<unsigned int, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > tick_buffer;
 
         // Server threading
         std::thread server_thread;

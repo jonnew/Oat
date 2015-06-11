@@ -46,9 +46,9 @@ void MeanPosition2D::combineAndServePosition() {
 void MeanPosition2D::combinePositions() {
 
     double mean_denom = 1.0/(double) source_positions.size(); 
-    combined_position.position = datatypes::Point2D(0,0);
-    combined_position.velocity = datatypes::Velocity2D(0,0);
-    combined_position.head_direction = datatypes::UnitVector2D(0,0);
+    combined_position.position = oat::Point2D(0,0);
+    combined_position.velocity = oat::Velocity2D(0,0);
+    combined_position.head_direction = oat::UnitVector2D(0,0);
     
     // Averaging operation
     for (auto pos : source_positions) {

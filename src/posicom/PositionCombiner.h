@@ -39,8 +39,8 @@ public:
          
         for (auto &name : position_source_names) {
             
-            position_sources.push_back(new shmem::SMClient<datatypes::Position2D>(name));
-            source_positions.push_back(new datatypes::Position2D); 
+            position_sources.push_back(new shmem::SMClient<oat::Position2D>(name));
+            source_positions.push_back(new oat::Position2D); 
         }
     }
 
@@ -57,15 +57,15 @@ protected:
 
     // For multi-source processing, we need to keep track of all the sources
     // we have finished reading from each processing step
-    std::vector<shmem::SMClient<datatypes::Position2D> >::size_type client_idx;
+    std::vector<shmem::SMClient<oat::Position2D> >::size_type client_idx;
 
     // Positions to be combined
-    std::vector<datatypes::Position2D* > source_positions;
-    std::vector<shmem::SMClient<datatypes::Position2D>* > position_sources;
+    std::vector<oat::Position2D* > source_positions;
+    std::vector<shmem::SMClient<oat::Position2D>* > position_sources;
 
     // Combined position server
-    datatypes::Position2D combined_position;
-    shmem::SMServer<datatypes::Position2D> position_sink;
+    oat::Position2D combined_position;
+    shmem::SMServer<oat::Position2D> position_sink;
 
     // All position combiners must be able to combine the position_sources
     // list to provide a single combined position output

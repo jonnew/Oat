@@ -37,13 +37,13 @@ void printUsage(po::options_description options) {
               << "   or: testpos TYPE SINK [CONFIGURATION]\n"
               << "Publish test positions to a SMSserver<Position> SINK.\n\n"
               << "TYPE\n"
-              << "  'rand2D': Randomly accelerating 2D Position\n"
-              << "  'rand3D': Randomly accelerating 3D Position (W.I.P.)\n\n"
+              << "  'rand2D': Randomly accelerating 2D Position\n\n"
+              //<< "  'rand3D': Randomly accelerating 3D Position (W.I.P.)\n\n"
               << options << "\n";
 }
 
 // Processing thread
-void run(TestPosition<datatypes::Position2D>* test_position) {
+void run(TestPosition<oat::Position2D>* test_position) {
 
     while (!done) {
         test_position->simulateAndServePosition();
@@ -151,16 +151,15 @@ int main(int argc, char *argv[]) {
     }
 
     // Create the specified TYPE of detector
-    // TODO: Right now I need to use datatypes::Position2D as a template parameter
+    // TODO: Right now I need to use oat::Position2D as a template parameter
     // because otherwise this is no longer a valid base class for RandomAccel2D whose
-    // base class is indeed TestPosition<datatypes::Position2D>
-    TestPosition<datatypes::Position2D>* test_position;
+    // base class is indeed TestPosition<oat::Position2D>
+    TestPosition<oat::Position2D>* test_position;
 
     switch (type_hash[type]) {
         case 'a':
         {
             test_position = new RandomAccel2D(sink);
-            
             break;
         }
         default:

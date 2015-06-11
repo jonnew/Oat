@@ -68,7 +68,7 @@ private:
     void initializeFilter(void);
     void initializeStaticMatracies(void);
     void createTuningWindows(void);
-    void drawPosition(cv::Mat& canvas, const datatypes::Position2D& position);
+    void drawPosition(cv::Mat& canvas, const oat::Position2D& position);
 };
 
 #endif	/* KALMANFILTER2D_H */

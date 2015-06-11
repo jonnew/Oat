@@ -79,21 +79,14 @@ protected:
     virtual void tune(void) = 0;
     virtual void createTuningWindows(void) = 0;
 
-    void addHomography() {
-        if (image_source.is_shared_object_found() &&
-            (object_position.homography_valid = image_source.is_homography_valid())) {
-            object_position.homography = image_source.get_homography();
-        }
-    }
-
     // The detected object position
-    datatypes::Position2D object_position;
+    oat::Position2D object_position;
 
     // The image source (Client side)
     shmem::MatClient image_source;
 
     // The detected object position destination (Server side)
-    shmem::SMServer<datatypes::Position2D> position_sink;
+    shmem::SMServer<oat::Position2D> position_sink;
 
 };
 

@@ -33,12 +33,11 @@ void DifferenceDetector2D::findObjectAndServePosition() {
 
     // If we are able to get a an image
     if (image_source.getSharedMat(this_image)) {
-        addHomography();
         applyThreshold();
         siftBlobs();
         tune();
 
-        position_sink.pushObject(object_position, image_source.get_current_time_stamp());
+        position_sink.pushObject(object_position, image_source.get_current_sample_number());
     }
 }
 
@@ -123,15 +122,17 @@ void DifferenceDetector2D::siftBlobs() {
             cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
             cv::rectangle(threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
 
+            //TODO: move this deprecated formatting stuff to decorate, where it
+            // can be an option
             // Tell object position
-            if (object_position.homography_valid) {
-                datatypes::Position2D convert_pos = object_position.convertToWorldCoordinates();
-                msg = cv::format("(%.3f, %.3f) world units", convert_pos.position.x, convert_pos.position.y);
-
-            } else {
+//            if (object_position.homography_valid) {
+//                oat::Position2D convert_pos = object_position.convertToWorldCoordinates();
+//                msg = cv::format("(%.3f, %.3f) world units", convert_pos.position.x, convert_pos.position.y);
+//
+//            } else {
                 msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
 
-            }
+//            }
         }
 
         int baseline = 0;

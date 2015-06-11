@@ -70,7 +70,7 @@ namespace shmem {
 } // namespace shmem
 
 // Explicit instantiations
-template class shmem::SyncSharedMemoryObject<datatypes::Position2D>;
+template class shmem::SyncSharedMemoryObject<oat::Position2D>;
 //template class shmem::SyncSharedMemoryObject<datatypes::Position3D>;
 
 #endif	/* SYNCSHAREDMEMORYOBJECT_H */

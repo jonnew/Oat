@@ -155,7 +155,7 @@ namespace shmem {
                 shared_mat_header->writeSample(sample.first, sample.second);
 
                 // Tell each client they can proceed
-                for (int i = 0; i < shared_mat_header->number_of_clients; ++i) {
+                for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
                     shared_mat_header->read_barrier.post();
                 }
 
@@ -163,13 +163,13 @@ namespace shmem {
                 /* END CRITICAL SECTION */
 
                 // Only wait if there is a client
-                if (shared_mat_header->number_of_clients) {
+                if (shared_mat_header->get_number_of_clients()) {
                     shared_mat_header->write_barrier.wait();
                 }
 
                 // Tell each client they can proceed now that the write_barrier
                 // has been passed
-                for (int i = 0; i < shared_mat_header->number_of_clients; ++i) {
+                for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
                     shared_mat_header->new_data_barrier.post();
                 }
             }

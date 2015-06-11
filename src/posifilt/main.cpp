@@ -22,6 +22,7 @@
 #include <boost/program_options.hpp>
 
 #include "KalmanFilter2D.h"
+#include "HomographyTransform2D.h"
 
 namespace po = boost::program_options;
 
@@ -29,13 +30,14 @@ volatile sig_atomic_t done = 0;
 bool running = true;
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: posifilt [OPTIONS]\n";
-    std::cout << "   or: posifilt TYPE SOURCE SINK [CONFIGURATION]\n";
-    std::cout << "Perform TYPE position filter on a position stream published by a SMServer<Position> SOURCE.\n";
-    std::cout << "Publish filtered object position to a SMSserver<Position> SINK.\n\n";
-    std::cout << "TYPE\n";
-    std::cout << "  \'kalman\': Kalman filter\n\n";
-    std::cout << options << "\n";
+    std::cout << "Usage: posifilt [OPTIONS]\n"
+              << "   or: posifilt TYPE SOURCE SINK [CONFIGURATION]\n"
+              << "Perform TYPE position filter on a position stream published by a SMServer<Position> SOURCE.\n"
+              << "Publish filtered object position to a SMSserver<Position> SINK.\n\n"
+              << "TYPE\n"
+              << "  \'kalman\': Kalman filter\n"
+              << "  \'homo\': homography transform\n\n"
+              << options << "\n";
 }
 
 void run(PositionFilter* positionFilter) {
@@ -58,6 +60,7 @@ int main(int argc, char *argv[]) {
 
     std::unordered_map<std::string, char> type_hash;
     type_hash["kalman"] = 'a';
+    type_hash["homo"] = 'b';
     //TODO: there should be a runtime decision, based on the types of positions
     //from the source, whether or not to use the 2D or 3D filter. Or, these types
     //of filter should be able to handle 2D or 3D positions
@@ -130,6 +133,13 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         
+        if (!variable_map.count("config-file") && type.compare("homo")) {
+            printUsage(visible_options);
+            std::cout << "Error: when TYPE=homo, a configuration file must be specified "
+                      << "to provide homography matrix. Exiting.\n";
+            return -1;
+        }
+        
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
@@ -153,6 +163,11 @@ int main(int argc, char *argv[]) {
         case 'a':
         {
             position_filter = new KalmanFilter2D(source, sink);
+            break;
+        }
+        case 'b':
+        {
+            position_filter = new HomographyTransform2D(source, sink);
             break;
         }
         default:

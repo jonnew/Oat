@@ -25,7 +25,7 @@
 
 #include "TestPosition.h"
 
-class RandomAccel2D : public TestPosition<datatypes::Position2D> {
+class RandomAccel2D : public TestPosition<oat::Position2D> {
     
 public:
 

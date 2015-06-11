@@ -69,14 +69,13 @@ void HSVDetector2D::findObjectAndServePosition() {
     // If we are able to get a an image
     if (image_source.getSharedMat(hsv_image)) {
 
-        addHomography();
         cv::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
         applyThreshold();
         clarifyBlobs();
         siftBlobs();
         tune();
 
-        position_sink.pushObject(object_position, image_source.get_current_time_stamp());
+        position_sink.pushObject(object_position, image_source.get_current_sample_number());
     }
 }
 
@@ -139,16 +138,7 @@ void HSVDetector2D::siftBlobs() {
             center.x = object_position.position.x;
             center.y = object_position.position.y;
             cv::circle(hsv_image, center, radius, cv::Scalar(0, 0, 255), 2);
-
-            // Tell object position
-            if (object_position.homography_valid) {
-                datatypes::Position2D convert_pos = object_position.convertToWorldCoordinates();
-                msg = cv::format("(%.3f, %.3f) world units", convert_pos.position.x, convert_pos.position.y);
-
-            } else {
-                msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
-
-            }
+            msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
         }
 
         int baseline = 0;

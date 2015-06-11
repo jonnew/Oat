@@ -26,7 +26,7 @@
  * @param position_sink_name The filtered position SINK
  */
 KalmanFilter2D::KalmanFilter2D(const std::string& position_source_name, const std::string& position_sink_name) :
-PositionFilter(position_source_name, position_sink_name)
+  PositionFilter(position_source_name, position_sink_name)
 , dt(0.02)
 , kf(4, 2, 0, CV_64F)
 , kf_predicted_state(4, 1, CV_64F)
@@ -234,9 +234,8 @@ void KalmanFilter2D::initializeStaticMatracies() {
 
 void KalmanFilter2D::tune() {
 
-    tuning_mutex.lock();
-
     if (tuning_on) {
+        
         if (!tuning_windows_created) {
             createTuningWindows();
         }
@@ -246,13 +245,13 @@ void KalmanFilter2D::tune() {
         sig_measure_noise = ((double) sig_measure_noise_tune);
         initializeStaticMatracies();
 
-        cv::Mat tuning_canvas(canvas_hw, canvas_hw, CV_8UC3);
-        tuning_canvas.setTo(255);
-        drawPosition(tuning_canvas, raw_position);
-        drawPosition(tuning_canvas, filtered_position);
+        //cv::Mat tuning_canvas(canvas_hw, canvas_hw, CV_8UC3);
+        //tuning_canvas.setTo(255);
+        //drawPosition(tuning_canvas, raw_position);
+        //drawPosition(tuning_canvas, filtered_position);
 
         // Draw the result, update sliders
-        cv::imshow(tuning_image_title, tuning_canvas);
+        //cv::imshow(tuning_image_title, tuning_canvas);
         
         // If user hits escape, close the tuning windows
         char user_input;
@@ -270,7 +269,6 @@ void KalmanFilter2D::tune() {
 
     }
 
-    tuning_mutex.unlock();
 }
 
 void KalmanFilter2D::createTuningWindows() {
@@ -287,28 +285,28 @@ void KalmanFilter2D::createTuningWindows() {
     tuning_windows_created = true;
 }
 
-void KalmanFilter2D::drawPosition(cv::Mat& canvas, const datatypes::Position2D& position) {
-
-    float x = position.position.x * draw_scale + (float) canvas_hw / 2.0;
-    float y = position.position.y * draw_scale + (float) canvas_hw / 2.0;
-    float dx = position.velocity.x * draw_scale;
-    float dy = position.velocity.y * draw_scale;
-
-    if (x > (canvas_hw - canvas_border)     ||
-            y > (canvas_hw - canvas_border) ||
-            x < canvas_border               ||
-            y < canvas_border)              {
-
-        draw_scale = draw_scale * 0.99;
-    } 
-
-    if (position.position_valid) {
-        cv::Point2f pos(x, y);
-        cv::circle(canvas, pos, 10, cv::Scalar(0, 0, 255), 2);
-    }
-
-    if (position.velocity_valid && position.position_valid) {
-        cv::Point2f pos(x, y);
-        cv::line(canvas, pos, cv::Point2f(x + dx, y + dy), cv::Scalar(0, 255, 0), 2, 8);
-    }
-}
+//void KalmanFilter2D::drawPosition(cv::Mat& canvas, const datatypes::Position2D& position) {
+//
+//    float x = position.position.x * draw_scale + (float) canvas_hw / 2.0;
+//    float y = position.position.y * draw_scale + (float) canvas_hw / 2.0;
+//    float dx = position.velocity.x * draw_scale;
+//    float dy = position.velocity.y * draw_scale;
+//
+//    if (x > (canvas_hw - canvas_border)     ||
+//            y > (canvas_hw - canvas_border) ||
+//            x < canvas_border               ||
+//            y < canvas_border)              {
+//
+//        draw_scale = draw_scale * 0.99;
+//    } 
+//
+//    if (position.position_valid) {
+//        cv::Point2f pos(x, y);
+//        cv::circle(canvas, pos, 10, cv::Scalar(0, 0, 255), 2);
+//    }
+//
+//    if (position.velocity_valid && position.position_valid) {
+//        cv::Point2f pos(x, y);
+//        cv::line(canvas, pos, cv::Point2f(x + dx, y + dy), cv::Scalar(0, 255, 0), 2, 8);
+//    }
+//}

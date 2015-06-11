@@ -53,15 +53,16 @@ private:
     // Mat client object for receiving frames
     shmem::MatClient frame_source;
     cv::Size frame_size;
-    bool have_current_frame;
+    //bool have_current_frame;
+    bool frame_read_success;
 
     // For multi-source processing, we need to keep track of all the sources
     // we have finished reading from each processing step
-    std::vector<shmem::SMClient<datatypes::Position2D> >::size_type client_idx;
+    std::vector<shmem::SMClient<oat::Position2D> >::size_type client_idx;
 
     // Positions to be added to the image stream
-    std::vector<datatypes::Position2D* > source_positions;
-    std::vector<shmem::SMClient<datatypes::Position2D>* > position_sources;
+    std::vector<oat::Position2D* > source_positions;
+    std::vector<shmem::SMClient<oat::Position2D>* > position_sources;
 
     // Mat server for sending decorated frames
     shmem::MatServer frame_sink;

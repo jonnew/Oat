@@ -31,8 +31,8 @@ public:
     name(position_sink_name)
     , position_source(position_source_name)
     , position_sink(position_sink_name)
-    , canvas_hw(500.0)
-    , canvas_border(100.0)
+//    , canvas_hw(500.0)
+//    , canvas_border(100.0)
     , tuning_image_title(position_sink_name + "_tuning") { }
 
     virtual ~PositionFilter() { }
@@ -50,36 +50,25 @@ public:
     virtual void configure(const std::string& config_file, const std::string&  config_key) = 0;
 
     // Accessors
-
-    void set_tune_mode(bool value) {
-        tuning_mutex.lock();
-        tuning_on = value;
-        tuning_mutex.unlock();
-    }
-
-    bool get_tune_mode(void) {
-        tuning_mutex.lock();
-        return tuning_on;
-        tuning_mutex.unlock();
-    }
+    void set_tune_mode(bool value) { tuning_on = value; }
+    bool get_tune_mode(void) { return tuning_on; }
     
     void stop(void) {position_sink.set_running(false); }
 
 protected:
     
-    const float canvas_hw;
-    const float canvas_border;
+    //const float canvas_hw;
+    //const float canvas_border;
 
     std::string name;
-    shmem::SMClient<datatypes::Position2D> position_source;
-    datatypes::Position2D raw_position;
-    shmem::SMServer<datatypes::Position2D> position_sink;
-    datatypes::Position2D filtered_position;
+    shmem::SMClient<oat::Position2D> position_source;
+    oat::Position2D raw_position;
+    shmem::SMServer<oat::Position2D> position_sink;
+    oat::Position2D filtered_position;
 
     // tuning on or off
     std::string tuning_image_title;
-    bool tuning_on; // This is a shared resource and must be synchronized
-    boost::mutex tuning_mutex; // Sync IO and processing thread, which can both manipulate the tuning state
+    std::atomic<bool> tuning_on; // This is a shared resource and must be synchronized
     
     // Position Filters must be able to grab the current position from
     // a position source (such as a Detector)
@@ -92,7 +81,7 @@ protected:
     virtual void serveFilteredPosition(void) = 0;
     
     // Draw the position on a cv::Mat for tuning purposes
-    virtual void drawPosition(cv::Mat& canvas, const datatypes::Position2D& position) = 0;
+    //virtual void drawPosition(cv::Mat& canvas, const datatypes::Position2D& position);
 };
 
 #endif	/* POSITIONFILTER_H */

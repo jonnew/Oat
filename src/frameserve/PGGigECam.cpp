@@ -221,19 +221,7 @@ void PGGigECam::configure(std::string config_file, std::string key) {
                 fs["calibration_valid"] >> undistort_image;
                 fs["camera_matrix"] >> camera_matrix;
                 fs["distortion_coefficients"] >> distortion_coefficients;
-                
-                // Get homography info
-                bool homography_valid;
-                fs["homography_valid"] >> homography_valid;
 
-                if (homography_valid) {
-
-                    cv::Mat temp_mat;
-                    fs["homography"] >> temp_mat;
-                    cv::Matx33d homography((double*) temp_mat.clone().ptr());
-                    frame_sink.set_homography(homography_valid, homography);
-                }
-                
                 fs.release();
             }
 

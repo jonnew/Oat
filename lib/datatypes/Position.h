@@ -23,7 +23,7 @@
 //#include <boost/interprocess/allocators/allocator.hpp>
 //#include <boost/interprocess/containers/string.hpp>
 
-namespace datatypes {
+namespace oat {
 
     enum coordinate_system_type {
         PIXELS = 0, WORLD = 1

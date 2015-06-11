@@ -26,7 +26,7 @@ Decorator::Decorator(const std::vector<std::string>& position_source_names,
         const std::string& frame_sink_name) :
   name(frame_sink_name)
 , frame_source(frame_source_name)
-, have_current_frame(false)
+, frame_read_success(false)
 , client_idx(0)
 , frame_sink(frame_sink_name)
 , decorate_position(true)
@@ -38,8 +38,8 @@ Decorator::Decorator(const std::vector<std::string>& position_source_names,
     if (!position_source_names.empty()) {
         for (auto &source_name : position_source_names) {
 
-            position_sources.push_back(new shmem::SMClient<datatypes::Position2D>(source_name));
-            source_positions.push_back(new datatypes::Position2D);
+            position_sources.push_back(new shmem::SMClient<oat::Position2D>(source_name));
+            source_positions.push_back(new oat::Position2D);
         }
     } else {
         decorate_position = false;
@@ -60,10 +60,8 @@ void Decorator::decorateAndServeImage() {
     // TODO: for some reason, this must come before reading the current positions.
     // If it comes, after, a deadlock will result. I don't know why, which is not
     // good.
-    if (!frame_source.getSharedMat(current_frame) && !have_current_frame) {
-        return;
-    }
-    have_current_frame = true;
+    if (!frame_read_success)
+        frame_read_success = frame_source.getSharedMat(current_frame);
 
     // Get the current positions
     while (client_idx < position_sources.size() && decorate_position) {
@@ -75,15 +73,19 @@ void Decorator::decorateAndServeImage() {
         client_idx++;
     }
 
+    if (!frame_read_success) {
+        return;
+    }
+    
     // Reset the position client read counter
     client_idx = 0;
-    have_current_frame = false;
+    frame_read_success = false;
 
     // Decorated image
     drawSymbols();
 
     // Serve the finished product
-    frame_sink.pushMat(current_frame, frame_source.get_current_time_stamp());
+    frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
 }
 
 void Decorator::drawSymbols() {
@@ -159,7 +161,7 @@ void Decorator::printTimeStamp() {
 void Decorator::printSampleNumber() {
 
     cv::Point text_origin(10, current_frame.rows - 10);
-    cv::putText(current_frame, std::to_string(frame_source.get_current_time_stamp()), text_origin, 1, font_scale, font_color);
+    cv::putText(current_frame, std::to_string(frame_source.get_current_sample_number()), text_origin, 1, font_scale, font_color);
 }
 
 /**
@@ -167,7 +169,7 @@ void Decorator::printSampleNumber() {
  */
 void Decorator::encodeSampleNumber() {
 
-    uint32_t sample_number = frame_source.get_current_time_stamp();
+    uint32_t sample_number = frame_source.get_current_sample_number();
 
     int column = 0;
     for (int shift = 0; shift < 32; shift++) {

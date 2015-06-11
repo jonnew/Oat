@@ -42,19 +42,20 @@ namespace shmem {
 
     /**
      * Use shmem_name and shobj_name to find (or create) the requested shared cvmat
-     * @return 
      */
     void MatClient::findSharedMat() {
 
+
+        // TODO: I am currently using a static 10 MB block to store shared
+        // cv::Mat headers and data. This is a bit of a hack  until 
+        // I can figure out how to resize the managed shared memory segment 
+        // on the server side without causing seg faults due to bad pointers on the client side.
+        // If the client creates the shared memory, it does not allocate room for the cv::Mat data
+        // The server will need to resize the shared memory to make room.
+        //size_t total_bytes = sizeof (shmem::SharedCVMatHeader) + 1024; 
+        
         try {
 
-            // If the client creates the shared memory, it does not allocate room for the cv::Mat data
-            // The server will need to resize the shared memory to make room.
-            //size_t total_bytes = sizeof (shmem::SharedCVMatHeader) + 1024; 
-
-            // TODO: This is a complete HACK until I can figure out how to resize 
-            // the managed shared memory segment on the server side without 
-            // causing seg faults due to bad pointers on the client side.
             size_t total_bytes = 1024e4;
 
             shared_memory = bip::managed_shared_memory(bip::open_or_create, shmem_name.c_str(), total_bytes);
@@ -68,11 +69,7 @@ namespace shmem {
 
         // Make sure everyone using this shared memory knows that another client
         // has joined
-        shared_mat_header->mutex.wait();
-        shared_mat_header->number_of_clients++;
-        number_of_clients = shared_mat_header->number_of_clients;
-        shared_mat_header->mutex.post();
-
+        number_of_clients = shared_mat_header->incrementClientCount();
     }
 
     /**
@@ -111,13 +108,13 @@ namespace shmem {
 
             // Assign the latest cv::Mat and get its timestamp and write index
             value = shared_cvmat.clone();
-            current_time_stamp = shared_mat_header->get_sample_number();
+            current_sample_number = shared_mat_header->get_sample_number();
 
             // Now that this client has finished its read, update the count
             shared_mat_header->client_read_count++;
 
             // If all clients have read, signal the barrier
-            if (shared_mat_header->client_read_count == shared_mat_header->number_of_clients) {
+            if (shared_mat_header->client_read_count == shared_mat_header->get_number_of_clients()) {
                 shared_mat_header->write_barrier.post();
                 shared_mat_header->client_read_count = 0;
             }
@@ -139,9 +136,7 @@ namespace shmem {
         if (shared_object_found) {
 
             // Make sure nobody is going to wait on a disposed object
-            shared_mat_header->mutex.wait();
-            shared_mat_header->number_of_clients--;
-            shared_mat_header->mutex.post();
+            number_of_clients = shared_mat_header->decrementClientCount();
 
 #ifndef NDEBUG
             std::cout << "Number of clients in \'" + shmem_name + "\' was decremented.\n";

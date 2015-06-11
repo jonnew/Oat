@@ -3,7 +3,7 @@
 # To use them:
 #
 # ``` bash
-# ./frameserve TYPE SINK -c config.toml -k TYPE
+# oat frameserve TYPE SINK -c config.toml -k TYPE
 # ```
 
 [gige]

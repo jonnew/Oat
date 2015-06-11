@@ -22,7 +22,7 @@
 
 #include "Position.h"
 
-namespace datatypes {
+namespace oat {
     
     typedef cv::Point3d Point3D;
     typedef cv::Point3d Velocity3D;

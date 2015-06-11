@@ -28,27 +28,32 @@ namespace shmem {
 
         SharedCVMatHeader();
 
+        // Synchronization constructs
         boost::interprocess::interprocess_semaphore mutex;
         boost::interprocess::interprocess_semaphore write_barrier;
         boost::interprocess::interprocess_semaphore read_barrier;
         boost::interprocess::interprocess_semaphore new_data_barrier;
-
-        size_t number_of_clients;
         size_t client_read_count;
 
         void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, const cv::Mat& model);
         void attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat);
         void writeSample(const uint32_t sample, const cv::Mat& value); // Server
         
-        // Accessors
+        size_t incrementClientCount(void);
+        size_t decrementClientCount(void);
         
+        // Accessors
+        size_t get_number_of_clients(void) const { return number_of_clients; }
         uint32_t get_sample_number(void) const {return sample_number; }
-        void set_homography_valid(const bool value) { mutex.wait(); homography_valid = value; mutex.post(); }
-        void set_homography(const cv::Matx33d& value) { mutex.wait(); homography = value; mutex.post(); }
-        bool is_homography_valid(void) const { return homography_valid; }
-        cv::Matx33d get_homography(void) const { return homography; }
+        //void set_homography_valid(const bool value) { mutex.wait(); homography_valid = value; mutex.post(); }
+        //void set_homography(const cv::Matx33d& value) { mutex.wait(); homography = value; mutex.post(); }
+        //bool is_homography_valid(void) const { return homography_valid; }
+        //cv::Matx33d get_homography(void) const { return homography; }
 
     private:
+        
+        // Number of clients sharing this shared memory
+        size_t number_of_clients;
 
         // Matrix primatives
         cv::Size mat_size;
@@ -61,8 +66,8 @@ namespace shmem {
         uint32_t sample_number;
         
         // Used to get world coordinates from image
-        bool homography_valid;
-        cv::Matx33d homography;
+        //bool homography_valid;
+        //cv::Matx33d homography;
         
         boost::interprocess::managed_shared_memory::handle_t handle;
         

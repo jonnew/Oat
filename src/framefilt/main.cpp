@@ -197,9 +197,11 @@ int main(int argc, char *argv[]) {
     while (!done) {
 
         char user_input;
-        std::cout << "Select an action:\n";
-        std::cout << " x: Exit\n";
-        std::cout << ">> ";
+
+        std::cout << "Framefilt has begun listening to source \"" + source + "\".\n";
+        std::cout << "Framefilt has begun steaming to sink \"" + sink + "\".\n\n";
+        std::cout << "COMMANDS:\n";
+        std::cout << "  x: Exit.\n";
 
         std::cin >> user_input;
 

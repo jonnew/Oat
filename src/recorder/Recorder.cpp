@@ -65,8 +65,8 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
         for (auto &name : position_source_names) {
 
-            position_sources.push_back(new shmem::SMClient<datatypes::Position2D>(name));
-            source_positions.push_back(new datatypes::Position2D);
+            position_sources.push_back(new shmem::SMClient<oat::Position2D>(name));
+            source_positions.push_back(new oat::Position2D);
         }
 
         // Create a single position file

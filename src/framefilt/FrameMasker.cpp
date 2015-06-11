@@ -83,7 +83,7 @@ void FrameMasker::filterAndServe() {
         }
 
         // Push filtered frame forward, along with frame_source sample number
-        frame_sink.pushMat(current_frame, frame_source.get_current_time_stamp());
+        frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
     }
 }
 

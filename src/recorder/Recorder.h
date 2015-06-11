@@ -87,9 +87,9 @@ private:
                < frame_write_buffer_size> > * > frame_write_buffers;
     
     // Position sources
-    std::vector<shmem::SMClient<datatypes::Position2D>* > position_sources;
-    std::vector<datatypes::Position2D* > source_positions;
-    std::vector<shmem::SMClient<datatypes::Position2D> >::size_type position_client_idx;
+    std::vector<shmem::SMClient<oat::Position2D>* > position_sources;
+    std::vector<oat::Position2D* > source_positions;
+    std::vector<shmem::SMClient<oat::Position2D> >::size_type position_client_idx;
     std::vector<std::string> position_labels;
 
     void openFiles(const std::vector<std::string>& save_path,

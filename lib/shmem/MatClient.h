@@ -37,30 +37,14 @@ namespace shmem {
         bool getSharedMat(cv::Mat& value);
 
         // Accessors
-
-        std::string get_name(void) const {
-            return name;
-        }
-
-        int get_number_of_clients(void) const {
-            return number_of_clients;
-        }
-
-        bool is_homography_valid(void) const {
-            return shared_mat_header->is_homography_valid();
-        }
-
-        cv::Matx33d get_homography(void) const {
-            return shared_mat_header->get_homography();
-        }
-
-        bool is_shared_object_found(void) const {
-            return shared_object_found;
-        }
-
-        uint32_t get_current_time_stamp(void) const {
-            return current_time_stamp;
-        }
+        std::string get_name(void) const { return name; }
+        int get_number_of_clients(void) const { return number_of_clients; }
+//        bool is_homography_valid(void) const 
+//            { return shared_mat_header->is_homography_valid(); }
+//        cv::Matx33d get_homography(void) const 
+//            { return shared_mat_header->get_homography(); }
+        bool is_shared_object_found(void) const { return shared_object_found; }
+        uint32_t get_current_sample_number(void) const { return current_sample_number; }
 
     private:
 
@@ -80,7 +64,7 @@ namespace shmem {
         size_t number_of_clients;
 
         // Time keeping
-        uint32_t current_time_stamp;
+        uint32_t current_sample_number;
 
         // Find cv::Mat object in shared memory
         void findSharedMat(void);
