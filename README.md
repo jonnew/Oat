@@ -143,31 +143,58 @@ frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ##### Configuration
 `TYPE=gige`
 
-- `index [+int]` User specified camera index. Useful in multi-camera imaging configurations.
-- `exposure [float]` Automatically adjust both shutter and gain to achieve given exposure. Specified in dB.
-- `shutter [+int]` Shutter time in milliseconds. Specifying `exposure` overrides this option.
-- `gain [float]` Sensor gain value. Specifying `exposure` overrides this option.
-- `white_bal [{+int, +int}]`
-- `roi [{+int, +int, +int, +int}]`
-- `trigger_on [bool]`
-- `triger_polarity [bool]`
-- `trigger_mode [+int]`
+- `_index_ [+int]` User specified camera index. Useful in multi-camera imaging configurations.
+- `_exposure_ [float]` Automatically adjust both shutter and gain to achieve given exposure. Specified in dB.
+- `_shutter_ [+int]` Shutter time in milliseconds. Specifying `exposure` overrides this option.
+- `_gain_ [float]` Sensor gain value. Specifying `exposure` overrides this option.
+- `_white_bal_ [{+int, +int}]`
+- `_roi_ [{+int, +int, +int, +int}]`
+- `_trigger_on_ [bool]`
+- `_triger_polarity_ [bool]`
+- `_trigger_mode_ [+int]`
 
 `TYPE=file`
 
-- `frame_rate [float]` Frame rate in frames per second
+- `_frame_rate_ [float]` Frame rate in frames per second
+- `_roi_ [{+int, +int, +int, +int}]`
 
-#### viewer
-Video frame viewer. Displays video stream from named shard memory.
+#### `view`
+Frame viewer. Displays video stream from named shard memory in a window. Also permits the user to take snapshots of the viewed stream.
 
 ##### Signature
 ```
-          ┌────────┐          
-frame ──> │ viewer │          
-		  └────────┘          
+          ┌──────┐          
+frame ──> │ view │          
+		  └──────┘          
 ```
 
-#### posidet
+##### Usage
+```
+Usage: viewer [OPTIONS]
+   or: viewer [CONFIGURATION] SOURCE
+
+OPTIONS:
+  --help                 Produce help message.
+  -v [ --version ]       Print version information.
+
+CONFIGURATION:
+  -n [ --filename ] arg  The base snapshot file name.
+                          - The the name of the SOURCE for this viewer will be 
+                         appended to this name.
+                          - The timestamp of the snapshot will be prepended to 
+                         this name.
+  -f [ --folder ] arg    The path to the folder to which the video stream and 
+                         position information will be saved.
+
+```
+
+##### Example
+```bash
+# View frame stream named raw
+oat view raw 
+```
+
+#### `posidet`
 Position detector. Detects object position within a frame stream using one of several methods.
 
 ##### Signature
