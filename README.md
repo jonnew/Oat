@@ -94,7 +94,7 @@ frameserve ──> framefilt ──> detect ──> decorate ───> viewer
 
 Each component of the simple-tracker project is an executable defined by its input/output signature. Here is each component, with a corresponding IO signature. Below, the signature, usage information, example usage, and configuration options are provided for each component.
 
-#### frameserve
+#### `frameserve`
 Video frame server. Serves video streams to named shard memory from physical devices (e.g. webcam or gige camera) or from disk.
 
 ##### Signature
