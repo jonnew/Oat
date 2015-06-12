@@ -27,10 +27,11 @@ class PositionFilter { // TODO: datatypes::Position2D -> Position
 public:
 
     PositionFilter(const std::string& position_source_name, const std::string& position_sink_name) :
-    name(position_sink_name)
+      name(position_sink_name)
     , position_source(position_source_name)
     , position_sink(position_sink_name)
-    , tuning_image_title(position_sink_name + "_tuning") { }
+    , tuning_image_title(position_sink_name + "_tuning")
+    , tuning_on(false) { }
 
     virtual ~PositionFilter() { }
 

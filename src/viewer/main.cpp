@@ -22,15 +22,15 @@
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
+#include "../../lib/shmem/Signals.h"
+
 namespace po = boost::program_options;
 
 volatile sig_atomic_t done = 0;
 
 void run(Viewer* viewer) {
 
-    while (!done) {
-        viewer->showImage();
-    }
+    while (!done && (viewer->showImage() != oat::ServerRunState::END)) { }
 }
 
 void printUsage(po::options_description options) {

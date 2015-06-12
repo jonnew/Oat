@@ -38,12 +38,12 @@ public:
     
     /**
      * Cameras must be able to serve cv::Mat frames.
-     * @return running state. true = finished (e.g. at end of file). false = not
-     * finished, more to come.
+     * @return running state. true = stream EOF (e.g. at end of file). false = stream not exhausted.
      */
     virtual bool serveMat(void) = 0;
     
     // Cameras allow image undistortion if parameters are provided
+    // TODO: This should probably be a framefilt component
     void undistortMat(void) {
         if (undistort_image) {
             cv::Mat undistorted_frame;

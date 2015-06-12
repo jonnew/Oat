@@ -20,6 +20,7 @@
 #include <chrono>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
+#include "Signals.h"
 #include "SharedCVMatHeader.h"
 #include "SharedCVMatHeader.cpp" // TODO: Why???
 
@@ -31,6 +32,7 @@ namespace oat {
       name(sink_name)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
+    , shsig_name(sink_name + "_sh_sig")
     , running(true)
     , shared_object_created(false)
     , mat_header_constructed(false) {
@@ -83,6 +85,12 @@ namespace oat {
                     total_bytes);
 
             shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
+            shared_server_state = shared_memory.find_or_construct<oat::ServerState>(shsig_name.c_str())();
+            
+            /* START CRITICAL SECTION */
+                shared_mat_header->mutex.wait();
+                
+                
 
         } catch (bip::interprocess_exception &ex) {
             std::cerr << ex.what() << '\n';
@@ -90,6 +98,8 @@ namespace oat {
         }
         
         shared_object_created = true;
+        setSharedServerState(oat::ServerRunState::RUNNING);
+        
     }
 
     /**
@@ -174,6 +184,9 @@ namespace oat {
                 }
             }
         }
+        
+        // Set stream EOF state in shmem
+        setSharedServerState(oat::ServerRunState::END);
     }
  
     void BufferedMatServer::notifySelf() {
@@ -183,4 +196,10 @@ namespace oat {
         }
     }
 
+    void BufferedMatServer::setSharedServerState(oat::ServerRunState state) {
+
+        if (shared_object_created) {
+            shared_server_state->set_state(state);
+        }
+    }   
 }

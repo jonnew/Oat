@@ -53,6 +53,8 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
             try {
                 roi_mask = cv::imread(mask_path, CV_LOAD_IMAGE_GRAYSCALE);
                 mask_set = true;
+                
+                // TODO: Need assertions for the validity of this mask image
             } catch (cv::Exception& e) {
                 std::cout << "CV Exception: " << e.what() << "\n";
                 std::cout << "ROI mask will not be used. This filter does nothing.\n";

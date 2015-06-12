@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 
         po::options_description configuration("CONFIGURATION");
         configuration.add_options()
-                ("positionsources,p", po::value< std::vector<std::string> >(),
+                ("positionsources,p", po::value< std::vector<std::string> >()->multitoken(),
                 "The name of the server(s) that supply object position information."
                 "The server(s) must be of type SMServer<Position>\n")
                 ("timestamp,t", "Write the current date and time on each frame.\n")

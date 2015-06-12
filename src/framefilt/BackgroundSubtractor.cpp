@@ -43,14 +43,16 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
 
             auto this_config = *config.get_table(config_key);
 
-            std::string mask_path;
+            std::string background_img_path;
             if (this_config.contains("background")) {
-                mask_path = *this_config.get_as<std::string>("background");
+                background_img_path = *this_config.get_as<std::string>("background");
             }
             
             try {
-                background_img = cv::imread(mask_path, CV_LOAD_IMAGE_GRAYSCALE);
+                background_img = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
                 background_set = true;
+                
+                // TODO: Need assertions for the validity of this background image
             } catch (cv::Exception& e) {
                 std::cout << "CV Exception: " << e.what() << "\n";
                 std::cout << "The provided background image will not be used.\n"

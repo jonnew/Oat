@@ -23,6 +23,7 @@
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
 #include <opencv2/core/mat.hpp>
 
+#include "Signals.h"
 #include "SharedCVMatHeader.h"
 
 namespace oat {
@@ -35,14 +36,12 @@ namespace oat {
 
         // get cv::Mat out of shared memory
         bool getSharedMat(cv::Mat& value);
+        oat::ServerRunState getServerRunState(void);
 
         // Accessors
         std::string get_name(void) const { return name; }
         int get_number_of_clients(void) const { return number_of_clients; }
-//        bool is_homography_valid(void) const 
-//            { return shared_mat_header->is_homography_valid(); }
-//        cv::Matx33d get_homography(void) const 
-//            { return shared_mat_header->get_homography(); }
+
         bool is_shared_object_found(void) const { return shared_object_found; }
         uint32_t get_current_sample_number(void) const { return current_sample_number; }
 
@@ -50,13 +49,14 @@ namespace oat {
 
         std::string name;
         oat::SharedCVMatHeader* shared_mat_header;
+        oat::ServerState* shared_server_state;
         bool shared_object_found, mat_attached_to_header;
         bool read_barrier_passed;
         int data_size; // Size of raw mat data in bytes
 
         // Shared mat object, constructed from the shared_mat_header
         cv::Mat shared_cvmat;
-        const std::string shmem_name, shobj_name;
+        const std::string shmem_name, shobj_name, shsig_name;
         boost::interprocess::managed_shared_memory shared_memory;
 
         // Number of clients, including *this, attached to the shared memory indicated

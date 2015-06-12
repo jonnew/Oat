@@ -104,6 +104,10 @@ private:
 
     void writeFramesToFileFromBuffer(uint32_t writer_idx);
     void writePositionsToFile(void);
+    void writePositionFileHeader(
+        const std::string& date, 
+        const double sample_rate, 
+        const std::vector<std::string>& sources);
 
 };
 

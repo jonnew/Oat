@@ -28,6 +28,7 @@ namespace oat {
       name(source_name)
     , shmem_name(source_name + "_sh_mem")
     , shobj_name(source_name + "_sh_obj")
+    , shsig_name(source_name + "_sh_sig")
     , shared_object_found(false)
     , mat_attached_to_header(false)
     , read_barrier_passed(false) {
@@ -60,13 +61,16 @@ namespace oat {
 
             shared_memory = bip::managed_shared_memory(bip::open_or_create, shmem_name.c_str(), total_bytes);
             shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
-            shared_object_found = true;
+            shared_server_state = shared_memory.find_or_construct<oat::ServerState>(shsig_name.c_str())();
+            
 
         } catch (bip::interprocess_exception& ex) {
             std::cerr << ex.what() << '\n';
             exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
         }
 
+        shared_object_found = true;
+        
         // Make sure everyone using this shared memory knows that another client
         // has joined
         number_of_clients = shared_mat_header->incrementClientCount();
@@ -129,6 +133,11 @@ namespace oat {
 
         read_barrier_passed = false;
         return true; // Result is valid and all waits have operated without timeout
+    }
+    
+    oat::ServerRunState MatClient::getServerRunState() {
+        
+        return shared_server_state->get_state();
     }
 
     void MatClient::detachFromShmem() {

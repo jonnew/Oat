@@ -22,6 +22,7 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <opencv2/core/mat.hpp>
 
+#include "Signals.h"
 #include "SharedCVMatHeader.h"
 
 namespace oat {
@@ -35,6 +36,7 @@ namespace oat {
 
         void createSharedMat(void);
         void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
+        void setSharedServerState(oat::ServerRunState state);
       
         // Accessors 
         std::string get_name(void) const { return name; }
@@ -46,11 +48,13 @@ namespace oat {
 
         // Shared object control
         oat::SharedCVMatHeader* shared_mat_header;
+        oat::ServerState* shared_server_state;
+        bool* eof_signal;
         bool shared_object_created;
         bool mat_header_constructed;
         int data_size; // Size of raw mat data in bytes
 
-        const std::string shmem_name, shobj_name;
+        const std::string shmem_name, shobj_name, shsig_name;
         boost::interprocess::managed_shared_memory shared_memory;
 
 

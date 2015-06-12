@@ -92,6 +92,20 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
         file_stream = new rapidjson::FileWriteStream(position_fp, position_write_buffer, sizeof (position_write_buffer));
         json_writer.Reset(*file_stream);
+        
+        // Main object, end this object before write flush
+        json_writer.StartObject();
+        
+        // Coordinate system
+        json_writer.String("oat_version");
+        json_writer.String("1.0");
+        
+        // Complete header object
+        json_writer.String("header");
+        writePositionFileHeader(date_now, frames_per_second, position_source_names);
+        
+        // Start data object
+        json_writer.String("positions");
         json_writer.StartArray();
     }
 
@@ -123,7 +137,8 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
                     < cv::Mat, boost::lockfree::capacity < frame_write_buffer_size> >);
             video_writers.push_back(new cv::VideoWriter());
 
-            // TODO: provide threads with function
+
+            // Spawn frame writer threads and synchronize to incoming data
             frame_write_mutexes.push_back(new std::mutex());
             frame_write_condition_variables.push_back(new std::condition_variable());
             frame_write_threads.push_back(new std::thread(&Recorder::writeFramesToFileFromBuffer, this, idx++));
@@ -178,6 +193,7 @@ Recorder::~Recorder() {
 
     if (position_fp) {
         json_writer.EndArray();
+        json_writer.EndObject();
         file_stream->Flush();
         delete file_stream;
     }
@@ -250,10 +266,6 @@ void Recorder::writeFramesToFileFromBuffer(uint32_t writer_idx) {
 void Recorder::writePositionsToFile() {
 
     if (position_fp) {
-        json_writer.StartArray();
-
-        //json_writer.String("sample");
-        json_writer.Uint(position_sources[0]->get_current_time_stamp());
 
         //json_writer.String("positions");
         json_writer.StartArray();
@@ -261,13 +273,36 @@ void Recorder::writePositionsToFile() {
         int idx = 0;
         for (auto pos : source_positions) {
 
+            json_writer.Uint(position_sources[idx]->get_current_time_stamp());
             pos->Serialize(json_writer, position_labels[idx]);
             ++idx;
         }
 
         json_writer.EndArray();
-        json_writer.EndArray();
     }
+}
+
+void Recorder::writePositionFileHeader(const std::string& date, 
+        const double sample_rate, 
+        const std::vector<std::string>& sources) {
+    
+    json_writer.StartObject();
+    
+    json_writer.String("date");
+    json_writer.String(date.c_str());
+    
+    json_writer.String("sample_rate_hz");
+    json_writer.Double(sample_rate);
+    
+    json_writer.String("position_sources");
+    json_writer.StartArray();
+    for (auto &s : sources) {
+        json_writer.String(s.c_str());
+    }
+    json_writer.EndArray();
+    
+    json_writer.EndObject();
+
 }
 
 void Recorder::initializeWriter(cv::VideoWriter& writer,

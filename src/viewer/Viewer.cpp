@@ -22,6 +22,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include "../../lib/shmem/Signals.h"
 #include "../../lib/shmem/MatClient.h"
 
 namespace bfs = boost::filesystem;
@@ -63,12 +64,12 @@ name(frame_source_name + "_viewer")
     compression_params.push_back(9);
 }
 
-void Viewer::showImage() {
+oat::ServerRunState Viewer::showImage() {
 
-    showImage(name);
+    return showImage(name);
 }
 
-void Viewer::showImage(const std::string title) {
+oat::ServerRunState Viewer::showImage(const std::string title) {
 
     // If we are able to aquire the current frame, 
     // show it.
@@ -97,6 +98,9 @@ void Viewer::showImage(const std::string title) {
             }
         }
     }
+    
+    return frame_source.getServerRunState();
+    
 }
 
 std::string Viewer::makeFileName() {

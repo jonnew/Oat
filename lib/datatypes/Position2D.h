@@ -57,15 +57,15 @@ namespace oat {
 #endif
 
             // Coordinate system
-            writer.String("coord");
+            writer.String("unit");
             writer.Int(coord_system);
 
             // Position
-            writer.String("pos_valid");
+            writer.String("pos_ok");
             writer.Bool(position_valid);
 
             if (position_valid) {
-                writer.String("position");
+                writer.String("pos_xy");
                 writer.StartArray();
                 writer.Double(position.x);
                 writer.Double(position.y);
@@ -73,11 +73,11 @@ namespace oat {
             }
 
             // Velocity
-            writer.String("vel_valid");
+            writer.String("vel_ok");
             writer.Bool(velocity_valid);
 
             if (velocity_valid) {
-                writer.String("velocity");
+                writer.String("vel_xy");
                 writer.StartArray();
                 writer.Double(velocity.x);
                 writer.Double(velocity.y);
@@ -85,11 +85,11 @@ namespace oat {
             }
 
             // Head direction
-            writer.String("headdir_valid");
+            writer.String("head_ok");
             writer.Bool(head_direction_valid);
 
             if (head_direction_valid) {
-                writer.String("headdir");
+                writer.String("head_xy");
                 writer.StartArray();
                 writer.Double(head_direction.x);
                 writer.Double(head_direction.y);

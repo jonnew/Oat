@@ -65,10 +65,10 @@ int main(int argc, char *argv[]) {
                 "The path to the folder to which the video stream and position information will be saved.")
                 ("date,d",
                 "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the filename.")
-                ("positionsources,p", po::value< std::vector<std::string> >(),
+                ("positionsources,p", po::value< std::vector<std::string> >()->multitoken(),
                 "The name of the server(s) that supply object position information."
                 "The server(s) must be of type SMServer<Position>\n")
-                ("imagesources,i", po::value< std::vector<std::string> >(),
+                ("imagesources,i", po::value< std::vector<std::string> >()->multitoken(),
                 "The name of the server(s) that supplies images to save to video."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
                 ;

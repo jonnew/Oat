@@ -21,6 +21,7 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
+#include "../../lib/shmem/Signals.h"
 #include "../../lib/shmem/SharedCVMatHeader.h"
 #include "../../lib/shmem/MatClient.h"
 
@@ -34,8 +35,8 @@ public:
            std::string& save_path,
            const std::string& file_name);
 
-    void showImage(void);
-    void showImage(std::string title);
+    oat::ServerRunState showImage(void);
+    oat::ServerRunState showImage(std::string title);
     void stop(void);
 
     // Accessors

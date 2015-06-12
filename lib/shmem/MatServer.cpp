@@ -20,8 +20,8 @@
 #include <chrono>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
+#include "Signals.h"
 #include "SharedCVMatHeader.h"
-//#include "SharedCVMatHeader.cpp" // TODO: Why???
 
 namespace oat {
 
@@ -31,6 +31,7 @@ namespace oat {
       name(sink_name)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
+    , shsig_name(sink_name + "_sh_sig")
     , shared_object_created(false)
     , mat_header_constructed(false) {
 
@@ -69,13 +70,15 @@ namespace oat {
                     total_bytes);
 
             shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
+            shared_server_state = shared_memory.find_or_construct<oat::ServerState>(shsig_name.c_str())();
 
         } catch (bip::interprocess_exception &ex) {
             std::cerr << ex.what() << '\n';
             exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
         }
-        
+
         shared_object_created = true;
+        setSharedServerState(oat::ServerRunState::RUNNING);
     }
 
     /**
@@ -131,5 +134,12 @@ namespace oat {
             shared_mat_header->write_barrier.post();
         }
     }
+    
+    void MatServer::setSharedServerState(oat::ServerRunState state) {
+
+        if (shared_object_created) {
+            shared_server_state->set_state(state);
+        }
+    }   
 
 }
