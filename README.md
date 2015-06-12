@@ -163,9 +163,9 @@ Frame viewer. Displays video stream from named shard memory in a window. Also pe
 
 ##### Signature
 ```
-          ┌──────┐          
-frame ──> │ view │          
-		  └──────┘          
+          ┌──────┐
+frame ──> │ view │
+          └──────┘
 ```
 
 ##### Usage
@@ -199,43 +199,76 @@ Position detector. Detects object position within a frame stream using one of se
 
 ##### Signature
 ```
-          ┌─────────┐          
+          ┌─────────┐
 frame ──> │ posidet │ ──> position
-		  └─────────┘          
+          └─────────┘
 ```
 
-#### posifilt
-Position filter. Filters positional information to, for example, remove discontinuities due to transient inaccuracies in position detection. 
+#### `posifilt`
+Position filter. Filters position stream to, for example, remove discontinuities due to noise or discontinuities in position detection. 
 
 ##### Signature
 ```
-             ┌──────────┐          
+             ┌──────────┐
 position ──> │ posifilt │ ──> position
-		     └──────────┘          
+             └──────────┘
 ```
+
+##### Usage
+TODO
+
+#### `posicom`
+Position combiner. Combines position inputs according to a specified operation.
+
+##### Signature
+```
+               ┌────────┐
+position 0 ──> │        │
+position 1 ──> │        │
+  :            │posicom │ ──> position
+position N ──> │        │
+               └────────┘
+```
+
+##### Usage
+TODO
 
 #### `record`
 Stream recorder. Saves frame and positions streams to disk. 
 
-* `frame` streams are compressed and saved as individual video files (H.264 compression format avi file).
-* `position` streams are combined into a single JSON file. Each position source is saved as an element in an array with corresponding sample number and metadata including homography transformation.
+* `frame` streams are compressed and saved as individual video files ([H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI file).
+* `position` streams are combined into a single [JSON](http://json.org/) file. Position files have the following structure:
 
-All streams saved with a single recorder have the same base file name and save location (see usage). Of course, multiple recorders can be used in parallel to (1) parallelize the computational load of video streaming, which tends to be quite intense and (2) save to multiple locations simultaneously.
+```json
+{header:  [ {timestamp: YYYY-MM-DD-hh-mm-ss}, 
+            {sample_rate_hz: Fs}, 
+            {sources: [s1, s2, ..., sN]}                   ] }
+{samples: [ [0, {Position1}, {Position2}, ..., {PositionN} ],
+            [1, {Position1}, {Position2}, ..., {PositionN} ],
+             :
+            [T, {Position1}, {Position2}, ..., {PositionN} ]] }
+```
+where each position object is defined as:
+
+```json
+{TODO}
+```
+
+All streams are saved with a single recorder have the same base file name and save location (see usage). Of course, multiple recorders can be used in parallel to (1) parallelize the computational load of video compression, which tends to be quite intense and (2) save to multiple locations simultaneously.
 
 ##### Signature
 ```
-               ┌────────┐     
+               ┌────────┐
 position 0 ──> │        │
 position 1 ──> │        │
-  :		       │        │	
+  :            │        │
 position N ──> │        │
                │ record │
    frame 0 ──> │        │
    frame 1 ──> │        │
      :         │        │
    frame N ──> │        │
-		       └────────┘
-          
+               └────────┘
 ```
 
 ##### Usage
