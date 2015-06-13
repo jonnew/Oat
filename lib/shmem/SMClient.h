@@ -130,7 +130,7 @@ namespace oat {
     bool SMClient<T, SharedMemType>::getSharedObject(T& value) {
 
         boost::system_time timeout =
-                boost::get_system_time() + boost::posix_time::milliseconds(100);
+                boost::get_system_time() + boost::posix_time::milliseconds(10);
 
         if (!read_barrier_passed) {
 

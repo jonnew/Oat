@@ -14,11 +14,9 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-
+#include <csignal>
 #include <unordered_map>
-#include <signal.h>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
+
 #include <boost/program_options.hpp>
 
 #include "PGGigECam.h"
@@ -27,12 +25,17 @@
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t user_finished = 0;
+volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t server_eof = 0;
+
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
+}
 
 void run(Camera* camera) {
 
-    while (!user_finished && !server_eof) { 
+    while (!quit && !server_eof) {
         camera->grabMat();
         camera->undistortMat();
         server_eof = camera->serveMat();
@@ -40,18 +43,23 @@ void run(Camera* camera) {
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: frameserve [OPTIONS]\n"
+    std::cout << "Usage: frameserve [META]\n"
               << "   or: frameserve TYPE SINK [CONFIGURATION]\n"
-              << "Serve images captured by the camera to SINK\n\n"
-              << "TYPE\n"
-              << "  \'wcam\': Onboard or USB webcam.\n"
-              << "  \'gige\': Point Grey GigE camera.\n"
-              << "  \'file\': Stream video from file.\n\n"
+              << "Serve image stream to SINK\n\n"
+              << "TYPE:\n"
+              << "  wcam: Onboard or USB webcam.\n"
+              << "  gige: Point Grey GigE camera.\n"
+              << "  file: Video from file (*.mpg, *.avi, etc.).\n\n"
+              << "SINK:\n"
+              << "  User supplied sink name (e.g. raw).\n\n"
               << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
+    
+    std::signal(SIGINT, sigHandler);
 
+    bool interactive = false;
     std::string sink;
     std::string type;
     std::string video_file;
@@ -59,7 +67,7 @@ int main(int argc, char *argv[]) {
     std::string config_file;
     std::string config_key;
     bool config_used = false;
-    po::options_description visible_options("VISIBLE OPTIONS");
+    po::options_description visible_options("OPTIONAL ARGUMENTS");
 
     std::unordered_map<std::string, char> type_hash;
     type_hash["wcam"] = 'a';
@@ -68,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     try {
 
-        po::options_description options("OPTIONS");
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -76,12 +84,12 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
-                ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
-                ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
                 ("video-file,f", po::value<std::string>(&video_file),
                 "Path to video file if \'file\' is selected as the server TYPE.")
                 ("fps,r", po::value<double>(&frames_per_second),
-                 "Frames per second. Overriden by information in configuration file if provided.")
+                "Frames per second. Overriden by information in configuration file if provided.")
+                ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
+                ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -131,6 +139,10 @@ int main(int argc, char *argv[]) {
             printUsage(visible_options);
             std::cout << "Error: a SINK must be specified. Exiting.\n";
             return -1;
+        }
+
+        if (variable_map.count("interactive")) {
+            interactive = true;
         }
 
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
@@ -186,39 +198,15 @@ int main(int argc, char *argv[]) {
         camera->configure(config_file, config_key);
     else
         camera->configure();
-
-    std::cout << "Frameserver named \"" + sink + "\" has started.\n"
-              << "COMMANDS:\n"
-              << "  x: Exit.\n";
-
-    // Two threads - one for user interaction, the other
-    // for executing the processor
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, camera));
-    sleep(1);
-
-    while (!user_finished) {
-        
-        char user_input;
-        std::cin >> user_input;
-
-        switch (user_input) {
-
-            case 'x':
-            {
-                user_finished = true;
-                camera->stop(); 
-                break;
-            }
-            default:
-                std::cout << "Invalid command. Try again.\n";
-                break;
-        }
-    }
-
-    // Exit gracefully and ensure all shared resources are cleaned up
-    thread_group.join_all();
     
+    // Tell user
+    std::cout << "\n\n"
+              << "Frameserver named \"" + sink + "\" has started.\n"
+              << "Use CTRL+C to exit.\n\n";
+    
+    // Infinite loop until ctrl-c or end of stream signal
+    run(camera);
+
     // Free heap memory allocated to camera 
     delete camera;
 

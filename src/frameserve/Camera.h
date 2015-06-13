@@ -56,11 +56,11 @@ public:
     virtual void grabMat(void) = 0;
     
     // Cameras must be configurable via file
-    virtual void configure(void) = 0;
+    //virtual void configure(void) = 0;
+    virtual void configure() = 0;
     virtual void configure(std::string file_name, std::string key) = 0;
     
-    // Users should be able to access current frame (without serving)
-    cv::Mat getCurrentFrame(void) { return current_frame; }
+    cv::Mat get_current_frame(void) const { return current_frame; }
     
     // Cameras must be interruptable by the user in a way that ensures shemem
     // is freed
@@ -86,10 +86,6 @@ protected:
     cv::Mat camera_matrix; // TODO: change to Matx
     cv::Mat distortion_coefficients; // TODO: change to Matx
     
-    // camera->wold homography
-    //bool homography_valid;
-    //cv::Matx33d homography;
-
 };
 
 #endif	/* CAMERA_H */

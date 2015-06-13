@@ -517,7 +517,7 @@ int main(int argc, char** argv) {
         if (use_simple_tracker_camera) {
             Mat view0;
             camera->grabMat();
-            view0 = camera->getCurrentFrame();
+            view0 = camera->get_current_frame();
             view0.copyTo(view);
         } else if (i < (int) imageList.size())
             view = imread(imageList[i], 1);

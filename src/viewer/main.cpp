@@ -17,7 +17,7 @@
 #include "Viewer.h"
 
 #include <string>
-#include <signal.h>
+#include <csignal>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
@@ -26,26 +26,34 @@
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t done = 0;
+volatile sig_atomic_t quit = 0;
+volatile sig_atomic_t server_eof = 0;
+
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
+}
 
 void run(Viewer* viewer) {
 
-    while (!done && (viewer->showImage() != oat::ServerRunState::END)) { }
+    while ((viewer->showImage() != oat::ServerRunState::END) && !quit) { }
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: viewer [OPTIONS]\n"
-            << "   or: viewer [CONFIGURATION] SOURCE\n"
+    std::cout << "Usage: view [OPTIONS]\n"
+            << "     or: view SOURCE [CONFIGURATION]\n"
             << "View the output of a SOURCE of type SMServer<SharedCVMatHeader>\n"
             << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
+    
+    std::signal(SIGINT, sigHandler);
 
+    bool interactive = false;
     std::string source;
     std::string file_name;
     std::string save_path;
-    bool append_date = false;
     po::options_description visible_options("OPTIONS");
 
     try {
@@ -58,6 +66,7 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
+                ("interactive,I", "Run the program in interactive mode.")
                 ("filename,n", po::value<std::string>(&file_name),
                 "The base snapshot file name.\n"
                 " - The the name of the SOURCE for this viewer will be appended to this name.\n"
@@ -78,7 +87,7 @@ int main(int argc, char *argv[]) {
 
         po::options_description all_options("ALL OPTIONS");
         all_options.add(options).add(hidden);
-        
+
         visible_options.add(options).add(config);
 
         po::variables_map variable_map;
@@ -107,20 +116,20 @@ int main(int argc, char *argv[]) {
             std::cout << "Error: a SOURCE must be specified. Exiting.\n";
             return -1;
         }
-        
-        if (!variable_map.count("folder") ) {
+
+        if (variable_map.count("interactive")) {
+            interactive = true;
+        }
+
+        if (!variable_map.count("folder")) {
             save_path = ".";
-            std::cout << "Warning: saving files to the current directory.\n";
+            //std::cout << "Warning: saving files to the current directory.\n";
         }
-        
-        if (!variable_map.count("filename") ) {
+
+        if (!variable_map.count("filename")) {
             file_name = "";
-            std::cout << "Warning: no base filename was provided.\n";
+            //std::cout << "Warning: no base filename was provided.\n";
         }
-        
-        if (variable_map.count("date")) {
-            append_date = true;
-        } 
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -132,37 +141,44 @@ int main(int argc, char *argv[]) {
     // Make the viewer
     Viewer viewer(source, save_path, file_name);
 
-    std::cout << "Viewer has begun listening to source \"" + source + "\".\n";
-    std::cout << "COMMANDS:\n";
-    std::cout << "  s: Take snapshot.\n";
-    std::cout << "  x: Exit.\n";
+    if (!interactive) {
 
-    // Two threads - one for user interaction, the other
-    // for executing the processor
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &viewer));
-    sleep(1);
+        run(&viewer);
 
-    // Start the user interface
-    while (!done) {
+    } else {
 
-        char user_input;
-        std::cin >> user_input;
+        std::cout << "Viewer has begun listening to source \"" + source + "\".\n"
+                << "COMMANDS:\n"
+                << "  s: Take snapshot.\n"
+                << "  x: Exit.\n";
 
-        switch (user_input) {
+        // Two threads - one for user interaction, the other
+        // for executing the processor
+        boost::thread_group thread_group;
+        thread_group.create_thread(boost::bind(&run, &viewer));
+        sleep(1);
 
-            case 'x':
-            {
-                done = true;
-                break;
+        // Start the user interface
+        while (!quit) {
+
+            char user_input;
+            std::cin >> user_input;
+
+            switch (user_input) {
+
+                case 'x':
+                {
+                    quit = true;
+                    break;
+                }
+                default:
+                    std::cout << "Invalid command.\n";
+                    break;
             }
-            default:
-                std::cout << "Invalid command. Try again.\n";
-                break;
         }
-    }
 
-    thread_group.join_all();
+        thread_group.join_all();
+    }
 
     // Exit
     return 0;

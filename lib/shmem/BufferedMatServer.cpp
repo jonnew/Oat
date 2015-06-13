@@ -87,11 +87,7 @@ namespace oat {
             shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
             shared_server_state = shared_memory.find_or_construct<oat::ServerState>(shsig_name.c_str())();
             
-            /* START CRITICAL SECTION */
-                shared_mat_header->mutex.wait();
-                
-                
-
+            
         } catch (bip::interprocess_exception &ex) {
             std::cerr << ex.what() << '\n';
             exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects

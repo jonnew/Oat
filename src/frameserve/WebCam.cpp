@@ -32,10 +32,5 @@ bool WebCam::serveMat() {
     return false;
 }
 
-void WebCam::configure() {
-   
-}
-
-void WebCam::configure(std::string file_name, std::string key) {
-   
-}
+void WebCam::configure() { }
+void WebCam::configure(std::string file_name, std::string key) { }

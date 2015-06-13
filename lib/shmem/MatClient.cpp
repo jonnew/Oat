@@ -88,51 +88,60 @@ namespace oat {
     bool MatClient::getSharedMat(cv::Mat& value) {
 
         boost::system_time timeout =
-                boost::get_system_time() + boost::posix_time::milliseconds(100);
+                boost::get_system_time() + boost::posix_time::milliseconds(10);
 
-        if (!read_barrier_passed) {
+        try {
+            if (!read_barrier_passed) {
 
-            if (!shared_mat_header->read_barrier.timed_wait(timeout)) {
+                if (!shared_mat_header->read_barrier.timed_wait(timeout)) {
+                    return false;
+                }
+
+                // Write down that we made it past the read_barrier in case the
+                // new_data_barrier times out.
+                read_barrier_passed = true;
+
+                /* START CRITICAL SECTION */
+                shared_mat_header->mutex.wait();
+
+                if (!mat_attached_to_header) {
+                    // Cannot do this until the server has called build header, which is 
+                    // why it is here, instead of in constructor
+                    shared_mat_header->attachMatToHeader(shared_memory, shared_cvmat);
+                    mat_attached_to_header = true;
+                }
+
+                // Assign the latest cv::Mat and get its timestamp and write index
+                value = shared_cvmat.clone();
+                current_sample_number = shared_mat_header->get_sample_number();
+
+                // Now that this client has finished its read, update the count
+                shared_mat_header->client_read_count++;
+
+                // If all clients have read, signal the barrier
+                if (shared_mat_header->client_read_count == shared_mat_header->get_number_of_clients()) {
+                    shared_mat_header->write_barrier.post();
+                    shared_mat_header->client_read_count = 0;
+                }
+
+                shared_mat_header->mutex.post();
+                /* END CRITICAL SECTION */
+            }
+
+            if (!shared_mat_header->new_data_barrier.timed_wait(timeout)) {
                 return false;
             }
 
-            // Write down that we made it past the read_barrier in case the
-            // new_data_barrier times out.
-            read_barrier_passed = true;
+            read_barrier_passed = false;
+            return true; // Result is valid and all waits have operated without timeout
 
-            /* START CRITICAL SECTION */
-            shared_mat_header->mutex.wait();
-
-            if (!mat_attached_to_header) {
-                // Cannot do this until the server has called build header, which is 
-                // why it is here, instead of in constructor
-                shared_mat_header->attachMatToHeader(shared_memory, shared_cvmat);
-                mat_attached_to_header = true;
-            }
-
-            // Assign the latest cv::Mat and get its timestamp and write index
-            value = shared_cvmat.clone();
-            current_sample_number = shared_mat_header->get_sample_number();
-
-            // Now that this client has finished its read, update the count
-            shared_mat_header->client_read_count++;
-
-            // If all clients have read, signal the barrier
-            if (shared_mat_header->client_read_count == shared_mat_header->get_number_of_clients()) {
-                shared_mat_header->write_barrier.post();
-                shared_mat_header->client_read_count = 0;
-            }
-
-            shared_mat_header->mutex.post();
-            /* END CRITICAL SECTION */
-        }
-
-        if (!shared_mat_header->new_data_barrier.timed_wait(timeout)) {
+        } catch (bip::interprocess_exception ex) {
+            
+            // Something went wrong during shmem access so result is invalid
+            // Usually due to SIGINT being called during read_barrier timed
+            // wait
             return false;
         }
-
-        read_barrier_passed = false;
-        return true; // Result is valid and all waits have operated without timeout
     }
     
     oat::ServerRunState MatClient::getServerRunState() {
