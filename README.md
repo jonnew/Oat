@@ -61,6 +61,7 @@ Simple tracker consists of a set of programs that communicate through shared mem
 * `position` - a thread safe 2D position object.
 
 Simple tracker components can be chained together to execute complicate data processing pipelines, with individual components executing largely in parallel. Data processing pipelines can be split and merged while maintaining thread-saftey and sample synchronization. For example, a script to detect a single object in a field might look like this:
+
 ```bash
 
 # Serve frames from a video file to the 'raw' stream
@@ -141,19 +142,20 @@ frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ```
 
 ##### Configuration
-`TYPE=gige`
 
-- `_index_ [+int]` User specified camera index. Useful in multi-camera imaging configurations.
-- `_exposure_ [float]` Automatically adjust both shutter and gain to achieve given exposure. Specified in dB.
-- `_shutter_ [+int]` Shutter time in milliseconds. Specifying `exposure` overrides this option.
-- `_gain_ [float]` Sensor gain value. Specifying `exposure` overrides this option.
-- `_white_bal_ [{+int, +int}]`
-- `_roi_ [{+int, +int, +int, +int}]`
-- `_trigger_on_ [bool]`
-- `_triger_polarity_ [bool]`
-- `_trigger_mode_ [+int]`
+###### `TYPE=gige`
 
-`TYPE=file`
+- `index [+int]` User specified camera index. Useful in multi-camera imaging configurations.
+- `exposure_ [float]` Automatically adjust both shutter and gain to achieve given exposure. Specified in dB.
+- `shutter_ [+int]` Shutter time in milliseconds. Specifying `exposure` overrides this option.
+- `gain_ [float]` Sensor gain value. Specifying `exposure` overrides this option.
+- `white_bal_ [{+int, +int}]`
+- `roi_ [{+int, +int, +int, +int}]`
+- `trigger_on_ [bool]`
+- `triger_polarity_ [bool]`
+- `trigger_mode_ [+int]`
+
+###### `TYPE=file`
 
 - `_frame_rate_ [float]` Frame rate in frames per second
 - `_roi_ [{+int, +int, +int, +int}]`
@@ -239,7 +241,7 @@ Stream recorder. Saves frame and positions streams to disk.
 * `frame` streams are compressed and saved as individual video files ([H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI file).
 * `position` streams are combined into a single [JSON](http://json.org/) file. Position files have the following structure:
 
-```json
+```javascript
 {header:  [ {timestamp: YYYY-MM-DD-hh-mm-ss}, 
             {sample_rate_hz: Fs}, 
             {sources: [s1, s2, ..., sN]}                   ] }
@@ -250,7 +252,7 @@ Stream recorder. Saves frame and positions streams to disk.
 ```
 where each position object is defined as:
 
-```json
+```javascript
 {TODO}
 ```
 
@@ -365,13 +367,15 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 	- _Point grey specific_
     - Right now, I poll the camera for frames. This is fine for a file, but not necessarily for a physical camera whose acquisitions is governed by an external, asynchronous clock
     - Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number, even if it does not serve the frame, to prevent offsets from occurring.
-- [ ] Dealing with corrupt data transmissions
+- [x] Dealing with corrupt data transmissions
 	- _Point grey specific_
     - I want to enable the hardware-based onboard frame buffer
 	- I want to be able to re-transmit frames in the case that a corrupt frame is detected
+    - __EDIT__ This issue has pretty much gone away without hardware buffering by increasing the amount of memory available to the kernel to buffer incoming Gige data. See Instructions below.
 - [ ] EOF signal for processing pipeline
     - shmem constructs need to include an EOF flag that can be initiated by a pure server (frameserve or positest) that will propogate through the processing pipeline shutting down processing components as it goes. This way, user interaction is not required to exit programs.
-#### Connecting to point-grey PGE camera in Linux
+    
+####  Connecting to point-grey PGE camera in Linux
 - First you must assign your camera a static IP address. 
     - The easiest way to do this is to use a Windows machine to run the the IP configurator program provided by Point Grey.
 - The ipv4 method should be set to __manual__.

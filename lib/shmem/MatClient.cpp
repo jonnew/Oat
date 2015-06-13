@@ -112,7 +112,7 @@ namespace oat {
                 }
 
                 // Assign the latest cv::Mat and get its timestamp and write index
-                value = shared_cvmat.clone();
+                value = shared_cvmat.clone(); // TODO: this clone might not be nessesary (http://docs.opencv.org/modules/core/doc/intro.html#multi-threading-and-re-enterability)
                 current_sample_number = shared_mat_header->get_sample_number();
 
                 // Now that this client has finished its read, update the count
