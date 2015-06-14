@@ -28,7 +28,7 @@ namespace oat {
 
     inline std::string boldSource(std::string source_name) {
 
-        return "\e[34;1m" + source_name + "\e[0m";
+        return "\e[33;1m" + source_name + "\e[0m";
     }
 
     inline std::string boldSink(std::string sink_name) {
@@ -53,7 +53,7 @@ namespace oat {
     
     inline std::string dbgMessage(std::string message) {
 
-        return "\e[35m" + message + "\e[0m";
+        return "\e[35;1mdebug: \e[0m\e[35m" + message + "\e[0m";
     }
 }
 

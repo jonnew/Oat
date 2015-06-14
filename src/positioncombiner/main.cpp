@@ -16,41 +16,50 @@
 
 #include "PositionCombiner.h"
 
+#include <csignal>
 #include <unordered_map>
-#include <signal.h>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/IOFormat.h"
+#include "../../lib/shmem/Signals.h"
 #include "MeanPosition2D.h"
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t done = 0;
+volatile sig_atomic_t quit = 0;
+
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
+}
 
 void run(PositionCombiner* combiner) {
     
-    while (!done) { 
-        combiner->combineAndServePosition();
-    }
+    while (!quit) { combiner->combineAndServePosition(); }
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: combiner [OPTIONS]\n"
+    std::cout << "Usage: combiner [INFO]\n"
               << "   or: combiner TYPE SOURCES SINK\n"
               << "Combine positional information from two or more SMServer<Position> SOURCES.\n"
               << "Publish processed object positions to a SMServer<Position> SINK.\n\n"
               << "TYPE\n"
-              << "  \'mean\': Geometric mean of SOURCE positions\n\n"
+              << "  mean: Geometric mean of SOURCE positions\n\n"
+              << "SOURCES:\n"
+              << "  User supplied position source names (e.g. pos1 pos2).\n\n"
+              << "SINK:\n"
+              << "  User supplied position sink name (e.g. pos).\n\n"
               << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
+    
+    std::signal(SIGINT, sigHandler);
 
     std::vector<std::string> sources;
     std::string sink;
     std::string type;
-    po::options_description options("OPTIONS");
+    po::options_description options("INFO");
     
     std::unordered_map<std::string, char> type_hash;
     type_hash["mean"] = 'a';
@@ -77,7 +86,7 @@ int main(int argc, char *argv[]) {
         positional_options.add("type", 1);
         positional_options.add("sources", -1); // If not overridend by explicit --sink, last positional argument is sink.
 
-        po::options_description all_options("ALL OPTIONS");
+        po::options_description all_options("OPTIONS");
         all_options.add(options).add(hidden);
 
         po::variables_map variable_map;
@@ -144,38 +153,22 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    std::cout << "Position combiner named \"" + sink + "\" has started.\n";
-    std::cout << "COMMANDS:\n";
-    std::cout << "  x: Exit.\n";
-
-    // Two threads - one for user interaction, the other
-    // for executing the processor
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, combiner));
-    sleep(1);
-
-    while (!done) {
-        
-        char user_input;
-        std::cin >> user_input;
-
-        switch (user_input) {
-            case 'x':
-            {
-                done = true;
-                break;
-            }
-            default:
-                std::cout << "Invalid selection. Try again.\n";
-                break;
-        }
-    }
+    // Tell user
+    std::cout << oat::whoMessage(combiner->get_name(), "Listening to sources ");
+    for (auto s : sources)
+        std::cout << oat::boldSource(s) << " ";          
+    std::cout << ".\n"
+              << oat::whoMessage(combiner->get_name(),
+                 "Steaming to sink " + oat::boldSink(sink) + ".\n")
+              << oat::whoMessage(combiner->get_name(), 
+                 "Press CTRL+C to exit.\n");
     
-    // Join the processing and UI threads
-    thread_group.join_all();
-
-    std::cout << "Position combiner named \"" + combiner->get_name() + "\" is exiting." << std::endl;
+    // Infinite loop until ctrl-c or end of stream signal
+    run(combiner);
     
+    // Tell user
+    std::cout << oat::whoMessage(combiner->get_name(), "Exiting.\n");
+
     // Free heap memory allocated to combiner
     delete combiner;
 

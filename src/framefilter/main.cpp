@@ -42,8 +42,7 @@ void run(FrameFilter* filter) {
 void printUsage(po::options_description options){
     std::cout << "Usage: framefilt [INFO]\n"
               << "   or: framefilt TYPE SOURCE SINK [CONFIG]\n"
-              << "Perform background subtraction on images from SOURCE.\n"
-              << "Publish background-subtracted images to SMServer<SharedCVMatHeader> SINK.\n\n"
+              << "Filter a frames from SOURCE and published filtered frames to SINK.\n"
               << "TYPE\n"
               << "  bsub: Background subtraction\n"
               << "  mask: Binary mask\n\n"

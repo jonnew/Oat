@@ -31,7 +31,7 @@ class Camera {
 public:
     
     Camera(std::string image_sink_name) : 
-      name(image_sink_name)
+      name("frameserve[*->" + image_sink_name + "]")
     , frame_sink(image_sink_name)
     , undistort_image(false)
     , current_sample(0) { }
@@ -61,6 +61,7 @@ public:
     virtual void configure(std::string file_name, std::string key) = 0;
     
     cv::Mat get_current_frame(void) const { return current_frame; }
+    virtual std::string get_name(void) const { return name; }
     
     // Cameras must be interruptable by the user in a way that ensures shemem
     // is freed
@@ -68,9 +69,10 @@ public:
     
 protected:
     
+    std::string name;
+    
     // cv::Mat server for sending frames to shared memory
     oat::BufferedMatServer frame_sink;
-    std::string name;
     
     // Cameras have a region of interest to crop images
     cv::Rect region_of_interest;

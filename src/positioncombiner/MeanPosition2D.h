@@ -24,11 +24,9 @@ class MeanPosition2D : public PositionCombiner {
 public:
     MeanPosition2D(std::vector<std::string> position_source_names, std::string sink_name);
 
-    void combineAndServePosition(void);
-
 private:
 
-    void combinePositions(void);
+    oat::Position2D combinePositions(const std::vector<oat::Position2D*>& sources);
 
 };
 

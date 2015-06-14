@@ -17,41 +17,28 @@
 #include <vector>
 #include <cmath>
 
+#include "../../lib/shmem/Signals.h"
 #include "MeanPosition2D.h"
 
 MeanPosition2D::MeanPosition2D(std::vector<std::string> position_source_names, std::string sink_name) :
   PositionCombiner(position_source_names, sink_name) { }
 
-void MeanPosition2D::combineAndServePosition() {
-
-    // Get current positions
-    while (client_idx < position_sources.size()) {
-        
-        if (!(position_sources[client_idx]->getSharedObject(*source_positions[client_idx]))) {
-            return;
-        }
-        
-        client_idx++;
-    }
-
-    client_idx = 0;
-    combinePositions();
-
-    position_sink.pushObject(combined_position, position_sources[0]->get_current_time_stamp());
-}
 
 /**
- * This function calculates the geometric mean of all positions.
+ * This function calculates the geometric mean of all source positions.
+ * @param sources Source positions
+ * @return Combined position
  */
-void MeanPosition2D::combinePositions() {
+oat::Position2D MeanPosition2D::combinePositions(const std::vector<oat::Position2D*>& sources) {
 
-    double mean_denom = 1.0/(double) source_positions.size(); 
+    double mean_denom = 1.0/(double) sources.size(); 
+    oat::Position2D combined_position;
     combined_position.position = oat::Point2D(0,0);
     combined_position.velocity = oat::Velocity2D(0,0);
     combined_position.head_direction = oat::UnitVector2D(0,0);
     
     // Averaging operation
-    for (auto pos : source_positions) {
+    for (auto pos : sources) {
         
         // Position
         if (pos->position_valid)
@@ -83,4 +70,6 @@ void MeanPosition2D::combinePositions() {
         combined_position.head_direction = 
                 combined_position.head_direction/mag;
     }
+    
+    return combined_position;
 }

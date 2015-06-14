@@ -218,6 +218,8 @@ void PGGigECam::configure(std::string config_file, std::string key) {
 
                 // TODO: Exception handling for missing entries
                 // Get calibration info
+                // TODO: use standard TOML format for these matracies instead 
+                // of the secondary YML config file
                 fs["calibration_valid"] >> undistort_image;
                 fs["camera_matrix"] >> camera_matrix;
                 fs["distortion_coefficients"] >> distortion_coefficients;

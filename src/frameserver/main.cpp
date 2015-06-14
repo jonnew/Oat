@@ -19,6 +19,7 @@
 
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/IOFormat.h"
 #include "PGGigECam.h"
 #include "WebCam.h"
 #include "FileReader.h"
@@ -194,19 +195,21 @@ int main(int argc, char *argv[]) {
     else
         camera->configure();
     
-    // Tell user
-    std::cout << "\n"
-              << " + Frameserver named \"" + sink + "\" has started.\n"
-              << " + Use CTRL+C to exit.\n";
+    
+        // Tell user
+    std::cout << oat::whoMessage(camera->get_name(),
+                 "Steaming to sink " + oat::boldSink(sink) + ".\n")
+              << oat::whoMessage(camera->get_name(), 
+                 "Press CTRL+C to exit.\n");
     
     // Infinite loop until ctrl-c or end of stream signal
     run(camera);
 
+    // Tell user
+    std::cout << oat::whoMessage(camera->get_name(), "Exiting.\n");
+    
     // Free heap memory allocated to camera 
     delete camera;
-
-    // Tell user
-    std::cout << "Frameserver named \"" + sink + "\" is exiting." << std::endl;
 
     // Exit
     return 0;

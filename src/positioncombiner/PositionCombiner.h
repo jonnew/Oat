@@ -19,6 +19,7 @@
 
 #include <string>
 
+#include "../../lib/shmem/Signals.h"
 #include "../../lib/shmem/SMServer.h"
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position.h"
@@ -33,7 +34,7 @@ class PositionCombiner { // TODO: Position2D -> Position somehow
 public:
 
     PositionCombiner(std::vector<std::string> position_source_names, std::string sink_name) :
-      name(sink_name)
+      name("posicom[" + position_source_names[0] + "...->" + sink_name + "]") 
     , position_sink(sink_name)
     , client_idx(0) {
          
@@ -44,14 +45,36 @@ public:
         }
     }
 
-    // All position combiners must implement a method to combine positions and
-    // publish the result
-    virtual void combineAndServePosition(void) = 0;
+    // Public 'run' method
+    void combineAndServePosition() {
+
+        // Get current positions
+        while (client_idx < position_sources.size()) {
+
+            if (!(position_sources[client_idx]->getSharedObject(*source_positions[client_idx]))) {
+                return;
+            }
+            
+            client_idx++;
+        }
+
+        client_idx = 0;
+        combined_position = combinePositions(source_positions);
+
+        position_sink.pushObject(combined_position, position_sources[0]->get_current_time_stamp());
+
+    }
 
     std::string get_name(void) const { return name; }
 
 protected:
 
+    // All position combiners must be able to combine the position_sources
+    // list to provide a single combined position output
+    virtual oat::Position2D combinePositions(const std::vector<oat::Position2D*>& sources) = 0;
+    
+private:
+    
     std::string name;
 
     // For multi-source processing, we need to keep track of all the sources
@@ -65,10 +88,6 @@ protected:
     // Combined position server
     oat::Position2D combined_position;
     oat::SMServer<oat::Position2D> position_sink;
-
-    // All position combiners must be able to combine the position_sources
-    // list to provide a single combined position output
-    virtual void combinePositions(void) = 0;
 };
 
 #endif	// POSITIONCOMBINER_H
