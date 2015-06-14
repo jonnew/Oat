@@ -58,7 +58,7 @@ cmake ../../src/positest
 make
 cd ..
 
-cd ./clean/ 
+cd ./cleaner/ 
 cmake ../../src/cleaner
 make
 cd ..
@@ -76,5 +76,5 @@ mv ./release/decorator/oat-decorate 	./oat/libexec
 mv ./release/posifilt/oat-posifilt 		./oat/libexec
 mv ./release/recorder/oat-record 		./oat/libexec
 mv ./release/positest/oat-positest 		./oat/libexec
-mv ./release/clean/oat-clean 			./oat/libexec
+mv ./release/cleaner/oat-clean 			./oat/libexec
 

@@ -31,7 +31,7 @@ class FrameFilter {
 public:
 
     FrameFilter(const std::string& source_name, const std::string& sink_name) :
-      name("ff_" + sink_name)
+	  name("framefilt[" + source_name + "->" + sink_name + "]")
     , frame_source(source_name)
     , frame_sink(sink_name) { }
     

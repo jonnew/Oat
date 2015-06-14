@@ -192,11 +192,11 @@ int main(int argc, char *argv[]) {
     
     // Tell user
     std::cout << oat::whoMessage(filter->get_name(), 
-                 "Listening to source " + oat::bold(source) + ".\n")
+                 "Listening to source " + oat::boldSource(source) + ".\n")
               << oat::whoMessage(filter->get_name(),
-                 "Steaming to sink " + oat::bold(sink) + ".\n")
+                 "Steaming to sink " + oat::boldSink(sink) + ".\n")
               << oat::whoMessage(filter->get_name(), 
-                 oat::bold("Press CTRL+C to exit.") + "\n");
+                 "Press CTRL+C to exit.\n");
     
     // Infinite loop until ctrl-c or end of stream signal
     run(filter);

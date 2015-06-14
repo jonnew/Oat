@@ -26,6 +26,16 @@ namespace oat {
         return "\e[1m" + message + "\e[0m";
     }
 
+    inline std::string boldSource(std::string source_name) {
+
+        return "\e[34;1m" + source_name + "\e[0m";
+    }
+
+    inline std::string boldSink(std::string sink_name) {
+
+        return "\e[35;1m" + sink_name + "\e[0m";
+    }
+
     inline std::string whoMessage(std::string source, std::string message) {
 
         return "\e[1m" + source + ": \e[0m" + message;
