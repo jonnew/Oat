@@ -41,6 +41,7 @@ namespace oat {
     private:
         std::atomic<ServerRunState> server_state {ServerRunState::UNDEFINED};
     };
+    
 }
 
 #endif	/* SIGNALS_H */

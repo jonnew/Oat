@@ -18,8 +18,6 @@
 
 #include <string>
 #include <csignal>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
 #include "../../lib/shmem/Signals.h"
@@ -27,7 +25,6 @@
 namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t server_eof = 0;
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int s) {
@@ -40,9 +37,9 @@ void run(Viewer* viewer) {
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: view [OPTIONS]\n"
+    std::cout << "Usage: view [INFO]\n"
             << "     or: view SOURCE [CONFIGURATION]\n"
-            << "View the output of a SOURCE of type SMServer<SharedCVMatHeader>\n"
+            << "View the output of a frame SOURCE.\n\n"
             << options << "\n";
 }
 
@@ -50,7 +47,6 @@ int main(int argc, char *argv[]) {
     
     std::signal(SIGINT, sigHandler);
 
-    bool interactive = false;
     std::string source;
     std::string file_name;
     std::string save_path;
@@ -58,7 +54,7 @@ int main(int argc, char *argv[]) {
 
     try {
 
-        po::options_description options("META");
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -66,7 +62,6 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
-                ("interactive,I", "Run the program in interactive mode.")
                 ("filename,n", po::value<std::string>(&file_name),
                 "The base snapshot file name.\n"
                 " - The the name of the SOURCE for this viewer will be appended to this name.\n"
@@ -117,18 +112,14 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if (variable_map.count("interactive")) {
-            interactive = true;
-        }
-
         if (!variable_map.count("folder")) {
             save_path = ".";
-            //std::cout << "Warning: saving files to the current directory.\n";
+            std::cout << "Warning: saving files to the current directory.\n";
         }
 
         if (!variable_map.count("filename")) {
             file_name = "";
-            //std::cout << "Warning: no base filename was provided.\n";
+            std::cout << "Warning: no base filename was provided.\n";
         }
 
     } catch (std::exception& e) {
@@ -141,44 +132,17 @@ int main(int argc, char *argv[]) {
     // Make the viewer
     Viewer viewer(source, save_path, file_name);
 
-    if (!interactive) {
+        // Tell user
+    std::cout << "\n"
+              << "Viewer has begun listening to source \"" + source + "\".\n"
+              << "Press 's' on the viewer window to take a snapshot of the currently displayed frame.\n"
+              << "Use CTRL+C to exit.\n";
 
-        run(&viewer);
+    // Infinite loop until ctrl-c or end of stream signal
+    run(&viewer);
 
-    } else {
-
-        std::cout << "Viewer has begun listening to source \"" + source + "\".\n"
-                << "COMMANDS:\n"
-                << "  s: Take snapshot.\n"
-                << "  x: Exit.\n";
-
-        // Two threads - one for user interaction, the other
-        // for executing the processor
-        boost::thread_group thread_group;
-        thread_group.create_thread(boost::bind(&run, &viewer));
-        sleep(1);
-
-        // Start the user interface
-        while (!quit) {
-
-            char user_input;
-            std::cin >> user_input;
-
-            switch (user_input) {
-
-                case 'x':
-                {
-                    quit = true;
-                    break;
-                }
-                default:
-                    std::cout << "Invalid command.\n";
-                    break;
-            }
-        }
-
-        thread_group.join_all();
-    }
+    // Tell user
+    std::cout << "Viewer is exiting." << std::endl;
 
     // Exit
     return 0;

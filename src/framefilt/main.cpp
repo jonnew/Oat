@@ -14,44 +14,49 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include <csignal>
 #include <unordered_map>
-#include <signal.h>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/IOFormat.h"
+#include "../../lib/shmem/Signals.h"
 #include "FrameFilter.h"
 #include "BackgroundSubtractor.h"
 #include "FrameMasker.h"
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t done = 0;
+volatile sig_atomic_t quit = 0;
+volatile sig_atomic_t server_eof = 0;
 
-void run(FrameFilter* filter, std::string source, std::string sink) {
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
+}
 
-    std::cout << "Frame filter has begun listening to source \"" + source + "\".\n";
-    std::cout << "Frame filter has begun steaming to sink \"" + sink + "\".\n";
-
-    while (!done) {
-        filter->filterAndServe();
-    }
-
-    std::cout << "Frame filter is exiting.\n";
+void run(FrameFilter* filter) {
+    
+    while ((filter->filterAndServe() != oat::ServerRunState::END) && !quit) { }
 }
 
 void printUsage(po::options_description options){
-    std::cout << "Usage: framefilt [OPTIONS]\n"
+    std::cout << "Usage: framefilt [INFO]\n"
               << "   or: framefilt TYPE SOURCE SINK [CONFIG]\n"
               << "Perform background subtraction on images from SOURCE.\n"
               << "Publish background-subtracted images to SMServer<SharedCVMatHeader> SINK.\n\n"
               << "TYPE\n"
-              << "  \'bsub\': Background subtraction\n"
-              << "  \'mask\': Binary mask\n\n"
+              << "  bsub: Background subtraction\n"
+              << "  mask: Binary mask\n\n"
+              << "SOURCE:\n"
+              << "  User supplied source name (e.g. raw).\n\n"
+              << "SINK:\n"
+              << "  User supplied sink name (e.g. filt).\n\n"
               << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
+    
+    std::signal(SIGINT, sigHandler);
 
     std::string type;
     std::string source;
@@ -68,7 +73,7 @@ int main(int argc, char *argv[]) {
 
     try {
 
-        po::options_description options("META");
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -125,43 +130,41 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("source")) {
             printUsage(visible_options);
-            std::cout << "Error: a SOURCE must be specified. Exiting.\n";
+            std::cout << oat::whoError("FrameFilt", "A SOURCE must be specified. Exiting.\n");
             return -1;
         }
 
         if (!variable_map.count("sink")) {
             printUsage(visible_options);
-            std::cout << "Error: a SINK name must be specified. Exiting.\n";
+            std::cerr << oat::whoError("FrameFilt", "A SINK name must be specified. Exiting.\n");
             return -1;
         }
-        
-        
+              
         if (variable_map.count("invert-mask")) {
 
             if (type_hash[type] != 'b') {
-                std::cout << "Warning: invert-mask was requested, but this is the wrong filter TYPE for that option.\n "
-                        << "invert-mask option was ignored.\n";
+                std::cout << oat::whoWarn("framefilt", "Invert-mask specified, but this is the wrong filter TYPE for that option.\n")
+                          << oat::whoWarn("framefilt", "Invert-mask option was ignored.\n");
             } else {
                 invert_mask = true;
             }
         }
-        
-        
+            
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
-            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+            std::cerr << oat::whoError("FrameFilt", "A configuration file must be supplied with a corresponding config-key. Exiting.\n");
             return -1;
         } else if (variable_map.count("config-file")) {
             config_used = true;
         }
 
-
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        std::cerr << oat::whoError("FrameFilt", e.what()) << "\n";
+        return -1;
     } catch (...) {
-        std::cerr << "Exception of unknown type! " << std::endl;
+        std::cerr << oat::whoError("FrameFilt", "Exception of unknown type. Exiting.\n");
+        return -1;
     }
 
     FrameFilter* filter; //(ant_source, pos_source, sink);
@@ -179,46 +182,27 @@ int main(int argc, char *argv[]) {
         default:
         {
             printUsage(visible_options);
-            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            std::cerr << oat::whoError(filter->get_name(), "Invalid TYPE specified. Exiting.") << std::endl;
             return -1;
         }
     }
 
     if (config_used)
         filter->configure(config_file, config_key);
-
-    // Two threads - one for user interaction, the other
-    // for executing the processor
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, filter, source, sink));
-    sleep(1);
     
-    // Start the user interface
-    while (!done) {
+    // Tell user
+    std::cout << oat::whoMessage(filter->get_name(), 
+                 "Listening to source " + oat::bold(source) + ".\n")
+              << oat::whoMessage(filter->get_name(),
+                 "Steaming to sink " + oat::bold(sink) + ".\n")
+              << oat::whoMessage(filter->get_name(), 
+                 oat::bold("Press CTRL+C to exit.") + "\n");
+    
+    // Infinite loop until ctrl-c or end of stream signal
+    run(filter);
 
-        char user_input;
-
-        std::cout << "Framefilt has begun listening to source \"" + source + "\".\n";
-        std::cout << "Framefilt has begun steaming to sink \"" + sink + "\".\n\n";
-        std::cout << "COMMANDS:\n";
-        std::cout << "  x: Exit.\n";
-
-        std::cin >> user_input;
-
-        switch (user_input) {
-            case 'x':
-            {
-                done = true;
-                break;
-            }
-            default:
-                std::cout << "Invalid selection. Try again.\n";
-                break;
-        }
-    }
-
-    // Join processing and UI threads
-    thread_group.join_all();
+    // Tell user
+    std::cout << oat::whoMessage(filter->get_name(), "Exiting.\n");
     
     // Free heap memory allocated to filter
     delete filter;

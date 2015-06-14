@@ -84,7 +84,7 @@ void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
  * the output matrix.
  * 
  */
-void BackgroundSubtractor::filterAndServe() {
+oat::ServerRunState BackgroundSubtractor::filterAndServe() {
     
     // Only proceed with processing if we are getting a valid frame
     if (frame_source.getSharedMat(current_frame)) {
@@ -106,4 +106,6 @@ void BackgroundSubtractor::filterAndServe() {
         // Push filtered frame forward, along with frame_source sample number
         frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
     }
+    
+    return frame_source.getServerRunState();
 }

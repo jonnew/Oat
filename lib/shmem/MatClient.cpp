@@ -20,6 +20,8 @@
 #include <boost/thread/thread_time.hpp>
 #include <boost/thread.hpp>
 
+#include "../../lib/utility/IOFormat.h"
+
 namespace oat {
 
      namespace bip = boost::interprocess;
@@ -157,7 +159,7 @@ namespace oat {
             number_of_clients = shared_mat_header->decrementClientCount();
 
 #ifndef NDEBUG
-            std::cout << "Number of clients in \'" + shmem_name + "\' was decremented.\n";
+            std::cout << oat::dbgMessage("Number of clients in \'" + shmem_name + "\' was decremented.\n");
 #endif
 
         }

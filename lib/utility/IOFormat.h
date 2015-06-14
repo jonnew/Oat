@@ -1,5 +1,5 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -14,27 +14,37 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef BACKGROUNDSUBTRACTOR_H
-#define	BACKGROUNDSUBTRACTOR_H
+#ifndef IOFORMAT_H
+#define	IOFORMAT_H
 
-#include "FrameFilter.h"
+#include <string>
 
-class BackgroundSubtractor : public FrameFilter {
-public:
+namespace oat {
 
-    BackgroundSubtractor(const std::string& source_name, const std::string& sink_name);
+    inline std::string bold(std::string message) {
 
-    void setBackgroundImage(const cv::Mat&);
-    void configure(const std::string& config_file, const std::string& config_key);
-    oat::ServerRunState filterAndServe(void);
+        return "\e[1m" + message + "\e[0m";
+    }
+
+    inline std::string whoMessage(std::string source, std::string message) {
+
+        return "\e[1m" + source + ": \e[0m" + message;
+    }
+
+    inline std::string whoWarn(std::string source, std::string message) {
+
+        return "\e[1m" + source + ": \e[0m\e[33m" + message + "\e[0m";
+    }
+
+    inline std::string whoError(std::string source, std::string message) {
+
+        return "\e[1m" + source + ": \e[0m\e[31m" + message + "\e[0m";
+    }
     
-private:
+    inline std::string dbgMessage(std::string message) {
 
-    // The background image used for subtraction
-    bool background_set = false;
-    cv::Mat background_img;
+        return "\e[35m" + message + "\e[0m";
+    }
+}
 
-};
-
-#endif	/* BACKGROUNDSUBTRACTOR_H */
-
+#endif	/* IOFORMAT_H */

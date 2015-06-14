@@ -20,6 +20,7 @@
 #include <chrono>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
+#include "../../lib/utility/IOFormat.h"
 #include "Signals.h"
 #include "SharedCVMatHeader.h"
 
@@ -47,7 +48,7 @@ namespace oat {
         // Remove_shared_memory on object destruction
         bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG
-        std::cout << "Shared memory \'" + shmem_name + "\' was deallocated.\n";
+        std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
 #endif
 
     }
@@ -90,7 +91,7 @@ namespace oat {
 
 #ifndef NDEBUG
 
-        std::cout << "sample: " + std::to_string(sample_number) << "\r";
+        std::cout << oat::dbgMessage("sample: " + std::to_string(sample_number)) << "\r";
         std::cout.flush();
 
 #endif

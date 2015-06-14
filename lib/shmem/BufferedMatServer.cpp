@@ -20,6 +20,7 @@
 #include <chrono>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
+#include "../../lib/utility/IOFormat.h"
 #include "Signals.h"
 #include "SharedCVMatHeader.h"
 #include "SharedCVMatHeader.cpp" // TODO: Why???
@@ -62,7 +63,7 @@ namespace oat {
 
         bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG
-        std::cout << "Shared memory \'" + shmem_name + "\' was deallocated.\n";
+        std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
 #endif
 
     }
@@ -127,21 +128,21 @@ namespace oat {
 #ifndef NDEBUG
 
 
-                std::cout << "[";
+                std::cout << oat::dbgMessage("[");
 
                 int progress = (BAR_WIDTH * mat_buffer.read_available()) / MATSERVER_BUFFER_SIZE;
                 int remaining = BAR_WIDTH - progress;
 
                 for (int i = 0; i < progress; ++i) {
-                    std::cout << "=";
+                    std::cout << oat::dbgMessage("=");
                 }
                 for (int i = 0; i < remaining; ++i) {
                     std::cout << " ";
                 }
-
-                std::cout << "] "
-                        << std::to_string(mat_buffer.read_available()) + "/" + std::to_string(MATSERVER_BUFFER_SIZE)
-                        << ", sample: " + std::to_string(sample.first)
+                
+                std::cout << oat::dbgMessage("] ")
+                        << oat::dbgMessage(std::to_string(mat_buffer.read_available()) + "/" + std::to_string(MATSERVER_BUFFER_SIZE))
+                        << oat::dbgMessage(", sample: " + std::to_string(sample.first))
                         << "\r";
 
                 std::cout.flush();

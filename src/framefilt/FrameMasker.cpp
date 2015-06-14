@@ -70,7 +70,7 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
     }
 }
 
-void FrameMasker::filterAndServe() {
+oat::ServerRunState FrameMasker::filterAndServe() {
 
     // Only proceed with processing if we are getting a valid frame
     if (frame_source.getSharedMat(current_frame)) {
@@ -87,6 +87,8 @@ void FrameMasker::filterAndServe() {
         // Push filtered frame forward, along with frame_source sample number
         frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
     }
+    
+    return frame_source.getServerRunState();
 }
 
 

@@ -23,6 +23,7 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
+#include "../../lib/shmem/Signals.h"
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
 
@@ -30,20 +31,25 @@ class FrameFilter {
 public:
 
     FrameFilter(const std::string& source_name, const std::string& sink_name) :
-      frame_source(source_name)
+      name("ff_" + sink_name)
+    , frame_source(source_name)
     , frame_sink(sink_name) { }
     
     virtual ~FrameFilter() { }
 
     // Frame filters must be able to receive, filter, and serve frames
-    virtual void filterAndServe(void) = 0;
+    virtual oat::ServerRunState filterAndServe(void) = 0;
 
     // Frame filters must be configurable
     virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
     
+    virtual std::string get_name(void) const { return name; }
 
 protected:
 
+    // Component nam
+    std::string name;
+    
     // Frame filters have Mat client object for receiving frames
     cv::Mat current_frame;
     oat::MatClient frame_source;

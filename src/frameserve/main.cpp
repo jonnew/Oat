@@ -43,9 +43,9 @@ void run(Camera* camera) {
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: frameserve [META]\n"
+    std::cout << "Usage: frameserve [INFO]\n"
               << "   or: frameserve TYPE SINK [CONFIGURATION]\n"
-              << "Serve image stream to SINK\n\n"
+              << "Serve image stream to a frame SINK\n\n"
               << "TYPE:\n"
               << "  wcam: Onboard or USB webcam.\n"
               << "  gige: Point Grey GigE camera.\n"
@@ -59,7 +59,6 @@ int main(int argc, char *argv[]) {
     
     std::signal(SIGINT, sigHandler);
 
-    bool interactive = false;
     std::string sink;
     std::string type;
     std::string video_file;
@@ -141,10 +140,6 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if (variable_map.count("interactive")) {
-            interactive = true;
-        }
-
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
@@ -200,9 +195,9 @@ int main(int argc, char *argv[]) {
         camera->configure();
     
     // Tell user
-    std::cout << "\n\n"
-              << "Frameserver named \"" + sink + "\" has started.\n"
-              << "Use CTRL+C to exit.\n\n";
+    std::cout << "\n"
+              << " + Frameserver named \"" + sink + "\" has started.\n"
+              << " + Use CTRL+C to exit.\n";
     
     // Infinite loop until ctrl-c or end of stream signal
     run(camera);

@@ -29,7 +29,7 @@ public:
                 const std::string& sink_name, 
                 bool invert_mask=false);
     
-    void filterAndServe(void);
+    oat::ServerRunState filterAndServe(void);
     void configure(const std::string& config_file, const std::string& config_key);
     
     // Accessors
