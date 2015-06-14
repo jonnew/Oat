@@ -1,15 +1,12 @@
-cmake_minimum_required (VERSION 2.8)
-project (Recorder)
+# Include the directory itself as a path to include directories
+set (CMAKE_INCLUDE_CURRENT_DIR ON)
+ 
+# Create a SOURCE variable containing all required .cpp files:
+set (oat-record_SOURCE Recorder.cpp main.cpp)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
-
-set (BOOST_ROOT /opt/boost_1_57_0 )
-find_package (Boost REQUIRED system thread program_options filesystem)
-link_directories (${Boost_LIBRARY_DIR})
-
-add_subdirectory("../../lib/shmem" "${CMAKE_CURRENT_BINARY_DIR}/shmem_build")
-
-find_package (OpenCV REQUIRED)
-add_executable (oat-record Recorder.cpp main.cpp )
+# Target
+add_executable (oat-record ${oat-record_SOURCE})
 target_link_libraries (oat-record shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
-
+	
+# Installation
+install (TARGETS oat-record DESTINATION ../../oat/libexec COMPONENT oat-processors)

@@ -87,7 +87,7 @@ case "$command" in
 Some useful oat commands are:
 $(print_summaries)
 
-See 'oat help <command>' for information on a specific command."
+See 'oat <command> --help' for information on a specific command."
 ;;
 *)
   file="$(command_path "$command")"
