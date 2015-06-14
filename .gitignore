@@ -31,6 +31,8 @@
 # All bin directories
 bin/ 
 build/
+release/
+debug/
 !sub/bin
 
 # Ignore video/image files
