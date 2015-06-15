@@ -10,7 +10,7 @@ install:
   - wget http://sourceforge.net/projects/boost/files/latest/download?source=files -O boost
   - tar -xf boost
   - sudo cp -r boost_* /opt
-  - cd /opt/boost_*/
+  - sudo cd /opt/boost_*/
   - sudo ./bootstrap.sh
   - sudo ./b2 --with-program_options --with_system --with_thread
   - cd 
@@ -36,5 +36,5 @@ install:
   - cd release
   - cmake -DCMAKE_BUILD_TYPE=RELEASE
   - make
-  - make install
+  - sudo make install
 
