@@ -45,6 +45,9 @@ namespace oat {
 
         notifySelf();
 
+		// Detach this server from shared mat header
+		shared_mat_header->set_server_attached(false);
+
         // Remove_shared_memory on object destruction
         bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG
@@ -79,6 +82,7 @@ namespace oat {
         }
 
         shared_object_created = true;
+		shared_mat_header->set_server_attached(true);
         setSharedServerState(oat::ServerRunState::RUNNING);
     }
 

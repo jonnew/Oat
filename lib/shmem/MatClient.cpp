@@ -158,10 +158,19 @@ namespace oat {
             // Make sure nobody is going to wait on a disposed object
             number_of_clients = shared_mat_header->decrementClientCount();
 
+			// If the client reference count is 0 and there is no server 
+			// atached to the shared mat, deallocate the shmem
+			if (number_of_clients == 0 && !shared_mat_header->is_server_attached()) {
+
+        		bip::shared_memory_object::remove(shmem_name.c_str());
+#ifndef NDEBUG
+        		std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
+#endif
+			} else {
 #ifndef NDEBUG
             std::cout << oat::dbgMessage("Number of clients in \'" + shmem_name + "\' was decremented.\n");
 #endif
-
+			}
         }
     }
 

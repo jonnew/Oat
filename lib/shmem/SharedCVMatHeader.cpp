@@ -49,22 +49,16 @@ namespace oat {
         mat.create(mat_size, type);
         mat.data = static_cast<uchar*> (shared_mem.get_address_from_handle(handle));
     }
-    
+   
     size_t SharedCVMatHeader::incrementClientCount(){
         
-        mutex.wait();
-        number_of_clients++;
-        mutex.post();
-        
-        return number_of_clients;
+		// This operation is atomic
+        return ++number_of_clients;
     }
     
     size_t SharedCVMatHeader::decrementClientCount(){
-        
-        mutex.wait();
-        number_of_clients--;
-        mutex.post();
-        
-        return number_of_clients;
+       
+		// This operation is atomic
+        return --number_of_clients;
     }
 } // namespace shmem
