@@ -61,7 +61,7 @@ namespace oat {
         std::thread server_thread;
         std::mutex server_mutex;
         std::condition_variable serve_condition;
-        std::atomic<bool> running; // Server running, can be accessed from multiple threads
+        std::atomic<bool> running; // TODO: is this used? 
         oat::SharedCVMatHeader* shared_mat_header;
         oat::ServerState* shared_server_state;
         bool shared_object_created;

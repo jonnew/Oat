@@ -55,15 +55,14 @@ sudo apt-get install tmux
 
 ### Manual
 
-Simple tracker consists of a set of programs that communicate through shared memory to capture, process, and record video streams. Simple tracker works with two basic data types: `frames` and `positions`. 
+Oat components consist of a rich set of sub-commands that communicate through shared memory to capture, process, and record video streams. Oat compoents act on two basic data types: `frames` and `positions`. 
 
-* `frame` - a thread safe, shared-memory abstraction of a [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
-* `position` - a thread safe 2D position object.
+* `frame` - a shared-memory abstraction of a [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
+* `position` - 2D position type.
 
-Simple tracker components can be chained together to execute complicate data processing pipelines, with individual components executing largely in parallel. Data processing pipelines can be split and merged while maintaining thread-saftey and sample synchronization. For example, a script to detect a single object in a field might look like this:
+Oat components can be chained together to execute data processing pipelines, with individual components executing largely in parallel. Processing pipelines can be split and merged while maintaining thread-safety and sample synchronization. For example, a script to detect the position of a single object in pre-recorded video file might look like this:
 
 ```bash
-
 # Serve frames from a video file to the 'raw' stream
 oat frameserve file raw -f ./video.mpg &
 
@@ -71,7 +70,7 @@ oat frameserve file raw -f ./video.mpg &
 # Serve the result to the 'filt' stream
 oat framefilt bsub raw filt &
 
-# Perform HSV-based object detection on the 'filt' stream
+# Perform color-based object detection on the 'filt' stream
 # Serve the object positionto the 'pos' stream
 oat detect hsv filt pos &
 
@@ -82,18 +81,23 @@ oat decorate -p pos raw dec &
 # View the 'dec' stream
 oat view dec &
 
-# Record the 'dec' stream to the current directory
-oat record -i dec -f ./
+# Record the 'dec' and 'pos' streams to file in the current directory
+oat record -i dec -p pos -f ./
 
 ```
 This script has the following graphical representation:
 ```
-frameserve ──> framefilt ──> detect ──> decorate ───> viewer
+frameserve ──> framefilt ──> posidet ──> decorate ───> view
            ╲                           ╱         ╲
-	         ─────────────────────────             ─> record   	
+	         ─────────────────────────             ──> record   	
 ```
 
-Each component of the simple-tracker project is an executable defined by its input/output signature. Below, the signature, usage information, examples, and configuration options are provided for each component.
+Each component of Oat is a subcommand defined by a general input/output type signature. Below, the signature, usage information, examples, and configuration options are provided for each component. 
+
+TODO: Note the general structure to specify a particular algorithm and parameter set.
+```
+oat <subcommand> [TYPE] [IO spec] [CONFIGURATION]
+```
 
 #### `frameserve`
 Video frame server. Serves video streams to named shard memory from physical devices (e.g. webcam or gige camera) or from disk.
@@ -131,13 +135,15 @@ CONFIGURATION:
 
 ##### Example
 ```bash
-# Serve from a webcam using the default camera bus 
+# Serve to the 'wraw' stream from a webcam 
 oat frameserve wcam wraw 
 
-# Stream from a point-grey GIGE camera
+# Stream to the 'graw' stream from a point-grey GIGE camera
+# using the gige_config tag from the config.toml file
 oat frameserve gige graw -c config.toml -k gige_config
 
-# Serve from a previously recorded file
+# Serve to the 'fraw' stream from a previously recorded file
+# using the file_config tag from the config.toml file
 oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ```
 
@@ -204,6 +210,19 @@ Position detector. Detects object position within a frame stream using one of se
           ┌─────────┐
 frame ──> │ posidet │ ──> position
           └─────────┘
+```
+
+##### Example
+```bash
+# Use color-based object detection on the 'raw' frame stream 
+# publish the result to the 'cpos' position stream
+# Use detector settings supplied by the hsv_config tag in config.toml
+oat posidet hsv raw cpos -c config.toml -k hsv_config
+
+# Use motion-based object detection on the 'raw' frame stream 
+# publish the result to the 'mpos' position stream
+oat posidet diff raw mpos  
+
 ```
 
 #### `posifilt`

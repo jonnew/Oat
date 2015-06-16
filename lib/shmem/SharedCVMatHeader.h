@@ -34,7 +34,7 @@ namespace oat {
         boost::interprocess::interprocess_semaphore write_barrier;
         boost::interprocess::interprocess_semaphore read_barrier;
         boost::interprocess::interprocess_semaphore new_data_barrier;
-        size_t client_read_count;
+        size_t client_read_count; // TODO: Is this used? Should it be private?
 
         void buildHeader(boost::interprocess::managed_shared_memory& shared_mem, const cv::Mat& model);
         void attachMatToHeader(boost::interprocess::managed_shared_memory& shared_mem, cv::Mat& mat);
