@@ -64,10 +64,10 @@ int main(int argc, char *argv[]) {
         config.add_options()
                 ("filename,n", po::value<std::string>(&file_name),
                 "The base snapshot file name.\n"
-                " - The the name of the SOURCE for this viewer will be appended to this name.\n"
-                " - The timestamp of the snapshot will be prepended to this name.")
+                "The the name of the SOURCE for this viewer will be appended to this name.\n"
+                "The timestamp of the snapshot will be prepended to this name.")
                 ("folder,f", po::value<std::string>(&save_path),
-                "The path to the folder to which the video stream and position information will be saved.")
+				 "The folder to which snapshots will be saved.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");

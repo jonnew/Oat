@@ -9,4 +9,4 @@ add_executable (oat-detect ${oat-detect_SOURCE})
 target_link_libraries (oat-detect shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
 	
 # Installation
-install (TARGETS oat-detect DESTINATION ../../oat/libexec COMPONENT oat-processors)
+install (TARGETS oat-posidet DESTINATION ../../oat/libexec COMPONENT oat-processors)

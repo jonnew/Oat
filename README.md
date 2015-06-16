@@ -65,25 +65,25 @@ Simple tracker components can be chained together to execute complicate data pro
 ```bash
 
 # Serve frames from a video file to the 'raw' stream
-frameserve file raw -f ./video.mpg &
+oat frameserve file raw -f ./video.mpg &
 
 # Perform background subtraction on the 'raw' stream 
 # Serve the result to the 'filt' stream
-framefilt bsub raw filt &
+oat framefilt bsub raw filt &
 
 # Perform HSV-based object detection on the 'filt' stream
 # Serve the object positionto the 'pos' stream
-detect hsv filt pos &
+oat detect hsv filt pos &
 
 # Decorate the 'raw' stream with the detected position form the `pos` stream
 # Serve the decorated images to the 'dec' stream
-decorate -p pos raw dec &
+oat decorate -p pos raw dec &
 
 # View the 'dec' stream
-view dec &
+oat view dec &
 
 # Record the 'dec' stream to the current directory
-record -i dec -f ./
+oat record -i dec -f ./
 
 ```
 This script has the following graphical representation:
@@ -93,7 +93,7 @@ frameserve ──> framefilt ──> detect ──> decorate ───> viewer
 	         ─────────────────────────             ─> record   	
 ```
 
-Each component of the simple-tracker project is an executable defined by its input/output signature. Here is each component, with a corresponding IO signature. Below, the signature, usage information, example usage, and configuration options are provided for each component.
+Each component of the simple-tracker project is an executable defined by its input/output signature. Below, the signature, usage information, examples, and configuration options are provided for each component.
 
 #### `frameserve`
 Video frame server. Serves video streams to named shard memory from physical devices (e.g. webcam or gige camera) or from disk.
@@ -107,18 +107,18 @@ Video frame server. Serves video streams to named shard memory from physical dev
 
 ##### Usage
 ```
-Usage: frameserve [OPTIONS]
+Usage: frameserve [INFO]
    or: frameserve TYPE SINK [CONFIGURATION]
 
 SINK
   The name of the memory segment to stream to.
 
 TYPE
-  'wcam': Onboard or USB webcam.
-  'gige': Point Grey GigE camera.
-  'file': Stream video from file.
+  wcam: Onboard or USB webcam.
+  gige: Point Grey GigE camera.
+  file: Stream video from file.
 
-OPTIONS:
+INFO:
   --help                    Produce help message.
   -v [ --version ]          Print version information.
 
@@ -132,13 +132,13 @@ CONFIGURATION:
 ##### Example
 ```bash
 # Serve from a webcam using the default camera bus 
-frameserve wcam wraw 
+oat frameserve wcam wraw 
 
 # Stream from a point-grey GIGE camera
-frameserve gige graw -c config.toml -k gige_config
+oat frameserve gige graw -c config.toml -k gige_config
 
 # Serve from a previously recorded file
-frameserve file fraw -f ./video.mpg -c config.toml -k file_config
+oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ```
 
 ##### Configuration
@@ -146,19 +146,19 @@ frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ###### `TYPE=gige`
 
 - `index [+int]` User specified camera index. Useful in multi-camera imaging configurations.
-- `exposure_ [float]` Automatically adjust both shutter and gain to achieve given exposure. Specified in dB.
-- `shutter_ [+int]` Shutter time in milliseconds. Specifying `exposure` overrides this option.
-- `gain_ [float]` Sensor gain value. Specifying `exposure` overrides this option.
-- `white_bal_ [{+int, +int}]`
-- `roi_ [{+int, +int, +int, +int}]`
-- `trigger_on_ [bool]`
-- `triger_polarity_ [bool]`
-- `trigger_mode_ [+int]`
+- `exposure [float]` Automatically adjust both shutter and gain to achieve given exposure. Specified in dB.
+- `shutter [+int]` Shutter time in milliseconds. Specifying `exposure` overrides this option.
+- `gain [float]` Sensor gain value. Specifying `exposure` overrides this option.
+- `white_bal [{+int, +int}]`
+- `roi [{+int, +int, +int, +int}]`
+- `trigger_on [bool]`
+- `triger_polarity [bool]`
+- `trigger_mode [+int]`
 
 ###### `TYPE=file`
 
-- `_frame_rate_ [float]` Frame rate in frames per second
-- `_roi_ [{+int, +int, +int, +int}]`
+- `frame_rate [float]` Frame rate in frames per second
+- `roi [{+int, +int, +int, +int}]`
 
 #### `view`
 Frame viewer. Displays video stream from named shard memory in a window. Also permits the user to take snapshots of the viewed stream.
@@ -172,23 +172,23 @@ frame ──> │ view │
 
 ##### Usage
 ```
-Usage: viewer [OPTIONS]
-   or: viewer [CONFIGURATION] SOURCE
+Usage: viewer [INFO]
+   or: viewer SOURCE [CONFIGURATION] 
 
-OPTIONS:
+INFO:
   --help                 Produce help message.
   -v [ --version ]       Print version information.
 
 CONFIGURATION:
   -n [ --filename ] arg  The base snapshot file name.
-                          - The the name of the SOURCE for this viewer will be 
+                         The the name of the SOURCE for this viewer will be 
                          appended to this name.
-                          - The timestamp of the snapshot will be prepended to 
+                         The timestamp of the snapshot will be prepended to 
                          this name.
-  -f [ --folder ] arg    The path to the folder to which the video stream and 
-                         position information will be saved.
+  -f [ --folder ] arg    The folder to which snapshots will be saved
 
-```
+NOTE:
+  To take a snapshot of the currently displayed frame, press <kbd>s</kbd> while the display window is in focus.
 
 ##### Example
 ```bash
