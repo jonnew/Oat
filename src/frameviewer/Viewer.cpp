@@ -16,13 +16,12 @@
 
 #include "Viewer.h"
 
-#include <iostream>
+#include <ostream>
 #include <string>
 #include <boost/filesystem.hpp>
-#include <opencv2/core/core.hpp>
+#include <opencv2/core/mat.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "../../lib/shmem/SyncSharedMemoryObject.h"
 #include "../../lib/shmem/MatClient.h"
 
 namespace bfs = boost::filesystem;
