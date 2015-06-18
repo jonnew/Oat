@@ -25,8 +25,6 @@ namespace oat {
     , write_barrier(0)
     , read_barrier(0)
     , new_data_barrier(0)
-    , client_read_count(0)
-    , number_of_clients(0)
     , sample_number(0) { }
 
     void SharedCVMatHeader::writeSample(const uint32_t sample, const cv::Mat& value) {
@@ -49,16 +47,5 @@ namespace oat {
         mat.create(mat_size, type);
         mat.data = static_cast<uchar*> (shared_mem.get_address_from_handle(handle));
     }
-   
-    size_t SharedCVMatHeader::incrementClientCount(){
-        
-		// This operation is atomic
-        return ++number_of_clients;
-    }
-    
-    size_t SharedCVMatHeader::decrementClientCount(){
-       
-		// This operation is atomic
-        return --number_of_clients;
-    }
-} // namespace shmem
+
+} // namespace oat

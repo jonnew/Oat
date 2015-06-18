@@ -30,10 +30,10 @@ public:
 
     // Use a configuration file to specify parameters
     void configure(void); // Default options
-    void configure(std::string config_file, std::string key);
+    void configure(const std::string& config_file, const std::string& key);
 
-    void grabMat(void);
-    bool serveMat(void);
+    void grabFrame(cv::Mat& frame);
+    //bool serveMat(void);
     void fireSoftwareTrigger(void);
 
 private:

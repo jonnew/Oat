@@ -20,6 +20,7 @@
 #include <atomic>
 #include <opencv2/opencv.hpp>
 
+#include "../../lib/shmem/SharedMemoryManager.h"
 #include "../../lib/shmem/BufferedMatServer.h"
 
 /**
@@ -40,42 +41,64 @@ public:
      * Cameras must be able to serve cv::Mat frames.
      * @return running state. true = stream EOF (e.g. at end of file). false = stream not exhausted.
      */
-    virtual bool serveMat(void) = 0;
+    virtual bool serveFrame(void) {
+        
+        grabFrame(current_frame);
+        undistortFrame(); // TODO: move to frame filt
+        
+        if (!current_frame.empty()) {
+            
+            frame_sink.pushMat(current_frame, current_sample);
+            current_sample++;
+            
+            return false;
+        } else {
+            
+            stop();
+            return true;
+        }
+    };
     
     // Cameras allow image undistortion if parameters are provided
-    // TODO: This should probably be a framefilt component
-    void undistortMat(void) {
+    // TODO: This should absolutely be a framefilt component
+    void undistortFrame(void) {
         if (undistort_image) {
             cv::Mat undistorted_frame;
             cv::undistort(current_frame, undistorted_frame, camera_matrix, distortion_coefficients);
             current_frame = undistorted_frame;
         }
     }
-    
-    // Cameras must be able to obtain a cv::Mat from some source (physical camera, file, etc)
-    virtual void grabMat(void) = 0;
-    
+ 
     // Cameras must be configurable via file
     //virtual void configure(void) = 0;
     virtual void configure() = 0;
-    virtual void configure(std::string file_name, std::string key) = 0;
+    virtual void configure(const std::string& file_name, const std::string& key) = 0;
     
     cv::Mat get_current_frame(void) const { return current_frame; }
     virtual std::string get_name(void) const { return name; }
     
-    // Cameras must be interruptable by the user in a way that ensures shemem
+    // Cameras must be interruptable by the user in a way that ensures shmem
     // is freed
     void stop(void) { frame_sink.set_running(false); }
-    
+
 protected:
+        // Cameras must be able to obtain a cv::Mat from some source (physical camera, file, etc)
+    virtual void grabFrame(cv::Mat& frame) = 0;
     
+    // Cameras have a region of interest to crop images
+    cv::Rect region_of_interest;
+    
+    // TODO: Move to framefilt
+    // Camera matrix and distortion coefficients. Use to undistort image
+    bool undistort_image;
+    cv::Mat camera_matrix; // TODO: change to Matx
+    cv::Mat distortion_coefficients; // TODO: change to Matx
+   
+private:
     std::string name;
     
     // cv::Mat server for sending frames to shared memory
     oat::BufferedMatServer frame_sink;
-    
-    // Cameras have a region of interest to crop images
-    cv::Rect region_of_interest;
     
     // Currently acquired frame
     cv::Mat current_frame;
@@ -83,11 +106,6 @@ protected:
     // Current sample number  ( this does account for missed hardware triggers)
     uint32_t current_sample;
 
-    // Camera matrix and distortion coefficients. Use to undistort image
-    bool undistort_image;
-    cv::Mat camera_matrix; // TODO: change to Matx
-    cv::Mat distortion_coefficients; // TODO: change to Matx
-    
 };
 
 #endif	/* CAMERA_H */

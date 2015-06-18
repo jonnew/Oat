@@ -27,8 +27,8 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <opencv2/core/mat.hpp>
 
-#include "Signals.h"
 #include "SharedCVMatHeader.h"
+#include "SharedMemoryManager.h"
 
 namespace oat {
 
@@ -45,7 +45,7 @@ namespace oat {
         
         // Accessors 
         std::string get_name(void) const { return name; }
-        void set_running(bool value) { running = value; }
+        void set_running(bool value) {serve_thread_running = value; }
 
     private:
 
@@ -60,16 +60,16 @@ namespace oat {
         // Server threading
         std::thread server_thread;
         std::mutex server_mutex;
+        std::atomic<bool> serve_thread_running;
         std::condition_variable serve_condition;
-        std::atomic<bool> running; // TODO: is this used? 
         oat::SharedCVMatHeader* shared_mat_header;
-        oat::ServerState* shared_server_state;
+        oat::SharedMemoryManager* shared_mem_manager;
         bool shared_object_created;
         bool mat_header_constructed;
 
         int data_size; // Size of raw mat data in bytes
 
-        const std::string shmem_name, shobj_name, shsig_name;
+        const std::string shmem_name, shobj_name, shmgr_name;
         boost::interprocess::managed_shared_memory shared_memory;
 
         /**

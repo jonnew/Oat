@@ -24,7 +24,7 @@
 Decorator::Decorator(const std::vector<std::string>& position_source_names,
         const std::string& frame_source_name,
         const std::string& frame_sink_name) :
-  name(frame_sink_name)
+  name("decorator[" + frame_source_name + "->" + frame_sink_name + "]")
 , frame_source(frame_source_name)
 , frame_read_success(false)
 , client_idx(0)
@@ -54,27 +54,31 @@ Decorator::~Decorator() {
     }
 }
 
-void Decorator::decorateAndServeImage() {
+bool Decorator::decorateFrame() {
 
+    // Are all sources running?
+    bool sources_running = true;
+    
     // Get the image to be decorated
-    // TODO: for some reason, this must come before reading the current positions.
-    // If it comes, after, a deadlock will result. I don't know why, which is not
-    // good.
-    if (!frame_read_success)
+    if (!frame_read_success) {
         frame_read_success = frame_source.getSharedMat(current_frame);
+        sources_running &= (frame_source.getSourceRunState() == oat::ServerRunState::RUNNING);
+    }
+        
 
     // Get the current positions
     while (client_idx < position_sources.size() && decorate_position) {
 
         if (!(position_sources[client_idx]->getSharedObject(*source_positions[client_idx]))) {
-            return;
+            return sources_running;
         }
 
+        sources_running &= (position_sources[client_idx]->getSourceRunState() == oat::ServerRunState::RUNNING);
         client_idx++;
     }
 
     if (!frame_read_success) {
-        return;
+        return sources_running;
     }
     
     // Reset the position client read counter
@@ -86,6 +90,8 @@ void Decorator::decorateAndServeImage() {
 
     // Serve the finished product
     frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
+    
+    return sources_running;
 }
 
 void Decorator::drawSymbols() {
@@ -124,9 +130,9 @@ void Decorator::drawPosition() {
 
 void Decorator::drawHeadDirection() {
     for (auto position : source_positions) {
-        if (position->position_valid && position->head_direction_valid) {
-            cv::Point2d start = position->position - (head_dir_line_length * position->head_direction);
-            cv::Point2d end = position->position + (head_dir_line_length * position->head_direction);
+        if (position->position_valid && position->heading_valid) {
+            cv::Point2d start = position->position - (head_dir_line_length * position->heading);
+            cv::Point2d end = position->position + (head_dir_line_length * position->heading);
             cv::line(current_frame, start, end, cv::Scalar(255, 255, 255), 2, 8);
         }
     }

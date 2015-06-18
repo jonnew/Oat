@@ -27,9 +27,7 @@ class KalmanFilter2D : public PositionFilter {
 public:
     KalmanFilter2D(const std::string& position_source_name, const std::string& position_sink_name);
 
-    bool grabPosition(void);
-    void filterPosition(void);
-    void serveFilteredPosition(void);
+    oat::Position2D filterPosition(oat::Position2D& position_in);
 
     /**
      * Configure filter parameters using a configuration file.
@@ -62,6 +60,12 @@ private:
     bool found;
     int not_found_count;
     int not_found_count_threshold;
+    
+    // Filtered position
+    oat::Position2D filtered_position;
+
+    // tuning window name
+    std::string tuning_image_title;
 
     cv::KalmanFilter kf;
     void tune(void);

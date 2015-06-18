@@ -79,33 +79,28 @@ void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
     background_img = frame.clone();
     background_set = true;
 }
+
 /**
  * Subtract a previously set background image from an input image to produce
  * the output matrix.
  * 
  */
-oat::ServerRunState BackgroundSubtractor::filterAndServe() {
-    
+cv::Mat BackgroundSubtractor::filter(cv::Mat& frame) {
+
     // Only proceed with processing if we are getting a valid frame
-    if (frame_source.getSharedMat(current_frame)) {
+    if (background_set) {
 
-        if (background_set) {
-
-            try {
-                current_frame = current_frame - background_img;
-            } catch (cv::Exception& e) {
-                std::cout << "CV Exception: " << e.what() << "\n";
-            }
-
-        } else {
-
-            // First image is always used as the default background image
-            setBackgroundImage(current_frame);
+        try {
+            frame = frame - background_img;
+        } catch (cv::Exception& e) {
+            std::cout << "CV Exception: " << e.what() << "\n";
         }
 
-        // Push filtered frame forward, along with frame_source sample number
-        frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
+    } else {
+
+        // First image is always used as the default background image
+        setBackgroundImage(frame);
     }
-    
-    return frame_source.getServerRunState();
+
+    return frame;
 }

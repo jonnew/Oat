@@ -24,13 +24,13 @@
 
 namespace oat {
 
-     namespace bip = boost::interprocess;
+    namespace bip = boost::interprocess;
 
     MatClient::MatClient(const std::string source_name) :
       name(source_name)
     , shmem_name(source_name + "_sh_mem")
     , shobj_name(source_name + "_sh_obj")
-    , shsig_name(source_name + "_sh_sig")
+    , shsig_name(source_name + "_sh_mgr")
     , shared_object_found(false)
     , mat_attached_to_header(false)
     , read_barrier_passed(false) {
@@ -46,7 +46,7 @@ namespace oat {
     /**
      * Use shmem_name and shobj_name to find (or create) the requested shared cvmat
      */
-    void MatClient::findSharedMat() {
+    int MatClient::findSharedMat() {
 
 
         // TODO: I am currently using a static 10 MB block to store shared
@@ -63,7 +63,7 @@ namespace oat {
 
             shared_memory = bip::managed_shared_memory(bip::open_or_create, shmem_name.c_str(), total_bytes);
             shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
-            shared_server_state = shared_memory.find_or_construct<oat::ServerState>(shsig_name.c_str())();
+            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shsig_name.c_str())();
             
 
         } catch (bip::interprocess_exception& ex) {
@@ -75,7 +75,9 @@ namespace oat {
         
         // Make sure everyone using this shared memory knows that another client
         // has joined
-        number_of_clients = shared_mat_header->incrementClientCount();
+        number_of_clients = shared_mem_manager->incrementClientRefCount();
+        
+        return number_of_clients;
     }
 
     /**
@@ -121,7 +123,7 @@ namespace oat {
                 shared_mat_header->client_read_count++;
 
                 // If all clients have read, signal the barrier
-                if (shared_mat_header->client_read_count == shared_mat_header->get_number_of_clients()) {
+                if (shared_mat_header->client_read_count == shared_mem_manager->get_client_ref_count()) {
                     shared_mat_header->write_barrier.post();
                     shared_mat_header->client_read_count = 0;
                 }
@@ -146,9 +148,12 @@ namespace oat {
         }
     }
     
-    oat::ServerRunState MatClient::getServerRunState() {
+    oat::ServerRunState MatClient::getSourceRunState() {
         
-        return shared_server_state->get_state();
+        if (shared_object_found)
+            return shared_mem_manager->get_server_state();
+        else
+            return oat::ServerRunState::UNDEFINED;
     }
 
     void MatClient::detachFromShmem() {
@@ -156,22 +161,21 @@ namespace oat {
         if (shared_object_found) {
 
             // Make sure nobody is going to wait on a disposed object
-            number_of_clients = shared_mat_header->decrementClientCount();
+            number_of_clients = shared_mem_manager->decrementClientRefCount();
 
-			// If the client reference count is 0 and there is no server 
-			// atached to the shared mat, deallocate the shmem
-			if (number_of_clients == 0 && !shared_mat_header->is_server_attached()) {
+            // If the client reference count is 0 and there is no server 
+            // attached to the shared mat, deallocate the shmem
+            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::ServerRunState::RUNNING) {
 
-        		bip::shared_memory_object::remove(shmem_name.c_str());
+                bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG
-        		std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
+                std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
 #endif
-			} else {
+            } else {
 #ifndef NDEBUG
-            std::cout << oat::dbgMessage("Number of clients in \'" + shmem_name + "\' was decremented.\n");
+                std::cout << oat::dbgMessage("Number of clients in \'" + shmem_name + "\' was decremented.\n");
 #endif
-			}
+            }
         }
     }
-
 } // namespace shmem

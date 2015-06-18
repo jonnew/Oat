@@ -23,14 +23,9 @@ WebCam::WebCam(std::string frame_sink_name) :
 , cv_camera(0) {
 }
 
-void WebCam::grabMat() {
-    cv_camera >> current_frame;
-}
-
-bool WebCam::serveMat() {
-    frame_sink.pushMat(current_frame, current_sample++);
-    return false;
+void WebCam::grabFrame(cv::Mat& frame) {
+    cv_camera >> frame;
 }
 
 void WebCam::configure() { }
-void WebCam::configure(std::string file_name, std::string key) { }
+void WebCam::configure(const std::string& file_name, const std::string& key) { }

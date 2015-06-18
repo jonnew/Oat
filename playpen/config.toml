@@ -7,7 +7,7 @@
 
 # Camera (gige) -------------------------
 
-[maze_cam]
+[cam]
 index = 0 								# Index of camera on the bus
 exposure = -2.0							# EV
 shutter = 3 							# ms (ignored if exposure on)

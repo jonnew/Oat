@@ -17,31 +17,41 @@
 #include "Decorator.h"
 
 #include <string>
-#include <signal.h>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
+#include <csignal>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t done = 0;
+volatile sig_atomic_t quit = 0;
+volatile sig_atomic_t source_eof = 0;
 
 void run(Decorator* decorator) {
 
-    while (!done) {
-        decorator->decorateAndServeImage();
+    while (!quit && !source_eof) {
+        source_eof = decorator->decorateFrame();
     }
 }
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: decorate [META]\n"
-            << "   or: decorate FRAME_SOURCE FRAME_SINK [CONFIGURATION]\n"
-            << "Decorate the image provided by IMAGE_SOURCE using object position information from POSITION_SOURCES.\n"
-            << "Publish decorated image to IMAGE_SINK.\n\n"
+    std::cout << "Usage: decorate [INFO]\n"
+            << "   or: decorate SOURCE SINK [CONFIGURATION]\n"
+            << "Decorate the frames from SOURCE with, e.g., object positions and sample number.\n"
+            << "Publish decorated frames to SINK.\n\n"
+            << "SOURCE:\n"
+            << "  User supplied frame source name (e.g. raw).\n\n"
+            << "SINK:\n"
+            << "  User supplied frame sink name (e.g. dec).\n\n"
             << options << "\n";
 }
 
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
+}
+
 int main(int argc, char *argv[]) {
+    
+    std::signal(SIGINT, sigHandler);
 
     // The image source to which the viewer will be attached
     std::vector<std::string> position_sources;
@@ -50,10 +60,11 @@ int main(int argc, char *argv[]) {
     bool print_timestamp = false;
     bool print_sample_number = false;
     bool encode_sample_number = false;
+    po::options_description visible_options("OPTIONS");
 
     try {
 
-        po::options_description options("META");
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -113,13 +124,13 @@ int main(int argc, char *argv[]) {
         }
 
         if (!variable_map.count("framesource")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: at least a single FRAME_SOURCE must be specified. Exiting.\n";
             return -1;
         }
 
         if (!variable_map.count("framesink")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: at least a single FRAME_SINK must be specified. Exiting.\n";
             return -1;
         }
@@ -147,44 +158,24 @@ int main(int argc, char *argv[]) {
         std::cerr << "Exception of unknown type! " << std::endl;
     }
 
-    std::cout << "Decorator named \"" + frame_sink + "\" has started.\n";
-    std::cout << "COMMANDS:\n";
-    std::cout << "  x: Exit.\n";
-
     // Make the decorator
     Decorator decorator(position_sources, frame_source, frame_sink);
     decorator.set_print_timestamp(print_timestamp);
     decorator.set_print_sample_number(print_sample_number);
     decorator.set_encode_sample_number(encode_sample_number);
+    
+     // Tell user
+    std::cout << oat::whoMessage(decorator.get_name(),
+            "Listening to source " + oat::sourceText(frame_source) + ".\n")
+            << oat::whoMessage(decorator.get_name(),
+            "Steaming to sink " + oat::sinkText(frame_sink) + ".\n")
+            << oat::whoMessage(decorator.get_name(),
+            "Press CTRL+C to exit.\n");
 
-    // Two threads - one for user interaction, the other
-    // for processing
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &decorator));
-    sleep(1);
-
-    // Start the user interface
-    while (!done) {
-
-        char user_input;
-        std::cin >> user_input;
-
-        switch (user_input) {
-            case 'x':
-            {
-                done = true;
-                break;
-            }
-            default:
-                std::cout << "Invalid selection. Try again.\n";
-                break;
-        }
-    }
-
-    // Join processing and UI threads
-    thread_group.join_all();
-
-    std::cout << "Decorator named \"" + decorator.get_name() + "\" is exiting." << std::endl;
+    run(&decorator);
+    
+    // Tell user
+    std::cout << oat::whoMessage(decorator.get_name(), "Exiting.\n");
 
     // Exit
     return 0;

@@ -18,30 +18,36 @@
 
 #include <algorithm>
 #include <string>
-#include <signal.h>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
+#include <csignal>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t done = 0;
-
-void run(Recorder* recorder) {
-
-    while (!done) {
-        recorder->writeStreams();
-    }
-}
+volatile sig_atomic_t quit = 0;
+volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: record [OPTIONS]\n"
+    std::cout << "Usage: record [INFO]\n"
               << "   or: record [CONFIGURATION]\n"
-              << "Record frame or position streams.\n\n"
+              << "Record frame and/or position streams.\n\n"
               << options << "\n";
 }
 
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
+}
+
+void run(Recorder* recorder) {
+
+    while (!quit && !source_eof) {
+        source_eof = recorder->writeStreams();
+    }
+}
+
 int main(int argc, char *argv[]) {
+    
+    std::signal(SIGINT, sigHandler);
 
     std::vector<std::string> frame_sources;
     std::vector<std::string> position_sources;
@@ -51,7 +57,7 @@ int main(int argc, char *argv[]) {
 
     try {
 
-        po::options_description options("OPTIONS");
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -73,7 +79,7 @@ int main(int argc, char *argv[]) {
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
                 ;
 
-        po::options_description all_options("ALL OPTIONS");
+        po::options_description all_options("OPTIONS");
         all_options.add(options).add(configuration);
 
         po::variables_map variable_map;
@@ -149,41 +155,39 @@ int main(int argc, char *argv[]) {
         std::cerr << "Exception of unknown type! " << std::endl;
     }
 
-    std::cout << "Recorder started.\n";
-    std::cout << "COMMANDS:\n";
-    std::cout << "  x: Exit.\n";
-
     // Make the decorator
     Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date);
 
-    // Two threads - one for user interaction, the other
-    // for processing
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, &recorder));
-    sleep(1);
+    // Tell user
+    if (!frame_sources.empty()) {
 
-    // Start the user interface
-    while (!done) {
+        std::cout << oat::whoMessage(recorder.get_name(),
+                "Listening to frame sources ");
 
-        char user_input;
-        std::cin >> user_input;
+        for (auto s : frame_sources)
+            std::cout << oat::sourceText(s) << " ";
 
-        switch (user_input) {
-            case 'x':
-            {
-                done = true;
-                break;
-            }
-            default:
-                std::cout << "Invalid selection. Try again.\n";
-                break;
-        }
+        std::cout << ".\n";
     }
 
-    // Join processing and UI threads
-    thread_group.join_all();
+    if (!position_sources.empty()) {
 
-    std::cout << "Recorder is exiting." << std::endl;
+        std::cout << oat::whoMessage(recorder.get_name(),
+                "Listening to position sources ");
+
+        for (auto s : position_sources)
+            std::cout << oat::sourceText(s) << " ";
+
+        std::cout << ".\n";
+    }
+    
+    std::cout << oat::whoMessage(recorder.get_name(), 
+                 "Press CTRL+C to exit.\n");
+
+    run(&recorder);
+    
+    // Tell user
+    std::cout << oat::whoMessage(recorder.get_name(), "Exiting.\n");
 
     // Exit
     return 0;

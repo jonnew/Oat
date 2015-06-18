@@ -70,25 +70,20 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
     }
 }
 
-oat::ServerRunState FrameMasker::filterAndServe() {
+cv::Mat FrameMasker::filter(cv::Mat& frame) {
 
-    // Only proceed with processing if we are getting a valid frame
-    if (frame_source.getSharedMat(current_frame)) {
-        if (mask_set) {
 
-            try {
-                current_frame.setTo(0, roi_mask == 0);
+    if (mask_set) {
 
-            } catch (cv::Exception& e) {
-                std::cout << "CV Exception: " << e.what() << "\n";
-            }
+        try {
+            frame.setTo(0, roi_mask == 0);
+
+        } catch (cv::Exception& e) {
+            std::cout << "CV Exception: " << e.what() << "\n";
         }
-
-        // Push filtered frame forward, along with frame_source sample number
-        frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
     }
-    
-    return frame_source.getServerRunState();
+
+    return frame;
 }
 
 

@@ -14,17 +14,17 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "Viewer.h"
-
 #include <string>
 #include <csignal>
 #include <boost/program_options.hpp>
 
-#include "../../lib/shmem/Signals.h"
+#include "../../lib/utility/IOFormat.h"
+#include "Viewer.h"
 
 namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
+volatile sig_atomic_t source_eof = 0;
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int s) {
@@ -33,7 +33,9 @@ void sigHandler(int s) {
 
 void run(Viewer* viewer) {
 
-    while ((viewer->showImage() != oat::ServerRunState::END) && !quit) { }
+    while (!quit && !source_eof) {
+        source_eof = viewer->showImage();
+    }
 }
 
 void printUsage(po::options_description options) {
@@ -131,18 +133,20 @@ int main(int argc, char *argv[]) {
 
     // Make the viewer
     Viewer viewer(source, save_path, file_name);
-
-        // Tell user
-    std::cout << "\n"
-              << "Viewer has begun listening to source \"" + source + "\".\n"
-              << "Press 's' on the viewer window to take a snapshot of the currently displayed frame.\n"
-              << "Use CTRL+C to exit.\n";
+    
+    // Tell user
+    std::cout << oat::whoMessage(viewer.get_name(),
+              "Listening to source " + oat::sourceText(source) + ".\n")
+              << oat::whoMessage(viewer.get_name(),
+              "Press 's' on the viewer window to take a snapshot.\n")
+              << oat::whoMessage(viewer.get_name(),
+              "Press CTRL+C to exit.\n");
 
     // Infinite loop until ctrl-c or end of stream signal
     run(&viewer);
 
     // Tell user
-    std::cout << "Viewer is exiting." << std::endl;
+    std::cout << oat::whoMessage(viewer.get_name(), "Exiting.\n");
 
     // Exit
     return 0;

@@ -24,10 +24,11 @@
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/SMServer.h"
+#include "../../lib/shmem/SyncSharedMemoryObject.h"
 
 /**
  * Abstract base class to be implemented by any object detector within the 
- * Simple Tracker project. Detector2D's are defined as classes used to indentify
+ * Simple Tracker project. Detector2D's are defined as classes used to identify
  * the _2D_ position of an object within images provided by a frame SOURCE and to
  * publish these detected _2D_ positions to SINK.
  * @param image_source_name Image SOURCE name
@@ -36,55 +37,57 @@
 class Detector2D {
 public:
 
-    Detector2D(std::string image_source_name, std::string position_sink_name) :
-      image_source(image_source_name)
+    Detector2D(const std::string& image_source_name, const std::string& position_sink_name) :
+      name("posidet[" + image_source_name + "->" + position_sink_name + "]")
+    , frame_source(image_source_name)
     , position_sink(position_sink_name)
-    , tuning_image_title(position_sink_name + "_tuning")
-    , tuning_windows_created(false)
-    , tuning_on(false) { }
+    , tuning_on(false) {
+    }
 
     // Detector must be able to find an object
-    virtual void findObjectAndServePosition(void) = 0;
+    bool process(void) {
+
+        // If we are able to get a an image
+        if (frame_source.getSharedMat(current_frame)) {
+
+            position_sink.pushObject(detectPosition(current_frame), 
+                                     frame_source.get_current_sample_number());
+        }
+        
+        // If server state is END, return true
+        return (frame_source.getSourceRunState() == oat::ServerRunState::END);
+    }
 
     // Detectors must be configurable via file
-    virtual void configure(std::string file_name, std::string config_key) = 0;
+    virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
 
     // Accessible from UI thread
-    void set_tune_mode(bool value) {
-        tuning_mutex.lock();
-        tuning_on = value;
-        tuning_mutex.unlock();
-    }
-
-    bool get_tune_mode(void) {
-        tuning_mutex.lock();
-        return tuning_on;
-        tuning_mutex.unlock();
-    }
+    std::string get_name(void) const { return name; }
+    void set_tune_mode(bool value) { tuning_on = value; }
+    bool get_tune_mode(void) const { return tuning_on; }
 
 protected:
+    
+    // To be implemented by derived classes
+    virtual oat::Position2D detectPosition(cv::Mat& frame_in) = 0;
 
-    // Detector must implement method  sifting a threshold image to find objects
-    virtual void siftBlobs(void) = 0;
-
-    // Detectors must allow manual tuning
-    boost::mutex tuning_mutex; // Sync IO and processing thread, which can both manipulate the tuning state
-    bool tuning_on; // This is a shared resource and must be synchronized
-    bool tuning_windows_created;
-    const std::string tuning_image_title;
-    cv::Mat tune_image;
-    virtual void tune(void) = 0;
-    virtual void createTuningWindows(void) = 0;
-
-    // The detected object position
-    oat::Position2D object_position;
+    // Detectors can allow manual tuning of parameters using this flag
+    std::atomic<bool> tuning_on; // This is a shared resource and must be synchronized
+ 
+private:
+    
+    // Detector name
+    std::string name;
+    
+    // Current frame
+    cv::Mat current_frame;
 
     // The image source (Client side)
-    oat::MatClient image_source;
+    oat::MatClient frame_source;
 
     // The detected object position destination (Server side)
     oat::SMServer<oat::Position2D> position_sink;
-
+    
 };
 
 #endif	/* DETECTOR_H */

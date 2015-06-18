@@ -21,12 +21,26 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "../../lib/shmem/Signals.h"
 #include "MeanPosition2D.h"
 
 namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
+volatile sig_atomic_t source_eof = 0;
+
+void printUsage(po::options_description options) {
+    std::cout << "Usage: combiner [INFO]\n"
+              << "   or: combiner TYPE SOURCES SINK\n"
+              << "Combine positional information from two or more SOURCES.\n"
+              << "Publish combined position to SINK.\n\n"
+              << "TYPE\n"
+              << "  mean: Geometric mean of SOURCE positions\n\n"
+              << "SOURCES:\n"
+              << "  User supplied position source names (e.g. pos1 pos2).\n\n"
+              << "SINK:\n"
+              << "  User supplied position sink name (e.g. pos).\n\n"
+              << options << "\n";
+}
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int s) {
@@ -35,21 +49,10 @@ void sigHandler(int s) {
 
 void run(PositionCombiner* combiner) {
     
-    while (!quit) { combiner->combineAndServePosition(); }
-}
-
-void printUsage(po::options_description options) {
-    std::cout << "Usage: combiner [INFO]\n"
-              << "   or: combiner TYPE SOURCES SINK\n"
-              << "Combine positional information from two or more SMServer<Position> SOURCES.\n"
-              << "Publish processed object positions to a SMServer<Position> SINK.\n\n"
-              << "TYPE\n"
-              << "  mean: Geometric mean of SOURCE positions\n\n"
-              << "SOURCES:\n"
-              << "  User supplied position source names (e.g. pos1 pos2).\n\n"
-              << "SINK:\n"
-              << "  User supplied position sink name (e.g. pos).\n\n"
-              << options << "\n";
+    while (!quit && !source_eof) { 
+        
+        source_eof = combiner->process(); 
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -156,10 +159,10 @@ int main(int argc, char *argv[]) {
     // Tell user
     std::cout << oat::whoMessage(combiner->get_name(), "Listening to sources ");
     for (auto s : sources)
-        std::cout << oat::boldSource(s) << " ";          
+        std::cout << oat::sourceText(s) << " ";          
     std::cout << ".\n"
               << oat::whoMessage(combiner->get_name(),
-                 "Steaming to sink " + oat::boldSink(sink) + ".\n")
+                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
               << oat::whoMessage(combiner->get_name(), 
                  "Press CTRL+C to exit.\n");
     

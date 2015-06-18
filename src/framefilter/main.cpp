@@ -19,7 +19,7 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "../../lib/shmem/Signals.h"
+#include "../../lib/shmem/SharedMemoryManager.h"
 #include "FrameFilter.h"
 #include "BackgroundSubtractor.h"
 #include "FrameMasker.h"
@@ -27,17 +27,7 @@
 namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t server_eof = 0;
-
-// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
-    quit = 1;
-}
-
-void run(FrameFilter* filter) {
-    
-    while ((filter->filterAndServe() != oat::ServerRunState::END) && !quit) { }
-}
+volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options){
     std::cout << "Usage: framefilt [INFO]\n"
@@ -51,6 +41,18 @@ void printUsage(po::options_description options){
               << "SINK:\n"
               << "  User supplied sink name (e.g. filt).\n\n"
               << options << "\n";
+}
+
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
+}
+
+void run(FrameFilter* filter) {
+
+    while (!quit && !source_eof) {
+        source_eof = filter->processSample();
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -191,9 +193,9 @@ int main(int argc, char *argv[]) {
     
     // Tell user
     std::cout << oat::whoMessage(filter->get_name(), 
-                 "Listening to source " + oat::boldSource(source) + ".\n")
+                 "Listening to source " + oat::sourceText(source) + ".\n")
               << oat::whoMessage(filter->get_name(),
-                 "Steaming to sink " + oat::boldSink(sink) + ".\n")
+                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
               << oat::whoMessage(filter->get_name(), 
                  "Press CTRL+C to exit.\n");
     

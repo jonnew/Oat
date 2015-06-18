@@ -34,12 +34,12 @@ public:
 
     ~Decorator(void);
     
-    void decorateAndServeImage(void);
+    bool decorateFrame(void);
     
     //Accessors
-	void set_print_timestamp(bool value) { print_timestamp = value; }
-	void set_print_sample_number(bool value) { print_sample_number = value; }
-	void set_encode_sample_number(bool value) { encode_sample_number = value; }
+    void set_print_timestamp(bool value) { print_timestamp = value; }
+    void set_print_sample_number(bool value) { print_sample_number = value; }
+    void set_encode_sample_number(bool value) { encode_sample_number = value; }
     std::string get_name(void) const { return name; }
 
 private:

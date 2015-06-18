@@ -26,7 +26,7 @@
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/shmem/BufferedMatServer.h"
 
-HSVDetector2D::HSVDetector2D(std::string image_source_name, std::string position_sink_name,
+HSVDetector2D::HSVDetector2D(const std::string& image_source_name, const std::string& position_sink_name,
         int h_min_in, int h_max_in,
         int s_min_in, int s_max_in,
         int v_min_in, int v_max_in) :
@@ -50,7 +50,7 @@ Detector2D(image_source_name, position_sink_name)
     max_object_area = std::numeric_limits<double>::max(); //TODO: These are not being used and would be helpful, esp max_area!
 }
 
-HSVDetector2D::HSVDetector2D(std::string source_name, std::string pos_sink_name) :
+HSVDetector2D::HSVDetector2D(const std::string& source_name, const std::string& pos_sink_name) :
 HSVDetector2D::HSVDetector2D(source_name, pos_sink_name, 0, 256, 0, 256, 0, 256) {
 }
 
@@ -64,19 +64,18 @@ void HSVDetector2D::dilateSliderChangedCallback(int value, void* object) {
     hsv_detector->set_dilate_size(value);
 }
 
-void HSVDetector2D::findObjectAndServePosition() {
+oat::Position2D HSVDetector2D::detectPosition(cv::Mat& frame_in) {
 
     // If we are able to get a an image
-    if (image_source.getSharedMat(hsv_image)) {
+    hsv_image = frame_in;
+    cv::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
+    applyThreshold();
+    clarifyBlobs();
+    siftBlobs();
+    tune();
 
-        cv::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
-        applyThreshold();
-        clarifyBlobs();
-        siftBlobs();
-        tune();
+    return object_position;
 
-        position_sink.pushObject(object_position, image_source.get_current_sample_number());
-    }
 }
 
 void HSVDetector2D::applyThreshold() {
@@ -151,21 +150,21 @@ void HSVDetector2D::siftBlobs() {
     }
 }
 
-void HSVDetector2D::configure(std::string file_name, std::string key) {
+void HSVDetector2D::configure(const std::string& config_file, const std::string& config_key) {
 
     cpptoml::table config;
 
     try {
-        config = cpptoml::parse_file(file_name);
+        config = cpptoml::parse_file(config_file);
     } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << file_name << ": " << e.what() << std::endl;
+        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
     }
 
     try {
         // See if a camera configuration was provided
-        if (config.contains(key)) {
+        if (config.contains(config_key)) {
 
-            auto this_config = *config.get_table(key);
+            auto this_config = *config.get_table(config_key);
 
             if (this_config.contains("erode")) {
                 set_erode_size((int) (*this_config.get_as<int64_t>("erode")));
@@ -216,7 +215,7 @@ void HSVDetector2D::configure(std::string file_name, std::string key) {
             }
 
         } else {
-            std::cerr << "No HSV detector configuration named \"" + key + "\" was provided. Exiting." << std::endl;
+            std::cerr << "No HSV detector configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
             exit(EXIT_FAILURE);
         }
     } catch (const std::exception& e) {

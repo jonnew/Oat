@@ -51,6 +51,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         save_path = bfs::current_path().c_str();
     }
 
+    name = "recorder[" ;
     std::time_t raw_time;
     struct tm * time_info;
     char buffer[100];
@@ -63,9 +64,13 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
     // Setup position sources
     if (!position_source_names.empty()) {
 
-        for (auto &name : position_source_names) {
+        name += position_source_names[0];
+        if (position_source_names.size() > 1)
+            name += "...";
+        
+        for (auto &s : position_source_names) {
 
-            position_sources.push_back(new oat::SMClient<oat::Position2D>(name));
+            position_sources.push_back(new oat::SMClient<oat::Position2D>(s));
             source_positions.push_back(new oat::Position2D);
         }
 
@@ -112,6 +117,10 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
     // Create a video writer, file, and buffer for each image stream
     uint32_t idx = 0;
     if (!frame_source_names.empty()) {
+        
+        name += frame_source_names[0];
+        if (frame_source_names.size() > 1)
+            name += "...";
 
         for (auto &frame_source_name : frame_source_names) {
 
@@ -147,6 +156,8 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
     } else {
         frame_read_success = true;
     }
+    
+    name +="]";
 
 }
 
@@ -199,11 +210,19 @@ Recorder::~Recorder() {
     }
 }
 
-void Recorder::writeStreams() {
+bool Recorder::writeStreams() {
+    
+    // Are all sources running?
+    bool sources_running = true;
 
     while (frame_client_idx < frame_sources.size()) {
 
+        // Check if source is sill running
+        sources_running &= (frame_sources[frame_client_idx]->getSourceRunState()
+                == oat::ServerRunState::RUNNING);
+
         if (!(frame_read_success = (frame_sources[frame_client_idx]->getSharedMat(current_frame)))) {
+            
             break;
 
         } else {
@@ -220,16 +239,19 @@ void Recorder::writeStreams() {
 
     // Get current positions
     while (position_client_idx < position_sources.size()) {
+        
+        sources_running &= (position_sources[position_client_idx]->getSourceRunState()
+                == oat::ServerRunState::RUNNING);
 
         if (!(position_sources[position_client_idx]->getSharedObject(*source_positions[position_client_idx]))) {
-            return;
+            return sources_running;
         }
-
+        
         position_client_idx++;
     }
 
     if (!frame_read_success) {
-        return;
+        return sources_running;
     }
 
     // Reset the position client read counter
@@ -239,6 +261,8 @@ void Recorder::writeStreams() {
     // Write the frames to file
     //writeFramesToBuffer(); TOD: callback on write to buffer.
     writePositionsToFile();
+    
+    return sources_running;
 
 }
 

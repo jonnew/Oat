@@ -24,14 +24,10 @@
 HomographyTransform2D::HomographyTransform2D(const std::string& position_source_name, const std::string& position_sink_name) :
 PositionFilter(position_source_name, position_sink_name)
 , homography_valid(false)
-, homography(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0) { }
+, homography(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0) 
+, tuning_image_title(position_sink_name + "_tuning") { }
 
-bool HomographyTransform2D::grabPosition() {
-
-    return position_source.getSharedObject(raw_position);
-}
-
-void HomographyTransform2D::filterPosition() {
+oat::Position2D HomographyTransform2D::filterPosition(oat::Position2D& raw_position) {
     
     filtered_position = raw_position;
 
@@ -54,18 +50,15 @@ void HomographyTransform2D::filterPosition() {
 
     // Head direction is normalized and unit-free, and therefore
     // does not require conversion
-    // TODO: No, this is not true. what about angular distortion??
+    // TODO: No, this is not true. what about shear distortion??
     
     // Return value uses world coordinates
     if (homography_valid)
         filtered_position.coord_system = oat::WORLD;
+    
+    return filtered_position;
 }
 
-void HomographyTransform2D::serveFilteredPosition() {
-    
-    // Publish filtered position
-    position_sink.pushObject(filtered_position, position_source.get_current_time_stamp());
-}
 
 void HomographyTransform2D::configure(const std::string& config_file, const std::string& config_key) {
     

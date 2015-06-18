@@ -31,9 +31,9 @@ public:
     
     // Implement Camera interface
     void configure(void); 
-    void configure(std::string config_file, std::string key);
-    void grabMat(void);
-    bool serveMat(void);
+    void configure(const std::string& config_file, const std::string& config_key);
+    void grabFrame(cv::Mat& frame);
+    //bool serveMat(void);
     
 private:
     

@@ -81,7 +81,7 @@ void PGGigECam::configure() {
  * @param config_file The configuration file.
  * @param key The configuration key specifying options for this instance.
  */
-void PGGigECam::configure(std::string config_file, std::string key) {
+void PGGigECam::configure(const std::string& config_file, const std::string& key) {
 
     cpptoml::table config;
 
@@ -794,18 +794,10 @@ cv::Mat PGGigECam::imageToMat() {
 
 }
 
-void PGGigECam::grabMat() {
+void PGGigECam::grabFrame(cv::Mat& frame) {
 
     grabImage();
-    current_frame = imageToMat();
-}
-
-bool PGGigECam::serveMat() {
-
-    // Write frame to shared memory and notify all client processes
-    // that a new frame is available. Do not block, though.
-    frame_sink.pushMat(current_frame, current_sample++);
-    return false;
+    frame = imageToMat();
 }
 
 // PRIVATE

@@ -23,6 +23,7 @@
 #include <boost/lockfree/spsc_queue.hpp>
 
 #include "SyncSharedMemoryObject.h"
+#include "SharedMemoryManager.h"
 
 namespace oat {
 
@@ -45,7 +46,8 @@ namespace oat {
 
         // Shared memory and managed object names
         SharedMemType<T>* shared_object; // Defaults to oat::SyncSharedMemoryObject<T>
-        std::string shmem_name, shobj_name;
+        oat::SharedMemoryManager* shared_mem_manager;
+        std::string shmem_name, shobj_name, shmgr_name;
         bip::managed_shared_memory shared_memory;
         bool shared_object_created;
 
@@ -59,6 +61,7 @@ namespace oat {
       name(sink_name)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
+    , shmgr_name(sink_name + "_sh_mgr")
     , shared_object_created(false) {
         
         createSharedObject();
@@ -72,6 +75,9 @@ namespace oat {
     SMServer<T, SharedMemType>::~SMServer() {
 
         notifySelf();
+        
+        // Detach this server from shared mat header
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
 
         // Remove_shared_memory on object destruction
         bip::shared_memory_object::remove(shmem_name.c_str());
@@ -89,11 +95,11 @@ namespace oat {
             shared_memory = bip::managed_shared_memory(
                     bip::open_or_create,
                     shmem_name.c_str(),
-                    sizeof (SharedMemType<T>) + 1024);
+                    sizeof(SharedMemType<T>) + sizeof(oat::SharedMemoryManager) + 1024);
 
             // Make the shared object
             shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
-
+            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
 
         } catch (bip::interprocess_exception& ex) {
             std::cerr << ex.what() << '\n';
@@ -101,6 +107,7 @@ namespace oat {
         }
 
         shared_object_created = true;
+        shared_mem_manager->set_server_state(oat::ServerRunState::RUNNING);
     }
 
     /**
@@ -130,18 +137,18 @@ namespace oat {
         /* END CRITICAL SECTION */
 
         // Tell each client they can proceed
-        for (int i = 0; i < shared_object->number_of_clients; ++i) {
+        for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
             shared_object->read_barrier.post();
         }
 
         // Only wait if there is a client
-        if (shared_object->number_of_clients) {
+        if (shared_mem_manager->get_client_ref_count()) {
             shared_object->write_barrier.wait();
         }
 
         // Tell each client they can proceed now that the write_barrier
         // has been passed
-        for (int i = 0; i < shared_object->number_of_clients; ++i) {
+        for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
             shared_object->new_data_barrier.post();
         }
     }

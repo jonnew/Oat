@@ -17,12 +17,10 @@
 #include <vector>
 #include <cmath>
 
-#include "../../lib/shmem/Signals.h"
 #include "MeanPosition2D.h"
 
 MeanPosition2D::MeanPosition2D(std::vector<std::string> position_source_names, std::string sink_name) :
   PositionCombiner(position_source_names, sink_name) { }
-
 
 /**
  * This function calculates the geometric mean of all source positions.
@@ -35,7 +33,7 @@ oat::Position2D MeanPosition2D::combinePositions(const std::vector<oat::Position
     oat::Position2D combined_position;
     combined_position.position = oat::Point2D(0,0);
     combined_position.velocity = oat::Velocity2D(0,0);
-    combined_position.head_direction = oat::UnitVector2D(0,0);
+    combined_position.heading = oat::UnitVector2D(0,0);
     
     // Averaging operation
     for (auto pos : sources) {
@@ -53,22 +51,22 @@ oat::Position2D MeanPosition2D::combinePositions(const std::vector<oat::Position
             combined_position.velocity_valid = false;
         
         // Head direction
-        if (pos->head_direction_valid)
-            combined_position.head_direction += pos->head_direction;
+        if (pos->heading_valid)
+            combined_position.heading += pos->heading;
         else
-           combined_position.head_direction_valid = false; 
+           combined_position.heading_valid = false; 
         
     }
     
     // Renormalize head-direction unit vector
-    if (combined_position.head_direction_valid)
+    if (combined_position.heading_valid)
     {
         double mag = std::sqrt(
-                std::pow(combined_position.head_direction.x, 2.0) +
-                std::pow(combined_position.head_direction.y, 2.0));
+                std::pow(combined_position.heading.x, 2.0) +
+                std::pow(combined_position.heading.y, 2.0));
 
-        combined_position.head_direction = 
-                combined_position.head_direction/mag;
+        combined_position.heading = 
+                combined_position.heading/mag;
     }
     
     return combined_position;

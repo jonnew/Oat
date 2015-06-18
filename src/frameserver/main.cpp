@@ -27,7 +27,7 @@
 namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t server_eof = 0;
+volatile sig_atomic_t source_eof = 0;
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int s) {
@@ -36,10 +36,13 @@ void sigHandler(int s) {
 
 void run(Camera* camera) {
 
-    while (!quit && !server_eof) {
-        camera->grabMat();
-        camera->undistortMat();
-        server_eof = camera->serveMat();
+    while (!quit && !source_eof) {
+        
+        if (quit) {
+            camera->stop();
+        }
+        
+        source_eof = camera->serveFrame();
     }
 }
 
@@ -198,7 +201,7 @@ int main(int argc, char *argv[]) {
     
         // Tell user
     std::cout << oat::whoMessage(camera->get_name(),
-                 "Steaming to sink " + oat::boldSink(sink) + ".\n")
+                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
               << oat::whoMessage(camera->get_name(), 
                  "Press CTRL+C to exit.\n");
     

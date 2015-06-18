@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   Signals.h
+//* File:   SyncSharedMemoryManager.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -17,32 +17,46 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef SIGNALS_H
-#define	SIGNALS_H
+#ifndef SHAREDMEMORYMANAGER_H
+#define	SHAREDMEMORYMANAGER_H
 
 #include <atomic>
 
 namespace oat {
 
     enum class ServerRunState {
-        
-        END = -1, 
-        UNDEFINED = 0, 
-        RUNNING = 1, 
+        END = -1,
+        UNDEFINED = 0,
+        RUNNING = 1,
         ERROR = 2
     };
-    
-    class ServerState {
-        
+
+
+    class SharedMemoryManager {
     public:
-        ServerRunState get_state(void) const { return server_state; }  
-        void set_state(ServerRunState value) { server_state = value; }
+
+        SharedMemoryManager() :
+          server_state(ServerRunState::UNDEFINED)
+        , client_reference_count(0) { }
+
+        // These operations are atomic
+        void set_server_state(ServerRunState value) { server_state = value; }
+        ServerRunState get_server_state(void) const { return server_state; }
+        size_t decrementClientRefCount() { return --client_reference_count; }
+        size_t incrementClientRefCount() { return ++client_reference_count; }
+        size_t get_client_ref_count(void) const { return client_reference_count; }
         
     private:
-        std::atomic<ServerRunState> server_state {ServerRunState::UNDEFINED};
-    };
-    
-}
 
-#endif	/* SIGNALS_H */
+        std::atomic<ServerRunState> server_state;
+
+        // Number of clients sharing this shared memory
+        std::atomic<size_t> client_reference_count;
+
+    };
+
+} // namespace oat
+
+
+#endif	/* SHAREDMEMORYMANAGER_H */
 

@@ -48,9 +48,13 @@ public:
     void configure(const std::string& config_file, const std::string& config_key);
 
     // Recorder must be able to write all requested streams to file(s)
-    void writeStreams(void);
+    bool writeStreams(void);
+    
+    std::string get_name(void) { return name; }
 
 private:
+    
+    std::string name;
 
     // General file name formatting
     std::string save_path;
@@ -77,7 +81,7 @@ private:
     cv::Mat current_frame;
     std::vector<oat::MatClient>::size_type frame_client_idx;
     bool frame_read_success;
-    static const int frame_write_buffer_size = 100;
+    static const int frame_write_buffer_size = 128;
 
     std::vector< std::thread* > frame_write_threads;
     std::vector< std::mutex* > frame_write_mutexes;

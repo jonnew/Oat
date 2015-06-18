@@ -12,11 +12,11 @@
 
 class DifferenceDetector2D : public Detector2D {
 public:
-    DifferenceDetector2D(std::string image_source_name, std::string position_sink_name);
+    DifferenceDetector2D(const std::string& image_source_name, const std::string& position_sink_name);
     
     // Detector2D's public interface
-    void configure(std::string file_name, std::string key);
-    void findObjectAndServePosition(void);
+    void configure(const std::string& config_file, const std::string& key);
+    oat::Position2D detectPosition(cv::Mat& frame_in);
 
 private:
     
@@ -28,21 +28,30 @@ private:
     // Object detection
     double object_area;
     
+    // The detected object position
+    oat::Position2D object_position;
+    
     // Detector parameters
     int difference_intensity_threshold;
     cv::Size blur_size;
     bool blur_on;
     
-    
+    // Tuning stuff
+    bool tuning_windows_created;
+    const std::string tuning_image_title;
+    cv::Mat tune_image;
+    void tune(void);
+    void createTuningWindows(void);
+    static void blurSliderChangedCallback(int, void*);
+
+    // Processing segregation 
+    // TODO: These are terrible - no IO sigature other than void -> void,
+    // no exceptions, etc
     void applyThreshold(void);
     void set_blur_size(int value);
     void siftBlobs(void);
     void servePosition(void);
 
-    void tune(void);
-    void createTuningWindows(void);
-    
-    static void blurSliderChangedCallback(int, void*);
 };
 
 #endif	/* DIFFERENCEDETECTOR_H */

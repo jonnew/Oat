@@ -32,48 +32,37 @@ FileReader::FileReader(std::string file_name_in, std::string image_sink_name, co
     configure();
 }
 
-void FileReader::grabMat() {
+void FileReader::grabFrame(cv::Mat& frame) {
     
-    file_reader >> current_frame;
+    file_reader >> frame;
     
     // Crop if necessary
     if (use_roi) {
-        current_frame = current_frame(region_of_interest);
+        frame = frame(region_of_interest);
     }
-}
-
-bool FileReader::serveMat() {
     
-    if (!current_frame.empty()) {
-        frame_sink.pushMat(current_frame, current_sample);
-        current_sample++;
-        usleep(frame_period_in_us);
-        return false;
-    } else {
-        frame_sink.set_running(false); //TODO: signal close somehow
-        return true;
-    }
+    usleep(frame_period_in_us);
 }
 
 void FileReader::configure() {
     calculateFramePeriod();
 }
 
-void FileReader::configure(std::string file_name, std::string key) {
+void FileReader::configure(const std::string& config_file, const std::string& config_key) {
 
     cpptoml::table config;
 
     try {
-        config = cpptoml::parse_file(file_name);
+        config = cpptoml::parse_file(config_file);
     } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << file_name << ": " << e.what() << std::endl;
+        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
     }
 
     try {
         // See if a camera configuration was provided
-        if (config.contains(key)) {
+        if (config.contains(config_key)) {
 
-            auto this_config = *config.get_table(key);
+            auto this_config = *config.get_table(config_key);
 
             if (this_config.contains("frame_rate")) {
                 frame_rate_in_hz = (double) (*this_config.get_as<double>("frame_rate"));
@@ -118,7 +107,7 @@ void FileReader::configure(std::string file_name, std::string key) {
             }
 
         } else {
-            std::cerr << "No HSV detector configuration named \"" + key + "\" was provided. Exiting." << std::endl;
+            std::cerr << "No HSV detector configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
             exit(EXIT_FAILURE);
         }
     } catch (const std::exception& e) {

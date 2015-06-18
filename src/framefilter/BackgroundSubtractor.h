@@ -26,7 +26,7 @@ public:
 
     void setBackgroundImage(const cv::Mat&);
     void configure(const std::string& config_file, const std::string& config_key);
-    oat::ServerRunState filterAndServe(void);
+    cv::Mat filter(cv::Mat& frame);
     
 private:
 

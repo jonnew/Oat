@@ -21,7 +21,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "Signals.h"
+#include "SharedMemoryManager.h"
 #include "SharedCVMatHeader.h"
 
 namespace oat {
@@ -32,7 +32,7 @@ namespace oat {
       name(sink_name)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
-    , shsig_name(sink_name + "_sh_sig")
+    , shmgr_name(sink_name + "_sh_mgr")
     , shared_object_created(false)
     , mat_header_constructed(false) {
 
@@ -45,8 +45,8 @@ namespace oat {
 
         notifySelf();
 
-		// Detach this server from shared mat header
-		shared_mat_header->set_server_attached(false);
+        // Detach this server from shared mat header
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
 
         // Remove_shared_memory on object destruction
         bip::shared_memory_object::remove(shmem_name.c_str());
@@ -74,7 +74,7 @@ namespace oat {
                     total_bytes);
 
             shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
-            shared_server_state = shared_memory.find_or_construct<oat::ServerState>(shsig_name.c_str())();
+            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
 
         } catch (bip::interprocess_exception &ex) {
             std::cerr << ex.what() << '\n';
@@ -82,8 +82,7 @@ namespace oat {
         }
 
         shared_object_created = true;
-		shared_mat_header->set_server_attached(true);
-        setSharedServerState(oat::ServerRunState::RUNNING);
+        shared_mem_manager->set_server_state(oat::ServerRunState::RUNNING);
     }
 
     /**
@@ -113,7 +112,7 @@ namespace oat {
         shared_mat_header->writeSample(sample_number, mat);
 
         // Tell each client they can proceed
-        for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
+        for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
             shared_mat_header->read_barrier.post();
         }
 
@@ -121,13 +120,13 @@ namespace oat {
         /* END CRITICAL SECTION */
 
         // Only wait if there is a client
-        if (shared_mat_header->get_number_of_clients()) {
+        if (shared_mem_manager->get_client_ref_count()) {
             shared_mat_header->write_barrier.wait();
         }
 
         // Tell each client they can proceed now that the write_barrier
         // has been passed
-        for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
+        for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
             shared_mat_header->new_data_barrier.post();
         }
 
@@ -139,12 +138,5 @@ namespace oat {
             shared_mat_header->write_barrier.post();
         }
     }
-    
-    void MatServer::setSharedServerState(oat::ServerRunState state) {
-
-        if (shared_object_created) {
-            shared_server_state->set_state(state);
-        }
-    }   
 
 }

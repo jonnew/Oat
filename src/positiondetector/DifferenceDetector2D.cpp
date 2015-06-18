@@ -22,40 +22,40 @@
 
 #include "../../lib/cpptoml/cpptoml.h"
 
-DifferenceDetector2D::DifferenceDetector2D(std::string image_source_name, std::string position_sink_name) :
+DifferenceDetector2D::DifferenceDetector2D(const std::string& image_source_name, const std::string& position_sink_name) :
 Detector2D(image_source_name, position_sink_name)
+, tuning_image_title(position_sink_name + "_tuning")
+, tuning_windows_created(false)
 , last_image_set(false) {
 
     set_blur_size(2);
 }
 
-void DifferenceDetector2D::findObjectAndServePosition() {
+oat::Position2D DifferenceDetector2D::detectPosition(cv::Mat& frame_in) {
 
-    // If we are able to get a an image
-    if (image_source.getSharedMat(this_image)) {
-        applyThreshold();
-        siftBlobs();
-        tune();
-
-        position_sink.pushObject(object_position, image_source.get_current_sample_number());
-    }
+    this_image = frame_in;
+    applyThreshold();
+    siftBlobs();
+    tune();
+    
+    return object_position;
 }
 
-void DifferenceDetector2D::configure(std::string file_name, std::string key) {
+void DifferenceDetector2D::configure(const std::string& config_file, const std::string& config_key) {
 
     cpptoml::table config;
 
     try {
-        config = cpptoml::parse_file(file_name);
+        config = cpptoml::parse_file(config_file);
     } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << file_name << ": " << e.what() << std::endl;
+        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
     }
 
     try {
         // See if a camera configuration was provided
-        if (config.contains(key)) {
+        if (config.contains(config_key)) {
 
-            auto this_config = *config.get_table(key);
+            auto this_config = *config.get_table(config_key);
 
             if (this_config.contains("blur")) {
                 set_blur_size((int) (*this_config.get_as<int64_t>("blur")));
@@ -73,7 +73,7 @@ void DifferenceDetector2D::configure(std::string file_name, std::string key) {
             }
 
         } else {
-            std::cerr << "No DifferenceDetector configuration named \"" + key + "\" was provided. Exiting." << std::endl;
+            std::cerr << "No DifferenceDetector configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
             exit(EXIT_FAILURE);
         }
     } catch (const std::exception& e) {
@@ -121,18 +121,8 @@ void DifferenceDetector2D::siftBlobs() {
         if (object_position.position_valid) {
             cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
             cv::rectangle(threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
+            msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
 
-            //TODO: move this deprecated formatting stuff to decorate, where it
-            // can be an option
-            // Tell object position
-//            if (object_position.homography_valid) {
-//                oat::Position2D convert_pos = object_position.convertToWorldCoordinates();
-//                msg = cv::format("(%.3f, %.3f) world units", convert_pos.position.x, convert_pos.position.y);
-//
-//            } else {
-                msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
-
-//            }
         }
 
         int baseline = 0;
@@ -167,8 +157,6 @@ void DifferenceDetector2D::applyThreshold() {
 
 void DifferenceDetector2D::tune() {
 
-    tuning_mutex.lock();
-
     if (tuning_on) {
         if (!tuning_windows_created) {
             createTuningWindows();
@@ -184,8 +172,6 @@ void DifferenceDetector2D::tune() {
         cv::destroyWindow(tuning_image_title);
         tuning_windows_created = false;
     }
-
-    tuning_mutex.unlock();
 }
 
 void DifferenceDetector2D::createTuningWindows() {

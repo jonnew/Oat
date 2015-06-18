@@ -8,33 +8,34 @@ tmux rename-window 'HSV Detector'
 tmux split-window -h
 tmux split-window -h
 tmux split-window -h
+tmux select-layout tiled
+tmux split-window -h
 tmux split-window -h
 tmux split-window -h
 tmux select-layout tiled
 
 # Pane 5: record
 tmux select-pane -t 5
-#tmux send-keys "./record -i final -f ~/Desktop -d" C-m
+#tmux send-keys "oat record -i final -f ~/Desktop -d" C-m
 
 # Pane 4: viewer
 tmux select-pane -t 4
-tmux send-keys "./viewer final" C-m
+tmux send-keys "oat view final" C-m
 
 # Pane 3: decorate
 tmux select-pane -t 3
-tmux send-keys "./decorate -p filt raw final" C-m
+tmux send-keys "oat decorate raw final -p filt" C-m
 
 # Pane 2: position filter
 tmux select-pane -t 2
-tmux send-keys "./posifilt kalman det filt" C-m
+tmux send-keys "oat posifilt kalman det filt" C-m
 
 # Pane 1: HSV detector
 tmux select-pane -t 1
-tmux send-keys "./detector hsv raw det" C-m
+tmux send-keys "oat posidet hsv raw det" C-m
 
 # Pane 0: frameserve
 tmux select-pane -t 0
-tmux send-keys "./frameserve gige raw" C-m
-tmux set-window-option synchronize-panes on
+tmux send-keys "oat frameserve gige raw" C-m
 
 tmux -2 attach-session -t $SESSION

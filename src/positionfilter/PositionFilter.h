@@ -23,58 +23,56 @@
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position2D.h"
 
-class PositionFilter { // TODO: datatypes::Position2D -> Position
+class PositionFilter { 
 public:
 
     PositionFilter(const std::string& position_source_name, const std::string& position_sink_name) :
       name(position_sink_name)
     , position_source(position_source_name)
     , position_sink(position_sink_name)
-    , tuning_image_title(position_sink_name + "_tuning")
+   
     , tuning_on(false) { }
 
     virtual ~PositionFilter() { }
 
     // Execute filtering operation
-    void filterPositionAndServe(void) {
+    bool process(void) {
 
-        if (grabPosition()) {
-            filterPosition();
-            serveFilteredPosition();
+        if (position_source.getSharedObject(raw_position)) {
+            
+            position_sink.pushObject(filterPosition(raw_position), 
+                                     position_source.get_current_time_stamp());
+   
         }
+        
+        // If server state is END, return true
+        return (position_source.getSourceRunState() == oat::ServerRunState::END);  
     }
 
     // Position filters must be configurable via file
     virtual void configure(const std::string& config_file, const std::string&  config_key) = 0;
 
     // Accessors
+    std::string get_name(void) const { return name; }
     void set_tune_mode(bool value) { tuning_on = value; }
     bool get_tune_mode(void) { return tuning_on; }
     
     //void stop(void) {position_sink.set_running(false); }
 
+    
 protected:
+    
+    // Position Filters must be able filter the position 
+    virtual oat::Position2D filterPosition(oat::Position2D& position_in) = 0;
+    std::atomic<bool> tuning_on; // This is a shared resource and must be synchronized
+        
+private:
     
     std::string name;
     oat::SMClient<oat::Position2D> position_source;
     oat::Position2D raw_position;
     oat::SMServer<oat::Position2D> position_sink;
-    oat::Position2D filtered_position;
-
-    // tuning on or off
-    std::string tuning_image_title;
-    std::atomic<bool> tuning_on; // This is a shared resource and must be synchronized
     
-    // Position Filters must be able to grab the current position from
-    // a position source (such as a Detector)
-    virtual bool grabPosition(void) = 0;
-
-    // Position Filters must be able filter the position 
-    virtual void filterPosition(void) = 0;
-
-    // Position filters must be able serve the filtered position
-    virtual void serveFilteredPosition(void) = 0;
-
 };
 
 #endif	/* POSITIONFILTER_H */

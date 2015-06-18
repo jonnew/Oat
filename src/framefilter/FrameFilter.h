@@ -23,7 +23,7 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/Signals.h"
+#include "../../lib/shmem/SharedMemoryManager.h"
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
 
@@ -38,20 +38,37 @@ public:
     virtual ~FrameFilter() { }
 
     // Frame filters must be able to receive, filter, and serve frames
-    virtual oat::ServerRunState filterAndServe(void) = 0;
+    bool processSample(void) {
+        
+        // Only proceed with processing if we are getting a valid frame
+        if (frame_source.getSharedMat(current_frame)) {
+
+            // Push filtered frame forward, along with frame_source sample number
+            frame_sink.pushMat(filter(current_frame), frame_source.get_current_sample_number());
+        }
+
+        return (frame_source.getSourceRunState() == oat::ServerRunState::END);
+    }
 
     // Frame filters must be configurable
     virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
     
-    virtual std::string get_name(void) const { return name; }
-
+    // Frame filters have a descriptive, accessible name
+    std::string get_name(void) const { return name; }
+    
 protected:
+    
+    virtual cv::Mat filter(cv::Mat& input_frame) = 0;
 
-    // Component nam
+private:
+
+    // Component name
     std::string name;
     
     // Frame filters have Mat client object for receiving frames
     cv::Mat current_frame;
+    
+    // Frame filters have a frame source from which frames are received
     oat::MatClient frame_source;
 
     // Frame filters have Mat server for sending processed frames

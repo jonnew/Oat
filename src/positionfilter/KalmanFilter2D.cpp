@@ -36,40 +36,31 @@ KalmanFilter2D::KalmanFilter2D(const std::string& position_source_name, const st
 , sig_accel(5.0)
 , sig_measure_noise(5.0)
 , tuning_windows_created(false)
-, draw_scale(10.0) {
+, draw_scale(10.0)
+, tuning_image_title(position_sink_name + "_tuning") {
 
     sig_accel_tune = (int) (sig_measure_noise);
     sig_measure_noise_tune = (int) (sig_measure_noise);
 }
 
-bool KalmanFilter2D::grabPosition() {
+oat::Position2D KalmanFilter2D::filterPosition(oat::Position2D& raw_position) {
 
-    if (position_source.getSharedObject(raw_position)) {
+    // Transform raw position into kf_meas vector
+    if (raw_position.position_valid) {
+        kf_meas.at<double>(0) = raw_position.position.x;
+        kf_meas.at<double>(1) = raw_position.position.y;
+        not_found_count = 0;
 
-        // Transform raw position into kf_meas vector
-        if (raw_position.position_valid) {
-            kf_meas.at<double>(0) = raw_position.position.x;
-            kf_meas.at<double>(1) = raw_position.position.y;
-            not_found_count = 0;
-
-            // We are coming from a time step where there were no measurements for a
-            // long time, so we need to reinitialize the filter
-            if (!found) {
-                initializeFilter();
-            }
-
-            found = true;
-        } else {
-            not_found_count++;
+        // We are coming from a time step where there were no measurements for a
+        // long time, so we need to reinitialize the filter
+        if (!found) {
+            initializeFilter();
         }
 
-        return true;
+        found = true;
     } else {
-        return false;
+        not_found_count++;
     }
-}
-
-void KalmanFilter2D::filterPosition() {
 
     // If we have not gotten a measurement of the object for a long time
     // we need to reinitialize the filter
@@ -86,11 +77,7 @@ void KalmanFilter2D::filterPosition() {
         // Apply the Kalman update
         kf.correct(kf_meas);
     }
-}
-
-void KalmanFilter2D::serveFilteredPosition() {
-
-    // Create a new Position object from the kf_state
+    
     filtered_position.position.x = kf_predicted_state.at<double>(0);
     filtered_position.velocity.x = kf_predicted_state.at<double>(1);
     filtered_position.position.y = kf_predicted_state.at<double>(2);
@@ -105,12 +92,11 @@ void KalmanFilter2D::serveFilteredPosition() {
         filtered_position.position_valid = false;
         filtered_position.velocity_valid = false;
     }
-
+    
     // Tune the filter, if requested
     tune();
-
-    // Publish filtered position
-    position_sink.pushObject(filtered_position, position_source.get_current_time_stamp());
+    
+    return filtered_position;
 }
 
 void KalmanFilter2D::configure(const std::string& config_file, const std::string& config_key) {

@@ -27,6 +27,8 @@
 #include <boost/lockfree/spsc_queue.hpp>
 
 #include "SyncSharedMemoryObject.h"
+#include "SharedMemoryManager.h"
+#include "../../lib/utility/IOFormat.h"
 
 namespace oat {
 
@@ -44,8 +46,8 @@ namespace oat {
 
 
         // Accessors
-        bool is_running(void) { return running; }
-        void set_running(bool value) { running = value; }
+        bool is_running(void) { return server_thread_running; }
+        void set_running(bool value) { server_thread_running = value; }
 
     private:
 
@@ -61,11 +63,12 @@ namespace oat {
         std::thread server_thread;
         std::mutex server_mutex;
         std::condition_variable serve_condition;
-        std::atomic<bool> running; // Server running
+        std::atomic<bool> server_thread_running; // Server running
 
         // Shared memory and managed object names
         SharedMemType<T>* shared_object; // Defaults to oat::SyncSharedMemoryObject<T>
-        std::string shmem_name, shobj_name;
+        oat::SharedMemoryManager* shared_mem_manager;
+        std::string shmem_name, shobj_name, shmgr_name;
         bip::managed_shared_memory shared_memory;
         bool shared_object_created;
 
@@ -84,8 +87,9 @@ namespace oat {
     name(sink_name)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
+    , shmgr_name(sink_name + "_sh_mgr")
     , shared_object_created(false)
-    , running(true) {
+    , server_thread_running(true) {
 
         // Start the server thread
         server_thread = std::thread(&BufferedSMServer<T, SharedMemType>::serveFromBuffer, this);
@@ -98,7 +102,10 @@ namespace oat {
     template<class T, template <typename> class SharedMemType>
     BufferedSMServer<T, SharedMemType>::~BufferedSMServer() {
 
-        running = false;
+        server_thread_running = false;
+        
+        // Detach this server from shared mat header
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
 
         // Make sure we unblock the server thread
         for (int i = 0; i <= SMSERVER_BUFFER_SIZE; ++i) {
@@ -124,11 +131,11 @@ namespace oat {
             shared_memory = bip::managed_shared_memory(
                     bip::open_or_create,
                     shmem_name.c_str(),
-                    sizeof (SharedMemType<T>) + 1024);
+                    sizeof(SharedMemType<T>) + sizeof(oat::SharedMemoryManager) + 1024);
 
             // Make the shared object
             shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
-
+            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
 
         } catch (bip::interprocess_exception& ex) {
             std::cerr << ex.what() << '\n';
@@ -136,6 +143,7 @@ namespace oat {
         }
 
         shared_object_created = true;
+        shared_mem_manager->set_server_state(oat::ServerRunState::RUNNING);
     }
 
     /**
@@ -158,32 +166,32 @@ namespace oat {
     template<class T, template <typename> class SharedMemType>
     void BufferedSMServer<T, SharedMemType>::serveFromBuffer() {
 
-        while (running) {
+        while (server_thread_running) {
 
             // Proceed only if mat_buffer has data
             std::unique_lock<std::mutex> lk(server_mutex);
             serve_condition.wait_for(lk, std::chrono::milliseconds(10));
 
             std::pair<uint32_t, T> sample;
-            while (buffer.pop(sample) && running) {
+            while (buffer.pop(sample)) {
 
 #ifndef NDEBUG
 
-                std::cout << "[";
+                std::cout << oat::dbgMessage("[");
 
                 int progress = (BAR_WIDTH * buffer.read_available()) / SMSERVER_BUFFER_SIZE;
                 int remaining = BAR_WIDTH - progress;
 
                 for (int i = 0; i < progress; ++i) {
-                    std::cout << "=";
+                    std::cout << oat::dbgColor("=");
                 }
                 for (int i = 0; i < remaining; ++i) {
                     std::cout << " ";
                 }
-
-                std::cout << "] "
-                        << std::to_string(buffer.read_available()) + "/" + std::to_string(SMSERVER_BUFFER_SIZE)
-                        << ", sample: " + std::to_string(sample.first)
+                
+                std::cout << oat::dbgColor("] ")
+                        << oat::dbgColor(std::to_string(buffer.read_available()) + "/" + std::to_string(SMSERVER_BUFFER_SIZE))
+                        << oat::dbgColor(", sample: " + std::to_string(sample.first))
                         << "\r";
 
                 std::cout.flush();
@@ -204,18 +212,18 @@ namespace oat {
                 /* END CRITICAL SECTION */
 
                 // Tell each client they can proceed
-                for (int i = 0; i < shared_object->number_of_clients; ++i) {
+                for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
                     shared_object->read_barrier.post();
                 }
 
                 // Only wait if there is a client
-                if (shared_object->number_of_clients) {
+                if (shared_mem_manager->get_client_ref_count()) {
                     shared_object->write_barrier.wait();
                 }
 
                 // Tell each client they can proceed now that the write_barrier
                 // has been passed
-                for (int i = 0; i < shared_object->number_of_clients; ++i) {
+                for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
                     shared_object->new_data_barrier.post();
                 }
             }

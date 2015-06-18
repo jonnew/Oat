@@ -17,10 +17,8 @@ class HomographyTransform2D : public PositionFilter {
 public:
     HomographyTransform2D(const std::string& position_source_name, const std::string& position_sink_name);
 
-    bool grabPosition(void);
-    void filterPosition(void);
-    void serveFilteredPosition(void);
-    
+    oat::Position2D filterPosition(oat::Position2D& position_in);
+
     /**
      * Configure homgraphy matrix using a configuration file.
      * @param config_file Path to the configuration file
@@ -33,6 +31,12 @@ private:
 
     bool homography_valid;
     cv::Matx33d homography;
+    
+    // Filtered position
+    oat::Position2D filtered_position;
+
+    // tuning window name
+    std::string tuning_image_title;
 
 };
 

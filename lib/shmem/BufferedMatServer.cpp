@@ -21,8 +21,6 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "Signals.h"
-#include "SharedCVMatHeader.h"
 #include "SharedCVMatHeader.cpp" // TODO: Why???
 
 namespace oat {
@@ -31,17 +29,20 @@ namespace oat {
 
     BufferedMatServer::BufferedMatServer(const std::string& sink_name) :
       name(sink_name)
+    , serve_thread_running(true)
     , shmem_name(sink_name + "_sh_mem")
     , shobj_name(sink_name + "_sh_obj")
-    , shsig_name(sink_name + "_sh_sig")
-    , running(true)
+    , shmgr_name(sink_name + "_sh_mgr")
     , shared_object_created(false)
     , mat_header_constructed(false) {
+        
+        // Create shared mat first so that server thread has something to play
+        // with
+        createSharedMat();
 
         // Start the server thread
         server_thread = std::thread(&BufferedMatServer::serveMatFromBuffer, this);
-        
-        createSharedMat();
+
     }
 
     BufferedMatServer::BufferedMatServer(const BufferedMatServer& orig) {
@@ -49,8 +50,8 @@ namespace oat {
 
     BufferedMatServer::~BufferedMatServer() {
 
-        running = false;
-
+        serve_thread_running = false;
+        
         // Make sure we unblock the server thread
         for (int i = 0; i <= MATSERVER_BUFFER_SIZE; ++i) {
             notifySelf();
@@ -86,7 +87,7 @@ namespace oat {
                     total_bytes);
 
             shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
-            shared_server_state = shared_memory.find_or_construct<oat::ServerState>(shsig_name.c_str())();
+            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
             
             
         } catch (bip::interprocess_exception &ex) {
@@ -95,7 +96,7 @@ namespace oat {
         }
         
         shared_object_created = true;
-        setSharedServerState(oat::ServerRunState::RUNNING);
+        shared_mem_manager->set_server_state(oat::ServerRunState::RUNNING);
         
     }
 
@@ -115,7 +116,7 @@ namespace oat {
 
     void BufferedMatServer::serveMatFromBuffer() {
 
-        while (running) {
+        while (serve_thread_running) {
 
             // Proceed only if mat_buffer has data
             std::unique_lock<std::mutex> lk(server_mutex);
@@ -123,10 +124,10 @@ namespace oat {
 
             // Here we must attempt to clear the whole buffer before waiting again.
             std::pair<uint32_t, cv::Mat> sample;
-            while (mat_buffer.pop(sample) && running) {
+            
+            while (mat_buffer.pop(sample)) {
 
 #ifndef NDEBUG
-
 
                 std::cout << oat::dbgMessage("[");
 
@@ -134,15 +135,15 @@ namespace oat {
                 int remaining = BAR_WIDTH - progress;
 
                 for (int i = 0; i < progress; ++i) {
-                    std::cout << oat::dbgMessage("=");
+                    std::cout << oat::dbgColor("=");
                 }
                 for (int i = 0; i < remaining; ++i) {
                     std::cout << " ";
                 }
                 
-                std::cout << oat::dbgMessage("] ")
-                        << oat::dbgMessage(std::to_string(mat_buffer.read_available()) + "/" + std::to_string(MATSERVER_BUFFER_SIZE))
-                        << oat::dbgMessage(", sample: " + std::to_string(sample.first))
+                std::cout << oat::dbgColor("] ")
+                        << oat::dbgColor(std::to_string(mat_buffer.read_available()) + "/" + std::to_string(MATSERVER_BUFFER_SIZE))
+                        << oat::dbgColor(", sample: " + std::to_string(sample.first))
                         << "\r";
 
                 std::cout.flush();
@@ -162,7 +163,7 @@ namespace oat {
                 shared_mat_header->writeSample(sample.first, sample.second);
 
                 // Tell each client they can proceed
-                for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
+                for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
                     shared_mat_header->read_barrier.post();
                 }
 
@@ -170,20 +171,20 @@ namespace oat {
                 /* END CRITICAL SECTION */
 
                 // Only wait if there is a client
-                if (shared_mat_header->get_number_of_clients()) {
+                if (shared_mem_manager->get_client_ref_count()) {
                     shared_mat_header->write_barrier.wait();
                 }
 
                 // Tell each client they can proceed now that the write_barrier
                 // has been passed
-                for (int i = 0; i < shared_mat_header->get_number_of_clients(); ++i) {
+                for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
                     shared_mat_header->new_data_barrier.post();
                 }
             }
         }
         
         // Set stream EOF state in shmem
-        setSharedServerState(oat::ServerRunState::END);
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
     }
  
     void BufferedMatServer::notifySelf() {
@@ -192,11 +193,4 @@ namespace oat {
             shared_mat_header->write_barrier.post();
         }
     }
-
-    void BufferedMatServer::setSharedServerState(oat::ServerRunState state) {
-
-        if (shared_object_created) {
-            shared_server_state->set_state(state);
-        }
-    }   
 }

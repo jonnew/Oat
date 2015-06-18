@@ -23,37 +23,42 @@ namespace oat {
 
     inline std::string bold(std::string message) {
 
-        return "\e[1m" + message + "\e[0m";
+        return "\033[1m" + message + "\033[0m";
     }
 
-    inline std::string boldSource(std::string source_name) {
+    inline std::string sourceText(std::string source_name) {
 
-        return "\e[33;1m" + source_name + "\e[0m";
+        return "\033[32m" + source_name + "\033[0m";
     }
 
-    inline std::string boldSink(std::string sink_name) {
+    inline std::string sinkText(std::string sink_name) {
 
-        return "\e[35;1m" + sink_name + "\e[0m";
+        return "\033[31m" + sink_name + "\033[0m";
     }
 
     inline std::string whoMessage(std::string source, std::string message) {
 
-        return "\e[1m" + source + ": \e[0m" + message;
+        return "\033[1m" + source + ": \033[0m" + message;
     }
 
     inline std::string whoWarn(std::string source, std::string message) {
 
-        return "\e[1m" + source + ": \e[0m\e[33m" + message + "\e[0m";
+        return "\033[1m" + source + ": \033[0m\033[33m" + message + "\033[0m";
     }
 
     inline std::string whoError(std::string source, std::string message) {
 
-        return "\e[1m" + source + ": \e[0m\e[31m" + message + "\e[0m";
+        return "\033[1m" + source + ": \033[0m\033[31m" + message + "\033[0m";
     }
     
     inline std::string dbgMessage(std::string message) {
 
-        return "\e[35;1mdebug: \e[0m\e[35m" + message + "\e[0m";
+        return "\033[35mdebug: " + message + "\033[0m";
+    }
+    
+    inline std::string dbgColor(std::string message) {
+
+        return "\033[35m" + message + "\033[0m";
     }
 }
 

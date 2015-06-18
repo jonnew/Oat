@@ -30,21 +30,21 @@ class HSVDetector2D : public Detector2D {
 public:
     
     // HSV values known
-    HSVDetector2D(std::string source_name, std::string pos_sink_name,
+    HSVDetector2D(const std::string& source_name, const std::string& pos_sink_name,
                 int h_min, int h_max,
                 int s_min, int s_max,
                 int v_min, int v_max);
     
     // Start with full range of HSV thresholds. This is typically used
     // for manual tuning of thresholds using the createTrackbars call
-    HSVDetector2D(std::string source_name, std::string pos_sink_name);
+    HSVDetector2D(const std::string& source_name, const std::string& pos_sink_name);
 
     // Use a configuration file to specify parameters
-    void configure(std::string file_name, std::string key);
+    void configure(const std::string& config_file, const std::string& config_key);
     
     // Apply the HSVTransform, thresholding, and erode/dilate operations to/from
     // shared memory allocated mat objects
-    void findObjectAndServePosition(void);
+    oat::Position2D detectPosition(cv::Mat& frame_in);
 
     // Accessors
     std::string get_detector_name() { return name; }
@@ -73,13 +73,16 @@ private:
 
     // Object detection
     double object_area;
+    
+    // The detected object position
+    oat::Position2D object_position;
 
     double min_object_area;
     double max_object_area;
     
-    // Mat server for sending processed frames
-    //bool frame_sink_used;
-    //MatServer frame_sink;
+    // Processing segregation 
+    // TODO: These are terrible - no IO sigature other than void -> void,
+    // no exceptions, etc
     
     // Binary threshold and use the binary threshold to mask the image
     void applyThreshold(void);
@@ -90,9 +93,12 @@ private:
     // Sift through thresholded blobs to pull out potential object
     void siftBlobs(void);
     
-    // Sliders to allow manipulation of HSV thresholds
-    void tune(void);
-    void createTuningWindows(void);
+    // Tuning stuff
+    bool tuning_windows_created;
+    const std::string tuning_image_title;
+    cv::Mat tune_image;
+    virtual void tune(void);
+    virtual void createTuningWindows(void);
     static void erodeSliderChangedCallback(int, void*);
     static void dilateSliderChangedCallback(int, void*);
 };

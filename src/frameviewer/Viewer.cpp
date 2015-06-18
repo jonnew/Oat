@@ -22,7 +22,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "../../lib/shmem/Signals.h"
+#include "../../lib/shmem/SyncSharedMemoryObject.h"
 #include "../../lib/shmem/MatClient.h"
 
 namespace bfs = boost::filesystem;
@@ -33,7 +33,7 @@ Viewer::Viewer(const std::string& frame_source_name,
         std::string& save_path,
         const std::string& file_name) :
 
-name(frame_source_name + "_viewer")
+  name("viewer[" + frame_source_name + "]")
 , frame_source(frame_source_name)
 , min_update_period(33)
 , save_path(save_path)
@@ -64,12 +64,12 @@ name(frame_source_name + "_viewer")
     compression_params.push_back(9);
 }
 
-oat::ServerRunState Viewer::showImage() {
+bool Viewer::showImage() {
 
     return showImage(name);
 }
 
-oat::ServerRunState Viewer::showImage(const std::string title) {
+bool Viewer::showImage(const std::string title) {
 
     // If we are able to aquire the current frame, 
     // show it.
@@ -99,7 +99,8 @@ oat::ServerRunState Viewer::showImage(const std::string title) {
         }
     }
     
-    return frame_source.getServerRunState();
+    // If server state is END, return true
+    return (frame_source.getSourceRunState() == oat::ServerRunState::END);
     
 }
 

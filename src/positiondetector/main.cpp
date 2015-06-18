@@ -14,48 +14,50 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include <csignal>
 #include <unordered_map>
-#include <signal.h>
-#include <memory>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/IOFormat.h"
 #include "Detector2D.h"
 #include "HSVDetector2D.h"
 #include "DifferenceDetector2D.h"
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t done = 0;
-bool running = true;
+volatile sig_atomic_t quit = 0;
+volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: detector [OPTIONS]\n"
-              << "   or: detector TYPE SOURCE SINK [CONFIGURATION]\n"
-              << "Perform TYPE object detection on images from SMServer<SharedCVMatHeader> SOURCE.\n"
-              << "Publish detected object positions to a SMSserver<Position2D> SINK.\n\n"
+    std::cout << "Usage: posidet [INFO]\n"
+              << "   or: posidet TYPE SOURCE SINK [CONFIGURATION]\n"
+              << "Perform TYPE object detection on frames from SOURCE.\n"
+              << "Publish detected object positions to SINK.\n\n"
               << "TYPE\n"
-              << "  'diff': Difference detector (grey-scale)\n"
-              << "  'hsv' : HSV detector (color)\n\n"
+              << "  diff: Difference detector (grey-scale, motion)\n"
+              << "  hsv : HSV detector (color)\n\n"
+              << "SOURCE:\n"
+              << "  User supplied source name (e.g. raw).\n\n"
+              << "SINK:\n"
+              << "  User supplied sink name (e.g. pos).\n\n"
               << options << "\n";
 }
 
-// Processing thread
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
+}
 
 void run(Detector2D* detector) {
 
-    while (!done) {
-        detector->findObjectAndServePosition();
+    while (!quit && !source_eof) {
+        source_eof = detector->process();
     }
 }
 
-// IO thread
-
 int main(int argc, char *argv[]) {
-
-    // Base options
-    po::options_description options("OPTIONS");
+    
+    std::signal(SIGINT, sigHandler);
 
     std::string source;
     std::string sink;
@@ -63,6 +65,7 @@ int main(int argc, char *argv[]) {
     std::string config_file;
     std::string config_key;
     bool config_used = false;
+    po::options_description visible_options("OPTIONS");
 
     std::unordered_map<std::string, char> type_hash;
     type_hash["diff"] = 'a';
@@ -70,6 +73,7 @@ int main(int argc, char *argv[]) {
 
     try {
 
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -99,7 +103,7 @@ int main(int argc, char *argv[]) {
         positional_options.add("source", 1);
         positional_options.add("sink", 1);
 
-        po::options_description visible_options("VISIBLE OPTIONS");
+        po::options_description visible_options("OPTIONS");
         visible_options.add(options).add(config);
 
         po::options_description all_options("ALL OPTIONS");
@@ -127,19 +131,19 @@ int main(int argc, char *argv[]) {
         }
 
         if (!variable_map.count("type")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: a TYPE must be specified. Exiting.\n";
             return -1;
         }
 
         if (!variable_map.count("source")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: a SOURCE must be specified. Exiting.\n";
             return -1;
         }
 
         if (!variable_map.count("sink")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: a SINK name must be specified. Exiting.\n";
             return -1;
         }
@@ -157,7 +161,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     } catch (...) {
-        std::cerr << "Exception of unknown type!" << std::endl;
+        std::cerr << "Exception of unknown type." << std::endl;
     }
 
     // Create the specified TYPE of detector
@@ -176,7 +180,7 @@ int main(int argc, char *argv[]) {
         }
         default:
         {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: invalid TYPE specified. Exiting.\n";
             return -1;
         }
@@ -184,56 +188,24 @@ int main(int argc, char *argv[]) {
 
     if (config_used)
         detector->configure(config_file, config_key);
+
+    // Tell user
+    std::cout << oat::whoMessage(detector->get_name(),
+            "Listening to source " + oat::sourceText(source) + ".\n")
+            << oat::whoMessage(detector->get_name(),
+            "Steaming to sink " + oat::sinkText(sink) + ".\n")
+            << oat::whoMessage(detector->get_name(),
+            "Press CTRL+C to exit.\n");
     
-    std::cout << "Detector has begun listening to source \"" + source + "\".\n";
-    std::cout << "Detector has begun steaming to sink \"" + sink + "\".\n\n";
-    std::cout << "COMMANDS:\n";
-    std::cout << "  t: Enable tuning mode.\n";
-    std::cout << "  T: Disable tuning mode.\n";
-    std::cout << "  x: Exit.\n";
 
-    // Two threads - one for user interaction, the other
-    // for executing the processor
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, detector));
-    sleep(1);
+    // Infinite loop until ctrl-c or end of stream signal
+    run(detector);
 
-    while (!done) {
-
-        char user_input;
-        std::cin >> user_input;
-
-        switch (user_input) {
-
-            case 't':
-            {
-                detector->set_tune_mode(true);
-                break;
-            }
-            case 'T':
-            {
-                detector->set_tune_mode(false);
-                break;
-            }
-            case 'x':
-            {
-                done = true;
-                break;
-            }
-            default:
-                std::cout << "Invalid command. Try again.\n";
-                break;
-        }
-
-    }
-
-    // TODO: Exit gracefully and ensure all shared resources are cleaned up!
-    thread_group.join_all();
+    // Tell user
+    std::cout << oat::whoMessage(detector->get_name(), "Exiting.\n");
 
     // Free heap memory allocated to detector 
     delete detector;
-
-    std::cout << "Detector is exiting.\n";
 
     // Exit
     return 0;

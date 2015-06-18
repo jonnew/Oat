@@ -19,7 +19,6 @@
 
 #include <string>
 
-#include "../../lib/shmem/Signals.h"
 #include "../../lib/shmem/SMServer.h"
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position.h"
@@ -46,13 +45,20 @@ public:
     }
 
     // Public 'run' method
-    void combineAndServePosition() {
+    bool process() {
 
+        // Are all sources running?
+        bool sources_running = true;
+    
         // Get current positions
         while (client_idx < position_sources.size()) {
 
+            // Check if source is sill running
+            sources_running &= (position_sources[client_idx]->getSourceRunState()
+                    == oat::ServerRunState::RUNNING);
+
             if (!(position_sources[client_idx]->getSharedObject(*source_positions[client_idx]))) {
-                return;
+                return sources_running;
             }
             
             client_idx++;
@@ -62,6 +68,8 @@ public:
         combined_position = combinePositions(source_positions);
 
         position_sink.pushObject(combined_position, position_sources[0]->get_current_time_stamp());
+        
+        return sources_running;
 
     }
 

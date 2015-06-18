@@ -15,39 +15,48 @@
 //******************************************************************************
 
 #include <unordered_map>
-#include <string>
-#include <signal.h>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
+#include <csignal>
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/IOFormat.h"
 #include "KalmanFilter2D.h"
 #include "HomographyTransform2D.h"
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t done = 0;
-bool running = true;
+volatile sig_atomic_t quit = 0;
+volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: posifilt [OPTIONS]\n"
+    std::cout << "Usage: posifilt [INFO]\n"
               << "   or: posifilt TYPE SOURCE SINK [CONFIGURATION]\n"
-              << "Perform TYPE position filter on a position stream published by a SMServer<Position> SOURCE.\n"
-              << "Publish filtered object position to a SMSserver<Position> SINK.\n\n"
+              << "Perform TYPE position filtering on the position stream from SOURCE.\n"
+              << "Publish filtered object positions to SINK.\n\n"
               << "TYPE\n"
-              << "  \'kalman\': Kalman filter\n"
-              << "  \'homo\': homography transform\n\n"
+              << "  kalman: Kalman filter\n"
+              << "  homo: homography transform\n\n"
+              << "SOURCE:\n"
+              << "  User supplied position source name (e.g. rpos).\n\n"
+              << "SINK:\n"
+              << "  User supplied position sink name (e.g. lpos).\n\n"
               << options << "\n";
+}
+
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
 }
 
 void run(PositionFilter* positionFilter) {
 
-    while (!done) {
-        positionFilter->filterPositionAndServe();
+    while (!quit && !source_eof) {
+        source_eof =positionFilter->process();
     }
 }
 
 int main(int argc, char *argv[]) {
+    
+    std::signal(SIGINT, sigHandler);
 
     // The image source to which the viewer will be attached
     std::string source;
@@ -56,18 +65,15 @@ int main(int argc, char *argv[]) {
     std::string config_file;
     std::string config_key;
     bool config_used = false;
-    po::options_description visible_options("VISIBLE OPTIONS");
+    po::options_description visible_options("OPTIONS");
 
     std::unordered_map<std::string, char> type_hash;
     type_hash["kalman"] = 'a';
     type_hash["homo"] = 'b';
-    //TODO: there should be a runtime decision, based on the types of positions
-    //from the source, whether or not to use the 2D or 3D filter. Or, these types
-    //of filter should be able to handle 2D or 3D positions
 
     try {
         
-        po::options_description options("OPTIONS");
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -154,7 +160,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     } catch (...) {
-        std::cerr << "Exception of unknown type! " << std::endl;
+        std::cerr << "Exception of unknown type. " << std::endl;
     }
 
     // Make the viewer
@@ -180,49 +186,20 @@ int main(int argc, char *argv[]) {
     
     if (config_used)
         position_filter->configure(config_file, config_key);
+    
+    // Tell user
+    std::cout << oat::whoMessage(position_filter->get_name(),
+            "Listening to source " + oat::sourceText(source) + ".\n")
+            << oat::whoMessage(position_filter->get_name(),
+            "Steaming to sink " + oat::sinkText(sink) + ".\n")
+            << oat::whoMessage(position_filter->get_name(),
+            "Press CTRL+C to exit.\n");
 
-    std::cout << "Position Filter named \"" + sink + "\" has started.\n";
-    std::cout << "COMMANDS:\n";
-    std::cout << "  t: Enable tuning mode.\n";
-    std::cout << "  T: Disable tuning mode.\n";
-    std::cout << "  x: Exit.\n";
-
-    // Two threads - one for user interaction, the other
-    // for executing the processor
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, position_filter));
-    sleep(1);
-
-    // Start the user interface
-    while (!done) {
-
-        char user_input;
-        std::cin >> user_input;
-
-        switch (user_input) {
-            case 't':
-            {
-                position_filter->set_tune_mode(true);
-                break;
-            }
-            case 'T':
-            {
-                position_filter->set_tune_mode(false);
-                break;
-            }
-            case 'x':
-            {
-                done = true;
-                break;
-            }
-            default:
-                std::cout << "Invalid selection. Try again.\n";
-                break;
-        }
-    }
-
-    // Exit gracefully and ensure all shared resources are cleaned up
-    thread_group.join_all();
+    // Infinite loop until ctrl-c or end of stream signal
+    run(position_filter);
+    
+    // Tell user
+    std::cout << oat::whoMessage(position_filter->get_name(), "Exiting.\n");
 
     // Deallocate heap
     delete position_filter;

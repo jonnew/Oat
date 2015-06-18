@@ -40,8 +40,8 @@ namespace oat {
         bool velocity_valid = false;
         Velocity2D velocity;
 
-        bool head_direction_valid = false;
-        UnitVector2D head_direction;
+        bool heading_valid = false;
+        UnitVector2D heading;
 
         template <typename Writer>
         void Serialize(Writer& writer, const std::string& label) const {
@@ -86,13 +86,13 @@ namespace oat {
 
             // Head direction
             writer.String("head_ok");
-            writer.Bool(head_direction_valid);
+            writer.Bool(heading_valid);
 
-            if (head_direction_valid) {
+            if (heading_valid) {
                 writer.String("head_xy");
                 writer.StartArray();
-                writer.Double(head_direction.x);
-                writer.Double(head_direction.y);
+                writer.Double(heading.x);
+                writer.Double(heading.y);
                 writer.EndArray(2);
             }
 

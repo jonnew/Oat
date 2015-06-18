@@ -34,24 +34,18 @@ namespace oat {
         , write_barrier(0)
         , read_barrier(0)
         , new_data_barrier(0)
-        , number_of_clients(0)
         , client_read_count(0)
         , sample_number(0) { }
 
-        // Semaphores used to synchronize access to the shared object
+        // IPC synchronization constructs
+        // TODO: Should these be private with accessors?
+        //       Or, just generally abstracted into a function for locking?
         boost::interprocess::interprocess_semaphore mutex;
         boost::interprocess::interprocess_semaphore write_barrier;
         boost::interprocess::interprocess_semaphore read_barrier;
         boost::interprocess::interprocess_semaphore new_data_barrier;
-        
-        size_t number_of_clients;
         size_t client_read_count;
-        
-        // Time keeping TODO: use accessors!
-        uint32_t sample_number; // Sample number of this position, respecting buffer overruns
-
-        // Write/read access to shared object
-        
+       
         /**
          * Move object into shared memory slot. 
          * @param value Value to be moved to shared memory. Value
@@ -60,10 +54,17 @@ namespace oat {
         void writeSample(uint32_t sample, T value) { sample_number = sample; object = std::move(value); }
         T get_value(void) const { return object; } // Read-only (for clients, forces copy if they want to mess with object)
 
-    private:
+        // Accessors
+        uint32_t get_sample_number(void) const {return sample_number; }
         
+    private:
+
         // Shared object
         T object;
+
+        // Sample number
+        // Should respect buffer overruns
+        uint32_t sample_number; // Sample number of this position, respecting buffer overruns
 
     };
 }

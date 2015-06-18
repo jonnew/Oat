@@ -21,7 +21,9 @@
 #include <boost/thread/thread_time.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
+#include "../../lib/utility/IOFormat.h"
 #include "SyncSharedMemoryObject.h"
+#include "SharedMemoryManager.h"
 
 namespace oat {
 
@@ -40,6 +42,8 @@ namespace oat {
          * @return true if assignment was successful, false if assignment timed out.
          */
         bool getSharedObject(T& value);
+        
+        oat::ServerRunState getSourceRunState(void);
 
         /**
          * Get the current sample number
@@ -50,13 +54,17 @@ namespace oat {
     private:
 
         SharedMemType<T>* shared_object; // Defaults to oat::SyncSharedMemoryObject<T>
-
+        oat::SharedMemoryManager* shared_mem_manager;
         std::string name;
-        std::string shmem_name, shobj_name;
+        std::string shmem_name, shobj_name, shmgr_name;
         bool shared_object_found;
         bool read_barrier_passed;
         bip::managed_shared_memory shared_memory;
 
+        // Number of clients, including *this, attached to the shared memory indicated
+        // by shmem_name
+        size_t number_of_clients;
+        
         // Time keeping
         uint32_t current_time_stamp;
 
@@ -69,9 +77,10 @@ namespace oat {
 
     template<class T, template <typename> class SharedMemType>
     SMClient<T, SharedMemType>::SMClient(std::string source_name) :
-    name(source_name)
+      name(source_name)
     , shmem_name(source_name + "_sh_mem")
     , shobj_name(source_name + "_sh_obj")
+    , shmgr_name(source_name + "_sh_mgr")
     , shared_object_found(false)
     , read_barrier_passed(false)
     , current_time_stamp(0) {
@@ -96,10 +105,11 @@ namespace oat {
             shared_memory = bip::managed_shared_memory(
                     bip::open_or_create,
                     shmem_name.c_str(),
-                    sizeof (SharedMemType<T>) + 1024);
+                    sizeof(SharedMemType<T>) + sizeof(oat::SharedMemoryManager) + 1024);
 
             // Find the object in shared memory
             shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
+            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
             shared_object_found = true;
 
         } catch (bip::interprocess_exception& ex) {
@@ -107,14 +117,13 @@ namespace oat {
             exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
         }
 
+        shared_object_found = true;
+        
         // Make sure everyone using this shared memory knows that another client
         // has joined
-        shared_object->mutex.wait();
-        shared_object->number_of_clients++;
-        client_num = shared_object->number_of_clients;
-        shared_object->mutex.post();
+        number_of_clients = shared_mem_manager->incrementClientRefCount();
 
-        return client_num;
+        return number_of_clients;
     }
 
     /**
@@ -131,43 +140,62 @@ namespace oat {
 
         boost::system_time timeout =
                 boost::get_system_time() + boost::posix_time::milliseconds(10);
+        
+        try {
+            
+            if (!read_barrier_passed) {
 
-        if (!read_barrier_passed) {
+                if (!shared_object->read_barrier.timed_wait(timeout)) {
+                    return false;
+                }
 
-            if (!shared_object->read_barrier.timed_wait(timeout)) {
+                // Write down that we made it past the read_barrier in case the
+                // new_data_barrier times out.
+                read_barrier_passed = true;
+
+                /* START CRITICAL SECTION */
+                shared_object->mutex.wait();
+
+                value = shared_object->get_value();
+                current_time_stamp = shared_object->get_sample_number();
+
+                // Now that this client has finished its read, update the count
+                shared_object->client_read_count++;
+
+                // If all clients have read, signal the write barrier
+                if (shared_object->client_read_count == shared_mem_manager->get_client_ref_count()) {
+                    shared_object->write_barrier.post();
+                    shared_object->client_read_count = 0;
+                }
+
+                shared_object->mutex.post();
+                /* END CRITICAL SECTION */
+            }
+
+            if (!shared_object->new_data_barrier.timed_wait(timeout)) {
                 return false;
             }
 
-            // Write down that we made it past the read_barrier in case the
-            // new_data_barrier times out.
-            read_barrier_passed = true;
+            // Reset the read_barrier_passed switch
+            read_barrier_passed = false;
+            return true;
+            
+        } catch (bip::interprocess_exception ex) {
 
-            /* START CRITICAL SECTION */
-            shared_object->mutex.wait();
-
-            value = shared_object->get_value();
-            current_time_stamp = shared_object->sample_number;
-
-            // Now that this client has finished its read, update the count
-            shared_object->client_read_count++;
-
-            // If all clients have read, signal the write barrier
-            if (shared_object->client_read_count == shared_object->number_of_clients) {
-                shared_object->write_barrier.post();
-                shared_object->client_read_count = 0;
-            }
-
-            shared_object->mutex.post();
-            /* END CRITICAL SECTION */
-        }
-
-        if (!shared_object->new_data_barrier.timed_wait(timeout)) {
+            // Something went wrong during shmem access so result is invalid
+            // Usually due to SIGINT being called during read_barrier timed
+            // wait
             return false;
         }
-
-        // Reset the read_barrier_passed switch
-        read_barrier_passed = false;
-        return true;
+    }
+    
+    template<class T, template <typename> class SharedMemType>
+    oat::ServerRunState SMClient<T, SharedMemType>::getSourceRunState() {
+        
+        if (shared_object_found) 
+            return shared_mem_manager->get_server_state();
+        else
+            return oat::ServerRunState::UNDEFINED;
     }
 
     template<class T, template <typename> class SharedMemType>
@@ -176,14 +204,21 @@ namespace oat {
         if (shared_object_found) {
 
             // Make sure nobody is going to wait on a disposed object
-            shared_object->mutex.wait();
-            shared_object->number_of_clients--;
-            shared_object->mutex.post();
+            number_of_clients = shared_mem_manager->decrementClientRefCount();
 
+            // If the client reference count is 0 and there is no server 
+            // attached to the shared mat, deallocate the shmem
+            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::ServerRunState::RUNNING) {
+
+                bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG
-            std::cout << "Number of clients in \'" + shmem_name + "\' was decremented.\n";
+                std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
 #endif
-
+            } else {
+#ifndef NDEBUG
+                std::cout << oat::dbgMessage("Number of clients in \'" + shmem_name + "\' was decremented.\n");
+#endif
+            }
         }
     }
 } // namespace shmem 
