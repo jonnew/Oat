@@ -19,9 +19,7 @@
 
 
 #include <unordered_map>
-#include <signal.h>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
+#include <csignal>
 #include <boost/program_options.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
@@ -29,7 +27,7 @@ namespace po = boost::program_options;
 namespace bip = boost::interprocess;
 
 void printUsage(po::options_description options){
-    std::cout << "Usage: clean [OPTIONS]\n"
+    std::cout << "Usage: clean [INFO]\n"
               << "   or: clean NAMES\n"
               << "Remove the named shared memory segments specified by NAMES.\n\n"
               << options << "\n";
@@ -41,7 +39,7 @@ int main(int argc, char *argv[]) {
 
     try {
 
-        po::options_description options("META");
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -52,6 +50,7 @@ int main(int argc, char *argv[]) {
                 ("names", po::value< std::vector<std::string> >(),
                 "The names of the shared memory segments to remove.")
                 ;
+        
         po::positional_options_description positional_options;
         positional_options.add("names", -1);
          
@@ -80,7 +79,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (!variable_map.count("names")) {
-            printUsage(all_options);
+            printUsage(options);
             std::cout << "Error: at least a single NAME must be specified. Exiting.\n";
             return -1;
         }

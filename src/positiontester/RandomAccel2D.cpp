@@ -29,7 +29,6 @@ RandomAccel2D::RandomAccel2D(std::string position_sink_name) :
   TestPosition<oat::Position2D>(position_sink_name) 
 , accel_distribution(0.0, 5.0) {
 
-    position_sink.createSharedObject();
     createStaticMatracies();
     
     // Initial condition
@@ -69,7 +68,7 @@ void RandomAccel2D::configure(const std::string& config_file, const std::string&
     }
 }
 
-void RandomAccel2D::simulateAndServePosition() {
+oat::Position2D RandomAccel2D::generatePosition( ) {
     
     // Simulate one step of random, but smooth, motion
     simulateMotion(); 
@@ -86,12 +85,9 @@ void RandomAccel2D::simulateAndServePosition() {
     pos.velocity_valid = true;
     pos.velocity.x = state(1);
     pos.velocity.y = state(3);
+    
+    return pos;
 
-    // Publish simulated position
-    position_sink.pushObject(pos, sample);
-    
-    ++sample;
-    
 }
 
 void RandomAccel2D::simulateMotion() {
@@ -104,7 +100,7 @@ void RandomAccel2D::simulateMotion() {
     state = state_transition_mat * state + input_mat * accel_vec;
 }
 
-void RandomAccel2D::createStaticMatracies() {
+void RandomAccel2D::createStaticMatracies( ) {
     
     // State transition matrix
     state_transition_mat(0, 0) = 1.0;

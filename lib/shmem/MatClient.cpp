@@ -123,7 +123,7 @@ namespace oat {
                 shared_mat_header->client_read_count++;
 
                 // If all clients have read, signal the barrier
-                if (shared_mat_header->client_read_count == shared_mem_manager->get_client_ref_count()) {
+                if (shared_mat_header->client_read_count >= shared_mem_manager->get_client_ref_count()) {
                     shared_mat_header->write_barrier.post();
                     shared_mat_header->client_read_count = 0;
                 }

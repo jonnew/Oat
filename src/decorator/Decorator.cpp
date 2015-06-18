@@ -20,6 +20,7 @@
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <opencv2/opencv.hpp>
 #include <ctime>
+#include <cmath>
 
 Decorator::Decorator(const std::vector<std::string>& position_source_names,
         const std::string& frame_source_name,
@@ -27,8 +28,8 @@ Decorator::Decorator(const std::vector<std::string>& position_source_names,
   name("decorator[" + frame_source_name + "->" + frame_sink_name + "]")
 , frame_source(frame_source_name)
 , frame_read_success(false)
-, client_idx(0)
 , frame_sink(frame_sink_name)
+, position_read_success(position_source_names.size())
 , decorate_position(true)
 , print_timestamp(false)
 , print_sample_number(false)
@@ -49,56 +50,63 @@ Decorator::Decorator(const std::vector<std::string>& position_source_names,
 Decorator::~Decorator() {
 
     // Release resources
-    for (auto &position_source : position_sources) {
-        delete position_source;
+    for (auto &value : position_sources) {
+        delete value;
+    }
+    
+    for (auto &value : source_positions) {
+        delete value;
     }
 }
 
 bool Decorator::decorateFrame() {
 
     // Are all sources running?
-    bool sources_running = true;
+    bool sources_eof = false;
+    
+    sources_eof |= (frame_source.getSourceRunState() 
+        == oat::ServerRunState::END);
     
     // Get the image to be decorated
     if (!frame_read_success) {
         frame_read_success = frame_source.getSharedMat(current_frame);
-        sources_running &= (frame_source.getSourceRunState() == oat::ServerRunState::RUNNING);
     }
+
+    // Get current positions
+    for (int i = 0; i < position_sources.size(); i++) {
+
+        sources_eof |= (position_sources[i]->getSourceRunState()
+                == oat::ServerRunState::END);
+
+        if (position_read_success[i])
+            continue;
         
-
-    // Get the current positions
-    while (client_idx < position_sources.size() && decorate_position) {
-
-        if (!(position_sources[client_idx]->getSharedObject(*source_positions[client_idx]))) {
-            return sources_running;
-        }
-
-        sources_running &= (position_sources[client_idx]->getSourceRunState() == oat::ServerRunState::RUNNING);
-        client_idx++;
+        position_read_success[i] =
+                position_sources[i]->getSharedObject(*source_positions[i]);
     }
 
-    if (!frame_read_success) {
-        return sources_running;
+    // If we have not finished reading _any_ of the clients, we cannot proceed
+    if (frame_read_success && position_read_success.all()) {
+
+        // Reset the frame and position client read counter
+        frame_read_success = false;
+        position_read_success.reset();
+
+        // Decorated image
+        drawSymbols();
+
+        // Serve the finished product
+        frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
     }
     
-    // Reset the position client read counter
-    client_idx = 0;
-    frame_read_success = false;
-
-    // Decorated image
-    drawSymbols();
-
-    // Serve the finished product
-    frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
-    
-    return sources_running;
+    return sources_eof;
 }
 
 void Decorator::drawSymbols() {
 
     if (decorate_position) {
         drawPosition();
-        drawHeadDirection();
+        drawHeading();
         drawVelocity();
     }
 
@@ -115,8 +123,6 @@ void Decorator::drawSymbols() {
     }
 }
 
-// TODO: project 3rd dimension
-
 void Decorator::drawPosition() {
 
     for (auto position : source_positions) {
@@ -126,19 +132,24 @@ void Decorator::drawPosition() {
     }
 }
 
-// TODO: project 3rd dimension
-
-void Decorator::drawHeadDirection() {
+void Decorator::drawHeading() {
     for (auto position : source_positions) {
         if (position->position_valid && position->heading_valid) {
-            cv::Point2d start = position->position - (head_dir_line_length * position->heading);
-            cv::Point2d end = position->position + (head_dir_line_length * position->heading);
-            cv::line(current_frame, start, end, cv::Scalar(255, 255, 255), 2, 8);
+            cv::Point2d start = position->position - (heading_line_length * position->heading);
+            cv::Point2d end = position->position + (heading_line_length * position->heading);
+
+            // Draw arrow
+            cv::line(current_frame, start, end, cv::Scalar(255, 0, 0), 2, 8);
+            double angle = std::atan2((double) start.y - end.y, (double) start.x - end.x);
+            start.x = end.x + heading_arrow_length * std::cos(angle + PI / 4);
+            start.y = end.y + heading_arrow_length * std::sin(angle + PI / 4);
+            cv::line(current_frame, start, end, cv::Scalar(255, 0, 0), 2, 8);
+            start.x = end.x + heading_arrow_length * std::cos(angle - PI / 4);
+            start.y = end.y + heading_arrow_length * std::sin(angle - PI / 4);
+            cv::line(current_frame, start, end, cv::Scalar(255, 0, 0), 2, 8);
         }
     }
 }
-
-// TODO: project 3rd dimension
 
 void Decorator::drawVelocity() {
     for (auto position : source_positions) {
@@ -167,7 +178,12 @@ void Decorator::printTimeStamp() {
 void Decorator::printSampleNumber() {
 
     cv::Point text_origin(10, current_frame.rows - 10);
-    cv::putText(current_frame, std::to_string(frame_source.get_current_sample_number()), text_origin, 1, font_scale, font_color);
+    cv::putText(current_frame, 
+                std::to_string(frame_source.get_current_sample_number()), 
+                text_origin, 
+                1, 
+                font_scale, 
+                font_color);
 }
 
 /**

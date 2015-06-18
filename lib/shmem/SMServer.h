@@ -22,6 +22,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 
+#include "../../lib/utility/IOFormat.h"
 #include "SyncSharedMemoryObject.h"
 #include "SharedMemoryManager.h"
 
@@ -35,8 +36,7 @@ namespace oat {
         SMServer(std::string sink_name);
         SMServer(const SMServer& orig);
         virtual ~SMServer();
-
-        void createSharedObject(void);
+        
         void pushObject(T value, uint32_t sample_number);
 
     private:
@@ -51,7 +51,7 @@ namespace oat {
         bip::managed_shared_memory shared_memory;
         bool shared_object_created;
 
-        void createSharedObject(size_t bytes);
+        void createSharedObject(void);
         void notifySelf(void);
 
     };
@@ -81,8 +81,9 @@ namespace oat {
 
         // Remove_shared_memory on object destruction
         bip::shared_memory_object::remove(shmem_name.c_str());
+        
 #ifndef NDEBUG
-        std::cout << "Shared memory \'" + shmem_name + "\' was deallocated.\n";
+        std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
 #endif
     }
 
@@ -122,7 +123,7 @@ namespace oat {
 
 #ifndef NDEBUG
 
-        std::cout << "sample: " + std::to_string(sample_number) << "\r";
+        std::cout << oat::dbgMessage("sample: " + std::to_string(sample_number)) << "\r";
         std::cout.flush();
 
 #endif

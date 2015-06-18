@@ -69,7 +69,7 @@ namespace oat {
     };
 }
 
-// Explicit instantiations
+// Explicit declaration
 template class oat::SyncSharedMemoryObject<oat::Position2D>;
 
 #endif	/* SYNCSHAREDMEMORYOBJECT_H */

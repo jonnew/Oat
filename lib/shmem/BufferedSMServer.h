@@ -20,6 +20,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <ostream>
 #include <string>
 #include <thread>
 #include <boost/interprocess/sync/scoped_lock.hpp>
@@ -41,9 +42,7 @@ namespace oat {
         BufferedSMServer(const BufferedSMServer& orig);
         virtual ~BufferedSMServer();
 
-        void createSharedObject(void);
         void pushObject(T value, uint32_t sample_number);
-
 
         // Accessors
         bool is_running(void) { return server_thread_running; }
@@ -72,7 +71,7 @@ namespace oat {
         bip::managed_shared_memory shared_memory;
         bool shared_object_created;
 
-        void createSharedObject(size_t bytes);
+        void createSharedObject(void);
         void serveFromBuffer(void);
         void notifySelf(void);
         
@@ -90,6 +89,8 @@ namespace oat {
     , shmgr_name(sink_name + "_sh_mgr")
     , shared_object_created(false)
     , server_thread_running(true) {
+        
+        createSharedObject();
 
         // Start the server thread
         server_thread = std::thread(&BufferedSMServer<T, SharedMemType>::serveFromBuffer, this);
@@ -117,9 +118,11 @@ namespace oat {
 
         // Remove_shared_memory on object destruction
         bip::shared_memory_object::remove(shmem_name.c_str());
+        
 #ifndef NDEBUG
-        std::cout << "Shared memory \'" + shmem_name + "\' was deallocated.\n";
+        std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
 #endif
+        
     }
 
     template<class T, template <typename> class SharedMemType>
@@ -198,10 +201,6 @@ namespace oat {
 
 #endif
 
-                if (!shared_object_created) {
-                    createSharedObject();
-                }
-
                 /* START CRITICAL SECTION */
                 shared_object->mutex.wait();
 
@@ -228,6 +227,9 @@ namespace oat {
                 }
             }
         }
+        
+        // Set stream EOF state in shmem
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
     }
 
     template<class T, template <typename> class SharedMemType>

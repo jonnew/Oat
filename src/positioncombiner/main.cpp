@@ -29,8 +29,8 @@ volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: combiner [INFO]\n"
-              << "   or: combiner TYPE SOURCES SINK\n"
+    std::cout << "Usage: posicom [INFO]\n"
+              << "   or: posicom TYPE SOURCES SINK [CONFIGURATION]\n"
               << "Combine positional information from two or more SOURCES.\n"
               << "Publish combined position to SINK.\n\n"
               << "TYPE\n"
@@ -62,18 +62,28 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> sources;
     std::string sink;
     std::string type;
-    po::options_description options("INFO");
+    std::string config_file;
+    std::string config_key;
+    bool config_used = false;
+    po::options_description visible_options("OPTIONS");
+    
     
     std::unordered_map<std::string, char> type_hash;
     type_hash["mean"] = 'a';
 
     try {
 
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
         
+        po::options_description config("CONFIGURATION");
+        config.add_options()
+                ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
+                ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
+                ;
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
                 ("type", po::value<std::string>(&type), 
@@ -90,7 +100,9 @@ int main(int argc, char *argv[]) {
         positional_options.add("sources", -1); // If not overridend by explicit --sink, last positional argument is sink.
 
         po::options_description all_options("OPTIONS");
-        all_options.add(options).add(hidden);
+        all_options.add(options).add(config).add(hidden);
+        
+        visible_options.add(options).add(config);
 
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
@@ -102,25 +114,25 @@ int main(int argc, char *argv[]) {
 
         // Use the parsed options
         if (variable_map.count("help")) {
-            printUsage(options);
+            printUsage(visible_options);
             return 0;
         }
 
         if (variable_map.count("version")) {
-            std::cout << "Simple-Tracker Object Position Combiner version 1.0\n"; //TODO: Cmake managed versioning
+            std::cout << "Simple-Tracker Position Combiner version 1.0\n"; //TODO: Cmake managed versioning
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
         
         if (!variable_map.count("type")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: a TYPE must be specified. Exiting.\n";
             return -1;
         }
         
         if (!variable_map.count("sources")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: at least two SOURCES and a SINK must be specified. Exiting.\n";
             return -1;
         }
@@ -131,6 +143,15 @@ int main(int argc, char *argv[]) {
             // If not overridden by explicit --sink, last positional argument is the sink.
             sink = sources.back();
             sources.pop_back(); 
+        }
+        
+        if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
+                (!variable_map.count("config-file") && variable_map.count("config-key"))) {
+            printUsage(visible_options);
+            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+            return -1;
+        } else if (variable_map.count("config-file")) {
+            config_used = true;
         }
 
     } catch (std::exception& e) {
@@ -150,11 +171,14 @@ int main(int argc, char *argv[]) {
         }
         default:
         {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: invalid TYPE specified. Exiting.\n";
             return -1;
         }
     }
+    
+     if (config_used)
+        combiner->configure(config_file, config_key);
     
     // Tell user
     std::cout << oat::whoMessage(combiner->get_name(), "Listening to sources ");

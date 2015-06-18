@@ -39,7 +39,6 @@ namespace oat {
         BufferedMatServer(const BufferedMatServer& orig);
         virtual ~BufferedMatServer();
 
-        void createSharedMat(void);
         void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
         void setSharedServerState(oat::ServerRunState state);
         
@@ -71,6 +70,8 @@ namespace oat {
 
         const std::string shmem_name, shobj_name, shmgr_name;
         boost::interprocess::managed_shared_memory shared_memory;
+        
+        void createSharedMat(void);
 
         /**
          * Synchronized shared memory publication.

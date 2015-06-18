@@ -5,7 +5,8 @@
 # - Commented options revert to their default state, ususuall "off"
 # - Invalid parameters are ignored (TODO: with a warning)
 
-# Camera (gige) -------------------------
+# -------------------------------------------
+# frameserve (gige) 
 
 [cam]
 index = 0 								# Index of camera on the bus
@@ -20,14 +21,19 @@ trigger_mode = 14						# 14 = Overlapped Exposure/Readout Mode (see Camera manua
 										# 7  = Software trigger
 trigger_source = 0						# GPIO pin that trigger will be sent to
 save_images = false						# If trigger mode is software triggered, we can save each image
-										# (useful for aquiring calibration images)
 
-# Camera (file) -------------------------
+# -------------------------------------------
+# frameserve (file) 
+[video]
+frame_rate = 100 						# Hz
 
-[file_cam]
-frame_rate = 30 						# Hz
+# -------------------------------------------
+# framefile (mask) 
+[mask]
+mask = 100 						# Hz
 
-# Detector (hsv, blue) ----------------
+# -------------------------------------------
+# posidet (hsv, blue) 
 
 [blue_hsv]
 erode = 0 								# Pixels
@@ -37,7 +43,8 @@ h_thresholds = {min = 106, max = 126}	# Hue pass band
 s_thresholds = {min = 237, max = 256}	# Saturation pass band
 v_thresholds = {min = 150, max = 256}	# Value pass band
 
-# Detector (hsv, orange) ----------------
+# -------------------------------------------
+# Detector (hsv, orange) 
 
 [orange_hsv]
 erode = 2 								# Pixels
@@ -47,7 +54,8 @@ h_thresholds = {min = 0, max = 32}		# Hue pass band band
 s_thresholds = {min = 230, max = 256}	# Saturation pass band
 v_thresholds = {min = 180, max = 256}	# Value pass band
 
-# Detector (difference) ----------------
+# -------------------------------------------
+# Detector (difference) 
 
 [diff_detector]
 blur = 2            					# pixels

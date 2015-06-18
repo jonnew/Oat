@@ -23,6 +23,7 @@
 #include <thread>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 
 #include "../../lib/rapidjson/filewritestream.h"
@@ -79,8 +80,7 @@ private:
     // Image sources
     std::vector<oat::MatClient*> frame_sources;
     cv::Mat current_frame;
-    std::vector<oat::MatClient>::size_type frame_client_idx;
-    bool frame_read_success;
+    boost::dynamic_bitset<> frame_read_success;
     static const int frame_write_buffer_size = 128;
 
     std::vector< std::thread* > frame_write_threads;
@@ -93,7 +93,7 @@ private:
     // Position sources
     std::vector<oat::SMClient<oat::Position2D>* > position_sources;
     std::vector<oat::Position2D* > source_positions;
-    std::vector<oat::SMClient<oat::Position2D> >::size_type position_client_idx;
+    boost::dynamic_bitset<> position_read_success;
     std::vector<std::string> position_labels;
 
     void openFiles(const std::vector<std::string>& save_path,

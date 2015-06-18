@@ -18,6 +18,7 @@
 #define DECORATOR_H
 
 #include <string>
+#include <boost/dynamic_bitset.hpp>
 
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/shmem/MatClient.h"
@@ -54,13 +55,10 @@ private:
     cv::Size frame_size;
     bool frame_read_success;
 
-    // For multi-source processing, we need to keep track of all the sources
-    // we have finished reading from each processing step
-    std::vector<oat::SMClient<oat::Position2D> >::size_type client_idx;
-
     // Positions to be added to the image stream
     std::vector<oat::Position2D* > source_positions;
     std::vector<oat::SMClient<oat::Position2D>* > position_sources;
+    boost::dynamic_bitset<> position_read_success;
 
     // Mat server for sending decorated frames
     oat::MatServer frame_sink;
@@ -72,14 +70,16 @@ private:
     bool print_sample_number;
     bool encode_sample_number;
     const float position_circle_radius = 5.0;
-    const float head_dir_line_length = 25.0;
+    const float heading_line_length = 20.0;
+    const float heading_arrow_length = 5;
     const float velocity_scale_factor = 0.1;
     const double font_scale = 1.0; 
     const cv::Scalar font_color;
     const int encode_bit_size = 5;
+    const double PI  = 3.141592653589793238463;
 
     void drawPosition(void);
-    void drawHeadDirection(void);
+    void drawHeading(void);
     void drawVelocity(void);
     void drawSymbols(void);
     void printTimeStamp(void); 

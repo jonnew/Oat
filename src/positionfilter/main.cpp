@@ -50,7 +50,7 @@ void sigHandler(int s) {
 void run(PositionFilter* positionFilter) {
 
     while (!quit && !source_eof) {
-        source_eof =positionFilter->process();
+        source_eof = positionFilter->process();
     }
 }
 

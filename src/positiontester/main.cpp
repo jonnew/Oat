@@ -16,37 +16,41 @@
 
 #include <unordered_map>
 #include <time.h>
-#include <signal.h>
-#include <memory>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
+#include <csignal>
 #include <boost/program_options.hpp>
-#include <boost/any.hpp>
 
 #include "TestPosition.h"
 #include "RandomAccel2D.h"
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t done = 0;
-bool running = true;
+volatile sig_atomic_t quit = 0;
+volatile sig_atomic_t source_eof = 0;
+
 struct timespec delay = {0};
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: testpos [OPTIONS]\n"
-              << "   or: testpos TYPE SINK [CONFIGURATION]\n"
-              << "Publish test positions to a SMSserver<Position> SINK.\n\n"
+    std::cout << "Usage: positest [INFO]\n"
+              << "   or: positest TYPE SINK [CONFIGURATION]\n"
+              << "Publish test positions to SINK.\n\n"
               << "TYPE\n"
-              << "  'rand2D': Randomly accelerating 2D Position\n\n"
-              //<< "  'rand3D': Randomly accelerating 3D Position (W.I.P.)\n\n"
+              << "  rand2D: Randomly accelerating 2D Position\n\n"
+              << "SINK:\n"
+              << "  User supplied position sink name (e.g. pos).\n\n"
               << options << "\n";
+}
+
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
 }
 
 // Processing thread
 void run(TestPosition<oat::Position2D>* test_position) {
 
-    while (!done) {
-        test_position->simulateAndServePosition();
+    while (!quit && !source_eof) {
+        
+        source_eof = test_position->process();
         nanosleep(&delay, (struct timespec *)NULL);
     }
 }
@@ -54,24 +58,22 @@ void run(TestPosition<oat::Position2D>* test_position) {
 // IO thread
 int main(int argc, char *argv[]) {
 
-    // Base options
-    po::options_description visible_options("VISIBLE OPTIONS");
+    std::signal(SIGINT, sigHandler);
 
     std::string sink;
     std::string type;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
-    
+    po::options_description visible_options("OPTIONS");
     
     std::unordered_map<std::string, char> type_hash;
     type_hash["rand2D"] = 'a';
-    //TODO: type_hash["rand3D"] = 'b';  
 
 
     try {
 
-        po::options_description options("OPTIONS");
+        po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
@@ -177,48 +179,20 @@ int main(int argc, char *argv[]) {
     delay.tv_sec = 0;
     delay.tv_nsec = (int)(test_position->get_sample_period() * 1.0e9);
 
-    std::cout << "Test Position has begun publishing to sink \"" + sink + "\".\n\n"
-              << "COMMANDS:\n"
-              << "  p: Pause/unpause.\n"
-              << "  x: Exit.\n\n";
+    // Tell user
+    std::cout << oat::whoMessage(test_position->get_name(),
+              "Steaming to sink " + oat::sinkText(sink) + ".\n")
+              << oat::whoMessage(test_position->get_name(),
+              "Press CTRL+C to exit.\n");
 
-    // Two threads - one for user interaction, the other
-    // for executing the processor
-    boost::thread_group thread_group;
-    thread_group.create_thread(boost::bind(&run, test_position));
-    sleep(1);
-
-    while (!done) {
-        
-        char user_input;
-        std::cin >> user_input;
-
-        switch (user_input) {
-
-            case 'p':
-            {
-                running = !running;
-                break;
-            }
-            case 'x':
-            {
-                done = true;
-                test_position->stop(); 
-                break;
-            }
-            default:
-                std::cout << "Invalid command. Try again.\n";
-                break;
-        }
-    }
-
-    // Exit gracefully and ensure all shared resources are cleaned up!
-    thread_group.join_all();
+    // Infinite loop until ctrl-c or end of stream signal
+    run(test_position);
+    
+    // Tell user
+    std::cout << oat::whoMessage(test_position->get_name(), "Exiting.\n");
     
     // Free heap memory allocated to test_position 
     delete test_position;
-
-    std::cout << "Test Position is exiting.\n";
 
     // Exit
     return 0;

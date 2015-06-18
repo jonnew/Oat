@@ -31,8 +31,8 @@ public:
 
     RandomAccel2D(std::string position_sink_name);
 
+    oat::Position2D generatePosition(void);
     void configure(const std::string& file_name, const std::string& key);
-    void simulateAndServePosition(void);
 
 private:
     
