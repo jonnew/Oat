@@ -9,12 +9,10 @@ install:
   # Install latest boost
   - wget http://sourceforge.net/projects/boost/files/latest/download?source=files -O tarboost
   - tar -xf tarboost
-  - sudo mv boost* /opt
-  - sudo su
-  - cd /opt/boost*
+  - cd ./boost*
   - sudo ./bootstrap.sh
-  - sudo ./b2 --with-program_options --with_system --with_thread
-  - exit 
+  - sudo ./b2 --with-program_options --with-system --with-thread
+  - sudo mv boost* /opt
   - cd 
 
   # Install OpenCV 3.0
