@@ -210,6 +210,9 @@ namespace oat {
             // attached to the shared mat, deallocate the shmem
             if (number_of_clients == 0 && shared_mem_manager->get_server_state() == oat::ServerRunState::END) {
 
+                // Ensure that no server is deadlocked
+                shared_object->write_barrier.post();
+                
                 bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG
                 std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");

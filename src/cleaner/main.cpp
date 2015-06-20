@@ -28,7 +28,7 @@ namespace bip = boost::interprocess;
 
 void printUsage(po::options_description options){
     std::cout << "Usage: clean [INFO]\n"
-              << "   or: clean NAMES\n"
+              << "   or: clean NAMES [CONFIGURATION]\n"
               << "Remove the named shared memory segments specified by NAMES.\n\n"
               << options << "\n";
 }
@@ -36,6 +36,7 @@ void printUsage(po::options_description options){
 int main(int argc, char *argv[]) {
 
     std::vector<std::string> names;
+    bool quiet = false;
 
     try {
 
@@ -43,6 +44,11 @@ int main(int argc, char *argv[]) {
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
+                ;
+        
+        po::options_description config("CONFIGURATION");
+        options.add_options()
+                ("quiet,q", "Quiet mode. Prevent output text.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -54,9 +60,12 @@ int main(int argc, char *argv[]) {
         po::positional_options_description positional_options;
         positional_options.add("names", -1);
          
-        po::options_description all_options("OPTIONS");
-        all_options.add(options).add(hidden);
+        po::options_description all_options("ALL");
+        all_options.add(options).add(config).add(hidden);
 
+        po::options_description visible_options("OPTIONS");
+        visible_options.add(options).add(config);
+        
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
                 .options(all_options)
@@ -79,10 +88,13 @@ int main(int argc, char *argv[]) {
         }
 
         if (!variable_map.count("names")) {
-            printUsage(options);
+            printUsage(visible_options);
             std::cout << "Error: at least a single NAME must be specified. Exiting.\n";
             return -1;
         }
+        
+        if (variable_map.count("quiet")) 
+            quiet = true;
         
         names = variable_map["names"].as< std::vector<std::string> >();
 
@@ -99,14 +111,18 @@ int main(int argc, char *argv[]) {
         // All servers (MatServer and SMServer) append "_sh_mem" to user-provided
         // stream names when created a named shmem block
         name = name + "_sh_mem";
-        
-        std::cout << "Removing " << name << " from shared memory...";
-        if (bip::shared_memory_object::remove(name.c_str()) ) {
-            
-            std::cout << "success.\n";
+
+        if (!quiet)
+            std::cout << "Removing " << name << " from shared memory...";
+
+        if (bip::shared_memory_object::remove(name.c_str())) {
+            if (!quiet)
+                std::cout << "success.\n";
         } else {
-            std::cout << "failure.\n";
-            std::cout << "Are you sure this block exists?\n";
+            if (!quiet) {
+                std::cout << "failure.\n";
+                std::cout << "Are you sure this block exists?\n";
+            }
         }
     }
 

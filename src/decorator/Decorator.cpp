@@ -29,7 +29,9 @@ Decorator::Decorator(const std::vector<std::string>& position_source_names,
 , frame_source(frame_source_name)
 , frame_read_success(false)
 , frame_sink(frame_sink_name)
-, position_read_success(position_source_names.size())
+, number_of_position_sources(position_source_names.size())
+, position_read_required(number_of_position_sources)
+, sources_eof(false)
 , decorate_position(true)
 , print_timestamp(false)
 , print_sample_number(false)
@@ -45,6 +47,8 @@ Decorator::Decorator(const std::vector<std::string>& position_source_names,
     } else {
         decorate_position = false;
     }
+    
+    position_read_required.set();
 }
 
 Decorator::~Decorator() {
@@ -61,36 +65,39 @@ Decorator::~Decorator() {
 
 bool Decorator::decorateFrame() {
 
-    // Are all sources running?
-    bool sources_eof = false;
-    
+    // Make sure all sources are still running
     sources_eof |= (frame_source.getSourceRunState() 
         == oat::ServerRunState::END);
+
+    for (int i = 0; i < number_of_position_sources; i++) {
+
+        sources_eof |= (position_sources[i]->getSourceRunState()
+                == oat::ServerRunState::END);
+    }
     
     // Get the image to be decorated
     if (!frame_read_success) {
         frame_read_success = frame_source.getSharedMat(current_frame);
     }
+    
+    boost::dynamic_bitset<>::size_type i = position_read_required.find_first();
 
     // Get current positions
-    for (int i = 0; i < position_sources.size(); i++) {
+    while (i < number_of_position_sources) {
 
-        sources_eof |= (position_sources[i]->getSourceRunState()
-                == oat::ServerRunState::END);
-
-        if (position_read_success[i])
-            continue;
+        position_read_required[i] =
+                !position_sources[i]->getSharedObject(*source_positions[i]);
         
-        position_read_success[i] =
-                position_sources[i]->getSharedObject(*source_positions[i]);
+        i = position_read_required.find_next(i);
+        
     }
 
     // If we have not finished reading _any_ of the clients, we cannot proceed
-    if (frame_read_success && position_read_success.all()) {
+    if (frame_read_success && position_read_required.none()) {
 
         // Reset the frame and position client read counter
         frame_read_success = false;
-        position_read_success.reset();
+        position_read_required.set();
 
         // Decorated image
         drawSymbols();

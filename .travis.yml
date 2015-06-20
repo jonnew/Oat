@@ -16,7 +16,7 @@ install:
   - cd 
 
   # Install OpenCV 3.0
-  - wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
+  - wget https://github.com/Itseez/opencv/archive/3.0.0.zip -O opencv.zip
   - unzip opencv.zip -d opencv
   - cd opencv/opencv-*
   - mkdir release

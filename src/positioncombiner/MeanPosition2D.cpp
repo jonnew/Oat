@@ -54,7 +54,7 @@ void MeanPosition2D::configure(const std::string& config_file, const std::string
                     heading_anchor_idx = *this_config.get_as<int64_t>("heading-anchor");
                 }
                 
-                if (heading_anchor_idx >= number_of_sources || heading_anchor_idx < 0) {
+                if (heading_anchor_idx >= get_number_of_sources() || heading_anchor_idx < 0) {
                     std::cerr << "Specified heading-anchor exceeds the number of position sources or is < 0.\n"
                               << "heading-anchor set to 0.\n";
                     heading_anchor_idx = 0;
@@ -69,7 +69,6 @@ void MeanPosition2D::configure(const std::string& config_file, const std::string
         std::cerr << e.what() << std::endl;
     }
 }
-
 
 /**
  * This function calculates the geometric mean of all source positions.
@@ -86,7 +85,6 @@ oat::Position2D MeanPosition2D::combinePositions(const std::vector<oat::Position
     combined_position.velocity_valid = true;
     combined_position.heading = oat::UnitVector2D(0,0);
     combined_position.heading_valid = true;
-    
     
     // Averaging operation
     for (auto pos : sources) {

@@ -39,9 +39,12 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 , append_date(append_date)
 , running(true)
 , frames_per_second(frames_per_second)
-, frame_read_success(frame_source_names.size())
-, position_read_success(position_source_names.size())
-, position_labels(position_source_names) {
+, number_of_frame_sources(frame_source_names.size())
+, frame_read_required(number_of_frame_sources)
+, number_of_position_sources(position_source_names.size())
+, position_read_required(number_of_position_sources)
+, position_labels(position_source_names)
+, sources_eof(false) {
 
     // First check that the save_path is valid
     bfs::path path(save_path.c_str());
@@ -52,11 +55,13 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         save_path = bfs::current_path().c_str();
     }
     
+    // Start recorder name construction
     name = "recorder[" ;
+    
+    // Create recording timestamp
     std::time_t raw_time;
     struct tm * time_info;
     char buffer[100];
-
     std::time(&raw_time);
     time_info = std::localtime(&raw_time);
     std::strftime(buffer, 80, "%F-%H-%M-%S", time_info);
@@ -154,48 +159,40 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
             frame_write_condition_variables.push_back(new std::condition_variable());
             frame_write_threads.push_back(new std::thread(&Recorder::writeFramesToFileFromBuffer, this, idx++));
 
-        }
-        
-//        frame_read_success = new std::bitset<frame_sources.size>();
-//        frame_read_success.reset();
-        
+        }    
     } 
     
+    frame_read_required.set();
+    position_read_required.set();
+    
     name +="]";
-
 }
 
 Recorder::~Recorder() {
 
     // Set running to false to trigger thread join
     running = false;
+    for (auto &value : frame_write_condition_variables) {
+        value->notify_one();
+    }
     
     // Join all threads
+    // Free all dynamically allocated resources
     for (auto &value : frame_write_threads) {
         value->join();
         delete value;
     }
-
-    // Free all dynamically allocated resources
-    for (auto &value : frame_sources) {
-        delete value;
-    }
-
+    
     for (auto &value : video_writers) {
-        value->release();
         delete value;
-    }
-
-    for (auto &value : frame_write_threads) {
-        delete &value;
     }
 
     for (auto &value : frame_write_mutexes) {
-        delete &value;
+        delete value;
     }
 
     for (auto &value : frame_write_condition_variables) {
-        delete &value;
+        delete value;
     }
 
     for (auto &value : frame_write_buffers) {
@@ -203,6 +200,10 @@ Recorder::~Recorder() {
     }
 
     for (auto &value : position_sources) {
+        delete value;
+    }
+    
+    for (auto &value : frame_sources) {
         delete value;
     }
 
@@ -215,56 +216,62 @@ Recorder::~Recorder() {
 }
 
 bool Recorder::writeStreams() {
-    
-    // Are all sources running?
-    bool sources_eof = false;
 
-    for (int i = 0; i < frame_sources.size(); i++) {
+    // Make sure all sources are still running
+    for (int i = 0; i < number_of_frame_sources; i++) {
 
-        // Check if this source is sill running
         sources_eof |= (frame_sources[i]->getSourceRunState()
-                        == oat::ServerRunState::END);
-        
+                == oat::ServerRunState::END);
+    }
+    
+    for (int i = 0; i < number_of_position_sources; i++) {
+
+        sources_eof |= (position_sources[i]->getSourceRunState()
+                == oat::ServerRunState::END);
+    }
+    
+    boost::dynamic_bitset<>::size_type i = frame_read_required.find_first();
+    
+    while( i < number_of_frame_sources) {
+
         // Check if we need to read frame_client_idx, or if the read has been
         // performed already
-        if (frame_read_success[i])
-            continue;
+        frame_read_required[i] = !frame_sources[i]->getSharedMat(current_frame);
 
-        // Read a frame from frame_client_idx and push it to its writer thread
-        frame_read_success[i] = frame_sources[i]->getSharedMat(current_frame);
+        if (!frame_read_required[i]) {
+            
+            // Push newest frame into client N's queue
+            frame_write_buffers[i]->push(current_frame);
 
-        // Push newest frame into client N's queue
-        frame_write_buffers[i]->push(current_frame);
-
-        // Notify a writer thread that there is new data in the queue
-        frame_write_condition_variables[i]->notify_one();
-
+            // Notify a writer thread that there is new data in the queue
+            frame_write_condition_variables[i]->notify_one();
+        }
+        
+        i = frame_read_required.find_next(i);
     }
+    
+    // Position source iterator
+    i = position_read_required.find_first();
 
     // Get current positions
-    for (int i = 0; i < position_sources.size(); i++) {
+    while( i < number_of_position_sources) {
         
-        sources_eof |= (position_sources[i]->getSourceRunState()
-                        == oat::ServerRunState::END);
-
         // Check if we need to read position_client_idx, or if the read has been
         // performed already
-        if (position_read_success[i])
-            continue;
+        position_read_required[i] = 
+                !position_sources[i]->getSharedObject(*source_positions[i]);
         
-        position_read_success[i] = 
-                position_sources[i]->getSharedObject(*source_positions[i]);
+        i = position_read_required.find_next(i);
     }
     
     // If we have not finished reading _any_ of the clients, we cannot proceed
-    if (frame_read_success.all() && position_read_success.all()) {
+    if (frame_read_required.none() && position_read_required.none()) {
     
         // Reset the frame and position client read counter
-        position_read_success.reset();
-        frame_read_success.reset();
+        position_read_required.set();
+        frame_read_required.set();
 
         // Write the frames to file
-        //writeFramesToBuffer(); TODO: ?? 
         writePositionsToFile();
     } 
     
@@ -278,16 +285,16 @@ void Recorder::writeFramesToFileFromBuffer(uint32_t writer_idx) {
         std::unique_lock<std::mutex> lk(*frame_write_mutexes[writer_idx]);
         frame_write_condition_variables[writer_idx]->wait_for(lk, std::chrono::milliseconds(10));
 
-        if (frame_write_buffers[writer_idx]->read_available()) {
+        cv::Mat m;
+        while (frame_write_buffers[writer_idx]->pop(m)) {
+
             if (!video_writers[writer_idx]->isOpened()) {
                 initializeWriter(*video_writers[writer_idx],
                         video_file_names.at(writer_idx),
-                        frame_write_buffers[writer_idx]->front());
+                        m);
             }
 
-
-            video_writers[writer_idx]->write(frame_write_buffers[writer_idx]->front());
-            frame_write_buffers[writer_idx]->pop();
+            video_writers[writer_idx]->write(m);
         }
     }
 }

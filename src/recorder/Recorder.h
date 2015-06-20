@@ -77,11 +77,12 @@ private:
     rapidjson::FileWriteStream * file_stream;
     rapidjson::Writer<rapidjson::FileWriteStream> json_writer;
 
-    // Image sources
-    std::vector<oat::MatClient*> frame_sources;
+    // Frame sources
+    boost::dynamic_bitset<>::size_type number_of_frame_sources;
+    std::vector<oat::MatClient* > frame_sources;
     cv::Mat current_frame;
-    boost::dynamic_bitset<> frame_read_success;
-    static const int frame_write_buffer_size = 128;
+    boost::dynamic_bitset<> frame_read_required;
+    static const int frame_write_buffer_size = 2;
 
     std::vector< std::thread* > frame_write_threads;
     std::vector< std::mutex* > frame_write_mutexes;
@@ -91,10 +92,14 @@ private:
                < frame_write_buffer_size> > * > frame_write_buffers;
     
     // Position sources
+    boost::dynamic_bitset<>::size_type number_of_position_sources;
     std::vector<oat::SMClient<oat::Position2D>* > position_sources;
     std::vector<oat::Position2D* > source_positions;
-    boost::dynamic_bitset<> position_read_success;
+    boost::dynamic_bitset<> position_read_required;
     std::vector<std::string> position_labels;
+    
+    // Sources EOF flag
+    bool sources_eof;
 
     void openFiles(const std::vector<std::string>& save_path,
             const bool& save_positions,
