@@ -36,7 +36,9 @@ public:
     PositionCombiner(std::vector<std::string> position_source_names, std::string sink_name) :
       name("posicom[" + position_source_names[0] + "...->" + sink_name + "]") 
     , position_sink(sink_name)
-    , position_read_success(position_source_names.size()) {
+    , number_of_position_sources(position_source_names.size())
+    , position_read_required(number_of_position_sources)
+    , sources_eof(false) {
          
         for (auto &name : position_source_names) {
             
@@ -44,7 +46,7 @@ public:
             source_positions.push_back(new oat::Position2D); 
         }
         
-        number_of_sources = position_sources.size();
+        position_read_required.set();
     }
 
     ~PositionCombiner() {
@@ -60,30 +62,31 @@ public:
     }
 
     // Public 'run' method
+
     bool process() {
 
-        // Are all sources running?
-        bool sources_eof = false;
-
-        for (int i = 0; i < position_sources.size(); i++) {
-
+        // Make sure all sources are still running
+        for (int i = 0; i < number_of_position_sources; i++) {
+            
             sources_eof |= (position_sources[i]->getSourceRunState()
                     == oat::ServerRunState::END);
+        }
 
-            // Check if we need to read position_client_idx, or if the read has been
-            // performed already
-            if (position_read_success[i])
-                continue;
+        boost::dynamic_bitset<>::size_type i = position_read_required.find_first();
 
-            position_read_success[i] =
-                    position_sources[i]->getSharedObject(*source_positions[i]);
+        while (i < number_of_position_sources) {
+
+            position_read_required[i] =
+                    !position_sources[i]->getSharedObject(*source_positions[i]);
+
+            i = position_read_required.find_next(i);
         }
 
         // If we have not finished reading _any_ of the clients, we cannot proceed
-        if (position_read_success.all()) {
-            
+        if (position_read_required.none()) {
+
             // Reset the position client read counter
-            position_read_success.reset();
+            position_read_required.set();
 
             combined_position = combinePositions(source_positions);
 
@@ -104,7 +107,7 @@ protected:
     // list to provide a single combined position output
     virtual oat::Position2D combinePositions(const std::vector<oat::Position2D*>& sources) = 0;
     
-    size_t number_of_sources;
+    int get_number_of_sources(void) const {return number_of_position_sources; };
     
 private:
     
@@ -113,7 +116,9 @@ private:
     // Positions to be combined
     std::vector<oat::Position2D* > source_positions;
     std::vector<oat::SMClient<oat::Position2D>* > position_sources;
-    boost::dynamic_bitset<> position_read_success;
+    boost::dynamic_bitset<>::size_type number_of_position_sources;
+    boost::dynamic_bitset<> position_read_required;
+    bool sources_eof;
 
     // Combined position server
     oat::Position2D combined_position;

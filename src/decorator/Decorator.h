@@ -25,7 +25,7 @@
 #include "../../lib/shmem/MatServer.h"
 #include "../../lib/datatypes/Position2D.h"
 
-class Decorator { // TODO: Position2D -> Position somehow
+class Decorator {
     
 public:
     
@@ -54,14 +54,17 @@ private:
     oat::MatClient frame_source;
     cv::Size frame_size;
     bool frame_read_success;
-
+    
+    // Mat server for sending decorated frames
+    oat::MatServer frame_sink;
+    
     // Positions to be added to the image stream
     std::vector<oat::Position2D* > source_positions;
     std::vector<oat::SMClient<oat::Position2D>* > position_sources;
-    boost::dynamic_bitset<> position_read_success;
+    boost::dynamic_bitset<>::size_type number_of_position_sources;
+    boost::dynamic_bitset<> position_read_required;
 
-    // Mat server for sending decorated frames
-    oat::MatServer frame_sink;
+    bool sources_eof;
 
     // Drawing constants 
     // TODO: These may need to become a bit more sophisticated or user defined

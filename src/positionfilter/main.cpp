@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         
-        if (!variable_map.count("config-file") && type.compare("homo")) {
+        if (!variable_map.count("config-file") && type.compare("homo") == 0) {
             printUsage(visible_options);
             std::cout << "Error: when TYPE=homo, a configuration file must be specified "
                       << "to provide homography matrix. Exiting.\n";

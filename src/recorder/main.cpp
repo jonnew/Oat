@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> position_sources;
     std::string file_name;
     std::string save_path;
+    int fps;
     bool append_date = false;
 
     try {
@@ -71,12 +72,15 @@ int main(int argc, char *argv[]) {
                 "The path to the folder to which the video stream and position information will be saved.")
                 ("date,d",
                 "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the filename.")
-                ("positionsources,p", po::value< std::vector<std::string> >()->multitoken(),
+                ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
                 "The name of the server(s) that supply object position information."
                 "The server(s) must be of type SMServer<Position>\n")
-                ("imagesources,i", po::value< std::vector<std::string> >()->multitoken(),
+                ("image-sources,i", po::value< std::vector<std::string> >()->multitoken(),
                 "The name of the server(s) that supplies images to save to video."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
+                ("frames-per-second,F", po::value<int>(&fps),
+                "The frame rate of the recorded video. This determines playback speed of the recording. "
+                "It does not affect online processing in any way.\n")
                 ;
 
         po::options_description all_options("OPTIONS");
@@ -102,7 +106,7 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        if (!variable_map.count("positionsources") && !variable_map.count("imagesources")) {
+        if (!variable_map.count("position-sources") && !variable_map.count("image-sources")) {
             printUsage(all_options);
             std::cout << "Error: at least a single POSITION_SOURCE or FRAME_SOURCE must be specified. Exiting.\n";
             return -1;
@@ -117,10 +121,15 @@ int main(int argc, char *argv[]) {
             file_name = "";
             std::cout << "Warning: no base filename was provided.\n";
         }
+        
+        if (!variable_map.count("frames-per-second") ) {
+            fps = 30;
+            std::cout << "Warning: playback speed set to 30 FPS.\n";
+        }
 
         // May contain imagesource and sink information!]
-        if (variable_map.count("positionsources")) {
-            position_sources = variable_map["positionsources"].as< std::vector<std::string> >();
+        if (variable_map.count("position-sources")) {
+            position_sources = variable_map["position-sources"].as< std::vector<std::string> >();
             
             // Assert that all positions sources are unique. If not, remove duplicates, and issue warning.
             std::vector<std::string>::iterator it;
@@ -132,8 +141,8 @@ int main(int argc, char *argv[]) {
             
         }
         
-        if (variable_map.count("imagesources")) {
-            frame_sources = variable_map["imagesources"].as< std::vector<std::string> >();
+        if (variable_map.count("image-sources")) {
+            frame_sources = variable_map["image-sources"].as< std::vector<std::string> >();
             
             // Assert that all positions sources are unique. If not, remove duplicates, and issue warning.
             std::vector<std::string>::iterator it;
@@ -156,7 +165,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Make the decorator
-    Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date);
+    Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date, fps);
 
     // Tell user
     if (!frame_sources.empty()) {

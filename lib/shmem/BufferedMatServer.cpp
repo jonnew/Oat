@@ -19,6 +19,7 @@
 #include <ostream>
 #include <chrono>
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/thread/thread_time.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 #include "SharedCVMatHeader.cpp" // TODO: Why???
@@ -59,14 +60,19 @@ namespace oat {
 
         // Join the server thread back with the main one
         server_thread.join();
+        
+        // Set stream EOF state in shmem
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
 
-        // Remove_shared_memory on object destruction
-
-        bip::shared_memory_object::remove(shmem_name.c_str());
+        // TODO: If the client ref count is 0, memory can be deallocated
+        if (shared_mem_manager->get_client_ref_count() == 0) {
+            
+            // Remove_shared_memory on object destruction
+            bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG
-        std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
+            std::cout << oat::dbgMessage("Shared memory \'" + shmem_name + "\' was deallocated.\n");
 #endif
-
+        } 
     }
 
     void BufferedMatServer::createSharedMat(void) {
@@ -124,6 +130,9 @@ namespace oat {
 
             // Here we must attempt to clear the whole buffer before waiting again.
             std::pair<uint32_t, cv::Mat> sample;
+
+            boost::system_time timeout =
+                    boost::get_system_time() + boost::posix_time::milliseconds(10);
             
             while (mat_buffer.pop(sample)) {
 
@@ -149,42 +158,48 @@ namespace oat {
                 std::cout.flush();
 
 #endif
+                try {
+                    // Create shared mat object if not done already
+                    if (!mat_header_constructed) {
+                        shared_mat_header->buildHeader(shared_memory, sample.second);
+                        mat_header_constructed = true;
+                    }
 
-                // Create shared mat object if not done already
-                if (!mat_header_constructed) {
-                    shared_mat_header->buildHeader(shared_memory, sample.second);
-                    mat_header_constructed = true;
-                }
+                    /* START CRITICAL SECTION */
+                    shared_mat_header->mutex.wait();
 
-                /* START CRITICAL SECTION */
-                shared_mat_header->mutex.wait();
+                    // Perform writes in shared memory 
+                    shared_mat_header->writeSample(sample.first, sample.second);
 
-                // Perform writes in shared memory 
-                shared_mat_header->writeSample(sample.first, sample.second);
+                    // Tell each client they can proceed
+                    for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
+                        shared_mat_header->read_barrier.post();
+                    }
 
-                // Tell each client they can proceed
-                for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
-                    shared_mat_header->read_barrier.post();
-                }
+                    shared_mat_header->mutex.post();
+                    /* END CRITICAL SECTION */
 
-                shared_mat_header->mutex.post();
-                /* END CRITICAL SECTION */
+                    // Only wait if there is a client
+                    // Timed wait with period check to prevent deadlocks
+                    while (shared_mem_manager->get_client_ref_count() > 0 &&
+                            !shared_mat_header->write_barrier.timed_wait(timeout)) {
+                    }
 
-                // Only wait if there is a client
-                if (shared_mem_manager->get_client_ref_count()) {
-                    shared_mat_header->write_barrier.wait();
-                }
 
-                // Tell each client they can proceed now that the write_barrier
-                // has been passed
-                for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
-                    shared_mat_header->new_data_barrier.post();
+                    // Tell each client they can proceed now that the write_barrier
+                    // has been passed
+                    for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
+                        shared_mat_header->new_data_barrier.post();
+                    }
+                } catch (bip::interprocess_exception ex) {
+
+                    // Something went wrong during shmem access so result is invalid
+                    // Usually due to SIGINT being called during read_barrier timed
+                    // wait
+                    return;
                 }
             }
         }
-        
-        // Set stream EOF state in shmem
-        shared_mem_manager->set_server_state(oat::ServerRunState::END);
     }
  
     void BufferedMatServer::notifySelf() {
