@@ -7,18 +7,21 @@ before_install:
 install:
   
   # Install latest boost
+  - cd
   - wget http://sourceforge.net/projects/boost/files/latest/download?source=files -O tarboost
   - tar -xf tarboost
   - cd ./boost*
   - ./bootstrap.sh
   - ./b2 --with-program_options --with-system --with-thread
-  - cd 
+  - cd ..
   - sudo mv boost* /opt
+  - cd
 
   # Install OpenCV 3.0
   #- wget https://github.com/Itseez/opencv/archive/3.0.0.zip -O opencv.zip
   #- unzip opencv.zip -d opencv
   #- cd opencv/opencv-*
+  - cd
   - git clone git@github.com:Itseez/opencv.git
   - cd opencv
   - mkdir release
@@ -29,11 +32,14 @@ install:
   - cd 
 
   # RapidJSON and cpptoml
+  - cd
   - cd simple-tracker/lib
   - sudo ./update_libs.sh
   - cd
 
   # Build
+  - cd
+  - cd simple-tracker
   - mkdir release
   - cd release
   - cmake -DCMAKE_BUILD_TYPE=RELEASE
