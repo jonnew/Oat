@@ -20,7 +20,6 @@
 #include "HomographyTransform2D.h"
 
 #include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/datatypes/OatException.h"
 
 HomographyTransform2D::HomographyTransform2D(const std::string& position_source_name, const std::string& position_sink_name) :
 PositionFilter(position_source_name, position_sink_name)
@@ -78,12 +77,10 @@ void HomographyTransform2D::configure(const std::string& config_file, const std:
             auto this_config = *config.get_table(config_key);
 
             if (this_config.contains("homography")) {
-                
+               
                 // Read array
                 cpptoml::array homo = (*this_config.get_array("homography"));
                 
-                // TODO: Assertions testing homography matrix size
-
                 auto homo_vec = homo.array_of<double>();
                 if (homo_vec.size() == 9) {
 
@@ -99,8 +96,7 @@ void HomographyTransform2D::configure(const std::string& config_file, const std:
 
                     homography_valid = true;
                 } else {
-                    std::cerr << "Homography matrix must be specified as 9 element TOML array of doubles.\n"; 
-                    throw oat::configEx;
+					throw std::runtime_error("Homography matrix must be specified as 9 element TOML array of doubles.");
                 }
             }
 

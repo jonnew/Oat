@@ -50,9 +50,9 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
             
             try {
                 background_img = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
+				background_frame_size = background_img.size();
                 background_set = true;
                 
-                // TODO: Need assertions for the validity of this background image
             } catch (cv::Exception& e) {
                 std::cout << "CV Exception: " << e.what() << "\n";
                 std::cout << "The provided background image will not be used.\n"
@@ -99,6 +99,7 @@ cv::Mat BackgroundSubtractor::filter(cv::Mat& frame) {
     } else {
 
         // First image is always used as the default background image
+		// if one is not provied in the config
         setBackgroundImage(frame);
     }
 

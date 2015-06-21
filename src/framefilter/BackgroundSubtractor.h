@@ -32,6 +32,7 @@ private:
 
     // The background image used for subtraction
     bool background_set = false;
+	cv::Size background_frame_size;
     cv::Mat background_img;
 
 };
