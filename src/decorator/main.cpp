@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> position_sources;
     std::string frame_source;
     std::string frame_sink;
+    bool print_region = false;
     bool print_timestamp = false;
     bool print_sample_number = false;
     bool encode_sample_number = false;
@@ -78,6 +79,8 @@ int main(int argc, char *argv[]) {
                 ("timestamp,t", "Write the current date and time on each frame.\n")
                 ("sample,s", "Write the frame sample number on each frame.\n")
                 ("samplecode,S", "Write the binary encoded sample on each frame.\n")
+                ("region,R", "Write region information on each frame "
+                "if there is a position stream that contains it.\n")
                 ;
 
         po::options_description hidden("POSITIONAL OPTIONS");
@@ -150,6 +153,10 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("samplecode")) {
             encode_sample_number = true;
         }
+        
+        if (variable_map.count("region")) {
+            print_region = true;
+        }
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -163,6 +170,7 @@ int main(int argc, char *argv[]) {
     decorator.set_print_timestamp(print_timestamp);
     decorator.set_print_sample_number(print_sample_number);
     decorator.set_encode_sample_number(encode_sample_number);
+    decorator.set_print_region(print_region);
     
      // Tell user
     std::cout << oat::whoMessage(decorator.get_name(),

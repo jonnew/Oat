@@ -82,7 +82,7 @@ private:
     std::vector<oat::MatClient* > frame_sources;
     cv::Mat current_frame;
     boost::dynamic_bitset<> frame_read_required;
-    static const int frame_write_buffer_size = 2;
+    static const int frame_write_buffer_size = 100;
 
     std::vector< std::thread* > frame_write_threads;
     std::vector< std::mutex* > frame_write_mutexes;

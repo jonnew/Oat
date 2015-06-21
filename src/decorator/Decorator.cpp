@@ -33,6 +33,7 @@ Decorator::Decorator(const std::vector<std::string>& position_source_names,
 , position_read_required(number_of_position_sources)
 , sources_eof(false)
 , decorate_position(true)
+, print_region(false)
 , print_timestamp(false)
 , print_sample_number(false)
 , encode_sample_number(false)
@@ -115,6 +116,10 @@ void Decorator::drawSymbols() {
         drawPosition();
         drawHeading();
         drawVelocity();
+        
+        if (print_region) {
+            printRegion();
+        }
     }
 
     if (print_timestamp) {
@@ -160,9 +165,18 @@ void Decorator::drawHeading() {
 
 void Decorator::drawVelocity() {
     for (auto position : source_positions) {
-        if (position->velocity_valid && position->position_valid) {
+        if (position->velocity_valid && position->position_valid) {        
             cv::Point2d end = position->position + (velocity_scale_factor * position->velocity);
             cv::line(current_frame, position->position, end, cv::Scalar(0, 255, 0), 2, 8);
+        }
+    }
+}
+
+void Decorator::printRegion() {
+    for (auto position : source_positions) {
+        if (position->region_valid) {          
+            cv::Point text_origin(current_frame.cols - 100, 20);
+            cv::putText(current_frame, "Region: " + std::string(position->region), text_origin, 1, font_scale, font_color);
         }
     }
 }

@@ -18,6 +18,7 @@
 //******************************************************************************
 
 #include "HomographyTransform2D.h"
+
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/datatypes/OatException.h"
 

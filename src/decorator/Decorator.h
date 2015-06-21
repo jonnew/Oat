@@ -38,6 +38,7 @@ public:
     bool decorateFrame(void);
     
     //Accessors
+    void set_print_region(bool value) { print_region = value; }
     void set_print_timestamp(bool value) { print_timestamp = value; }
     void set_print_sample_number(bool value) { print_sample_number = value; }
     void set_encode_sample_number(bool value) { encode_sample_number = value; }
@@ -69,6 +70,7 @@ private:
     // Drawing constants 
     // TODO: These may need to become a bit more sophisticated or user defined
     bool decorate_position;
+    bool print_region;
     bool print_timestamp;
     bool print_sample_number;
     bool encode_sample_number;
@@ -84,6 +86,7 @@ private:
     void drawPosition(void);
     void drawHeading(void);
     void drawVelocity(void);
+    void printRegion(void);
     void drawSymbols(void);
     void printTimeStamp(void); 
     void printSampleNumber(void);  

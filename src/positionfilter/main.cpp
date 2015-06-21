@@ -21,6 +21,7 @@
 #include "../../lib/utility/IOFormat.h"
 #include "KalmanFilter2D.h"
 #include "HomographyTransform2D.h"
+#include "RegionFilter2D.h"
 
 namespace po = boost::program_options;
 
@@ -70,6 +71,7 @@ int main(int argc, char *argv[]) {
     std::unordered_map<std::string, char> type_hash;
     type_hash["kalman"] = 'a';
     type_hash["homo"] = 'b';
+    type_hash["region"] = 'c';
 
     try {
         
@@ -174,6 +176,11 @@ int main(int argc, char *argv[]) {
         case 'b':
         {
             position_filter = new HomographyTransform2D(source, sink);
+            break;
+        }
+        case 'c':
+        {
+            position_filter = new RegionFilter2D(source, sink);
             break;
         }
         default:

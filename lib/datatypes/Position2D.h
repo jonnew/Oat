@@ -29,20 +29,24 @@ namespace oat {
     typedef cv::Point2d Point2D;
     typedef cv::Point2d Velocity2D;
     typedef cv::Point2d UnitVector2D;
+    typedef char Region[100];
 
     struct Position2D : public Position {
 
         Position2D() : Position() { };
 
-        bool position_valid = false;
+        bool position_valid {false};
         Point2D position;
 
-        bool velocity_valid = false;
+        bool velocity_valid {false};
         Velocity2D velocity;
 
-        bool heading_valid = false;
+        bool heading_valid {false};
         UnitVector2D heading;
 
+        bool region_valid {false};
+        Region region;
+        
         template <typename Writer>
         void Serialize(Writer& writer, const std::string& label) const {
             
@@ -94,6 +98,15 @@ namespace oat {
                 writer.Double(heading.x);
                 writer.Double(heading.y);
                 writer.EndArray(2);
+            }
+            
+            // Head direction
+            writer.String("reg_ok");
+            writer.Bool(region_valid);
+
+            if (region_valid) {
+                writer.String("reg");
+                writer.String(region);
             }
 
             writer.EndObject();
