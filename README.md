@@ -273,7 +273,7 @@ Frame decorator. Annotates frames with sample times, dates, and/or positional in
      frame ──> │         │
 position 0 ──> │         │
 position 1 ──> │decorate │ ──> frame
-  :            │ 	 │
+  :            │         │
 position N ──> │         │
                └─────────┘
 ```
