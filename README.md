@@ -166,6 +166,18 @@ oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 - `frame_rate [float]` Frame rate in frames per second
 - `roi [{+int, +int, +int, +int}]`
 
+
+
+#### `framefilt`
+Frame filter.
+
+##### Signature
+```
+         ┌───────────┐          
+frame──> │ framefilt │ ──> frame
+         └───────────┘          
+```
+
 #### `view`
 Frame viewer. Displays video stream from named shard memory in a window. Also permits the user to take snapshots of the viewed stream.
 
@@ -195,6 +207,7 @@ CONFIGURATION:
 
 NOTE:
   To take a snapshot of the currently displayed frame, press <kbd>s</kbd> while the display window is in focus.
+```
 
 ##### Example
 ```bash
@@ -249,6 +262,20 @@ position 1 ──> │        │
   :            │posicom │ ──> position
 position N ──> │        │
                └────────┘
+```
+
+#### `decorate`
+Frame decorator. Annotates frames with sample times, dates, and/or positional information.
+
+##### Signature
+```
+               ┌─────────┐
+     frame ──> │         │
+position 0 ──> │         │
+position 1 ──> │decorate │ ──> frame
+  :            │ 	 │
+position N ──> │         │
+               └─────────┘
 ```
 
 ##### Usage
