@@ -89,7 +89,7 @@ This script has the following graphical representation:
 ```
 frameserve ──> framefilt ──> posidet ──> decorate ───> view
            ╲                           ╱         ╲
-	         ─────────────────────────             ──> record   	
+             ─────────────────────────               ──> record   	
 ```
 
 Each component of Oat is a subcommand defined by a general input/output type signature. Below, the signature, usage information, examples, and configuration options are provided for each component. 
