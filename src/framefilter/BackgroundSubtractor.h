@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   BackgroundSubtractor.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -22,18 +25,35 @@
 class BackgroundSubtractor : public FrameFilter {
 public:
 
+    /**
+     * A background subtractor.
+     * Subtract a frame image from a frame stream. The background frame is 
+     * the first frame obtained from the SOURCE frame stream, or can be 
+     * supplied via configuration file.
+     * @param source_name raw frame source name
+     * @param sink_name filtered frame sink name
+     */
     BackgroundSubtractor(const std::string& source_name, const std::string& sink_name);
 
-    void setBackgroundImage(const cv::Mat&);
-    void configure(const std::string& config_file, const std::string& config_key);
+    /**
+     * Apply background subtraction.
+     * @param frame unfiltered frame
+     * @return filtered frame
+     */
     cv::Mat filter(cv::Mat& frame);
+    
+    void configure(const std::string& config_file, const std::string& config_key);
     
 private:
 
-    // The background image used for subtraction
+    // Is the background frame set?
     bool background_set = false;
-	cv::Size background_frame_size;
+
+    // The backgound frame
     cv::Mat background_img;
+    
+    // Set the background frame
+    void setBackgroundImage(const cv::Mat&);
 
 };
 

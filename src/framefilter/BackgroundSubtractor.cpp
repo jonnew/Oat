@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   BackgroundSubtractor.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -25,49 +28,40 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 BackgroundSubtractor::BackgroundSubtractor(const std::string& source_name, const std::string& sink_name) :
-  FrameFilter(source_name, sink_name) { }
+  FrameFilter(source_name, sink_name) {
+}
 
 void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
-    
+
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
-    }
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(config_key)) {
+        auto this_config = *config.get_table(config_key);
 
-            auto this_config = *config.get_table(config_key);
+        std::string background_img_path;
+        if (this_config.contains("background")) {
+            background_img_path = *this_config.get_as<std::string>("background");
 
-            std::string background_img_path;
-            if (this_config.contains("background")) {
-                background_img_path = *this_config.get_as<std::string>("background");
-            }
-            
-            try {
-                background_img = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
-				background_frame_size = background_img.size();
-                background_set = true;
-                
-            } catch (cv::Exception& e) {
-                std::cout << "CV Exception: " << e.what() << "\n";
-                std::cout << "The provided background image will not be used.\n"
-                          << "Instead, the first frame captured will be used.\n";
-                background_set = false;
+            background_img = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
+
+            if (background_img.data == NULL) {
+                throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
             }
 
-        } else {
-            std::cerr << "No background subtraction configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
-            exit(EXIT_FAILURE);
+            background_set = true;
         }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+    } else {
+        throw ( std::runtime_error(
+                "No background subtractor configuration named " + config_key +
+                " was provided in the configuration file " + config_file)
+                );
     }
-}
+} 
 
 /**
  * Set the background image to be used during subsequent subtraction operations.
@@ -86,20 +80,24 @@ void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
  * 
  */
 cv::Mat BackgroundSubtractor::filter(cv::Mat& frame) {
-
+    // Throws cv::Exception if there is a size mismatch between frames,
+    // or in any case where cv assertions fail.
+    
     // Only proceed with processing if we are getting a valid frame
     if (background_set) {
 
-        try {
-            frame = frame - background_img;
-        } catch (cv::Exception& e) {
-            std::cout << "CV Exception: " << e.what() << "\n";
+        if (background_img.size != frame.size) {
+            std::string error_message = "Background frame and frames from SOURCE do not have equal sizes";
+            CV_Error(cv::Error::StsBadSize, error_message);
+
         }
+
+        frame = frame - background_img;
 
     } else {
 
         // First image is always used as the default background image
-		// if one is not provied in the config
+	// if one is not provided in a configuration file
         setBackgroundImage(frame);
     }
 

@@ -1,7 +1,7 @@
 //******************************************************************************
-//* File:   FrameFilt.h
+//* File:   FrameFilter.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
@@ -44,7 +44,7 @@ public:
     /**
      * Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
      * filtered frame to SINK.
-     * @return 
+     * @return SOURCE end of stream signal. If true, this component should exit.
      */
     bool processSample(void) {
         
@@ -75,35 +75,24 @@ protected:
     
     /**
      * Perform frame filtering.
-     * @param raw_frame unfiltered frame
+     * @param frame unfiltered frame
      * @return filtered frame
      */
-    virtual cv::Mat filter(cv::Mat& raw_frame) = 0;
+    virtual cv::Mat filter(cv::Mat& frame) = 0;
 
 private:
 
-    /**
-     * Filter name.
-     */
+    // Filter name.
     std::string name;
     
-    /**
-     * Currently processed frame
-     */
+    //Currently processed frame
     cv::Mat current_frame;
     
-    /**
-     * Frame SOURCE object for receiving raw frames
-     */
+    // Frame SOURCE object for receiving raw frames
     oat::MatClient frame_source;
-
-    // Frame filters have Mat server for sending processed frames
     
-    /**
-     * Frame SOURCE object for publishing filtered frames
-     */
+    //Frame SOURCE object for publishing filtered frames
     oat::MatServer frame_sink;
-   
 };
 
 #endif	/* FRAMEFILT_H */

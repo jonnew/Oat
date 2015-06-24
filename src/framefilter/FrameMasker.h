@@ -25,28 +25,39 @@
 class FrameMasker : public FrameFilter {
 public:
     
+    /**
+     * A frame mask.
+     * A frame mask to isolate one or more regions of interest in a frame stream using
+     * a mask frame. Pixels of the input frames that correspond to non-zero pixels in
+     * the mask frame will be unchanged. All other pixels will be set to 0. 
+     * @param source_name raw frame source name
+     * @param sink_name filtered frame sink name
+     * @param invert_mask invert the mask frame before filtering.
+     */
     FrameMasker(const std::string& source_name, 
                 const std::string& sink_name, 
                 bool invert_mask=false);
     
+    
+    /**
+     * Apply frame mask.
+     * @param frame unfiltered frame
+     * @return filtered frame
+     */
     cv::Mat filter(cv::Mat& frame);
+
     void configure(const std::string& config_file, const std::string& config_key);
     
-    // Accessors
-    void set_invert_mask(bool value) { invert_mask = value; }
-    
 private:
-    
-    // Should the mask be inverted?
-    // This value can be accessed from the UI thread
-    std::atomic<bool> invert_mask;
+
+    // Should be inverted before application.
+    bool invert_mask;
     
     // Do we have a mask to work with
     bool mask_set = false;
     
     // Mask frames with an arbitrary ROI
     cv::Mat roi_mask;
-
 };
 
 #endif	/* FRAMEMASKER_H */

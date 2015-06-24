@@ -1,7 +1,7 @@
 //******************************************************************************
 //* File:   FrameMasker.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
@@ -25,19 +25,9 @@
 
 #include "../../lib/cpptoml/cpptoml.h"
 
-/**
- * A frame mask.
- * A frame mask to isolate one or more regions of interest in a frame stream using
- * a mask frame. Pixels of the input frames that correspond to non-zero pixels in
- * the mask frame will be unchanged. All other pixels will be set to 0. 
- * @param source_name raw frame source name
- * @param sink_name filtered frame sink name
- * @param invert_mask invert the mask frame before filtering.
- */
 FrameMasker::FrameMasker(const std::string& source_name, const std::string& sink_name, bool invert_mask) :
   FrameFilter(source_name, sink_name)
 , invert_mask(false) { }
-
 
 void FrameMasker::configure(const std::string& config_file, const std::string& config_key) {
 
@@ -58,20 +48,17 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
             roi_mask = cv::imread(mask_path, CV_LOAD_IMAGE_GRAYSCALE);
 
             if (roi_mask.data == NULL) {
-                throw (std::runtime_error("Mask file \"" + mask_path + "\" could not be read."));
+                throw (std::runtime_error("File \"" + mask_path + "\" could not be read."));
             }
 
             mask_set = true;
-
         }
-
     } else {
         throw ( std::runtime_error(
                 "No frame mask configuration named "  + config_key +  
                 " was provided in the configuration file " + config_file)
               );
     }
-
 }
 
 cv::Mat FrameMasker::filter(cv::Mat& frame) {
@@ -80,12 +67,12 @@ cv::Mat FrameMasker::filter(cv::Mat& frame) {
     // received from SOURCE with custom message, or in any case where setTo()
     // assertions fail.
     if (mask_set) {
-        
+
         if (roi_mask.size != frame.size) {
-            std::string error_message = "Mask image and frames from SOURCE do not have equal sizes";
+            std::string error_message = "Mask frame and frames from SOURCE do not have equal sizes";
             CV_Error(cv::Error::StsBadSize, error_message);
         }
-        
+
         frame.setTo(0, roi_mask == 0);
     }
 
