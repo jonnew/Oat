@@ -30,6 +30,10 @@
 class FrameFilter {
 public:
 
+    /**
+     * Abstract frame filter.
+     * All concrete frame filter types derive from this ABC.
+     */
     FrameFilter(const std::string& source_name, const std::string& sink_name) :
       name("framefilt[" + source_name + "->" + sink_name + "]")
     , frame_source(source_name)
@@ -37,7 +41,11 @@ public:
     
     virtual ~FrameFilter() { }
 
-    // Frame filters must be able to receive, filter, and serve frames
+    /**
+     * Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
+     * filtered frame to SINK.
+     * @return 
+     */
     bool processSample(void) {
         
         // Only proceed with processing if we are getting a valid frame
@@ -50,28 +58,50 @@ public:
         return (frame_source.getSourceRunState() == oat::ServerRunState::END);
     }
 
-    // Frame filters must be configurable
+    /**
+     * Configure filter parameters.
+     * @param config_file configuration file path
+     * @param config_key configuration key
+     */
     virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
     
-    // Frame filters have a descriptive, accessible name
+    /**
+     * Get FrameFilter name
+     * @return name 
+     */
     std::string get_name(void) const { return name; }
     
 protected:
     
-    virtual cv::Mat filter(cv::Mat& input_frame) = 0;
+    /**
+     * Perform frame filtering.
+     * @param raw_frame unfiltered frame
+     * @return filtered frame
+     */
+    virtual cv::Mat filter(cv::Mat& raw_frame) = 0;
 
 private:
 
-    // Component name
+    /**
+     * Filter name.
+     */
     std::string name;
     
-    // Frame filters have Mat client object for receiving frames
+    /**
+     * Currently processed frame
+     */
     cv::Mat current_frame;
     
-    // Frame filters have a frame source from which frames are received
+    /**
+     * Frame SOURCE object for receiving raw frames
+     */
     oat::MatClient frame_source;
 
     // Frame filters have Mat server for sending processed frames
+    
+    /**
+     * Frame SOURCE object for publishing filtered frames
+     */
     oat::MatServer frame_sink;
    
 };

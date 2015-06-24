@@ -45,10 +45,21 @@ namespace oat {
 
         return "\033[1m" + source + ": \033[0m\033[33m" + message + "\033[0m";
     }
+    
+    inline std::string Warn(std::string message) {
+
+        return "\033[0m\033[33m" + message + "\033[0m";
+    }
+
 
     inline std::string whoError(std::string source, std::string message) {
 
         return "\033[1m" + source + ": \033[0m\033[31m" + message + "\033[0m";
+    }
+    
+    inline std::string Error(std::string message) {
+
+        return "\033[31m" + message + "\033[0m";
     }
     
     inline std::string dbgMessage(std::string message) {

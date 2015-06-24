@@ -420,7 +420,7 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
     - __EDIT__ This issue has pretty much gone away without hardware buffering by increasing the amount of memory available to the kernel to buffer incoming Gige data. See Instructions below.
 - [ ] EOF signal for processing pipeline
     - shmem constructs need to include an EOF flag that can be initiated by a pure server (frameserve or positest) that will propogate through the processing pipeline shutting down processing components as it goes. This way, user interaction is not required to exit programs.
-    
+- [ ] shmem type checking by clients, exit gracefully in the case of incorrect type
 ####  Connecting to point-grey PGE camera in Linux
 - First you must assign your camera a static IP address. 
     - The easiest way to do this is to use a Windows machine to run the the IP configurator program provided by Point Grey.

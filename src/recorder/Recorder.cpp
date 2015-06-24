@@ -33,10 +33,12 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         std::string save_path,
         std::string file_name,
         const bool& append_date,
-        const int& frames_per_second) :
+        const int& frames_per_second,
+        bool overwrite) :
   save_path(save_path)
 , file_name(file_name)
 , append_date(append_date)
+, allow_overwrite(overwrite)
 , running(true)
 , frames_per_second(frames_per_second)
 , number_of_frame_sources(frame_source_names.size())
@@ -93,8 +95,10 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
         posi_fid = posi_fid + ".json";
 
-        checkFile(posi_fid);
-
+        if (!allow_overwrite) {
+            checkFile(posi_fid);
+        }
+        
         position_fp = fopen(posi_fid.c_str(), "wb");
         if (!position_fp) {
             std::cerr << "Error: unable to open, " + posi_fid + ". Exiting." << std::endl;
@@ -139,11 +143,13 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
             else
                 frame_fid = file_name.empty() ?
                 (save_path + "/" + frame_source_name) :
-                (save_path + "/" + file_name + "_" + frame_source_name);
+                (save_path + "/" + file_name);
 
             frame_fid = frame_fid + ".avi";
 
-            checkFile(frame_fid);
+            if (!allow_overwrite) {
+                checkFile(frame_fid);
+            }
 
             video_file_names.push_back(frame_fid);
             frame_sources.push_back(new oat::MatClient(frame_source_name));

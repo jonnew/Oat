@@ -41,7 +41,8 @@ public:
             std::string save_path = ".",
             std::string file_name = "",
             const bool& append_date = false,
-            const int& frames_per_second = 30);
+            const int& frames_per_second = 30,
+            const bool overwrite = false);
 
     ~Recorder();
 
@@ -61,6 +62,7 @@ private:
     std::string save_path;
     std::string file_name;
     const bool append_date;
+    const bool allow_overwrite;
     
     // File writer in running state (i.e. all threads should remain responsive for
     // new data coming down the pipeline)

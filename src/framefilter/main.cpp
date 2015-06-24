@@ -17,9 +17,12 @@
 #include <csignal>
 #include <unordered_map>
 #include <boost/program_options.hpp>
+#include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/shmem/SharedMemoryManager.h"
+#include "../../lib/cpptoml/cpptoml.h"
+
 #include "FrameFilter.h"
 #include "BackgroundSubtractor.h"
 #include "FrameMasker.h"
@@ -123,7 +126,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (variable_map.count("version")) {
-            std::cout << "Simple-Tracker Background Subtractor version 1.0\n"; //TODO: Cmake managed versioning
+            std::cout << "Simple-Tracker Frame Filter version 1.0\n"; //TODO: Cmake managed versioning
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
@@ -131,21 +134,21 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("source")) {
             printUsage(visible_options);
-            std::cout << oat::whoError("FrameFilt", "A SOURCE must be specified. Exiting.\n");
+            std::cout << oat::Error("A SOURCE must be specified.\n");
             return -1;
         }
 
         if (!variable_map.count("sink")) {
             printUsage(visible_options);
-            std::cerr << oat::whoError("FrameFilt", "A SINK name must be specified. Exiting.\n");
+            std::cerr << oat::Error("A SINK name must be specified.\n");
             return -1;
         }
               
         if (variable_map.count("invert-mask")) {
 
             if (type_hash[type] != 'b') {
-                std::cout << oat::whoWarn("framefilt", "Invert-mask specified, but this is the wrong filter TYPE for that option.\n")
-                          << oat::whoWarn("framefilt", "Invert-mask option was ignored.\n");
+                std::cerr << oat::Warn("Invert-mask specified, but this is the wrong filter TYPE for that option.\n")
+                          << oat::Warn("Invert-mask option was ignored.\n");
             } else {
                 invert_mask = true;
             }
@@ -154,21 +157,22 @@ int main(int argc, char *argv[]) {
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
-            std::cerr << oat::whoError("FrameFilt", "A configuration file must be supplied with a corresponding config-key. Exiting.\n");
+            std::cerr << oat::Error("A configuration file must be supplied with a corresponding config-key.\n");
             return -1;
         } else if (variable_map.count("config-file")) {
             config_used = true;
         }
 
     } catch (std::exception& e) {
-        std::cerr << oat::whoError("FrameFilt", e.what()) << "\n";
+        std::cerr << oat::Error(e.what()) << "\n";
         return -1;
     } catch (...) {
-        std::cerr << oat::whoError("FrameFilt", "Exception of unknown type. Exiting.\n");
+        std::cerr << oat::Error("Exception of unknown type.\n");
         return -1;
     }
 
-    FrameFilter* filter; //(ant_source, pos_source, sink);
+    // Create component
+    FrameFilter* filter;
     switch (type_hash[type]) {
         case 'a':
         {
@@ -178,38 +182,65 @@ int main(int argc, char *argv[]) {
         case 'b':
         {
             filter = new FrameMasker(source, sink, invert_mask);
+            if (!config_used)
+                 std::cerr << oat::whoWarn(filter->get_name(), 
+                         "No mask configuration was provided." 
+                         " This filter does nothing but waste CPU cycles.\n");
             break;
         }
         default:
         {
             printUsage(visible_options);
-            std::cerr << oat::whoError(filter->get_name(), "Invalid TYPE specified. Exiting.") << std::endl;
+            std::cerr << oat::Error("Invalid framefilter TYPE specified. Exiting.") << std::endl;
             return -1;
         }
     }
-
-    if (config_used)
-        filter->configure(config_file, config_key);
     
-    // Tell user
-    std::cout << oat::whoMessage(filter->get_name(), 
-                 "Listening to source " + oat::sourceText(source) + ".\n")
-              << oat::whoMessage(filter->get_name(),
-                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-              << oat::whoMessage(filter->get_name(), 
-                 "Press CTRL+C to exit.\n");
-    
-    // Infinite loop until ctrl-c or end of stream signal
-    run(filter);
+    // At this point, the new'ed component exists and must be deleted in the case
+    // any exception
+    try { 
+        
+        if (config_used)
+            filter->configure(config_file, config_key);
 
-    // Tell user
-    std::cout << oat::whoMessage(filter->get_name(), "Exiting.\n");
+        // Tell user
+        std::cout << oat::whoMessage(filter->get_name(),
+                "Listening to source " + oat::sourceText(source) + ".\n")
+                << oat::whoMessage(filter->get_name(),
+                "Steaming to sink " + oat::sinkText(sink) + ".\n")
+                << oat::whoMessage(filter->get_name(),
+                "Press CTRL+C to exit.\n");
+
+        // Infinite loop until ctrl-c or end of stream signal
+        run(filter);
+
+        // Tell user
+        std::cout << oat::whoMessage(filter->get_name(), "Exiting.\n");
+        
+        // Free heap memory allocated to filter
+        delete filter;
+
+        // Exit success
+        return 0;
+
+    } catch (const cpptoml::parse_exception& ex) {
+        std::cerr << oat::whoError(filter->get_name(), "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(filter->get_name(), ex.what())
+                  << "\n";
+    } catch (const std::runtime_error ex) {
+        std::cerr << oat::whoError(filter->get_name(),ex.what())
+                  << "\n";
+    } catch (const cv::Exception ex) {
+        std::cerr << oat::whoError(filter->get_name(), ex.msg)
+                  << "\n";
+    } catch (...) {
+        std::cerr << oat::whoError(filter->get_name(), "Unknown exception.\n");
+    }
     
     // Free heap memory allocated to filter
     delete filter;
 
-    // Exit
-    return 0;
+    // Exit failure
+    return -1;
+
 }
-
-

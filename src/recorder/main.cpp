@@ -53,6 +53,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> position_sources;
     std::string file_name;
     std::string save_path;
+    bool allow_overwrite = false;
+    
     int fps;
     bool append_date = false;
 
@@ -72,6 +74,9 @@ int main(int argc, char *argv[]) {
                 "The path to the folder to which the video stream and position information will be saved.")
                 ("date,d",
                 "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the filename.")
+                ("allow-overwrite,o",
+                "If set and save path matches and existing file, the file will be overwritten instead of"
+                "a numerical index being added to the file path.")
                 ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
                 "The name of the server(s) that supply object position information."
                 "The server(s) must be of type SMServer<Position>\n")
@@ -156,6 +161,11 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("date")) {
             append_date = true;
         } 
+        
+        if (variable_map.count("allow-overwrite")) {
+            allow_overwrite = true;
+        } 
+
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -165,7 +175,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Make the decorator
-    Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date, fps);
+    Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date, fps, allow_overwrite);
 
     // Tell user
     if (!frame_sources.empty()) {
