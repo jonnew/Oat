@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   DifferenceDetector.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,7 +15,7 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//****************************************************************************
 
 
 #include "DifferenceDetector2D.h"
@@ -20,20 +23,24 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
+#include "../../lib/datatypes/Position2D.h"
 #include "../../lib/cpptoml/cpptoml.h"
 
 DifferenceDetector2D::DifferenceDetector2D(const std::string& image_source_name, const std::string& position_sink_name) :
 Detector2D(image_source_name, position_sink_name)
 , tuning_image_title(position_sink_name + "_tuning")
 , tuning_windows_created(false)
-, last_image_set(false) {
+, last_image_set(false)
+, tuning_on(false) {
 
+    // Cannot use initializer because if this is set to 0, erode_on or 
+    // dilate_on must be set to false
     set_blur_size(2);
 }
 
-oat::Position2D DifferenceDetector2D::detectPosition(cv::Mat& frame_in) {
+oat::Position2D DifferenceDetector2D::detectPosition(cv::Mat& frame) {
 
-    this_image = frame_in;
+    this_image = frame;
     applyThreshold();
     siftBlobs();
     tune();
@@ -43,42 +50,50 @@ oat::Position2D DifferenceDetector2D::detectPosition(cv::Mat& frame_in) {
 
 void DifferenceDetector2D::configure(const std::string& config_file, const std::string& config_key) {
 
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
-    }
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(config_key)) {
+        auto this_config = *config.get_table(config_key);
 
-            auto this_config = *config.get_table(config_key);
+        if (this_config.contains("blur")) {
+            set_blur_size(*this_config.get_as<int64_t>("blur"));
 
-            if (this_config.contains("blur")) {
-                set_blur_size((int) (*this_config.get_as<int64_t>("blur")));
-            }
-
-            if (this_config.contains("diff_threshold")) {
-                difference_intensity_threshold = (int) (*this_config.get_as<int64_t>("diff_threshold"));
-            }
-
-            if (this_config.contains("tune")) {
-                if (*this_config.get_as<bool>("tune")) {
-                    tuning_on = true;
-                    createTuningWindows();
-                }
-            }
-
-        } else {
-            std::cerr << "No DifferenceDetector configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
-            exit(EXIT_FAILURE);
+            if (blur_size.height < 0)
+                throw (std::runtime_error(
+                    "blur value in " + config_key + 
+                    " in" + config_file + " must be > 0.")
+                    );
         }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+
+        if (this_config.contains("diff_threshold")) {
+            difference_intensity_threshold = *this_config.get_as<int64_t>("diff_threshold");
+            
+            if (difference_intensity_threshold < 0)
+                throw (std::runtime_error(
+                    "diff_threshold value in " + config_key + 
+                    " in" + config_file + " must be > 0.")
+                    );
+        }
+
+        if (this_config.contains("tune")) {
+            if (*this_config.get_as<bool>("tune")) {
+                tuning_on = true;
+                createTuningWindows();
+            }
+        }
+
+    } else {
+        throw ( std::runtime_error(
+                "No configuration named " + config_key +
+                " was provided in the configuration file " + config_file)
+                );
     }
+
 }
 
 void DifferenceDetector2D::siftBlobs() {

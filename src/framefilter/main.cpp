@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   oat framefilt main.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,7 +15,7 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//****************************************************************************
 
 #include <csignal>
 #include <unordered_map>
@@ -20,7 +23,6 @@
 #include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "../../lib/shmem/SharedMemoryManager.h"
 #include "../../lib/cpptoml/cpptoml.h"
 
 #include "FrameFilter.h"
@@ -93,7 +95,10 @@ int main(int argc, char *argv[]) {
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
                 ("type", po::value<std::string>(&type), 
-                "Type of frame filter to use.\n")
+                "Type of frame filter to use.\n\n"
+                "Values:\n"
+                "  bsub: Background subtrator.\n"
+                "  mask: Frame mask.")
                 ("source", po::value<std::string>(&source),
                 "The name of the SOURCE that supplies images on which to perform background subtraction."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
@@ -126,10 +131,16 @@ int main(int argc, char *argv[]) {
         }
 
         if (variable_map.count("version")) {
-            std::cout << "Simple-Tracker Frame Filter version 1.0\n"; //TODO: Cmake managed versioning
+            std::cout << "Oat Frame Filter version 1.0\n"; //TODO: Cmake managed versioning
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
+        }
+        
+        if (!variable_map.count("type")) {
+            printUsage(visible_options);
+            std::cout << oat::Error("A TYPE must be specified.\n");
+            return -1;
         }
 
         if (!variable_map.count("source")) {
@@ -191,7 +202,7 @@ int main(int argc, char *argv[]) {
         default:
         {
             printUsage(visible_options);
-            std::cerr << oat::Error("Invalid framefilter TYPE specified. Exiting.") << std::endl;
+            std::cerr << oat::Error("Invalid TYPE specified.\n");
             return -1;
         }
     }

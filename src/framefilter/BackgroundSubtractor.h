@@ -49,7 +49,7 @@ private:
     // Is the background frame set?
     bool background_set = false;
 
-    // The backgound frame
+    // The background frame
     cv::Mat background_img;
     
     // Set the background frame

@@ -57,7 +57,7 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
         }
     } else {
         throw ( std::runtime_error(
-                "No background subtractor configuration named " + config_key +
+                "No configuration named " + config_key +
                 " was provided in the configuration file " + config_file)
                 );
     }

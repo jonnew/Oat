@@ -27,12 +27,18 @@
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
 
+/**
+ * Abstract frame filter.
+ * All concrete frame filter types implement this ABC.
+ */
 class FrameFilter {
 public:
 
     /**
      * Abstract frame filter.
-     * All concrete frame filter types derive from this ABC.
+     * All concrete frame filter types implement this ABC.
+     * @param source_name Image SOURCE name
+     * @param sink_name Image SINK name
      */
     FrameFilter(const std::string& source_name, const std::string& sink_name) :
       name("framefilt[" + source_name + "->" + sink_name + "]")
@@ -44,7 +50,7 @@ public:
     /**
      * Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
      * filtered frame to SINK.
-     * @return SOURCE end of stream signal. If true, this component should exit.
+     * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
     bool processSample(void) {
         
@@ -83,7 +89,7 @@ protected:
 private:
 
     // Filter name.
-    std::string name;
+    const std::string name;
     
     //Currently processed frame
     cv::Mat current_frame;
@@ -91,7 +97,7 @@ private:
     // Frame SOURCE object for receiving raw frames
     oat::MatClient frame_source;
     
-    //Frame SOURCE object for publishing filtered frames
+    // Frame SINK object for publishing filtered frames
     oat::MatServer frame_sink;
 };
 

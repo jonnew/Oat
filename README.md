@@ -421,6 +421,17 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 - [ ] EOF signal for processing pipeline
     - shmem constructs need to include an EOF flag that can be initiated by a pure server (frameserve or positest) that will propogate through the processing pipeline shutting down processing components as it goes. This way, user interaction is not required to exit programs.
 - [ ] shmem type checking by clients, exit gracefully in the case of incorrect type
+- [ ] Exception saftey for all components
+    - frameserve
+	- ~~framefilt~~
+	- ~~posidet~~
+	- posicom
+	- posifilt
+	- positest
+	- record
+	- view
+	- decorate
+
 ####  Connecting to point-grey PGE camera in Linux
 - First you must assign your camera a static IP address. 
     - The easiest way to do this is to use a Windows machine to run the the IP configurator program provided by Point Grey.
@@ -449,5 +460,6 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 	- _Note_: In order for these changes to persist after system reboots, the following lines must be manually added to the bottom of the /etc/sysctl.conf file:
 	- net.core.rmem_max=1048576
 	- net.core.rmem_default=1048576
+
 
 

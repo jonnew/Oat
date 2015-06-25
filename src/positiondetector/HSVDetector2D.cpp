@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   HSVDetector.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,56 +15,36 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//****************************************************************************
 
 #include "HSVDetector2D.h"
 
 #include <string>
-#include <iostream>
 #include <limits>
 #include <math.h>
 #include <opencv2/opencv.hpp>
 #include <cmath>
 
+#include "../../lib/datatypes/Position2D.h"
 #include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/shmem/BufferedMatServer.h"
 
-HSVDetector2D::HSVDetector2D(const std::string& image_source_name, const std::string& position_sink_name,
-        int h_min_in, int h_max_in,
-        int s_min_in, int s_max_in,
-        int v_min_in, int v_max_in) :
-Detector2D(image_source_name, position_sink_name)
-, h_min(h_min_in)
-, h_max(h_max_in)
-, s_min(s_min_in)
-, s_max(s_max_in)
-, v_min(v_min_in)
-, v_max(v_max_in)
-, name(position_sink_name + "_hsv") {
-
-    tuning_on = false;
+HSVDetector2D::HSVDetector2D(const std::string& image_source_name, const std::string& position_sink_name) :
+  Detector2D(image_source_name, position_sink_name)
+, h_min(0)
+, h_max(256)
+, s_min(0)
+, s_max(256)
+, v_min(0)
+, v_max(256)
+, min_object_area(0)
+, max_object_area(std::numeric_limits<double>::max())
+, tuning_on(false) {
 
     // Set defaults for the erode and dilate blocks
+    // Cannot use initializer because if these are set to 0, erode_on or 
+    // dilate_on must be set to false
     set_erode_size(0);
     set_dilate_size(10);
-
-    // Initialize area parameters without constraint
-    min_object_area = 0;
-    max_object_area = std::numeric_limits<double>::max(); //TODO: These are not being used and would be helpful, esp max_area!
-}
-
-HSVDetector2D::HSVDetector2D(const std::string& source_name, const std::string& pos_sink_name) :
-HSVDetector2D::HSVDetector2D(source_name, pos_sink_name, 0, 256, 0, 256, 0, 256) {
-}
-
-void HSVDetector2D::erodeSliderChangedCallback(int value, void* object) {
-    HSVDetector2D* hsv_detector = (HSVDetector2D*) object;
-    hsv_detector->set_erode_size(value);
-}
-
-void HSVDetector2D::dilateSliderChangedCallback(int value, void* object) {
-    HSVDetector2D* hsv_detector = (HSVDetector2D*) object;
-    hsv_detector->set_dilate_size(value);
 }
 
 oat::Position2D HSVDetector2D::detectPosition(cv::Mat& frame_in) {
@@ -128,7 +111,7 @@ void HSVDetector2D::siftBlobs() {
 
     if (tuning_on) {
         
-        std::string msg = cv::format("Object not found"); // TODO: This default msg will not show up. I have no idea why.
+        std::string msg = cv::format("Object not found"); 
 
         // Plot a circle representing found object
         if (object_position.position_valid) {
@@ -152,74 +135,128 @@ void HSVDetector2D::siftBlobs() {
 
 void HSVDetector2D::configure(const std::string& config_file, const std::string& config_key) {
 
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
-    }
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(config_key)) {
+        auto this_config = *config.get_table(config_key);
 
-            auto this_config = *config.get_table(config_key);
-
-            if (this_config.contains("erode")) {
-                set_erode_size((int) (*this_config.get_as<int64_t>("erode")));
-            }
-
-            if (this_config.contains("dilate")) {
-                set_dilate_size((int) (*this_config.get_as<int64_t>("dilate")));
-            }
-
-            if (this_config.contains("h_thresholds")) {
-                auto t = *this_config.get_table("h_thresholds");
-
-                if (t.contains("min")) {
-                    h_min = (int) (*t.get_as<int64_t>("min"));
-                }
-                if (t.contains("max")) {
-                    h_max = (int) (*t.get_as<int64_t>("max"));
-                }
-            }
-
-            if (this_config.contains("s_thresholds")) {
-                auto t = *this_config.get_table("s_thresholds");
-
-                if (t.contains("min")) {
-                    s_min = (int) (*t.get_as<int64_t>("min"));
-                }
-                if (t.contains("max")) {
-                    s_max = (int) (*t.get_as<int64_t>("max"));
-                }
-            }
-
-            if (this_config.contains("v_thresholds")) {
-                auto t = *this_config.get_table("v_thresholds");
-
-                if (t.contains("min")) {
-                    v_min = (int) (*t.get_as<int64_t>("min"));
-                }
-                if (t.contains("max")) {
-                    v_max = (int) (*t.get_as<int64_t>("max"));
-                }
-            }
-
-            if (this_config.contains("tune")) {
-                if (*this_config.get_as<bool>("tune")) {
-                    tuning_on = true;
-                    createTuningWindows();
-                }
-            }
-
-        } else {
-            std::cerr << "No HSV detector configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
-            exit(EXIT_FAILURE);
+        if (this_config.contains("erode")) {
+            int val = *this_config.get_as<int64_t>("erode");
+            if (val < 0)
+                    throw (std::runtime_error(
+                        "erode value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+            set_erode_size(val);
         }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+
+        if (this_config.contains("dilate")) {
+            int val = *this_config.get_as<int64_t>("dilate");
+            if (val < 0)
+                    throw (std::runtime_error(
+                        "dilate value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+            set_dilate_size(val);
+        }
+        
+        if (this_config.contains("min_area")) {
+            min_object_area = *this_config.get_as<int64_t>("min_area");
+            if (min_object_area < 0)
+                    throw (std::runtime_error(
+                        "min_area value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+        }
+        
+        if (this_config.contains("max_area")) {
+            max_object_area = *this_config.get_as<int64_t>("max_area");
+            if (max_object_area < 0)
+                    throw (std::runtime_error(
+                        "max_area value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+        }
+        
+        if (this_config.contains("h_thresholds")) {
+            auto t = *this_config.get_table("h_thresholds");
+
+            if (t.contains("min")) {
+                h_min = *t.get_as<int64_t>("min");
+                if (h_min < 0)
+                    throw (std::runtime_error(
+                        "h_min value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+            }
+            if (t.contains("max")) {
+                h_max = *t.get_as<int64_t>("max");
+                if (h_max < 0)
+                    throw (std::runtime_error(
+                        "h_max value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+            }
+        }
+
+        if (this_config.contains("s_thresholds")) {
+            auto t = *this_config.get_table("s_thresholds");
+
+            if (t.contains("min")) {
+                s_min = *t.get_as<int64_t>("min");
+                if (s_min < 0)
+                    throw (std::runtime_error(
+                        "s_min value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+            }
+            if (t.contains("max")) {
+                s_max = *t.get_as<int64_t>("max");
+                if (s_max < 0)
+                    throw (std::runtime_error(
+                        "s_max value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+            }
+        }
+
+        if (this_config.contains("v_thresholds")) {
+            auto t = *this_config.get_table("v_thresholds");
+
+            if (t.contains("min")) {
+                v_min = *t.get_as<int64_t>("min");
+                throw (std::runtime_error(
+                        "v_min value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+            }
+            if (t.contains("max")) {
+                v_max = *t.get_as<int64_t>("max");
+                if (v_max < 0)
+                    throw (std::runtime_error(
+                        "v_max value in " + config_key + 
+                        " in" + config_file + " must be > 0.")
+                        );
+            }
+        }
+
+        if (this_config.contains("tune")) {
+            if (*this_config.get_as<bool>("tune")) {
+                tuning_on = true;
+                createTuningWindows();
+            }
+        }
+
+    } else {
+        throw ( std::runtime_error(
+                "No configuration named " + config_key +
+                " was provided in the configuration file " + config_file)
+                );
     }
 }
 
@@ -246,12 +283,14 @@ void HSVDetector2D::createTuningWindows() {
     cv::namedWindow(tuning_image_title, cv::WINDOW_NORMAL);
 
     // Create sliders and insert them into window
-    cv::createTrackbar("H_MIN", tuning_image_title, &h_min, 256);
-    cv::createTrackbar("H_MAX", tuning_image_title, &h_max, 256);
-    cv::createTrackbar("S_MIN", tuning_image_title, &s_min, 256);
-    cv::createTrackbar("S_MAX", tuning_image_title, &s_max, 256);
-    cv::createTrackbar("V_MIN", tuning_image_title, &v_min, 256);
-    cv::createTrackbar("V_MAX", tuning_image_title, &v_max, 256);
+    cv::createTrackbar("H MIN", tuning_image_title, &h_min, 256);
+    cv::createTrackbar("H MAX", tuning_image_title, &h_max, 256);
+    cv::createTrackbar("S MIN", tuning_image_title, &s_min, 256);
+    cv::createTrackbar("S MAX", tuning_image_title, &s_max, 256);
+    cv::createTrackbar("V MIN", tuning_image_title, &v_min, 256);
+    cv::createTrackbar("V MAX", tuning_image_title, &v_max, 256);
+    cv::createTrackbar("MIN AREA", tuning_image_title, &min_object_area, 10000);
+    cv::createTrackbar("MAX AREA", tuning_image_title, &max_object_area, 10000);
     cv::createTrackbar("ERODE", tuning_image_title, &erode_px, 50, &HSVDetector2D::erodeSliderChangedCallback, this);
     cv::createTrackbar("DILATE", tuning_image_title, &dilate_px, 50, &HSVDetector2D::dilateSliderChangedCallback, this);
 
@@ -277,4 +316,14 @@ void HSVDetector2D::set_dilate_size(int value) {
     } else {
         dilate_on = false;
     }
+}
+
+void HSVDetector2D::erodeSliderChangedCallback(int value, void* object) {
+    HSVDetector2D* hsv_detector = (HSVDetector2D*) object;
+    hsv_detector->set_erode_size(value);
+}
+
+void HSVDetector2D::dilateSliderChangedCallback(int value, void* object) {
+    HSVDetector2D* hsv_detector = (HSVDetector2D*) object;
+    hsv_detector->set_dilate_size(value);
 }

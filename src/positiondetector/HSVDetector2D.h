@@ -21,35 +21,31 @@
 #include <opencv2/core/mat.hpp>
 
 #include "Detector2D.h"
-#include "../../lib/datatypes/Position2D.h"
 
-#define PI 3.14159265358979323846
-
+/**
+ * A color-based object position detector
+ */
 class HSVDetector2D : public Detector2D {
-    
 public:
-    
-    // HSV values known
-    HSVDetector2D(const std::string& source_name, const std::string& pos_sink_name,
-                int h_min, int h_max,
-                int s_min, int s_max,
-                int v_min, int v_max);
-    
-    // Start with full range of HSV thresholds. This is typically used
-    // for manual tuning of thresholds using the createTrackbars call
+
+    /**
+     * A color-based object position detector with default parameters.
+     * @param source_name Image SOURCE name
+     * @param pos_sink_name Position SINK name
+     */
     HSVDetector2D(const std::string& source_name, const std::string& pos_sink_name);
 
-    // Use a configuration file to specify parameters
-    void configure(const std::string& config_file, const std::string& config_key);
+
+    /**
+     * Perform color-based object position detection.
+     * @param frame frame to look for object in.
+     * @return  detected object position.
+     */
+    oat::Position2D detectPosition(cv::Mat& frame);
     
-    // Apply the HSVTransform, thresholding, and erode/dilate operations to/from
-    // shared memory allocated mat objects
-    oat::Position2D detectPosition(cv::Mat& frame_in);
+    void configure(const std::string& config_file, const std::string& config_key);
 
     // Accessors
-    std::string get_detector_name() { return name; }
-    void set_min_object_area(double value) { min_object_area = value; }
-    void set_max_object_area(double value) { max_object_area = value; }
     void set_erode_size(int erode_px);
     void set_dilate_size(int dilate_px);
     
@@ -61,28 +57,21 @@ private:
     cv::Mat hsv_image, threshold_image, erode_element, dilate_element;
 
     // HSV threshold values
-    int h_min;
-    int h_max;
-    int s_min;
-    int s_max;
-    int v_min;
-    int v_max;
+    int h_min, h_max;
+    int s_min, s_max;
+    int v_min, v_max;
 
-    // For manual manipulation of HSV filtering
-    const std::string name;
-
-    // Object detection
+    // Detect object area 
     double object_area;
+    int min_object_area;
+    int max_object_area;
+    static constexpr double PI{3.14159265358979323846};
     
     // The detected object position
     oat::Position2D object_position;
 
-    double min_object_area;
-    double max_object_area;
-    
     // Processing segregation 
-    // TODO: These are terrible - no IO sigature other than void -> void,
-    // no exceptions, etc
+    // TODO: These are terrible - no IO signature other than void -> void,
     
     // Binary threshold and use the binary threshold to mask the image
     void applyThreshold(void);
@@ -92,8 +81,9 @@ private:
     
     // Sift through thresholded blobs to pull out potential object
     void siftBlobs(void);
-    
-    // Tuning stuff
+   
+    // Parameter tuning GUI functions and properties
+    bool tuning_on;
     bool tuning_windows_created;
     const std::string tuning_image_title;
     cv::Mat tune_image;
@@ -101,6 +91,8 @@ private:
     virtual void createTuningWindows(void);
     static void erodeSliderChangedCallback(int, void*);
     static void dilateSliderChangedCallback(int, void*);
+    
+
 };
 
 #endif	/* HSVFILTER_H */
