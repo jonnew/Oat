@@ -18,7 +18,7 @@
 //****************************************************************************
 
 
-#include "DifferenceDetector2D.h"
+#include "DifferenceDetector.h"
 
 #include <string>
 #include <opencv2/opencv.hpp>

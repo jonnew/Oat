@@ -20,7 +20,7 @@
 #ifndef DIFFERENCEDETECTOR_H
 #define	DIFFERENCEDETECTOR_H
 
-#include "Detector2D.h"
+#include "PositionDetector.h"
 
 /**
  * Motion-based object position detector.

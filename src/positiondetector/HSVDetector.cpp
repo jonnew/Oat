@@ -17,7 +17,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include "HSVDetector2D.h"
+#include "HSVDetector.h"
 
 #include <string>
 #include <limits>

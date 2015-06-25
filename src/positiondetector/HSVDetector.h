@@ -20,7 +20,7 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "Detector2D.h"
+#include "PositionDetector.h"
 
 /**
  * A color-based object position detector

@@ -2,7 +2,7 @@
 set (CMAKE_INCLUDE_CURRENT_DIR ON)
  
 # Create a SOURCES variable containing all required .cpp files:
-set (oat-posidet_SOURCE DifferenceDetector2D.cpp HSVDetector2D.cpp main.cpp)
+set (oat-posidet_SOURCE DifferenceDetector.cpp HSVDetector.cpp main.cpp)
 
 # Target
 add_executable (oat-posidet ${oat-posidet_SOURCE})

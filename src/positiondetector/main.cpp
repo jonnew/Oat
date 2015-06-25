@@ -24,9 +24,9 @@
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/cpptoml/cpptoml.h"
 
-#include "Detector2D.h"
-#include "HSVDetector2D.h"
-#include "DifferenceDetector2D.h"
+#include "PositionDetector.h"
+#include "HSVDetector.h"
+#include "DifferenceDetector.h"
 
 namespace po = boost::program_options;
 
