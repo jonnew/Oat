@@ -22,3 +22,4 @@
 #define Oat_VERSION_MINOR @Oat_VERSION_MINOR@
 
 #cmakedefine OAT_USE_OPENGL
+#cmakedefine OAT_USE_CUDA

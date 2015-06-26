@@ -28,8 +28,11 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 #include "FrameFilter.h"
+#ifndef OAT_USE_CUDA
 #include "BackgroundSubtractor.h"
+#else 
 #include "BackgroundSubtractorCUDA.h"
+#endif
 #include "FrameMasker.h"
 
 namespace po = boost::program_options;
@@ -79,9 +82,7 @@ int main(int argc, char *argv[]) {
     std::unordered_map<std::string, char> type_hash;
     type_hash["bsub"] = 'a';
     type_hash["mask"] = 'b';
-    type_hash["bsubcuda"] = 'c'; // TODO: should be a build configuration instead of a different TYPE
     
-
     try {
 
         po::options_description options("INFO");
@@ -196,7 +197,11 @@ int main(int argc, char *argv[]) {
     switch (type_hash[type]) {
         case 'a':
         {
+#ifndef OAT_USE_CUDA
             filter = new BackgroundSubtractor(source, sink);
+#else
+            filter = new BackgroundSubtractorCUDA(source, sink);
+#endif
             break;
         }
         case 'b':
@@ -206,11 +211,6 @@ int main(int argc, char *argv[]) {
                  std::cerr << oat::whoWarn(filter->get_name(), 
                          "No mask configuration was provided." 
                          " This filter does nothing but waste CPU cycles.\n");
-            break;
-        }
-        case 'c':
-        {
-            filter = new BackgroundSubtractorCUDA(source, sink);
             break;
         }
         default:
