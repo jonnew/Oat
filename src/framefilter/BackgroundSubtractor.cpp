@@ -63,22 +63,12 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
     }
 } 
 
-/**
- * Set the background image to be used during subsequent subtraction operations.
- * The frame_source must have previously populated the the shared cv::Mat object.
- * 
- */
 void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
 
     background_img = frame.clone();
     background_set = true;
 }
 
-/**
- * Subtract a previously set background image from an input image to produce
- * the output matrix.
- * 
- */
 cv::Mat BackgroundSubtractor::filter(cv::Mat& frame) {
     // Throws cv::Exception if there is a size mismatch between frames,
     // or in any case where cv assertions fail.

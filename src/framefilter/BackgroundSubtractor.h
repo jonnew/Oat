@@ -22,11 +22,14 @@
 
 #include "FrameFilter.h"
 
+/**
+ * A basic background subtractor.
+ */
 class BackgroundSubtractor : public FrameFilter {
 public:
 
     /**
-     * A background subtractor.
+     * A basic background subtractor.
      * Subtract a frame image from a frame stream. The background frame is 
      * the first frame obtained from the SOURCE frame stream, or can be 
      * supplied via configuration file.
@@ -35,16 +38,16 @@ public:
      */
     BackgroundSubtractor(const std::string& source_name, const std::string& sink_name);
 
+    void configure(const std::string& config_file, const std::string& config_key);
+    
+private:
+    
     /**
      * Apply background subtraction.
      * @param frame unfiltered frame
      * @return filtered frame
      */
     cv::Mat filter(cv::Mat& frame);
-    
-    void configure(const std::string& config_file, const std::string& config_key);
-    
-private:
 
     // Is the background frame set?
     bool background_set = false;

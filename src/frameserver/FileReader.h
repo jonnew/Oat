@@ -17,6 +17,7 @@
 #ifndef FILEREADER_H
 #define	FILEREADER_H
 
+#include <chrono>
 #include <string>
 #include <opencv2/opencv.hpp>
 
@@ -38,7 +39,6 @@ public:
 private:
     
     std::string file_name;
-    int frame_period_in_us;
     double frame_rate_in_hz;
     void calculateFramePeriod(void);
     
@@ -47,6 +47,11 @@ private:
     
     // Should the image be cropped
     bool use_roi;
+    
+    // frame generation clock
+    std::chrono::high_resolution_clock clock;
+    std::chrono::duration<double> frame_period_in_sec;
+    std::chrono::high_resolution_clock::time_point tick;
 };
 
 #endif	/* FILEREADER_H */

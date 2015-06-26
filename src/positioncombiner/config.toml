@@ -7,7 +7,6 @@
 # ```
 
 [mean]
-generate-heading = true; 					# Should a heading be generated instead
-											# of taking the mean of the sources?
-heading-anchor = 0; 						# Position used has anchor when calculing
-											# mean vector to other SOURCE positions
+heading-anchor = 0; 						# Position used has anchor when calculating
+								# mean vector to other SOURCE positions
+								# If left unspecified, no heading will be generated        

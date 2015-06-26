@@ -22,12 +22,15 @@
 
 #include "FrameFilter.h"
 
+/**
+ * A frame masker.
+ */
 class FrameMasker : public FrameFilter {
 public:
     
     /**
-     * A frame mask.
-     * A frame mask to isolate one or more regions of interest in a frame stream using
+     * A frame masker.
+     * A frame masker to isolate one or more regions of interest in a frame stream using
      * a mask frame. Pixels of the input frames that correspond to non-zero pixels in
      * the mask frame will be unchanged. All other pixels will be set to 0. 
      * @param source_name raw frame source name
@@ -38,6 +41,9 @@ public:
                 const std::string& sink_name, 
                 bool invert_mask=false);
     
+    void configure(const std::string& config_file, const std::string& config_key);
+    
+private:
     
     /**
      * Apply frame mask.
@@ -45,10 +51,6 @@ public:
      * @return filtered frame
      */
     cv::Mat filter(cv::Mat& frame);
-
-    void configure(const std::string& config_file, const std::string& config_key);
-    
-private:
 
     // Should be inverted before application.
     bool invert_mask;

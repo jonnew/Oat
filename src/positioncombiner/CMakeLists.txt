@@ -2,7 +2,7 @@
 set (CMAKE_INCLUDE_CURRENT_DIR ON)
  
 # Create a SOURCES variable containing all required .cpp files:
-set (oat-posicom_SOURCE MeanPosition2D.cpp main.cpp)
+set (oat-posicom_SOURCE MeanPosition.cpp main.cpp)
 
 # Target
 add_executable (oat-posicom ${oat-posicom_SOURCE})

@@ -1,5 +1,8 @@
 ## Real-time position tracker for animal behavior
-Simple tracker consists of a set of programs for processing images, extracting position information, and streaming data to disk and the network that communicate through shared memory. This model enables quick, scripted construction of complex data processing chains without relying on a complicated GUI or plugin architecture.
+Simple tracker consists of a set of programs for processing images, extracting 
+position information, and streaming data to disk and the network that communicate 
+through shared memory. This model enables quick, scripted construction of complex 
+data processing chains without relying on a complicated GUI or plugin architecture.
 
 ### Installation
 
@@ -28,19 +31,40 @@ sudo ./b2 --with-program_options --with_system --with_thread
 ```bash
 # Install dependencies
 sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+sudo ldconfig -v
+```
+__Note__: OpenCV must be installed with ffmpeg support in order for offline analysis 
+of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreamer 
+will be used to serve from video files at the rate the files were recorded.
 
+__Note__: To get increased video visualization performance, you can build OpenCV
+with OpenGL support (WIP)
+
+```bash
 # Install OpenCV
 wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
 unzip opencv.zip -d opencv
 cd opencv/opencv-3.0.0-rc1 
 mkdir release
 cd release
+```
+
+To build OpenCV, execute the following in the release directory
+```bash
 cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
 make
 sudo make install
 ```
-__Note__: OpenCV must be installed with ffmpeg support in order for offline analysis of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreamer will be used to serve from video files at the rate the files were recorded.
-
+__Note__: If you have [NVIDA GPU that supports CUDA](https://developer.nvidia.com/cuda-gpus), 
+you can build OpenCV with CUDA support to enable GPU accelerated video processing. 
+To do this, will first need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit). 
+Be sure to read the [installation instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/index.html) since it is a mulitstep process.
+To build OpenCV _with_ CUDA support, execute the following in the release directory
+```bash
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_CUDA=ON ..
+make
+sudo make install
+```
 #### [RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)
 Starting in the simple-tracker root directory,
 ```bash
@@ -55,12 +79,19 @@ sudo apt-get install tmux
 
 ### Manual
 
-Oat components consist of a rich set of sub-commands that communicate through shared memory to capture, process, and record video streams. Oat compoents act on two basic data types: `frames` and `positions`. 
+Oat components consist of a rich set of sub-commands that communicate through 
+shared memory to capture, process, and record video streams. Oat components act 
+on two basic data types: `frames` and `positions`. 
 
-* `frame` - a shared-memory abstraction of a [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
+* `frame` - a shared-memory abstraction of a 
+  [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
 * `position` - 2D position type.
 
-Oat components can be chained together to execute data processing pipelines, with individual components executing largely in parallel. Processing pipelines can be split and merged while maintaining thread-safety and sample synchronization. For example, a script to detect the position of a single object in pre-recorded video file might look like this:
+Oat components can be chained together to execute data processing pipelines, 
+with individual components executing largely in parallel. Processing pipelines 
+can be split and merged while maintaining thread-safety and sample synchronization. 
+For example, a script to detect the position of a single object in pre-recorded 
+video file might look like this:
 
 ```bash
 # Serve frames from a video file to the 'raw' stream
@@ -92,7 +123,9 @@ frameserve ──> framefilt ──> posidet ──> decorate ───> view
              ─────────────────────────               ──> record   	
 ```
 
-Each component of Oat is a subcommand defined by a general input/output type signature. Below, the signature, usage information, examples, and configuration options are provided for each component. 
+Each component of Oat is a subcommand defined by its type signature. Below, the 
+type signature, usage information, examples, and configuration options are provided 
+for each component. 
 
 TODO: Note the general structure to specify a particular algorithm and parameter set.
 ```
@@ -179,7 +212,8 @@ frame──> │ framefilt │ ──> frame
 ```
 
 #### `view`
-Frame viewer. Displays video stream from named shard memory in a window. Also permits the user to take snapshots of the viewed stream.
+Frame viewer. Displays video stream from named shard memory in a window. Also 
+permits the user to take snapshots of the viewed stream.
 
 ##### Signature
 ```
@@ -206,7 +240,8 @@ CONFIGURATION:
   -f [ --folder ] arg    The folder to which snapshots will be saved
 
 NOTE:
-  To take a snapshot of the currently displayed frame, press <kbd>s</kbd> while the display window is in focus.
+  To take a snapshot of the currently displayed frame, press 's' while 
+  the display window is in focus.
 ```
 
 ##### Example
@@ -216,7 +251,8 @@ oat view raw
 ```
 
 #### `posidet`
-Position detector. Detects object position within a frame stream using one of several methods.
+Position detector. Detects object position within a frame stream using one of 
+several methods.
 
 ##### Signature
 ```
@@ -239,7 +275,8 @@ oat posidet diff raw mpos
 ```
 
 #### `posifilt`
-Position filter. Filters position stream to, for example, remove discontinuities due to noise or discontinuities in position detection. 
+Position filter. Filters position stream to, for example, remove discontinuities 
+due to noise or discontinuities in position detection. 
 
 ##### Signature
 ```
@@ -265,7 +302,8 @@ position N ──> │        │
 ```
 
 #### `decorate`
-Frame decorator. Annotates frames with sample times, dates, and/or positional information.
+Frame decorator. Annotates frames with sample times, dates, and/or positional 
+information.
 
 ##### Signature
 ```
@@ -425,7 +463,7 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
     - frameserve
 	- ~~framefilt~~
 	- ~~posidet~~
-	- posicom
+	- ~~posicom~~
 	- posifilt
 	- positest
 	- record

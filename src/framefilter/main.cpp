@@ -29,6 +29,7 @@
 
 #include "FrameFilter.h"
 #include "BackgroundSubtractor.h"
+#include "BackgroundSubtractorCUDA.h"
 #include "FrameMasker.h"
 
 namespace po = boost::program_options;
@@ -78,6 +79,8 @@ int main(int argc, char *argv[]) {
     std::unordered_map<std::string, char> type_hash;
     type_hash["bsub"] = 'a';
     type_hash["mask"] = 'b';
+    type_hash["bsubcuda"] = 'c'; // TODO: should be a build configuration instead of a different TYPE
+    
 
     try {
 
@@ -203,6 +206,11 @@ int main(int argc, char *argv[]) {
                  std::cerr << oat::whoWarn(filter->get_name(), 
                          "No mask configuration was provided." 
                          " This filter does nothing but waste CPU cycles.\n");
+            break;
+        }
+        case 'c':
+        {
+            filter = new BackgroundSubtractorCUDA(source, sink);
             break;
         }
         default:

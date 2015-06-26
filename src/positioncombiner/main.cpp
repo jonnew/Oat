@@ -24,9 +24,10 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/cpptoml/cpptoml.h"
 
 #include "PositionCombiner.h"
-#include "MeanPosition2D.h"
+#include "MeanPosition.h"
 
 namespace po = boost::program_options;
 
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]) {
         
         po::positional_options_description positional_options;
         positional_options.add("type", 1);
-        positional_options.add("sources", -1); // If not overridend by explicit --sink, last positional argument is sink.
+        positional_options.add("sources", -1); // If not overridden by explicit --sink, last positional argument is sink.
 
         po::options_description all_options("OPTIONS");
         all_options.add(options).add(config).add(hidden);
@@ -135,16 +136,22 @@ int main(int argc, char *argv[]) {
         
         if (!variable_map.count("type")) {
             printUsage(visible_options);
-            std::cout << "Error: a TYPE must be specified. Exiting.\n";
+            std::cerr << oat::Error("A TYPE must be specified.\n");
             return -1;
         }
         
         if (!variable_map.count("sources")) {
             printUsage(visible_options);
-            std::cout << "Error: at least two SOURCES and a SINK must be specified. Exiting.\n";
+            std::cerr << oat::Error("At least two SOURCES and a SINK must be specified.\n");
             return -1;
         }
+        
         sources = variable_map["sources"].as< std::vector<std::string> >();
+        if (sources.size() < 3) {
+            printUsage(visible_options);
+            std::cerr << oat::Error("At least two SOURCES and a SINK must be specified.\n");
+            return -1;
+        }
         
         if (!variable_map.count("sink")) {
             
@@ -156,59 +163,83 @@ int main(int argc, char *argv[]) {
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
-            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+            std::cerr << oat::Error("A configuration file must be supplied with a corresponding config-key.\n");
             return -1;
         } else if (variable_map.count("config-file")) {
             config_used = true;
         }
 
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        std::cerr << oat::Error(e.what()) << "\n";
+        return -1;
     } catch (...) {
-        std::cerr << "Exception of unknown type!" << std::endl;
-        return 1;
+        std::cerr << oat::Error("Exception of unknown type.\n");
+        return -1;
     }
 
     PositionCombiner* combiner; //(ant_source, pos_source, sink);
     switch (type_hash[type]) {
         case 'a':
         {
-            combiner = new MeanPosition2D(sources, sink);
+            combiner = new MeanPosition(sources, sink);
             break;
         }
         default:
         {
             printUsage(visible_options);
-            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            std::cerr << oat::Error("Invalid TYPE specified.\n");
             return -1;
         }
     }
     
-     if (config_used)
-        combiner->configure(config_file, config_key);
-    
-    // Tell user
-    std::cout << oat::whoMessage(combiner->get_name(), "Listening to sources ");
-    for (auto s : sources)
-        std::cout << oat::sourceText(s) << " ";          
-    std::cout << ".\n"
-              << oat::whoMessage(combiner->get_name(),
-                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-              << oat::whoMessage(combiner->get_name(), 
-                 "Press CTRL+C to exit.\n");
-    
-    // Infinite loop until ctrl-c or end of stream signal
-    run(combiner);
-    
-    // Tell user
-    std::cout << oat::whoMessage(combiner->get_name(), "Exiting.\n");
+    // At this point, the new'ed component exists and must be deleted in the case
+    // any exception
+    try { 
 
-    // Free heap memory allocated to combiner
+        if (config_used)
+            combiner->configure(config_file, config_key);
+
+        // Tell user
+        std::cout << oat::whoMessage(combiner->get_name(), "Listening to sources ");
+        for (auto s : sources)
+            std::cout << oat::sourceText(s) << " ";
+        std::cout << ".\n"
+                << oat::whoMessage(combiner->get_name(),
+                "Steaming to sink " + oat::sinkText(sink) + ".\n")
+                << oat::whoMessage(combiner->get_name(),
+                "Press CTRL+C to exit.\n");
+
+        // Infinite loop until ctrl-c or end of stream signal
+        run(combiner);
+
+        // Tell user
+        std::cout << oat::whoMessage(combiner->get_name(), "Exiting.\n");
+
+        // Free heap memory allocated to combiner
+        delete combiner;
+
+        // Exit
+        return 0;
+
+    } catch (const cpptoml::parse_exception& ex) {
+        std::cerr << oat::whoError(combiner->get_name(), "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(combiner->get_name(), ex.what())
+                  << "\n";
+    } catch (const std::runtime_error ex) {
+        std::cerr << oat::whoError(combiner->get_name(),ex.what())
+                  << "\n";
+    } catch (const cv::Exception ex) {
+        std::cerr << oat::whoError(combiner->get_name(), ex.msg)
+                  << "\n";
+    } catch (...) {
+        std::cerr << oat::whoError(combiner->get_name(), "Unknown exception.\n");
+    }
+    
+    // Free heap memory allocated to filter
     delete combiner;
 
-    // Exit
-    return 0;
+    // Exit failure
+    return -1;
 }
 
 

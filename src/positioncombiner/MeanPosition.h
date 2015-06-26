@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   MeanPosition.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -14,22 +17,42 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef MEANPOSITION2D_H
-#define	MEANPOSITION2D_H
+#ifndef MEANPOSITION_H
+#define	MEANPOSITION_H
 
 #include "PositionCombiner.h"
 
-class MeanPosition2D : public PositionCombiner {
+/**
+ * A mean position combiner.
+ */
+class MeanPosition : public PositionCombiner {
 public:
     
-    MeanPosition2D(std::vector<std::string> position_source_names, std::string sink_name);
+    /**
+     * A mean position combiner.
+     * A mean position combiner to generate a mean position from 2 or more
+     * source positions. Can be used to generate the mean position heading
+     * using a specified anchor position as a reference.
+     * @param position_source_names
+     * @param sink_name
+     */
+    MeanPosition(std::vector<std::string> position_source_names, std::string sink_name);
     
     void configure(const std::string& config_file, const std::string& config_key);
+    
 private:
 
+    /**
+     * Calculate the mean of SOURCE positions.
+     * @param sources SOURCE positions to combine
+     * @return mean position
+     */
     oat::Position2D combinePositions(const std::vector<oat::Position2D*>& sources);
     
+    // Should a heading be generated?
     bool generate_heading;
+    
+    // SOURCE position to be used ad an anchor when calculating headings
     int heading_anchor_idx;
 
 };

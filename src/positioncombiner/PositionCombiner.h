@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   PositionCombiner.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -25,14 +28,18 @@
 #include "../../lib/datatypes/Position.h"
 
 /**
- * Abstract base class to be implemented by any Position Combiner filter within
- * the Simple Tracker project.
- * @param position_sources A vector of position SOURCE names
- * @param sink Combined position SINK name
+ * Abstract position combiner.
+ * All concrete position combiner types implement this ABC.
  */
-class PositionCombiner { // TODO: Position2D -> Position somehow
+class PositionCombiner { 
 public:
 
+    /**
+     * Abstract position combiner.
+     * All concrete position combiner types implement this ABC.
+     * @param position_sources A vector of position SOURCE names
+     * @param sink Combined position SINK name
+     */
     PositionCombiner(std::vector<std::string> position_source_names, std::string sink_name) :
       name("posicom[" + position_source_names[0] + "...->" + sink_name + "]") 
     , position_sink(sink_name)
@@ -61,8 +68,11 @@ public:
         }
     }
 
-    // Public 'run' method
-
+    /**
+     * Obtain positions from all SOURCES. Combine positions. Publish combined position
+     * to SINK.
+     * @return SOURCE end-of-stream signal. If true, this component should exit.
+     */
     bool process() {
 
         // Make sure all sources are still running
@@ -87,9 +97,7 @@ public:
 
             // Reset the position client read counter
             position_read_required.set();
-
             combined_position = combinePositions(source_positions);
-
             position_sink.pushObject(combined_position, position_sources[0]->get_current_time_stamp());
         }
 
@@ -98,30 +106,44 @@ public:
 
     std::string get_name(void) const { return name; }
     
-    // Frame filters must be configurable
+    /**
+     * Configure position combiner parameters.
+     * @param config_file configuration file path
+     * @param config_key configuration key
+     */
     virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
 
 protected:
 
-    // All position combiners must be able to combine the position_sources
-    // list to provide a single combined position output
+    /**
+     *  Perform position combination.
+     * @param sources SOURCE position servers
+     * @return combined position
+     */
     virtual oat::Position2D combinePositions(const std::vector<oat::Position2D*>& sources) = 0;
     
+    /**
+     * Get the number of SOURCE positions.
+     * @return number of SOURCE positions
+     */
     int get_number_of_sources(void) const {return number_of_position_sources; };
     
 private:
     
+    // Combiner name
     std::string name;
-
-    // Positions to be combined
-    std::vector<oat::Position2D* > source_positions;
-    std::vector<oat::SMClient<oat::Position2D>* > position_sources;
+    
+    // Position SOURCES object for un-combined positions
+    std::vector<oat::Position2D* > source_positions; // Positions to be combined
+    std::vector<oat::SMClient<oat::Position2D>* > position_sources; // Position SOURCES
     boost::dynamic_bitset<>::size_type number_of_position_sources;
     boost::dynamic_bitset<> position_read_required;
     bool sources_eof;
 
-    // Combined position server
+    // Combined position
     oat::Position2D combined_position;
+    
+    // Position SINK object for publishing combined position
     oat::SMServer<oat::Position2D> position_sink;
 };
 

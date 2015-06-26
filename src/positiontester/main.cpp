@@ -32,7 +32,7 @@ namespace po = boost::program_options;
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
-struct timespec delay = {0};
+struct timespec delay{0};
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: positest [INFO]\n"
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (variable_map.count("version")) {
-            std::cout << "Oat Test Position Server version "
+            std::cout << "Oat Test-Position Server version "
                       << Oat_VERSION_MAJOR
                       << "." 
                       << Oat_VERSION_MINOR 

@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   MeanPosition.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -18,56 +21,48 @@
 #include <cmath>
 
 #include "../../lib/cpptoml/cpptoml.h"
-#include "MeanPosition2D.h"
 
-MeanPosition2D::MeanPosition2D(std::vector<std::string> position_source_names, std::string sink_name) :
+#include "MeanPosition.h"
+
+MeanPosition::MeanPosition(std::vector<std::string> position_source_names, std::string sink_name) :
   PositionCombiner(position_source_names, sink_name)
 , generate_heading(false)
 , heading_anchor_idx(0) { }
 
-void MeanPosition2D::configure(const std::string& config_file, const std::string& config_key) {
+void MeanPosition::configure(const std::string& config_file, const std::string& config_key) {
     
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
-    }
+    // See if a configuration was provided
+    if (config.contains(config_key)) {
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(config_key)) {
+        auto this_config = *config.get_table(config_key);
 
-            auto this_config = *config.get_table(config_key);
+        if (this_config.contains("heading-anchor")) {
 
-            if (this_config.contains("generate-heading")) {
-                generate_heading = *this_config.get_as<bool>("generate-heading");
+            heading_anchor_idx = *this_config.get_as<int64_t>("heading-anchor");\
+
+            if (heading_anchor_idx >= get_number_of_sources() || heading_anchor_idx < 0) {
+                
+                throw (std::runtime_error(
+                        "Specified heading-anchor exceeds the number of "
+                        " position sources or is < 0.")
+                      );
             }
             
-            if (this_config.contains("heading-anchor")) {
-                
-                if (!generate_heading) {
-                    std::cerr << "Position combiner is not set to generate heading, so specifying a heading anchor does not make sense.\n"
-                              << "heading-anchor option ignored.\n";
-                } else {
-                    heading_anchor_idx = *this_config.get_as<int64_t>("heading-anchor");
-                }
-                
-                if (heading_anchor_idx >= get_number_of_sources() || heading_anchor_idx < 0) {
-                    std::cerr << "Specified heading-anchor exceeds the number of position sources or is < 0.\n"
-                              << "heading-anchor set to 0.\n";
-                    heading_anchor_idx = 0;
-                }
-            }
-
-        } else {
-            std::cerr << "No position combiner configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
-            exit(EXIT_FAILURE);
+            generate_heading = true;
         }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-    }
+
+    } else {
+        throw (std::runtime_error(
+                "No configuration named " + config_key +
+                " was provided in the configuration file " + config_file)
+              );
+
+    } 
 }
 
 /**
@@ -75,7 +70,7 @@ void MeanPosition2D::configure(const std::string& config_file, const std::string
  * @param sources Source positions
  * @return Combined position
  */
-oat::Position2D MeanPosition2D::combinePositions(const std::vector<oat::Position2D*>& sources) {
+oat::Position2D MeanPosition::combinePositions(const std::vector<oat::Position2D*>& sources) {
 
     double mean_denom = 1.0/(double) sources.size(); 
     oat::Position2D combined_position;

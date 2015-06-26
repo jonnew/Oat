@@ -16,7 +16,9 @@
 
 #include "FileReader.h"
 
+#include <chrono>
 #include <string>
+#include <thread>
 #include <opencv2/videoio.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
@@ -30,6 +32,7 @@ FileReader::FileReader(std::string file_name_in, std::string image_sink_name, co
 
     // Default config
     configure();
+    tick = clock.now();
 }
 
 void FileReader::grabFrame(cv::Mat& frame) {
@@ -41,7 +44,10 @@ void FileReader::grabFrame(cv::Mat& frame) {
         frame = frame(region_of_interest);
     }
     
-    usleep(frame_period_in_us);
+    auto tock = clock.now();
+    std::this_thread::sleep_for(frame_period_in_sec - (tock - tick));
+    
+    tick = clock.now();
 }
 
 void FileReader::configure() {
@@ -116,5 +122,9 @@ void FileReader::configure(const std::string& config_file, const std::string& co
 }
 
 void FileReader::calculateFramePeriod() {
-    frame_period_in_us = 1.0e6 * (1.0 / frame_rate_in_hz);
+    
+    std::chrono::duration<double> frame_period{1.0 / frame_rate_in_hz};
+
+    // Automatic conversion
+    frame_period_in_sec = frame_period;
 }
