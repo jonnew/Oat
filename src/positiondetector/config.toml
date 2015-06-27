@@ -12,7 +12,7 @@ erode = 1                               # Pixels, candidate object erosion kerne
 dilate = 7                              # Pixels, candiate object dilation kernal size
 min_area = 4                            # Pixels^2, minimum object area 
 max_area = 1000                         # Pixels^2, maximum object area
-h_thresholds = 20#{min = 030, max = 080}   # Hue pass band
+h_thresholds = {min = 030, max = 080}   # Hue pass band
 s_thresholds = {min = 140, max = 250}   # Saturation pass band 
 v_thresholds = {min = 000, max = 070}   # Value pass band
 

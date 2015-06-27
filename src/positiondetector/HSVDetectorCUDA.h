@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   HSVDetector.h
+//* File:   HSVDetectorCUDA.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -17,18 +17,21 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef HSVDETECTOR_H
-#define	HSVDETECTOR_H
+#ifndef HSVDETECTORCUDA_H
+#define	HSVDETECTORCUDA_H
 
 #include <string>
 #include <opencv2/core/mat.hpp>
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudafilters.hpp>
+#include <opencv2/cudaarithm.hpp>
 
 #include "PositionDetector.h"
 
 /**
  * A color-based object position detector
  */
-class HSVDetector : public Detector2D {
+class HSVDetectorCUDA : public Detector2D {
 public:
 
     /**
@@ -36,7 +39,7 @@ public:
      * @param source_name Image SOURCE name
      * @param pos_sink_name Position SINK name
      */
-    HSVDetector(const std::string& source_name, const std::string& pos_sink_name);
+    HSVDetectorCUDA(const std::string& source_name, const std::string& pos_sink_name);
 
 
     /**
@@ -54,12 +57,20 @@ public:
     
 private:
     
-    // Sizes of the erode and dilate blocks
+    // Erode and dilate filters
     int erode_px, dilate_px;
     bool erode_on, dilate_on;
-    cv::Mat hsv_image, threshold_image, erode_element, dilate_element;
+    cv::Ptr<cv::cuda::Filter> erode_filter;
+    cv::Ptr<cv::cuda::Filter> dilate_filter;
+    
+    // Intermediate matracies
+    cv::cuda::GpuMat hsv_image, lut_frame, threshold_frame;
+    cv::Mat search_frame;
+    cv::Mat tuning_image;
+    std::vector<cv::cuda::GpuMat> hsv_channels;
 
     // HSV threshold values
+    cv::Ptr<cv::cuda::LookUpTable> hsv_lut;
     int h_min, h_max;
     int s_min, s_max;
     int v_min, v_max;
@@ -78,6 +89,9 @@ private:
     
     // Binary threshold and use the binary threshold to mask the image
     void applyThreshold(void);
+    
+    // Create a LUT to perform HSV thresholding
+    void createHSVLUT(void);
 
     // Erode/dilate objects to get rid of speckles
     void erodeDilate(void);
@@ -98,5 +112,5 @@ private:
 
 };
 
-#endif	/* HSVDETECTOR_H */
+#endif	/* HSVDETECTORCUDA_H */
 

@@ -27,7 +27,11 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 #include "PositionDetector.h"
+#ifndef OAT_USE_CUDA
 #include "HSVDetector.h"
+#else 
+#include "HSVDetectorCUDA.h"
+#endif
 #include "DifferenceDetector.h"
 
 namespace po = boost::program_options;
@@ -186,7 +190,11 @@ int main(int argc, char *argv[]) {
         }
         case 'b':
         {
-            detector = new HSVDetector2D(source, sink);
+#ifndef OAT_USE_CUDA
+            detector = new HSVDetector(source, sink);
+#else
+            detector = new HSVDetectorCUDA(source, sink);
+#endif
             break;
         }
         default:
