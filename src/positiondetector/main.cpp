@@ -1,7 +1,7 @@
 //******************************************************************************
 //* File:   oat posidet main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
@@ -227,14 +227,14 @@ int main(int argc, char *argv[]) {
 
     } catch (const cpptoml::parse_exception& ex) {
         std::cerr << oat::whoError(detector->get_name(), "Failed to parse configuration file " + config_file + "\n")
-                << oat::whoError(detector->get_name(), ex.what())
-                << "\n";
+                  << oat::whoError(detector->get_name(), ex.what())
+                  << "\n";
     } catch (const std::runtime_error ex) {
         std::cerr << oat::whoError(detector->get_name(), ex.what())
-                << "\n";
+                  << "\n";
     } catch (const cv::Exception ex) {
         std::cerr << oat::whoError(detector->get_name(), ex.msg)
-                << "\n";
+                  << "\n";
     } catch (...) {
         std::cerr << oat::whoError(detector->get_name(), "Unknown exception.\n");
     }

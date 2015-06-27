@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   PositionFilter.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -13,6 +16,7 @@
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
+
 #ifndef POSITIONFILTER_H
 #define	POSITIONFILTER_H
 
@@ -23,18 +27,31 @@
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position2D.h"
 
+/**
+ * Abstract position filter.
+ * All concrete position filter types implement this ABC.
+ */
 class PositionFilter { 
 public:
 
+    /**
+     * Abstract position filter.
+     * All concrete position filter types implement this ABC.
+     * @param position_source_name Un-filtered position SOURCE name
+     * @param position_sink_name Filtered position SINK name
+     */
     PositionFilter(const std::string& position_source_name, const std::string& position_sink_name) :
       name("posifilt[" + position_source_name + "->" + position_sink_name + "]")
     , position_source(position_source_name)
-    , position_sink(position_sink_name)
-    , tuning_on(false) { }
+    , position_sink(position_sink_name) { }
 
     virtual ~PositionFilter() { }
 
-    // Execute filtering operation
+    /**
+     * Obtain un-filtered position from SOURCE. Filter position. Publish filtered 
+     * position to SINK.
+     * @return SOURCE end-of-stream signal. If true, this component should exit.
+     */
     bool process(void) {
 
         if (position_source.getSharedObject(raw_position)) {
@@ -48,30 +65,38 @@ public:
         return (position_source.getSourceRunState() == oat::ServerRunState::END);  
     }
 
-    // Position filters must be configurable via file
+    /**
+     * Configure position filter parameters.
+     * @param config_file configuration file path
+     * @param config_key configuration key
+     */
     virtual void configure(const std::string& config_file, const std::string&  config_key) = 0;
 
     // Accessors
     std::string get_name(void) const { return name; }
-    void set_tune_mode(bool value) { tuning_on = value; }
-    bool get_tune_mode(void) { return tuning_on; }
-    
-    //void stop(void) {position_sink.set_running(false); }
 
-    
 protected:
-    
-    // Position Filters must be able filter the position 
+
+    /**
+     * Perform position filtering.
+     * @param position_in Un-filtered position SOURCE
+     * @return filtered position
+     */
     virtual oat::Position2D filterPosition(oat::Position2D& position_in) = 0;
-    std::atomic<bool> tuning_on; // This is a shared resource and must be synchronized
         
 private:
     
+    // Filter name
     std::string name;
-    oat::SMClient<oat::Position2D> position_source;
-    oat::Position2D raw_position;
-    oat::SMServer<oat::Position2D> position_sink;
     
+    // Un-filtered position SOURCE object
+    oat::SMClient<oat::Position2D> position_source;
+    
+    // Un-filtered position
+    oat::Position2D raw_position;
+    
+    // Filtered position SINK object
+    oat::SMServer<oat::Position2D> position_sink;
 };
 
 #endif	/* POSITIONFILTER_H */

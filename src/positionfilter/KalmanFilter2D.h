@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   KalmanFilter2D.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -22,22 +25,30 @@
 
 #include "PositionFilter.h"
 
+/**
+ * A 2D Kalman filter.
+ */
 class KalmanFilter2D : public PositionFilter {
     
 public:
+    
+    /**
+     * A 2D Kalman filter.
+     * The assumed model is normally distributed constant force applied at each 
+     * time steps causes a random, constant acceleration in between each time-step.
+     * Measurement noise is assumed to be Gaussian with a user supplied variance.
+     * Model parameters (time step size, standard deviation of random acceleration,
+     * and measurement noise standard deviation, etc) are supplied using the
+     * configure method.
+     * @param position_source_name Un-filtered position SOURCE name
+     * @param position_sink_name Filtered position SINK name
+     */
     KalmanFilter2D(const std::string& position_source_name, const std::string& position_sink_name);
 
-    oat::Position2D filterPosition(oat::Position2D& position_in);
-
-    /**
-     * Configure filter parameters using a configuration file.
-     * @param config_file Path to the configuration file
-     * @param config_key Configuration file key specifying the table used to
-     * configure the Kalman filter.
-     */
     void configure(const std::string& config_file, const std::string& config_key);
 
 private:
+    
     // Kalman state estimate and measurement vectors
     cv::Mat kf_predicted_state;
     cv::Mat kf_meas;
@@ -64,10 +75,20 @@ private:
     // Filtered position
     oat::Position2D filtered_position;
 
-    // tuning window name
+    // Tuning window name
     std::string tuning_image_title;
 
+    // Kalman filter object
     cv::KalmanFilter kf;
+    
+    /**
+     * Perform Kalman filtering.
+     * @param position_in Un-filtered position SOURCE
+     * @return filtered position
+     */
+    oat::Position2D filterPosition(oat::Position2D& position_in);
+    
+    // TODO: These subroutines have pretty boring type signatures...
     void tune(void);
     void initializeFilter(void);
     void initializeStaticMatracies(void);

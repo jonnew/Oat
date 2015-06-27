@@ -116,7 +116,7 @@ public:
 protected:
 
     /**
-     *  Perform position combination.
+     * Perform position combination.
      * @param sources SOURCE position servers
      * @return combined position
      */

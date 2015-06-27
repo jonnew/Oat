@@ -25,6 +25,7 @@
 #include "RegionFilter2D.h"
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/utility/IOFormat.h"
 
 RegionFilter2D::RegionFilter2D(const std::string& position_source_name, const std::string& position_sink_name) :
   PositionFilter(position_source_name, position_sink_name)
@@ -39,65 +40,87 @@ RegionFilter2D::~RegionFilter2D() {
 
 void RegionFilter2D::configure(const std::string& config_file, const std::string& config_key) {
     
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
-    }
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(config_key)) {
-            
-            // HACK HACK HACK HACK HACK
-            // TODO: This section needs major work in terms of type checking
-            // Really, all configuration functions do, they are all very very fragile
+        // The config should be an array of tables, with one key-value
+        // pair per table, with the key specifying the region ID and the 
+        // Value an array specifying a vector of 2D points.
 
-            // The config should be an array of tables, with one key-value
-            // pair per table, with the key specifying the region ID and the 
-            // Value an array specifying a vector of 2D points.
-            
-            auto region_tab = *config.get_table(config_key);
-            auto it = region_tab.begin();
+        auto region_tab = *config.get_table(config_key);
 
-            while (it != region_tab.end()) {
-                
-                auto region_val = *it;
+        auto it = region_tab.begin();
 
-                    // Push the name of this region onto the id list
-                    region_ids.push_back(region_val.first);
-                    region_contours.push_back(new std::vector<cv::Point>());
+        while (it != region_tab.end()) {
 
-                    auto region = region_val.second->as_array()->nested_array();
-                    auto reg_it = region.begin();
+            auto region_val = *it;
 
-                    while (reg_it != region.end()) {
-
-                        auto point = (**reg_it).array_of<double>();
-                        auto p = cv::Point2d(point[0]->get(), point[1]->get());
-                        region_contours.back()->push_back(p);
-                        reg_it++;
-                    }
-                it++;
+            if (!region_val.second->is_array()) {
+                 throw std::runtime_error(
+                         oat::configValueError(
+                         region_val.first,
+                         config_key, 
+                         config_file,
+                         "must be a nested, Nx2 TOML array of doubles to specify a region contour")
+                         );
             }
             
-//            //check the result
-//            for (int i = 0; i < region_contours.size(); i++) {
-//                std::cout << "Region ID: " + region_ids[i] + "\n";
-//                for (int j = 0; j < region_contours[i]->size(); j++) {
-//                    std::cout << "x: " + std::to_string(region_contours[i]->at(j).x) + " "
-//                              << "y: " + std::to_string(region_contours[i]->at(j).y) + "\n";
-//                }
-//            }
+            // Push the name of this region onto the id list
+            region_ids.push_back(region_val.first);
+            region_contours.push_back(new std::vector<cv::Point>());
             
+            auto region = region_val.second->as_array()->nested_array();
+            auto reg_it = region.begin();
+
+            while (reg_it != region.end()) {
+
+                // This should be a 2-element vector
+                if (*reg_it == nullptr) {
+                    throw std::runtime_error(
+                         oat::configValueError(
+                         region_val.first,
+                         config_key, 
+                         config_file,
+                         "must be a nested, Nx2 TOML array of doubles to specify a region contour.")
+                         );
+                    
+                }
+                
+                auto point = (**reg_it).array_of<double>();
+
+                if (point.size() != 2) {
+                    throw std::runtime_error(
+                         oat::configValueError(
+                         region_val.first,
+                         config_key, 
+                         config_file,
+                         "must be a nested, Nx2 TOML array of doubles to specify a region contour")
+                         );
+                }
+
+                auto p = cv::Point2d(point[0]->get(), point[1]->get());
+                region_contours.back()->push_back(p);
+                reg_it++;
+            }
+            it++;
+        }
+
+        //            //check the result
+        //            for (int i = 0; i < region_contours.size(); i++) {
+        //                std::cout << "Region ID: " + region_ids[i] + "\n";
+        //                for (int j = 0; j < region_contours[i]->size(); j++) {
+        //                    std::cout << "x: " + std::to_string(region_contours[i]->at(j).x) + " "
+        //                              << "y: " + std::to_string(region_contours[i]->at(j).y) + "\n";
+        //                }
+        //            }
+
     } else {
-        std::cerr << "No region filter configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
 

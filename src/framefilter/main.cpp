@@ -168,7 +168,8 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("invert-mask")) {
 
             if (type_hash[type] != 'b') {
-                std::cerr << oat::Warn("Invert-mask specified, but this is the wrong filter TYPE for that option.\n")
+                std::cerr << oat::Warn("Invert-mask specified, but this is the"
+                          " wrong filter TYPE for that option.\n")
                           << oat::Warn("Invert-mask option was ignored.\n");
             } else {
                 invert_mask = true;

@@ -24,6 +24,7 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/cpptoml/cpptoml.h"
 
 #include "KalmanFilter2D.h"
 #include "HomographyTransform2D.h"
@@ -41,7 +42,8 @@ void printUsage(po::options_description options) {
               << "Publish filtered object positions to SINK.\n\n"
               << "TYPE\n"
               << "  kalman: Kalman filter\n"
-              << "  homo: homography transform\n\n"
+              << "  homo: homography transform\n"
+              << "  region: position region annotation\n\n"
               << "SOURCE:\n"
               << "  User supplied position source name (e.g. rpos).\n\n"
               << "SINK:\n"
@@ -66,9 +68,9 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, sigHandler);
 
     // The image source to which the viewer will be attached
+    std::string type;
     std::string source;
     std::string sink;
-    std::string type;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
@@ -138,30 +140,36 @@ int main(int argc, char *argv[]) {
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
+        
+        if (!variable_map.count("type")) {
+            printUsage(visible_options);
+            std::cout <<  oat::Error("A TYPE must be specified.\n");
+            return -1;
+        }
 
         if (!variable_map.count("positionsource")) {
             printUsage(visible_options);
-            std::cout << "Error: a position SOURCE must be specified. Exiting.\n";
+            std::cout <<  oat::Error("A position SOURCE must be specified.\n");
             return -1;
         }
 
         if (!variable_map.count("sink")) {
             printUsage(visible_options);
-            std::cout << "Error: a position SINK must be specified. Exiting.\n";
+            std::cout <<  oat::Error("A position SINK must be specified.\n");
             return -1;
         }
         
         if (!variable_map.count("config-file") && type.compare("homo") == 0) {
             printUsage(visible_options);
-            std::cout << "Error: when TYPE=homo, a configuration file must be specified "
-                      << "to provide homography matrix. Exiting.\n";
+            std::cerr << oat::Error("When TYPE=homo, a configuration file must be specified"
+                         " to provide homography matrix.\n");
             return -1;
         }
         
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
-            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+            std::cerr << oat::Error("A configuration file must be supplied with a corresponding config-key.\n");
             return -1;
         } else if (variable_map.count("config-file")) {
             config_used = true;
@@ -169,58 +177,84 @@ int main(int argc, char *argv[]) {
 
 
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        std::cerr << oat::Error(e.what()) << "\n";
+        return -1;
     } catch (...) {
-        std::cerr << "Exception of unknown type. " << std::endl;
+        std::cerr << oat::Error("Exception of unknown type.\n");
+        return -1;
     }
 
     // Make the viewer
-    PositionFilter* position_filter;
+    PositionFilter* filter;
     switch (type_hash[type]) {
         case 'a':
         {
-            position_filter = new KalmanFilter2D(source, sink);
+            filter = new KalmanFilter2D(source, sink);
             break;
         }
         case 'b':
         {
-            position_filter = new HomographyTransform2D(source, sink);
+            filter = new HomographyTransform2D(source, sink);
             break;
         }
         case 'c':
         {
-            position_filter = new RegionFilter2D(source, sink);
+            filter = new RegionFilter2D(source, sink);
             break;
         }
         default:
         {
             printUsage(visible_options);
-            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            std::cerr << oat::Error("Invalid TYPE specified.\n");
             return -1;
         }
     }
     
-    if (config_used)
-        position_filter->configure(config_file, config_key);
-    
-    // Tell user
-    std::cout << oat::whoMessage(position_filter->get_name(),
-            "Listening to source " + oat::sourceText(source) + ".\n")
-            << oat::whoMessage(position_filter->get_name(),
-            "Steaming to sink " + oat::sinkText(sink) + ".\n")
-            << oat::whoMessage(position_filter->get_name(),
-            "Press CTRL+C to exit.\n");
+    // At this point, the new'ed component exists and must be deleted in the case
+    // any exception
+    try { 
 
-    // Infinite loop until ctrl-c or end of stream signal
-    run(position_filter);
-    
-    // Tell user
-    std::cout << oat::whoMessage(position_filter->get_name(), "Exiting.\n");
+        if (config_used)
+            filter->configure(config_file, config_key);
 
-    // Deallocate heap
-    delete position_filter;
+        // Tell user
+        std::cout << oat::whoMessage(filter->get_name(),
+                "Listening to source " + oat::sourceText(source) + ".\n")
+                << oat::whoMessage(filter->get_name(),
+                "Steaming to sink " + oat::sinkText(sink) + ".\n")
+                << oat::whoMessage(filter->get_name(),
+                "Press CTRL+C to exit.\n");
+
+        // Infinite loop until ctrl-c or end of stream signal
+        run(filter);
+
+        // Tell user
+        std::cout << oat::whoMessage(filter->get_name(), "Exiting.\n");
+
+        // Deallocate heap
+        delete filter;
+
+        // Exit
+        return 0;
+
+    } catch (const cpptoml::parse_exception& ex) {
+        std::cerr << oat::whoError(filter->get_name(), "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(filter->get_name(), ex.what())
+                  << "\n";
+    } catch (const std::runtime_error ex) {
+        std::cerr << oat::whoError(filter->get_name(),ex.what())
+                  << "\n";
+    } catch (const cv::Exception ex) {
+        std::cerr << oat::whoError(filter->get_name(), ex.msg)
+                  << "\n";
+    } catch (...) {
+        std::cerr << oat::whoError(filter->get_name(), "Unknown exception.\n");
+    }
     
-    // Exit
-    return 0;
+    // Free heap memory allocated to filter
+    delete filter;
+
+    // Exit failure
+    return -1; 
+    
 }

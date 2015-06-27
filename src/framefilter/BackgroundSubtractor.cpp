@@ -26,6 +26,7 @@
 #include <opencv2/highgui.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/utility/IOFormat.h"
 
 BackgroundSubtractor::BackgroundSubtractor(const std::string& source_name, const std::string& sink_name) :
   FrameFilter(source_name, sink_name) {
@@ -45,6 +46,14 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
 
         std::string background_img_path;
         if (this_config.contains("background")) {
+            
+            if (!this_config.get("background")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                       "background", config_key, config_file, "must be a TOML string "
+                        "specifying a path to a background image."))
+                      );
+            }
+            
             background_img_path = *this_config.get_as<std::string>("background");
 
             background_img = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
@@ -56,10 +65,7 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
             background_set = true;
         }
     } else {
-        throw ( std::runtime_error(
-                "No configuration named " + config_key +
-                " was provided in the configuration file " + config_file)
-                );
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 } 
 

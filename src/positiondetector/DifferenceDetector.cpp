@@ -1,7 +1,7 @@
 //******************************************************************************
 //* File:   DifferenceDetector.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
@@ -63,7 +63,7 @@ void DifferenceDetector2D::configure(const std::string& config_file, const std::
         if (this_config.contains("blur")) {
             set_blur_size(*this_config.get_as<int64_t>("blur"));
 
-            if (blur_size.height < 0)
+            if (blur_size.height < 0 || !this_config.get("blur")->is_value())
                 throw (std::runtime_error(
                     "blur value in " + config_key + 
                     " in" + config_file + " must be > 0.")

@@ -1,7 +1,10 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   KalmanFilter2D.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
-
+//* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
 //* it under the terms of the GNU General Public License as published by
 //* the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +19,7 @@
 
 #include "KalmanFilter2D.h"
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/utility/IOFormat.h"
 
 /**
  * A Kalman filter for position measures. The assumed model is normally distributed
@@ -101,51 +105,74 @@ oat::Position2D KalmanFilter2D::filterPosition(oat::Position2D& raw_position) {
 
 void KalmanFilter2D::configure(const std::string& config_file, const std::string& config_key) {
 
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
-    }
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(config_key)) {
+        auto this_config = *config.get_table(config_key);
 
-            auto this_config = *config.get_table(config_key);
+        if (this_config.contains("dt")) {
 
-            if (this_config.contains("dt")) {
-                dt = (float) (*this_config.get_as<double>("dt"));
+            dt = *this_config.get_as<double>("dt");
+
+            if (dt <= 0 || !this_config.get("dt")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                       "dt", config_key, config_file, "must be a double > 0."))
+                      );
             }
-
-            if (this_config.contains("not_found_timeout")) {
-                // Seconds to samples
-                float timeout_in_sec = (float) (*this_config.get_as<double>("not_found_timeout"));
-                not_found_count_threshold = (int) (timeout_in_sec / dt);
-            }
-
-            if (this_config.contains("sigma_accel")) {
-                sig_accel =  *this_config.get_as<double>("sigma_accel");
-            }
-
-            if (this_config.contains("sigma_noise")) {
-                sig_measure_noise = *this_config.get_as<double>("sigma_noise");
-            }
-
-            if (this_config.contains("tune")) {
-                if (*this_config.get_as<bool>("tune")) {
-                    tuning_on = true;
-                    createTuningWindows();
-                }
-            }
-
-        } else {
-            std::cerr << "No Kalman Filter configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
-            exit(EXIT_FAILURE);
         }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+
+        if (this_config.contains("timeout")) {
+            
+            // Seconds to samples
+            double timeout_in_sec = *this_config.get_as<double>("timeout");
+            if (timeout_in_sec < 0 || !this_config.get("timeout")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                       "timeout", config_key, config_file, "must be a double > 0."))
+                      );
+            }
+
+            not_found_count_threshold = (int) (timeout_in_sec / dt);
+        }
+
+        if (this_config.contains("sigma_accel")) {
+            sig_accel = *this_config.get_as<double>("sigma_accel");
+            if (sig_accel < 0 || !this_config.get("sigma_accel")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                       "sigma_accel", config_key, config_file, "must be a double >= 0."))
+                      );
+            }
+        }
+
+        if (this_config.contains("sigma_noise")) {
+            sig_measure_noise = *this_config.get_as<double>("sigma_noise");
+            if (sig_measure_noise < 0 || !this_config.get("sigma_noise")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                       "sigma_noise", config_key, config_file, "must be a double >= 0."))
+                      );
+            }
+        }
+
+        if (this_config.contains("tune")) {
+            
+            if (!this_config.get("tune")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                       "tune", config_key, config_file, "must be a boolean value."))
+                      );
+            }
+            
+            if (*this_config.get_as<bool>("tune")) {
+                tuning_on = true;
+                createTuningWindows();
+            }
+        }
+
+    } else {
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
 
@@ -219,7 +246,10 @@ void KalmanFilter2D::initializeStaticMatracies() {
 }
 
 void KalmanFilter2D::tune() {
-
+    
+    // TODO: The display output of this tuning feature is pretty useless. The constant
+    // rescaling makes it very difficutl to get a sense of the absolute accuracy of 
+    // filtering and how parameters affect this over time.
     if (tuning_on) {
         
         if (!tuning_windows_created) {

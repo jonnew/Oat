@@ -147,105 +147,132 @@ void HSVDetector2D::configure(const std::string& config_file, const std::string&
 
         if (this_config.contains("erode")) {
             int val = *this_config.get_as<int64_t>("erode");
-            if (val < 0)
-                    throw (std::runtime_error(
-                        "erode value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
-                        );
+            if (val < 0 || !this_config.get("erode")->is_value())
+                throw (std::runtime_error(
+                    "erode value in " + config_key +
+                    " in " + config_file + " must be > 0.")
+                    );
             set_erode_size(val);
         }
 
         if (this_config.contains("dilate")) {
             int val = *this_config.get_as<int64_t>("dilate");
-            if (val < 0)
-                    throw (std::runtime_error(
-                        "dilate value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
-                        );
+            if (val < 0 || !this_config.get("dilate")->is_value())
+                throw (std::runtime_error(
+                    "dilate value in " + config_key +
+                    " in " + config_file + " must be > 0.")
+                    );
             set_dilate_size(val);
         }
-        
+
         if (this_config.contains("min_area")) {
             min_object_area = *this_config.get_as<int64_t>("min_area");
-            if (min_object_area < 0)
-                    throw (std::runtime_error(
-                        "min_area value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
-                        );
+            if (min_object_area < 0 || !this_config.get("min_area")->is_value())
+                throw (std::runtime_error(
+                    "min_area value in " + config_key +
+                    " in " + config_file + " must be > 0.")
+                    );
         }
-        
+
         if (this_config.contains("max_area")) {
             max_object_area = *this_config.get_as<int64_t>("max_area");
-            if (max_object_area < 0)
-                    throw (std::runtime_error(
-                        "max_area value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
-                        );
+            if (max_object_area < 0 || !this_config.get("max_area")->is_value())
+                throw (std::runtime_error(
+                    "max_area value in " + config_key +
+                    " in " + config_file + " must be > 0.")
+                    );
         }
-        
+
         if (this_config.contains("h_thresholds")) {
+    
+            if (!this_config.get("h_thresholds")->is_table()){
+                throw (std::runtime_error(oat::configValueError(
+                       "h_thresholds", config_key, config_file, 
+                        "must be a TOML table specifying a min and max double value."))
+                      );
+            }
+            
             auto t = *this_config.get_table("h_thresholds");
 
             if (t.contains("min")) {
                 h_min = *t.get_as<int64_t>("min");
-                if (h_min < 0)
-                    throw (std::runtime_error(
-                        "h_min value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
+                if (h_min < 0 || !t.get("min")->is_value())
+                    throw (std::runtime_error(oat::configValueError(
+                       "h_min", config_key, config_file, "must be a double > 0."))
                         );
             }
             if (t.contains("max")) {
+
                 h_max = *t.get_as<int64_t>("max");
-                if (h_max < 0)
-                    throw (std::runtime_error(
-                        "h_max value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
+                if (h_max < 0 || !t.get("max")->is_value())
+                    throw (std::runtime_error(oat::configValueError(
+                       "h_max", config_key, config_file, "must be a double > 0."))
                         );
             }
         }
 
         if (this_config.contains("s_thresholds")) {
+
+            if (!this_config.get("s_thresholds")->is_table()){
+                throw (std::runtime_error(oat::configValueError(
+                       "s_thresholds", config_key, config_file, 
+                        "must be a TOML table specifying a min and max double value."))
+                      );
+            }
+            
             auto t = *this_config.get_table("s_thresholds");
 
             if (t.contains("min")) {
                 s_min = *t.get_as<int64_t>("min");
-                if (s_min < 0)
-                    throw (std::runtime_error(
-                        "s_min value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
+                if (s_min < 0 || !t.get("min")->is_value())
+                    throw (std::runtime_error(oat::configValueError(
+                       "s_min", config_key, config_file, "must be a double > 0."))
                         );
             }
             if (t.contains("max")) {
                 s_max = *t.get_as<int64_t>("max");
-                if (s_max < 0)
-                    throw (std::runtime_error(
-                        "s_max value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
+                if (s_max < 0 || !t.get("max")->is_value())
+                    throw (std::runtime_error(oat::configValueError(
+                       "s_max", config_key, config_file, "must be a double > 0."))
                         );
             }
         }
 
         if (this_config.contains("v_thresholds")) {
+            
+            if (!this_config.get("v_thresholds")->is_table()){
+                throw (std::runtime_error(oat::configValueError(
+                       "v_thresholds", config_key, config_file, 
+                        "must be a TOML table specifying a min and max double value."))
+                      );
+            }
+            
             auto t = *this_config.get_table("v_thresholds");
 
             if (t.contains("min")) {
-                v_min = *t.get_as<int64_t>("min");
-                throw (std::runtime_error(
-                        "v_min value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
+                v_min = *t.get_as<int64_t>("max");
+                if (v_min < 0 || !t.get("min")->is_value())
+                    throw (std::runtime_error(oat::configValueError(
+                       "v_min", config_key, config_file, "must be a double> 0."))
                         );
             }
             if (t.contains("max")) {
                 v_max = *t.get_as<int64_t>("max");
-                if (v_max < 0)
-                    throw (std::runtime_error(
-                        "v_max value in " + config_key + 
-                        " in" + config_file + " must be > 0.")
+                if (v_max < 0 || !t.get("max")->is_value())
+                    throw (std::runtime_error(oat::configValueError(
+                       "v_max", config_key, config_file, "must be a double > 0."))
                         );
             }
         }
 
         if (this_config.contains("tune")) {
+
+            if (!this_config.get("tune")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                        "tune", config_key, config_file, "must be a boolean value."))
+                        );
+            }
+
             if (*this_config.get_as<bool>("tune")) {
                 tuning_on = true;
                 createTuningWindows();
@@ -253,10 +280,7 @@ void HSVDetector2D::configure(const std::string& config_file, const std::string&
         }
 
     } else {
-        throw ( std::runtime_error(
-                "No configuration named " + config_key +
-                " was provided in the configuration file " + config_file)
-                );
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
 

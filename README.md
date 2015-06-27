@@ -464,7 +464,7 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 	- ~~framefilt~~
 	- ~~posidet~~
 	- ~~posicom~~
-	- posifilt
+	- ~~posifilt~~
 	- positest
 	- record
 	- view

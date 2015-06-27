@@ -24,6 +24,7 @@
 #include <opencv2/highgui.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/utility/IOFormat.h"
 
 FrameMasker::FrameMasker(const std::string& source_name, const std::string& sink_name, bool invert_mask) :
   FrameFilter(source_name, sink_name)
@@ -36,15 +37,22 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
     cpptoml::table config;
     config = cpptoml::parse_file(config_file);
 
-    // See if a camera configuration was provided
+    // See if a configuration was provided
     if (config.contains(config_key)) {
 
         auto this_config = *config.get_table(config_key);
 
         std::string mask_path;
         if (this_config.contains("mask")) {
+            
+            if (!this_config.get("mask")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                       "mask", config_key, config_file, "must be a TOML string "
+                        "specifying a path to a mask image."))
+                      );
+            }
+            
             mask_path = *this_config.get_as<std::string>("mask");
-
             roi_mask = cv::imread(mask_path, CV_LOAD_IMAGE_GRAYSCALE);
 
             if (roi_mask.data == NULL) {
@@ -54,10 +62,7 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
             mask_set = true;
         }
     } else {
-        throw ( std::runtime_error(
-                "No frame mask configuration named "  + config_key +  
-                " was provided in the configuration file " + config_file)
-              );
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
 

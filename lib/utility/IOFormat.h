@@ -51,10 +51,24 @@ namespace oat {
         return "\033[0m\033[33m" + message + "\033[0m";
     }
 
-
     inline std::string whoError(std::string source, std::string message) {
 
         return "\033[1m" + source + ": \033[0m\033[31m" + message + "\033[0m";
+    }
+    
+    inline std::string configNoTableError(std::string table_name,
+                                          std::string config_file) {
+
+        return  "No configuration table named '" + table_name +
+                "' was provided in the configuration file '" + config_file + "'";
+    }
+
+    inline std::string configValueError(std::string entry_name,
+                                        std::string table_name,
+                                        std::string config_file,
+                                        std::string message) {
+
+        return "'" + entry_name + "' in '" + table_name + "' in '" + config_file + "' " + message;
     }
     
     inline std::string Error(std::string message) {

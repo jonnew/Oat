@@ -20,12 +20,12 @@
 #include "HomographyTransform2D.h"
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/utility/IOFormat.h"
 
 HomographyTransform2D::HomographyTransform2D(const std::string& position_source_name, const std::string& position_sink_name) :
 PositionFilter(position_source_name, position_sink_name)
 , homography_valid(false)
-, homography(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0) 
-, tuning_image_title(position_sink_name + "_tuning") { }
+, homography(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0) { }
 
 oat::Position2D HomographyTransform2D::filterPosition(oat::Position2D& raw_position) {
     
@@ -59,53 +59,56 @@ oat::Position2D HomographyTransform2D::filterPosition(oat::Position2D& raw_posit
     return filtered_position;
 }
 
-
 void HomographyTransform2D::configure(const std::string& config_file, const std::string& config_key) {
-    
+
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
-    }
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(config_key)) {
+        auto this_config = *config.get_table(config_key);
 
-            auto this_config = *config.get_table(config_key);
+        if (this_config.contains("homography")) {
 
-            if (this_config.contains("homography")) {
-               
-                // Read array
-                cpptoml::array homo = (*this_config.get_array("homography"));
-                
-                auto homo_vec = homo.array_of<double>();
-                if (homo_vec.size() == 9) {
-
-                    homography(0, 0) = homo_vec[0]->get();
-                    homography(0, 1) = homo_vec[1]->get();
-                    homography(0, 2) = homo_vec[2]->get();
-                    homography(1, 0) = homo_vec[3]->get();
-                    homography(1, 1) = homo_vec[4]->get();
-                    homography(1, 2) = homo_vec[5]->get();
-                    homography(2, 0) = homo_vec[6]->get();
-                    homography(2, 1) = homo_vec[7]->get();
-                    homography(2, 2) = homo_vec[8]->get();
-
-                    homography_valid = true;
-                } else {
-					throw std::runtime_error("Homography matrix must be specified as 9 element TOML array of doubles.");
-                }
+            // Check for array
+            if (!this_config.get("homography")->is_array()) {
+                throw (std::runtime_error(oat::configValueError(
+                       "homography", config_key, config_file, 
+                        "must be specified as 9 element TOML array of doubles."))
+                      );
             }
+            
+            // Read array
+            cpptoml::array homo = (*this_config.get_array("homography"));
 
-        } else {
-            std::cerr << "No homography configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
-            exit(EXIT_FAILURE);
+            // Assign array
+            auto homo_vec = homo.array_of<double>();
+            if (homo_vec.size() == 9) {
+
+                homography(0, 0) = homo_vec[0]->get();
+                homography(0, 1) = homo_vec[1]->get();
+                homography(0, 2) = homo_vec[2]->get();
+                homography(1, 0) = homo_vec[3]->get();
+                homography(1, 1) = homo_vec[4]->get();
+                homography(1, 2) = homo_vec[5]->get();
+                homography(2, 0) = homo_vec[6]->get();
+                homography(2, 1) = homo_vec[7]->get();
+                homography(2, 2) = homo_vec[8]->get();
+
+                homography_valid = true;
+            } else {
+                throw (std::runtime_error(oat::configValueError(
+                       "homography", config_key, config_file, 
+                        "must be specified as 9 element TOML array of doubles."))
+                      );
+            }
         }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+
+    } else {
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
-    
+
 }
