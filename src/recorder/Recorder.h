@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   Recorder.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,7 +15,7 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//*****************************************************************************
 
 #ifndef RECORDER_H
 #define RECORDER_H
@@ -21,10 +24,10 @@
 #include <condition_variable>
 #include <string>
 #include <thread>
-#include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 #include "../../lib/rapidjson/filewritestream.h"
 #include "../../lib/rapidjson/prettywriter.h"
@@ -32,30 +35,47 @@
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position2D.h"
 
+/**
+ * Position and frame recorder.
+ */
 class Recorder {
 public: 
 
-    // Both positions and images
+    /**
+     * Position and frame recorder.
+     * @param position_source_names Names specifying position SOURCES to record
+     * @param frame_source_names Names specifying frame SOURCES to record
+     * @param save_path Directory to which files will be written
+     * @param file_name Base file name
+     * @param append_date Should the date be prepended to the file name
+     * @param frames_per_second Frame rate if video is recorded
+     * @param overwrite Should a file with the same name be overwritten
+     */
     Recorder(const std::vector<std::string>& position_source_names,
             const std::vector<std::string>& frame_source_names,
             std::string save_path = ".",
             std::string file_name = "",
-            const bool& append_date = false,
-            const int& frames_per_second = 30,
+            const bool prepend_date = false,
+            const int frames_per_second = 30,
             const bool overwrite = false);
 
     ~Recorder();
-
-    // Recorder must be configurable
-    void configure(const std::string& config_file, const std::string& config_key);
-
-    // Recorder must be able to write all requested streams to file(s)
+    
+    /**
+     * Collect frames and positions from SOURCES. Write frames and positions to file.
+     * @return SOURCE end-of-stream signal. If true, this component should exit.
+     */
     bool writeStreams(void);
     
+    /**
+     * Get recorder name
+     * @return name 
+     */
     std::string get_name(void) { return name; }
 
 private:
     
+    // Name of this recorder
     std::string name;
 
     // General file name formatting
@@ -119,7 +139,6 @@ private:
         const std::string& date, 
         const double sample_rate, 
         const std::vector<std::string>& sources);
-
 };
 
 #endif // RECORDER_H

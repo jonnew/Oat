@@ -72,7 +72,7 @@ public:
     virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
     
     /**
-     * Get FrameFilter name
+     * Get frame filter name
      * @return name 
      */
     std::string get_name(void) const { return name; }

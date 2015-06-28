@@ -28,13 +28,12 @@ public:
     
     FileReader(std::string file_name_in, 
                std::string image_sink_name, 
-               const double& frames_per_second = 30);
+               const double frames_per_second = 30);
     
     // Implement Camera interface
     void configure(void); 
     void configure(const std::string& config_file, const std::string& config_key);
     void grabFrame(cv::Mat& frame);
-    //bool serveMat(void);
     
 private:
     

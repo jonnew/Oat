@@ -208,7 +208,7 @@ namespace oat {
 
             // If the client reference count is 0 and there is no server 
             // attached to the shared mat, deallocate the shmem
-            if (number_of_clients == 0 && shared_mem_manager->get_server_state() == oat::ServerRunState::END) {
+            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::ServerRunState::RUNNING) {
 
                 // Ensure that no server is deadlocked
                 shared_object->write_barrier.post();

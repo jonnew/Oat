@@ -1,87 +1,14 @@
-## Real-time position tracker for animal behavior
-Simple tracker consists of a set of programs for processing images, extracting 
+__Oat__ consists of a set of programs for processing images, extracting 
 position information, and streaming data to disk and the network that communicate 
 through shared memory. This model enables quick, scripted construction of complex 
-data processing chains without relying on a complicated GUI or plugin architecture.
-
-### Installation
-
-#### Flycapture SDK (If point-grey camera is used)
-- Go to [point-grey website](www.ptgrey.com)
-- Download the FlyCapture2 SDK (version > 2.7.3)
-- Extract the archive and use the `install_flycapture.sh` script to install the SDK on your computer.
-
-```bash
-tar xf flycapture.tar.gz
-cd flycapture
-sudo ./install_flycapture
-```
-
-#### [Boost](http://www.boost.org/)
-```bash
-wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
-tar -xf download
-sudo cp -r boost_1_58_0 /opt
-cd opt/boost_1_58_0/
-sudo ./bootstrap.sh
-sudo ./b2 --with-program_options --with_system --with_thread
-```
-
-#### [OpenCV](http://opencv.org/)
-```bash
-# Install dependencies
-sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
-sudo ldconfig -v
-```
-__Note__: OpenCV must be installed with ffmpeg support in order for offline analysis 
-of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreamer 
-will be used to serve from video files at the rate the files were recorded.
-
-__Note__: To get increased video visualization performance, you can build OpenCV
-with OpenGL support (WIP)
-
-```bash
-# Install OpenCV
-wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
-unzip opencv.zip -d opencv
-cd opencv/opencv-3.0.0-rc1 
-mkdir release
-cd release
-```
-
-To build OpenCV, execute the following in the release directory
-```bash
-cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
-make
-sudo make install
-```
-__Note__: If you have [NVIDA GPU that supports CUDA](https://developer.nvidia.com/cuda-gpus), 
-you can build OpenCV with CUDA support to enable GPU accelerated video processing. 
-To do this, will first need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit). 
-Be sure to read the [installation instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/index.html) since it is a mulitstep process.
-To build OpenCV _with_ CUDA support, execute the following in the release directory
-```bash
-cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_CUDA=ON ..
-make
-sudo make install
-```
-#### [RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)
-Starting in the simple-tracker root directory,
-```bash
-cd lib
-./updatelibs.sh
-```
-
-#### [tmux](http://tmux.sourceforge.net/) (for running scripts in playpen)
-```bash
-sudo apt-get install tmux 
-```
+data processing chains. Oat is primarily used for real-time animal position tracking
+in the context of experimental neuroscience, but can be used in any circumstance
+that requires real-time object tracking.
 
 ### Manual
-
-Oat components consist of a rich set of sub-commands that communicate through 
-shared memory to capture, process, and record video streams. Oat components act 
-on two basic data types: `frames` and `positions`. 
+Oat components are a set of programs that communicate through shared memory to 
+capture, process, and record video streams. Oat components act on two basic 
+data types: `frames` and `positions`. 
 
 * `frame` - a shared-memory abstraction of a 
   [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
@@ -114,26 +41,32 @@ oat view dec &
 
 # Record the 'dec' and 'pos' streams to file in the current directory
 oat record -i dec -p pos -f ./
-
 ```
+
 This script has the following graphical representation:
 ```
 frameserve ──> framefilt ──> posidet ──> decorate ───> view
            ╲                           ╱         ╲
-             ─────────────────────────               ──> record   	
+             ─────────────────────────             ──> record   	
 ```
 
-Each component of Oat is a subcommand defined by its type signature. Below, the 
+Each component of Oat is a subcommand defined by its type signature. Generally,
+using an Oat component is used in the following pattern:
+```
+oat <subcommand> [TYPE] [IO] [CONFIGURATION]
+```
+The subcommand specifies the general classification of function that will be executed 
+(e.g. frame filter). The TYPE parameter specifies a concrete type of transform 
+(e.g. background subtraction). The IO specification indicates where the component
+is receiving data from and to where the processed data should be published. The
+CONFIGURATION specification is used to provide parameters to the component. Below, the 
 type signature, usage information, examples, and configuration options are provided 
-for each component. 
+for each Oat component.
 
-TODO: Note the general structure to specify a particular algorithm and parameter set.
-```
-oat <subcommand> [TYPE] [IO spec] [CONFIGURATION]
-```
 
 #### `frameserve`
-Video frame server. Serves video streams to named shard memory from physical devices (e.g. webcam or gige camera) or from disk.
+Video frame server. Serves video streams to named shared memory from physical 
+devices (e.g. webcam or GIGE camera) or from disk.
 
 ##### Signature
 ```
@@ -166,7 +99,7 @@ CONFIGURATION:
                             server TYPE.
 ```
 
-##### Example
+##### Examples
 ```bash
 # Serve to the 'wraw' stream from a webcam 
 oat frameserve wcam wraw 
@@ -271,7 +204,6 @@ oat posidet hsv raw cpos -c config.toml -k hsv_config
 # Use motion-based object detection on the 'raw' frame stream 
 # publish the result to the 'mpos' position stream
 oat posidet diff raw mpos  
-
 ```
 
 #### `posifilt`
@@ -322,8 +254,10 @@ TODO
 #### `record`
 Stream recorder. Saves frame and positions streams to disk. 
 
-* `frame` streams are compressed and saved as individual video files ([H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI file).
-* `position` streams are combined into a single [JSON](http://json.org/) file. Position files have the following structure:
+* `frame` streams are compressed and saved as individual video files (
+  [H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI file).
+* `position` streams are combined into a single [JSON](http://json.org/) file. 
+  Position files have the following structure:
 
 ```javascript
 {header:  [ {timestamp: YYYY-MM-DD-hh-mm-ss}, 
@@ -404,6 +338,84 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 
 ```
 
+### Installation
+
+#### Flycapture SDK (If point-grey camera is used)
+- Go to [point-grey website](www.ptgrey.com)
+- Download the FlyCapture2 SDK (version > 2.7.3)
+- Extract the archive and use the `install_flycapture.sh` script to install the SDK on your computer.
+
+```bash
+tar xf flycapture.tar.gz
+cd flycapture
+sudo ./install_flycapture
+```
+
+#### [Boost](http://www.boost.org/)
+```bash
+wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
+tar -xf download
+sudo cp -r boost_1_58_0 /opt
+cd opt/boost_1_58_0/
+sudo ./bootstrap.sh
+sudo ./b2 --with-program_options --with_system --with_thread
+```
+
+#### [OpenCV](http://opencv.org/)
+
+__Note__: OpenCV must be installed with ffmpeg support in order for offline analysis 
+of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreamer 
+will be used to serve from video files at the rate the files were recorded. No cmake 
+flags are required to configure the build to use ffmpeg. OpenCV will be built 
+with ffmpeg support if something like
+```bash
+--       FFMPEG:                    YES
+--       codec:                     YES (ver 54.35.0)
+--       format:                    YES (ver 54.20.4)
+--       util:                      YES (ver 52.3.0)
+--       swscale:                   YES (ver 2.1.1)
+```
+appears in the cmake output text. 
+
+__Note__: To increase Oat's video visualization performance using `oat view`, you can 
+build OpenCV with OpenGL support. This will open up significant processing bandwidth 
+to other Oat components and make for faster processing pipelines. To compile OpenCV
+with OpenGL support, add the `-DWITH_OPENGL=ON` flag in the cmake command below.
+OpenCV will be build with OpenGL support if `OpenGL support: YES` appears in the 
+cmake output text.
+
+__Note__: If you have [NVIDA GPU that supports CUDA](https://developer.nvidia.com/cuda-gpus), 
+you can build OpenCV with CUDA support to enable GPU accelerated video processing. 
+To do this, will first need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit). 
+Be sure to read the [installation instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/index.html) 
+since it is a multistep process.To compile OpenCV with CUDA support, add the 
+`-DWITH_CUDA=ON` flag in the cmake command below.
+
+```bash
+# Install dependencies
+sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+sudo ldconfig -v
+
+# Get OpenCV
+wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
+unzip opencv.zip -d opencv
+
+# Build OpenCV
+cd opencv/opencv-3.0.0-rc1 
+mkdir release
+cd release
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
+make
+sudo make install
+```
+
+#### [RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)
+Starting in the project root directory,
+```bash
+cd lib
+./updatelibs.sh
+```
+
 ### TODO
 - [x] Interprocess data processing synchronization
     - Whatever is chosen, all subsequent processing must propagate in accordance with the frame captured by the base image server(s).
@@ -461,18 +473,24 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 - [ ] shmem type checking by clients, exit gracefully in the case of incorrect type
 - [ ] Exception saftey for all components
     - frameserve
-	- ~~framefilt~~
-	- ~~posidet~~
-	- ~~posicom~~
-	- ~~posifilt~~
-	- positest
-	- record
-	- view
-	- decorate
+    - ~~framefilt~~
+    - ~~posidet~~
+    - ~~posicom~~
+    - ~~posifilt~~
+    - ~~positest~~
+    - ~~record~~
+    - ~~view~~
+    - decorate
 
-####  Connecting to point-grey PGE camera in Linux
+####  Setting up a Point-grey PGE camera in Linux
+`oat frameserve` supports using Point Grey GIGE cameras to collect frames. I found
+the setup process to be straightforward and robust, but only after cobling together
+the following notes:
+
 - First you must assign your camera a static IP address. 
-    - The easiest way to do this is to use a Windows machine to run the the IP configurator program provided by Point Grey.
+    - The easiest way to do this is to use a Windows machine to run the the IP 
+      configurator program provided by Point Grey. If someone has a way to do this
+      without Windows, please tell me.
 - The ipv4 method should be set to __manual__.
 - Finally, you must the PG POE gigabit interface to (1) have the same network prefix and (2) be on the same subnet as your Gigabit camera. 
     - For instance, assume that your camera was assigned the following private ipv4 configuration:

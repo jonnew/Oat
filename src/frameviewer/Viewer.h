@@ -23,12 +23,19 @@
 
 #include "../../lib/shmem/MatClient.h"
 
+/**
+ * View a frame stream on the monitor.
+ */
 class Viewer {
     
     typedef std::chrono::high_resolution_clock Clock;
     typedef std::chrono::milliseconds milliseconds;
     
 public:
+    
+    /**
+     * View a frame stream on the monitor.
+     */
     Viewer(const std::string& frame_source_name, 
            std::string& save_path,
            const std::string& file_name);
@@ -48,10 +55,10 @@ private:
     // Image data
     cv::Mat current_frame;;
 
-    // Mat client object for receiving frames
+    // Frame SOURCE to get frames to display
     oat::MatClient frame_source;
     
-    // minimum viewer refresh period
+    // Minimum viewer refresh period
     Clock::time_point tick, tock;
     const milliseconds min_update_period;
     
@@ -61,7 +68,7 @@ private:
     std::string file_name;
     bool append_date;
     std::vector<int> compression_params;
-    
+
     std::string makeFileName(void);
 };
 

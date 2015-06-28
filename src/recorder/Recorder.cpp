@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   Recorder.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,7 +15,7 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//*****************************************************************************
 
 #include <chrono>
 #include <ctime>
@@ -32,12 +35,12 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         const std::vector<std::string>& frame_source_names,
         std::string save_path,
         std::string file_name,
-        const bool& append_date,
-        const int& frames_per_second,
+        const bool prepend_date,
+        const int frames_per_second,
         bool overwrite) :
   save_path(save_path)
 , file_name(file_name)
-, append_date(append_date)
+, append_date(prepend_date)
 , allow_overwrite(overwrite)
 , running(true)
 , frames_per_second(frames_per_second)
@@ -74,7 +77,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
         name += position_source_names[0];
         if (position_source_names.size() > 1)
-            name += "...";
+            name += "..";
         
         for (auto &s : position_source_names) {
 
@@ -84,7 +87,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
         // Create a single position file
         std::string posi_fid;
-        if (append_date)
+        if (prepend_date)
             posi_fid = file_name.empty() ?
             (save_path + "/" + date_now + "_" + position_source_names[0]) :
             (save_path + "/" + date_now + "_" + file_name);
@@ -127,16 +130,19 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
     // Create a video writer, file, and buffer for each image stream
     uint32_t idx = 0;
     if (!frame_source_names.empty()) {
+
+        if (!position_source_names.empty()) 
+            name += ", ";
         
         name += frame_source_names[0];
         if (frame_source_names.size() > 1)
-            name += "...";
+            name += "..";
 
         for (auto &frame_source_name : frame_source_names) {
 
             // Generate file name for this video
             std::string frame_fid;
-            if (append_date)
+            if (prepend_date)
                 frame_fid = file_name.empty() ?
                 (save_path + "/" + date_now + "_" + frame_source_name) :
                 (save_path + "/" + date_now + "_" + file_name + "_" + frame_source_name);
@@ -383,8 +389,6 @@ bool Recorder::checkFile(std::string& file) {
     }
 
     if (i != 0) {
-        std::cout << "Warning: " + original_file + " exists.\n"
-                << "File renamed to: " + file + ".\n";
         file_exists = true;
     }
 

@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   RandomAccel2D.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,21 +15,22 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//*****************************************************************************
 
-#include "RandomAccel2D.h"
-
-#include <string>
 #include <iostream>
 #include <limits>
 #include <math.h>
+#include <string>
+#include <thread>
 #include <opencv2/opencv.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/shmem/BufferedMatServer.h"
+#include "../../lib/utility/IOFormat.h"
 
-RandomAccel2D::RandomAccel2D(std::string position_sink_name) :
-  TestPosition<oat::Position2D>(position_sink_name) 
+#include "RandomAccel2D.h"
+
+RandomAccel2D::RandomAccel2D(std::string position_sink_name, const double samples_per_second) :
+  TestPosition<oat::Position2D>(position_sink_name, samples_per_second) 
 , accel_distribution(0.0, 5.0) {
 
     createStaticMatracies();
@@ -40,32 +44,34 @@ RandomAccel2D::RandomAccel2D(std::string position_sink_name) :
 }
 
 void RandomAccel2D::configure(const std::string& config_file, const std::string& config_key) {
-    
+
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
-    }
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(config_key)) {
+        auto this_config = *config.get_table(config_key);
 
-            auto this_config = *config.get_table(config_key);
+        if (this_config.contains("dt")) {
 
-            if (this_config.contains("dt")) {
-                sample_period_in_seconds = (float) (*this_config.get_as<double>("dt"));
+            double Ts = *this_config.get_as<double>("dt");
+
+            if (Ts < 0 || !this_config.get("dt")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                        "dt", config_key, config_file, "must be a double > 0."))
+                        );
             }
 
-        } else {
-            std::cerr << "No Position Test configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
-            exit(EXIT_FAILURE);
+            generateSamplePeriod(Ts);
         }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+
+    } else {
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
+
 }
 
 oat::Position2D RandomAccel2D::generatePosition( ) {
@@ -86,8 +92,12 @@ oat::Position2D RandomAccel2D::generatePosition( ) {
     pos.velocity.x = state(1);
     pos.velocity.y = state(3);
     
+    // Enforce sample period
+    auto tock = clock.now();
+    std::this_thread::sleep_for(sample_period_in_sec - (tock - tick));
+    tick = clock.now();
+    
     return pos;
-
 }
 
 void RandomAccel2D::simulateMotion() {
@@ -102,9 +112,11 @@ void RandomAccel2D::simulateMotion() {
 
 void RandomAccel2D::createStaticMatracies( ) {
     
+    double Ts = sample_period_in_sec.count();
+    
     // State transition matrix
     state_transition_mat(0, 0) = 1.0;
-    state_transition_mat(0, 1) = sample_period_in_seconds;
+    state_transition_mat(0, 1) = Ts;
     state_transition_mat(0, 2) = 0.0;
     state_transition_mat(0, 3) = 0.0;
     
@@ -116,7 +128,7 @@ void RandomAccel2D::createStaticMatracies( ) {
     state_transition_mat(2, 0) = 0.0;
     state_transition_mat(2, 1) = 0.0;
     state_transition_mat(2, 2) = 1.0;
-    state_transition_mat(2, 3) = sample_period_in_seconds;
+    state_transition_mat(2, 3) = Ts;
     
     state_transition_mat(3, 0) = 0.0;
     state_transition_mat(3, 1) = 0.0;
@@ -124,16 +136,16 @@ void RandomAccel2D::createStaticMatracies( ) {
     state_transition_mat(3, 3) = 1.0;
     
     // Input Matrix
-    input_mat(0, 0) = (sample_period_in_seconds*sample_period_in_seconds)/2;
+    input_mat(0, 0) = (Ts*Ts)/2.0;
     input_mat(0, 1) = 0.0;
 
-    input_mat(1, 0) = sample_period_in_seconds;
+    input_mat(1, 0) = Ts;
     input_mat(1, 1) = 0.0;
 
     input_mat(2, 0) = 0.0;
-    input_mat(2, 1) = (sample_period_in_seconds*sample_period_in_seconds)/2;
+    input_mat(2, 1) = (Ts*Ts)/2.0;
     
     input_mat(3, 0) = 0.0;
-    input_mat(3, 1) = sample_period_in_seconds;
+    input_mat(3, 1) = Ts;
    
 }

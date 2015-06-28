@@ -32,7 +32,7 @@ class Camera {
 public:
     
     Camera(std::string image_sink_name) : 
-      name("frameserve[*->" + image_sink_name + "]")
+      name("frameserve[" + image_sink_name + "]")
     , frame_sink(image_sink_name)
     , undistort_image(false)
     , current_sample(0) { }

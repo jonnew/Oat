@@ -173,10 +173,10 @@ int main(int argc, char *argv[]) {
         }
 
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << oat::Error(e.what()) << "\n";
         return -1;
     } catch (...) {
-        std::cerr << "Exception of unknown type." << std::endl;
+        std::cerr << oat::Error("Exception of unknown type.\n");
         return -1;
     }
 

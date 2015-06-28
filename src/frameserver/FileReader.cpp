@@ -14,8 +14,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "FileReader.h"
-
 #include <chrono>
 #include <string>
 #include <thread>
@@ -23,7 +21,9 @@
 
 #include "../../lib/cpptoml/cpptoml.h"
 
-FileReader::FileReader(std::string file_name_in, std::string image_sink_name, const double& frames_per_second) :
+#include "FileReader.h"
+
+FileReader::FileReader(std::string file_name_in, std::string image_sink_name, const double frames_per_second) :
   Camera(image_sink_name)
 , file_name(file_name_in)
 , file_reader(file_name_in)

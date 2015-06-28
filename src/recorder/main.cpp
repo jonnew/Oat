@@ -24,6 +24,8 @@
 #include <csignal>
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/IOFormat.h"
+
 #include "Recorder.h"
 
 namespace po = boost::program_options;
@@ -83,11 +85,9 @@ int main(int argc, char *argv[]) {
                 "If set and save path matches and existing file, the file will be overwritten instead of"
                 "a numerical index being added to the file path.")
                 ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
-                "The name of the server(s) that supply object position information."
-                "The server(s) must be of type SMServer<Position>\n")
+                "The names of the POSITION SOURCES that supply object positions to be recorded.")
                 ("image-sources,i", po::value< std::vector<std::string> >()->multitoken(),
-                "The name of the server(s) that supplies images to save to video."
-                "The server must be of type SMServer<SharedCVMatHeader>\n")
+                "The names of the FRAME SOURCES that supply images to save to video.")
                 ("frames-per-second,F", po::value<int>(&fps),
                 "The frame rate of the recorded video. This determines playback speed of the recording. "
                 "It does not affect online processing in any way.\n")
@@ -122,23 +122,23 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("position-sources") && !variable_map.count("image-sources")) {
             printUsage(all_options);
-            std::cout << "Error: at least a single POSITION_SOURCE or FRAME_SOURCE must be specified. Exiting.\n";
+            std::cerr << oat::Error("At least a single POSITION SOURCE or FRAME SOURCE must be specified. Exiting.\n");
             return -1;
         }
 
         if (!variable_map.count("folder") ) {
             save_path = ".";
-            std::cout << "Warning: saving files to the current directory.\n";
+            std::cerr << oat::Warn("Warning: Saving files to the current directory.\n");
         }
         
         if (!variable_map.count("filename") ) {
             file_name = "";
-            std::cout << "Warning: no base filename was provided.\n";
+            std::cerr << oat::Warn("Warning: No base filename was provided.\n");
         }
         
-        if (!variable_map.count("frames-per-second") ) {
+        if (!variable_map.count("frames-per-second") && variable_map.count("image-sources")) {
             fps = 30;
-            std::cout << "Warning: playback speed set to 30 FPS.\n";
+            std::cerr << oat::Warn("Warning: Video playback speed set to 30 FPS.\n");
         }
 
         // May contain imagesource and sink information!]
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
             it = std::unique (position_sources.begin(), position_sources.end());   
             if (it != position_sources.end()) {
                 position_sources.resize(std::distance(position_sources.begin(),it)); 
-                std::cout << "Warning: duplicate position sources have been removed.\n";
+                std::cerr << oat::Warn("Warning: duplicate position sources have been removed.\n");
             }
         }
         
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
             it = std::unique (frame_sources.begin(), frame_sources.end());   
             if (it != frame_sources.end()) {
                 frame_sources.resize(std::distance(frame_sources.begin(),it)); 
-                std::cout << "Warning: duplicate frame sources have been removed.\n";
+                 std::cerr << oat::Warn("Warning: duplicate frame sources have been removed.\n");
             }
         }
         
@@ -176,10 +176,11 @@ int main(int argc, char *argv[]) {
 
 
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        std::cerr << oat::Error(e.what()) << "\n";
+        return -1;
     } catch (...) {
-        std::cerr << "Exception of unknown type! " << std::endl;
+        std::cerr << oat::Error("Exception of unknown type.\n");
+        return -1;
     }
 
     // Make the decorator

@@ -73,13 +73,8 @@ void HSVDetectorCUDA::applyThreshold() {
     
     std::vector<cv::cuda::GpuMat> channels;
     cv::cuda::split(lut_frame, channels);
-    cv::cuda::multiply(channels[0], channels[1], threshold_frame);
-    cv::cuda::multiply(channels[2], threshold_frame, threshold_frame, 255.0);
-    
-    
-    threshold_frame.download(tuning_image);
-    //hsv_image.setTo(0, lut_frame == 0);
-
+    cv::cuda::bitwise_and(channels[0], channels[1], threshold_frame);
+    cv::cuda::bitwise_and(channels[2], threshold_frame, threshold_frame);
 }
 
 void HSVDetectorCUDA::erodeDilate() {
@@ -91,7 +86,6 @@ void HSVDetectorCUDA::erodeDilate() {
     if (dilate_on) {
         dilate_filter->apply(threshold_frame, threshold_frame);
     }
-
 }
 
 void HSVDetectorCUDA::siftBlobs() {
@@ -123,28 +117,28 @@ void HSVDetectorCUDA::siftBlobs() {
         }
     }
 
-//    if (tuning_on) {
-//        
-//        std::string msg = cv::format("Object not found"); 
-//
-//        // Plot a circle representing found object
-//        if (object_position.position_valid) {
-//            auto radius = std::sqrt(object_area / PI);
-//            cv::Point center;
-//            center.x = object_position.position.x;
-//            center.y = object_position.position.y;
-//            cv::circle(search_frame, center, radius, cv::Scalar(0, 0, 255), 2);
-//            msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
-//        }
-//
-//        int baseline = 0;
-//        cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
-//        cv::Point text_origin(
-//                search_frame.cols - textSize.width - 10,
-//                search_frame.rows - 2 * baseline - 10);
-//
-//        cv::putText(search_frame, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
-//    }
+    if (tuning_on) {
+        
+        std::string msg = cv::format("Object not found"); 
+
+        // Plot a circle representing found object
+        if (object_position.position_valid) {
+            auto radius = std::sqrt(object_area / PI);
+            cv::Point center;
+            center.x = object_position.position.x;
+            center.y = object_position.position.y;
+            cv::circle(search_frame, center, radius, cv::Scalar(0, 0, 255), 2);
+            msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
+        }
+
+        int baseline = 0;
+        cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
+        cv::Point text_origin(
+                search_frame.cols - textSize.width - 10,
+                search_frame.rows - 2 * baseline - 10);
+
+        cv::putText(search_frame, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+    }
 }
 
 void HSVDetectorCUDA::configure(const std::string& config_file, const std::string& config_key) {
@@ -264,7 +258,7 @@ void HSVDetectorCUDA::configure(const std::string& config_file, const std::strin
             auto t = *this_config.get_table("v_thresholds");
 
             if (t.contains("min")) {
-                v_min = *t.get_as<int64_t>("max");
+                v_min = *t.get_as<int64_t>("min");
                 if (v_min < 0 || !t.get("min")->is_value())
                     throw (std::runtime_error(oat::configValueError(
                        "v_min", config_key, config_file, "must be a double> 0."))
@@ -306,8 +300,9 @@ void HSVDetectorCUDA::tune() {
         if (!tuning_windows_created) {
             createTuningWindows();
         }
-        cv::imshow(tuning_image_title, tuning_image);
+        cv::imshow(tuning_image_title, search_frame);
         cv::waitKey(1);
+        createHSVLUT();
     } else if (!tuning_on && tuning_windows_created) {
         
         // TODO: Window will not actually close!!
@@ -316,7 +311,6 @@ void HSVDetectorCUDA::tune() {
         tuning_windows_created = false;
     }
     
-    createHSVLUT();
 }
 
 void HSVDetectorCUDA::createTuningWindows() {
@@ -377,7 +371,7 @@ void HSVDetectorCUDA::set_erode_size(int value) {
         cv::Mat erode_element = 
             cv::getStructuringElement(cv::MORPH_RECT, cv::Size(erode_px, erode_px));
         erode_filter = 
-            cv::cuda::createMorphologyFilter(cv::MORPH_ERODE, lut_frame.type(), erode_element);
+            cv::cuda::createMorphologyFilter(cv::MORPH_ERODE, CV_8UC1, erode_element);
     } else {
         erode_on = false;
     }
@@ -390,7 +384,7 @@ void HSVDetectorCUDA::set_dilate_size(int value) {
         cv::Mat dilate_element = 
             cv::getStructuringElement(cv::MORPH_RECT, cv::Size(dilate_px, dilate_px));
         dilate_filter = 
-            cv::cuda::createMorphologyFilter(cv::MORPH_DILATE, lut_frame.type(), dilate_element);
+            cv::cuda::createMorphologyFilter(cv::MORPH_DILATE, CV_8UC1, dilate_element);
     } else {
         dilate_on = false;
     }

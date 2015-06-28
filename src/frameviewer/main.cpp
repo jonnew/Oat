@@ -121,25 +121,24 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("source")) {
             printUsage(visible_options);
-            std::cout << "Error: a SOURCE must be specified. Exiting.\n";
+            std::cerr << oat::Error("A SOURCE must be specified. Exiting.\n");
             return -1;
         }
 
         if (!variable_map.count("folder")) {
             save_path = ".";
-            std::cout << "Warning: saving files to the current directory.\n";
         }
 
         if (!variable_map.count("filename")) {
             file_name = "";
-            std::cout << "Warning: no base filename was provided.\n";
         }
 
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        std::cerr << oat::Error(e.what()) << "\n";
+        return -1;
     } catch (...) {
-        std::cerr << "Exception of unknown type! " << std::endl;
+        std::cerr << oat::Error("Exception of unknown type.\n");
+        return -1;
     }
 
     // Make the viewer

@@ -24,6 +24,9 @@
 #include <csignal>
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/IOFormat.h"
+#include "../../lib/cpptoml/cpptoml.h"
+
 #include "TestPosition.h"
 #include "RandomAccel2D.h"
 
@@ -31,8 +34,6 @@ namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
-
-struct timespec delay{0};
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: positest [INFO]\n"
@@ -54,9 +55,7 @@ void sigHandler(int s) {
 void run(TestPosition<oat::Position2D>* test_position) {
 
     while (!quit && !source_eof) {
-        
         source_eof = test_position->process();
-        nanosleep(&delay, (struct timespec *)NULL);
     }
 }
 
@@ -67,6 +66,7 @@ int main(int argc, char *argv[]) {
 
     std::string sink;
     std::string type;
+    double samples_per_second = 30;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
@@ -74,7 +74,6 @@ int main(int argc, char *argv[]) {
     
     std::unordered_map<std::string, char> type_hash;
     type_hash["rand2D"] = 'a';
-
 
     try {
 
@@ -86,6 +85,8 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
+                ("sps,r", po::value<double>(&samples_per_second),
+                "Samples per second. Overriden by information in configuration file if provided.")
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
                 ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
                 ;
@@ -135,30 +136,31 @@ int main(int argc, char *argv[]) {
         
         if (!variable_map.count("type")) {
             printUsage(visible_options);
-            std::cout << "Error: a TYPE name must be specified. Exiting.\n";
+            std::cerr << oat::Error("A TYPE name must be specified. Exiting.\n");
             return -1;
         }
 
         if (!variable_map.count("sink")) {
             printUsage(visible_options);
-            std::cout << "Error: a SINK name must be specified. Exiting.\n";
+            std::cerr << oat::Error("A SINK name must be specified. Exiting.\n");
             return -1;
         }
 
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
-            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+            std::cerr << oat::Error("A config file must be supplied with a corresponding config-key.\n");
             return -1;
         } else if (variable_map.count("config-file")) {
             config_used = true;
         }
 
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        std::cerr << oat::Error(e.what()) << "\n";
+        return -1;
     } catch (...) {
-        std::cerr << "Exception of unknown type!" << std::endl;
+        std::cerr << oat::Error("Exception of unknown type.\n");
+        return -1;
     }
 
     // Create the specified TYPE of detector
@@ -170,41 +172,61 @@ int main(int argc, char *argv[]) {
     switch (type_hash[type]) {
         case 'a':
         {
-            test_position = new RandomAccel2D(sink);
+            test_position = new RandomAccel2D(sink, samples_per_second);
             break;
         }
         default:
         {
             printUsage(visible_options);
-            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            std::cerr << oat::Error("Invalid TYPE specified.\n");
             return -1;
         }
     }
     
-    if (config_used)
-       test_position->configure(config_file, config_key);
-    
-    // Set the test position sample frequency
-    delay.tv_sec = 0;
-    delay.tv_nsec = (int)(test_position->get_sample_period() * 1.0e9);
+    // At this point, the new'ed component exists and must be deleted in the case
+    // any exception
+    try {
 
-    // Tell user
-    std::cout << oat::whoMessage(test_position->get_name(),
-              "Steaming to sink " + oat::sinkText(sink) + ".\n")
-              << oat::whoMessage(test_position->get_name(),
-              "Press CTRL+C to exit.\n");
+        if (config_used)
+            test_position->configure(config_file, config_key);
 
-    // Infinite loop until ctrl-c or end of stream signal
-    run(test_position);
-    
-    // Tell user
-    std::cout << oat::whoMessage(test_position->get_name(), "Exiting.\n");
-    
-    // Free heap memory allocated to test_position 
+        // Tell user
+        std::cout << oat::whoMessage(test_position->get_name(),
+                "Steaming to sink " + oat::sinkText(sink) + ".\n")
+                << oat::whoMessage(test_position->get_name(),
+                "Press CTRL+C to exit.\n");
+
+        // Infinite loop until ctrl-c or end of stream signal
+        run(test_position);
+
+        // Tell user
+        std::cout << oat::whoMessage(test_position->get_name(), "Exiting.\n");
+
+        // Free heap memory allocated to test_position 
+        delete test_position;
+
+        // Exit
+        return 0;
+
+    } catch (const cpptoml::parse_exception& ex) {
+        std::cerr << oat::whoError(test_position->get_name(), "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(test_position->get_name(), ex.what())
+                  << "\n";
+    } catch (const std::runtime_error ex) {
+        std::cerr << oat::whoError(test_position->get_name(), ex.what())
+                  << "\n";
+    } catch (const cv::Exception ex) {
+        std::cerr << oat::whoError(test_position->get_name(), ex.msg)
+                  << "\n";
+    } catch (...) {
+        std::cerr << oat::whoError(test_position->get_name(), "Unknown exception.\n");
+    }
+
+    // Free heap memory allocated to filter
     delete test_position;
 
-    // Exit
-    return 0;
+    // Exit failure
+    return -1;
 }
 
 

@@ -250,7 +250,7 @@ void HSVDetector::configure(const std::string& config_file, const std::string& c
             auto t = *this_config.get_table("v_thresholds");
 
             if (t.contains("min")) {
-                v_min = *t.get_as<int64_t>("max");
+                v_min = *t.get_as<int64_t>("min");
                 if (v_min < 0 || !t.get("min")->is_value())
                     throw (std::runtime_error(oat::configValueError(
                        "v_min", config_key, config_file, "must be a double> 0."))
