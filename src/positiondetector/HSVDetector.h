@@ -28,7 +28,7 @@
 /**
  * A color-based object position detector
  */
-class HSVDetector : public Detector2D {
+class HSVDetector : public PositionDetector {
 public:
 
     /**

@@ -454,13 +454,12 @@ cd lib
     - Sample number
 - [x] Camera class should implement distortion correction (see [this example](https://github.com/Itseez/opencv/blob/6df1198e8b1ea4925cbce943a1dc6549f27d8be2/modules/calib3d/test/test_fisheye.cpp))
     - Ended up just hacking together a dedicated executable to produce the camera matrix and distortion parameters. Its called calibrate and its in the camserv project.
-- [ ] Cmake improvements
+- [x] Cmake improvements
     - Global build script to make all of the programs in the project
 	- CMake managed versioning
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Dealing with dropped frames
-	- _Point grey specific_
     - Right now, I poll the camera for frames. This is fine for a file, but not necessarily for a physical camera whose acquisitions is governed by an external, asynchronous clock
     - Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number, even if it does not serve the frame, to prevent offsets from occurring.
 - [x] Dealing with corrupt data transmissions
@@ -468,7 +467,7 @@ cd lib
     - I want to enable the hardware-based onboard frame buffer
 	- I want to be able to re-transmit frames in the case that a corrupt frame is detected
     - __EDIT__ This issue has pretty much gone away without hardware buffering by increasing the amount of memory available to the kernel to buffer incoming Gige data. See Instructions below.
-- [ ] EOF signal for processing pipeline
+- [x] EOF signal for processing pipeline
     - shmem constructs need to include an EOF flag that can be initiated by a pure server (frameserve or positest) that will propogate through the processing pipeline shutting down processing components as it goes. This way, user interaction is not required to exit programs.
 - [ ] shmem type checking by clients, exit gracefully in the case of incorrect type
 - [ ] Exception saftey for all components

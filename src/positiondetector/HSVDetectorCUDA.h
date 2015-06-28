@@ -31,7 +31,7 @@
 /**
  * A color-based object position detector
  */
-class HSVDetectorCUDA : public Detector2D {
+class HSVDetectorCUDA : public PositionDetector {
 public:
 
     /**

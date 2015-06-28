@@ -16,8 +16,8 @@
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
-#ifndef DETECTOR_H
-#define	DETECTOR_H
+#ifndef POSITIONDETECTOR_H
+#define	POSITIONDETECTOR_H
 
 #include <string>
 #include <opencv2/core/mat.hpp>
@@ -33,7 +33,7 @@ namespace oat {
  * Abstract object position detector.
  * All concrete object position detector types implement this ABC.
  */
-class Detector2D {
+class PositionDetector {
 public:
 
     /**
@@ -42,13 +42,13 @@ public:
      * @param image_source_name Image SOURCE name
      * @param position_sink_name Position SINK name
      */
-    Detector2D(const std::string& image_source_name, const std::string& position_sink_name) :
+    PositionDetector(const std::string& image_source_name, const std::string& position_sink_name) :
       name("posidet[" + image_source_name + "->" + position_sink_name + "]")
     , frame_source(image_source_name)
     , position_sink(position_sink_name) {
     }
 
-    virtual ~Detector2D() { }
+    virtual ~PositionDetector() { }
 
     /**
      * Obtain frame from SOURCE. Detect object position within the frame. Publish
@@ -105,5 +105,5 @@ private:
     oat::SMServer<oat::Position2D> position_sink;
 };
 
-#endif	/* DETECTOR_H */
+#endif	/* POSITIONDETECTOR_H */
 

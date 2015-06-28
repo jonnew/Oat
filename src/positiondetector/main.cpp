@@ -59,7 +59,7 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(Detector2D* detector) {
+void run(PositionDetector* detector) {
 
     while (!quit && !source_eof) {
         source_eof = detector->process();
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Create the specified TYPE of detector
-    Detector2D* detector;
+    PositionDetector* detector;
     switch (type_hash[type]) {
         case 'a':
         {

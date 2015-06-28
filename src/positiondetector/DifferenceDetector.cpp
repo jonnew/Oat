@@ -27,7 +27,7 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 DifferenceDetector2D::DifferenceDetector2D(const std::string& image_source_name, const std::string& position_sink_name) :
-Detector2D(image_source_name, position_sink_name)
+PositionDetector(image_source_name, position_sink_name)
 , tuning_image_title(position_sink_name + "_tuning")
 , tuning_windows_created(false)
 , last_image_set(false)

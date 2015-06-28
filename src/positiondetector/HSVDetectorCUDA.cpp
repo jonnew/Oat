@@ -34,7 +34,7 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 HSVDetectorCUDA::HSVDetectorCUDA(const std::string& image_source_name, const std::string& position_sink_name) :
-  Detector2D(image_source_name, position_sink_name)
+  PositionDetector(image_source_name, position_sink_name)
 , h_min(0)
 , h_max(256)
 , s_min(0)

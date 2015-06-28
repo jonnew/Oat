@@ -27,7 +27,7 @@
  * @param image_source_name
  * @param position_sink_name
  */
-class DifferenceDetector2D : public Detector2D {
+class DifferenceDetector2D : public PositionDetector {
 public:
     
     /**
