@@ -30,19 +30,23 @@ link_directories (${Boost_LIBRARY_DIR})
 find_package (OpenCV REQUIRED)
 
 # oat shared memory lib
-add_subdirectory (lib/shmem "${CMAKE_CURRENT_BINARY_DIR}/shmem")
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem 
+				 "${CMAKE_CURRENT_BINARY_DIR}/shmem")
 
 # oat components
-add_subdirectory (src/cleaner)
-add_subdirectory (src/decorator)
-add_subdirectory (src/framefilter)
-add_subdirectory (src/frameserver)
-add_subdirectory (src/frameviewer)
-add_subdirectory (src/positioncombiner)
-add_subdirectory (src/positiondetector)
-add_subdirectory (src/positionfilter)
-add_subdirectory (src/positiontester)
-add_subdirectory (src/recorder)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/cleaner)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/decorator)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/framefilter)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/frameserver)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/frameviewer)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positioncombiner)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positiondetector)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positionfilter)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positiontester)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/recorder)
+
+# oat API documentation
+add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
 
 # All executables should be installed in oat/libexec
-set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "default install path" FORCE)
+set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "Default install path" FORCE)
