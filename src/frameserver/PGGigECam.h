@@ -22,9 +22,9 @@
 
 #include "FlyCapture2.h"
 
-#include "Camera.h"
+#include "FrameServer.h"
 
-class PGGigECam : public Camera {
+class PGGigECam : public FrameServer {
 public:
     PGGigECam(std::string frame_sink_name);
 

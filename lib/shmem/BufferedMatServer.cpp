@@ -82,28 +82,29 @@ namespace oat {
         // I can figure out how to resize the managed shared memory segment 
         // on the server side without causing seg faults due to bad pointers on the client side.
 
-        try {
+        // Total amount of shared memory to allocated
+        size_t total_bytes = 1024e4;
 
-            // Total amount of shared memory to allocated
-            size_t total_bytes = 1024e4;
+        // Define shared memory
+        shared_memory = bip::managed_shared_memory(bip::open_or_create,
+                shmem_name.c_str(),
+                total_bytes);
 
-            // Define shared memory
-            shared_memory = bip::managed_shared_memory(bip::open_or_create,
-                    shmem_name.c_str(),
-                    total_bytes);
+        shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
+        shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
 
-            shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
-            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
-            
-            
-        } catch (bip::interprocess_exception &ex) {
-            std::cerr << ex.what() << '\n';
-            exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
+        // Make sure there is not another server using this shmem
+        if (shared_mem_manager->get_server_state() != oat::ServerRunState::UNDEFINED) {
+
+            // There is already a server using this shmem
+            throw (std::runtime_error(
+                    "Requested SINK name, '" + name + "', is not available."));
+
+        } else {
+
+            shared_object_created = true;
+            shared_mem_manager->set_server_state(oat::ServerRunState::ATTACHED);
         }
-        
-        shared_object_created = true;
-        shared_mem_manager->set_server_state(oat::ServerRunState::RUNNING);
-        
     }
 
     /**

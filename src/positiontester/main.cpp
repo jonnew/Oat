@@ -23,6 +23,7 @@
 #include <time.h>
 #include <csignal>
 #include <boost/program_options.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/cpptoml/cpptoml.h"
@@ -167,6 +168,7 @@ int main(int argc, char *argv[]) {
     // TODO: Right now I need to use oat::Position2D as a template parameter
     // because otherwise this is no longer a valid base class for RandomAccel2D whose
     // base class is indeed TestPosition<oat::Position2D>
+
     TestPosition<oat::Position2D>* test_position;
 
     switch (type_hash[type]) {

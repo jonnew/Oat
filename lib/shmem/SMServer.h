@@ -94,25 +94,29 @@ namespace oat {
     template<class T, template <typename> class SharedMemType>
     void SMServer<T, SharedMemType>::createSharedObject() {
 
-        try {
+        // Allocate shared memory
+        // Throws bip::interprocess_exception on failure
+        shared_memory = bip::managed_shared_memory(
+                bip::open_or_create,
+                shmem_name.c_str(),
+                sizeof (SharedMemType<T>) + sizeof (oat::SharedMemoryManager) + 1024);
 
-            // Allocate shared memory
-            shared_memory = bip::managed_shared_memory(
-                    bip::open_or_create,
-                    shmem_name.c_str(),
-                    sizeof(SharedMemType<T>) + sizeof(oat::SharedMemoryManager) + 1024);
+        // Make the shared object
+        shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
+        shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
 
-            // Make the shared object
-            shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
-            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
+        // Make sure there is not another server using this shmem
+        if (shared_mem_manager->get_server_state() != oat::ServerRunState::UNDEFINED) {
+            
+            // There is already a server using this shmem
+            throw (std::runtime_error(
+                   "Requested SINK name, '" + name + "', is not available."));
+            
+        } else {
 
-        } catch (bip::interprocess_exception& ex) {
-            std::cerr << ex.what() << '\n';
-            exit(EXIT_FAILURE); // TODO: exit does not unwind the stack to take care of destructing shared memory objects
+            shared_object_created = true;
+            shared_mem_manager->set_server_state(oat::ServerRunState::ATTACHED);
         }
-
-        shared_object_created = true;
-        shared_mem_manager->set_server_state(oat::ServerRunState::RUNNING);
     }
 
     /**

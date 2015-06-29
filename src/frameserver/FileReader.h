@@ -21,9 +21,9 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
-#include "Camera.h"
+#include "FrameServer.h"
 
-class FileReader : public Camera {
+class FileReader : public FrameServer {
 public:
     
     FileReader(std::string file_name_in, 

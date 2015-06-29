@@ -162,7 +162,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
             
             frame_write_buffers.push_back(new
                     boost::lockfree::spsc_queue
-                    < cv::Mat, boost::lockfree::capacity < frame_write_buffer_size> >);
+                    < cv::Mat, boost::lockfree::capacity < FRAME_WRITE_BUFFER_SIZE> >);
             video_writers.push_back(new cv::VideoWriter());
 
 
@@ -253,7 +253,12 @@ bool Recorder::writeStreams() {
         if (!frame_read_required[i]) {
             
             // Push newest frame into client N's queue
-            frame_write_buffers[i]->push(current_frame);
+            if (frame_write_buffers[i]->push(current_frame) == 0) {
+
+                throw (std::runtime_error(
+                        "Frame buffer overrun. "
+                        "Decrease the frame rate or get a faster hard-disk."));
+            }
 
             // Notify a writer thread that there is new data in the queue
             frame_write_condition_variables[i]->notify_one();
@@ -292,12 +297,12 @@ bool Recorder::writeStreams() {
 
 void Recorder::writeFramesToFileFromBuffer(uint32_t writer_idx) {
 
+    cv::Mat m;
     while (running) {
 
         std::unique_lock<std::mutex> lk(*frame_write_mutexes[writer_idx]);
         frame_write_condition_variables[writer_idx]->wait_for(lk, std::chrono::milliseconds(10));
 
-        cv::Mat m;
         while (frame_write_buffers[writer_idx]->pop(m)) {
 
             if (!video_writers[writer_idx]->isOpened()) {
