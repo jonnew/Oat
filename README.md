@@ -50,18 +50,20 @@ frameserve ──> framefilt ──> posidet ──> decorate ───> view
              ─────────────────────────             ──> record   	
 ```
 
-Each component of Oat is a subcommand defined by its type signature. Generally,
-using an Oat component is used in the following pattern:
+Generally, an Oat component is called in the following pattern:
 ```
 oat <subcommand> [TYPE] [IO] [CONFIGURATION]
 ```
-The subcommand specifies the general classification of function that will be executed 
-(e.g. frame filter). The TYPE parameter specifies a concrete type of transform 
-(e.g. background subtraction). The IO specification indicates where the component
-is receiving data from and to where the processed data should be published. The
-CONFIGURATION specification is used to provide parameters to the component. Below, the 
-type signature, usage information, examples, and configuration options are provided 
-for each Oat component.
+`subcommand` indicates the component that will be executed. Components
+are classified according to their type signature. For instance, `framefilt` 
+(frame filter) accepts a frame and produces a frame. `posifilt` (position filter) 
+accepts a position and produces a position. `frameserve` (frame server) produces 
+a frame, and so on.  The `TYPE` parameter specifies a concrete type of transform 
+(e.g. background subtraction). The `IO` specification indicates where the 
+component is receiving data from and to where the processed data should be 
+published. The `CONFIGURATION` specification is used to provide parameters to 
+the component. Below, the type signature, usage information, examples, and 
+configuration options are provided for each Oat component.
 
 
 #### `frameserve`
