@@ -22,11 +22,11 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/videoio.hpp> // TODO: correct header...
 
-#include "Camera.h"
+#include "FrameServer.h"
 #include "../../lib/shmem/SharedCVMatHeader.h"
 #include "../../lib/shmem/BufferedMatServer.h"
 
-class WebCam : public Camera {
+class WebCam : public FrameServer {
 public:
     WebCam(std::string frame_sink_name);
 

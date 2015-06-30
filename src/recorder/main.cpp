@@ -212,11 +212,25 @@ int main(int argc, char *argv[]) {
     std::cout << oat::whoMessage(recorder.get_name(), 
                  "Press CTRL+C to exit.\n");
 
-    run(&recorder);
-    
-    // Tell user
-    std::cout << oat::whoMessage(recorder.get_name(), "Exiting.\n");
+    try {
+        run(&recorder);
 
-    // Exit
-    return 0;
+        // Tell user
+        std::cout << oat::whoMessage(recorder.get_name(), "Exiting.\n");
+
+        // Exit
+        return 0;
+        
+    } catch (const std::runtime_error ex) {
+        std::cerr << oat::whoError(recorder.get_name(), ex.what())
+                << "\n";
+    } catch (const cv::Exception ex) {
+        std::cerr << oat::whoError(recorder.get_name(), ex.msg)
+                << "\n";
+    } catch (...) {
+        std::cerr << oat::whoError(recorder.get_name(), "Unknown exception.\n");
+    }
+
+    // Exit failure
+    return -1;
 }

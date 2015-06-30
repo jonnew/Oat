@@ -25,6 +25,7 @@
 
 #include "../../lib/utility/IOFormat.h"
 
+#include "FrameServer.h"
 #include "PGGigECam.h"
 #include "WebCam.h"
 #include "FileReader.h"
@@ -39,7 +40,7 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(Camera* camera) {
+void run(FrameServer* camera) {
 
     while (!quit && !source_eof) {
         
@@ -177,21 +178,22 @@ int main(int argc, char *argv[]) {
     }
 
     // Create the specified TYPE of detector
-    Camera* camera;
+    FrameServer* server;
+    
     switch (type_hash[type]) {
         case 'a':
         {
-            camera = new WebCam(sink);
+            server = new WebCam(sink);
             break;
         }
         case 'b':
         {
-            camera = new PGGigECam(sink);
+            server = new PGGigECam(sink);
             break;
         }
         case 'c':
         {
-            camera = new FileReader(video_file, sink, frames_per_second);
+            server = new FileReader(video_file, sink, frames_per_second);
             break;
         }
         default:
@@ -203,25 +205,25 @@ int main(int argc, char *argv[]) {
     }
 
     if (config_used)
-        camera->configure(config_file, config_key);
+        server->configure(config_file, config_key);
     else
-        camera->configure();
+        server->configure();
     
     
         // Tell user
-    std::cout << oat::whoMessage(camera->get_name(),
+    std::cout << oat::whoMessage(server->get_name(),
                  "Steaming to sink " + oat::sinkText(sink) + ".\n")
-              << oat::whoMessage(camera->get_name(), 
+              << oat::whoMessage(server->get_name(), 
                  "Press CTRL+C to exit.\n");
     
     // Infinite loop until ctrl-c or end of stream signal
-    run(camera);
+    run(server);
 
     // Tell user
-    std::cout << oat::whoMessage(camera->get_name(), "Exiting.\n");
+    std::cout << oat::whoMessage(server->get_name(), "Exiting.\n");
     
     // Free heap memory allocated to camera 
-    delete camera;
+    delete server;
 
     // Exit
     return 0;

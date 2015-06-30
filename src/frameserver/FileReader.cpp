@@ -24,7 +24,7 @@
 #include "FileReader.h"
 
 FileReader::FileReader(std::string file_name_in, std::string image_sink_name, const double frames_per_second) :
-  Camera(image_sink_name)
+  FrameServer(image_sink_name)
 , file_name(file_name_in)
 , file_reader(file_name_in)
 , use_roi(false)

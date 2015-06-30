@@ -424,59 +424,24 @@ cd lib
 ```
 
 ### TODO
-- [x] Interprocess data processing synchronization
-    - Whatever is chosen, all subsequent processing must propagate in accordance with the frame captured by the base image server(s).
-    - In this case, Decorator must block until Detector provides a result. However, Camera _may_ have produced another image in the meantime causing the Detector result and the image used by the Decorator to be out of sync. I need to find an intelligent way to deal with this.
-    - **Edit**: Ended up using several autonomous semaphores which (1) keep track of the number of clients attached to each server and (2) enforce synchronized publication and read events on the server and client(s) respectively. These semaphores implement two canonical synchronization patters: the `rendezvous point` and the `turnstile`.
-- [x] Start synchronization. The data processing chain should be initialized and waiting before the first image get sent.
-    - This is optional. The current scheme allows servers to be started before clients and clients to be added while the servers are running
-    - If no clients are attached to the server, the server will not bother to buffer data
-    - Clients can also be removed while the server is running.
-    - If clients are started before servers, then starts will be synchronized and no samples will be lost
-- [x] Frame buffer?
-    - This is now an intrinsic property of all data server classes and class templates (SMServer and MatServer)
-- [x] IPC method?
-    - ~~UPD, TCP,~~ **shared memory**, ~~pipe?~~
 - [ ] Networked communication with clients that use extracted positional information
-    - Wire format: per packet, one time-stamp and N frames labeled by camera serial number. Frames encoded to something like rgb8 char array
-        - Strongly prefer to consume JSON over something ad hoc, opaque and untyped
+    - Strongly prefer to consume JSON over something ad hoc, opaque and untyped
     - Multiple clients
         - Broadcast over UDP
         - Shared memory (no good for remote tracker)
         - TCP/IP with thread for each client 
-- [x] General C++ coding practice
-    - Pass by const ref whenever possible. Especially relevant when passing derived objects to prevent slicing.
-    - const member properties can be initialized in the initialization list, rather than assigned in the constructor body. Take advantage.
-- [x] Implement pure intensity based detector (now color conversion, just saturation on raw image)
-    - EDIT: This is just a special case of the already implemented H<b>S</b>V detector.
-- [x] Implement position Filter (Kalman is first implementation)
-- [x] Implement recorder (Position and images? Viewer can also record?)
-   - Viewer can record snapshots using keystroke. True video recording would be to much of a side effect for this component.
-   - Recorder will record up to N positions and N video streams. Of course, recorders can be paralleled to decrease computation burden on any single instance.
-- [x] Camera configuration should specify frame capture due to digital pulses on a user selected GPIO line or free running.
-- [x] To simplify IPC, clients should copy data in guarded sections. This limits the amount of time locks are engaged and likely, esp for cv::mat's make up for the copy in the increased amount of code that can be executed in parallel.
-- [x] Can image metadata be packaged with shared cv::mats?
-    - Frame rate
-    - pixel -> cm transformation information
-    - Sample number
-- [x] Camera class should implement distortion correction (see [this example](https://github.com/Itseez/opencv/blob/6df1198e8b1ea4925cbce943a1dc6549f27d8be2/modules/calib3d/test/test_fisheye.cpp))
-    - Ended up just hacking together a dedicated executable to produce the camera matrix and distortion parameters. Its called calibrate and its in the camserv project.
-- [x] Cmake improvements
-    - Global build script to make all of the programs in the project
-	- CMake managed versioning
+- [ ] Cmake improvements
+    - ~~Global build script to make all of the programs in the project~~
+    - ~~CMake managed versioning~~
+    - Output messages detailing required and recommended pacakges.
+    - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Dealing with dropped frames
     - Right now, I poll the camera for frames. This is fine for a file, but not necessarily for a physical camera whose acquisitions is governed by an external, asynchronous clock
     - Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number, even if it does not serve the frame, to prevent offsets from occurring.
-- [x] Dealing with corrupt data transmissions
-	- _Point grey specific_
-    - I want to enable the hardware-based onboard frame buffer
-	- I want to be able to re-transmit frames in the case that a corrupt frame is detected
-    - __EDIT__ This issue has pretty much gone away without hardware buffering by increasing the amount of memory available to the kernel to buffer incoming Gige data. See Instructions below.
-- [x] EOF signal for processing pipeline
-    - shmem constructs need to include an EOF flag that can be initiated by a pure server (frameserve or positest) that will propogate through the processing pipeline shutting down processing components as it goes. This way, user interaction is not required to exit programs.
 - [ ] shmem type checking by clients, exit gracefully in the case of incorrect type
+   - e.g. a framefilter tries to use a position filter as a SOURCE. In this case, the framefilter needs to realize that the SOURCE type is wrong and exit.
 - [ ] Exception saftey for all components
     - frameserve
     - ~~framefilt~~
@@ -487,6 +452,9 @@ cd lib
     - ~~record~~
     - ~~view~~
     - decorate
+- [x] Recorder buffer anomolies
+    - Recorder deadlocks when frame buffer is filled. Of course the buffer should never fill, but obviously a deadlock is not the right thing to do if it does...
+- [ ] Use PMPL for library classes to hide implementation (private member properties/functions)
 
 ####  Setting up a Point-grey PGE camera in Linux
 `oat frameserve` supports using Point Grey GIGE cameras to collect frames. I found

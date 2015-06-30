@@ -52,7 +52,7 @@ namespace oat {
         std::string name;
 
         // Buffer
-        static const int MATSERVER_BUFFER_SIZE = 1024;
+        static const int MATSERVER_BUFFER_SIZE {1000};;
         boost::lockfree::spsc_queue
         <std::pair<unsigned int, cv::Mat>, boost::lockfree::capacity<MATSERVER_BUFFER_SIZE> > mat_buffer;
 

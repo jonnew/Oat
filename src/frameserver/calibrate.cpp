@@ -17,8 +17,11 @@
 // *************** NOTE *********************
 // This program is basically a copy of the OpenCV camera calibration tutorial
 // found here: https://github.com/Itseez/opencv/blob/master/samples/cpp/calibration.cpp
-// Except that it works with simple-tracker's Camera interface.
+// Except that it works with Oat's FrameServer interface.
 
+// TODO: This is a buggy hacky crappy program that is used for one-off generation
+// of homography and calibration matracies. Might need lots of improvement if used
+// more...
 
 #include <cctype>
 #include <stdio.h>
@@ -34,7 +37,7 @@
 #include <opencv2/highgui.hpp>
 #include <vector>
 
-#include "Camera.h"
+#include "FrameServer.h"
 #include "PGGigECam.h"
 #include "WebCam.h"
 #include "FileReader.h"
@@ -363,7 +366,7 @@ int main(int argc, char** argv) {
     int flags = 0;
 
     bool use_simple_tracker_camera = false;
-    Camera* camera; // TODO: add new flag to determine if this is used and what type it is
+    FrameServer* camera; // TODO: add new flag to determine if this is used and what type it is
     std::string config_file;
     std::string config_key;
     bool config_used = false;

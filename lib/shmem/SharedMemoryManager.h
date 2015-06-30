@@ -27,10 +27,9 @@ namespace oat {
     enum class ServerRunState {
         END = -1,
         UNDEFINED = 0,
-        RUNNING = 1,
+        ATTACHED = 1,
         ERROR = 2
     };
-
 
     class SharedMemoryManager {
     public:

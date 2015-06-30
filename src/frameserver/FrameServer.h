@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   FrameServer.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,10 +15,10 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//*****************************************************************************
 
-#ifndef CAMERA_H
-#define	CAMERA_H
+#ifndef FRAMESERVER_H
+#define	FRAMESERVER_H
 
 #include <atomic>
 #include <opencv2/opencv.hpp>
@@ -28,10 +31,10 @@
  * Tracker project.
  * @param image_sink_name Image SINK name.
  */
-class Camera {
+class FrameServer {
 public:
     
-    Camera(std::string image_sink_name) : 
+    FrameServer(std::string image_sink_name) : 
       name("frameserve[" + image_sink_name + "]")
     , frame_sink(image_sink_name)
     , undistort_image(false)
@@ -108,5 +111,5 @@ private:
 
 };
 
-#endif	/* CAMERA_H */
+#endif	/* FRAMESERVER_H */
 

@@ -19,7 +19,7 @@
 #include <string>
 
 WebCam::WebCam(std::string frame_sink_name) :
-  Camera(frame_sink_name)
+  FrameServer(frame_sink_name)
 , cv_camera(0) {
 }
 

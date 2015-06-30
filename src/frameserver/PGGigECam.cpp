@@ -35,7 +35,7 @@
 
 using namespace FlyCapture2;
 
-PGGigECam::PGGigECam(std::string frame_sink_name) : Camera(frame_sink_name)
+PGGigECam::PGGigECam(std::string frame_sink_name) : FrameServer(frame_sink_name)
 , num_cameras(0)
 , index(0)
 , gain_dB(0)

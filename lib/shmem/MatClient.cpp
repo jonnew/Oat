@@ -165,7 +165,7 @@ namespace oat {
 
             // If the client reference count is 0 and there is no server 
             // attached to the shared mat, deallocate the shmem
-            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::ServerRunState::RUNNING) {
+            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::ServerRunState::ATTACHED) {
                 
                 bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG
