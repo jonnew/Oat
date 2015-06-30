@@ -1,9 +1,12 @@
-__Oat__ consists of a set of programs for processing images, extracting 
-position information, and streaming data to disk and the network that communicate 
-through shared memory. This model enables quick, scripted construction of complex 
-data processing chains. Oat is primarily used for real-time animal position tracking
-in the context of experimental neuroscience, but can be used in any circumstance
-that requires real-time object tracking.
+__Oat__ is a set of programs for processing images, extracting object
+position information, and streaming data to disk and the network in real-time.
+Oat subcommands are independent programs that each perform a single operation. 
+However, programs can communicate through shared memory. This allows a user 
+to chain operations together in arrangements suitable for particular context or 
+tracking requirement. This architecture enables quick, scripted construction of 
+custom data processing chains. Oat is primarily used for real-time animal 
+position tracking in the context of experimental neuroscience, but can be used 
+in any circumstance that requires real-time object tracking.
 
 ### Manual
 Oat components are a set of programs that communicate through shared memory to 
@@ -59,11 +62,12 @@ are classified according to their type signature. For instance, `framefilt`
 (frame filter) accepts a frame and produces a frame. `posifilt` (position filter) 
 accepts a position and produces a position. `frameserve` (frame server) produces 
 a frame, and so on.  The `TYPE` parameter specifies a concrete type of transform 
-(e.g. background subtraction). The `IO` specification indicates where the 
-component is receiving data from and to where the processed data should be 
-published. The `CONFIGURATION` specification is used to provide parameters to 
-the component. Below, the type signature, usage information, examples, and 
-configuration options are provided for each Oat component.
+(e.g. for the framefilt subcommand this could be `bsub` for background subtraction). 
+The `IO` specification indicates where the component is receiving data from 
+and to where the processed data should be published. The `CONFIGURATION` 
+specification is used to provide parameters to the component. Below, the type 
+signature, usage information, examples, and configuration options are provided 
+for each Oat component.
 
 
 #### `frameserve`
@@ -371,11 +375,11 @@ will be used to serve from video files at the rate the files were recorded. No c
 flags are required to configure the build to use ffmpeg. OpenCV will be built 
 with ffmpeg support if something like
 ```bash
---       FFMPEG:                    YES
---       codec:                     YES (ver 54.35.0)
---       format:                    YES (ver 54.20.4)
---       util:                      YES (ver 52.3.0)
---       swscale:                   YES (ver 2.1.1)
+-- FFMPEG:          YES
+-- codec:           YES (ver 54.35.0)
+-- format:          YES (ver 54.20.4)
+-- util:            YES (ver 52.3.0)
+-- swscale:         YES (ver 2.1.1)
 ```
 appears in the cmake output text. 
 
@@ -406,6 +410,7 @@ unzip opencv.zip -d opencv
 cd opencv/opencv-3.0.0-rc1 
 mkdir release
 cd release
+# Add -DWITH_CUDA=ON for CUDA support and -DWITH_OPENGL for OpenGL support 
 cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
 make
 sudo make install
