@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("position-sources") && !variable_map.count("image-sources")) {
             printUsage(all_options);
-            std::cerr << oat::Error("At least a single POSITION SOURCE or FRAME SOURCE must be specified. Exiting.\n");
+            std::cerr << oat::Error("At least a single POSITION SOURCE or FRAME SOURCE must be specified.\n");
             return -1;
         }
 
@@ -213,6 +213,8 @@ int main(int argc, char *argv[]) {
                  "Press CTRL+C to exit.\n");
 
     try {
+        
+        // Infinite loop until ctrl-c or end of stream signal
         run(&recorder);
 
         // Tell user
@@ -221,10 +223,10 @@ int main(int argc, char *argv[]) {
         // Exit
         return 0;
         
-    } catch (const std::runtime_error ex) {
+    } catch (const std::runtime_error& ex) {
         std::cerr << oat::whoError(recorder.get_name(), ex.what())
                 << "\n";
-    } catch (const cv::Exception ex) {
+    } catch (const cv::Exception& ex) {
         std::cerr << oat::whoError(recorder.get_name(), ex.msg)
                 << "\n";
     } catch (...) {

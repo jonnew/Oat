@@ -241,10 +241,10 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::whoError(filter->get_name(), "Failed to parse configuration file " + config_file + "\n")
                   << oat::whoError(filter->get_name(), ex.what())
                   << "\n";
-    } catch (const std::runtime_error ex) {
+    } catch (const std::runtime_error& ex) {
         std::cerr << oat::whoError(filter->get_name(),ex.what())
                   << "\n";
-    } catch (const cv::Exception ex) {
+    } catch (const cv::Exception& ex) {
         std::cerr << oat::whoError(filter->get_name(), ex.msg)
                   << "\n";
     } catch (...) {

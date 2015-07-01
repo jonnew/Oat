@@ -16,6 +16,7 @@
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
+
 #ifndef POSITIONDETECTOR_H
 #define	POSITIONDETECTOR_H
 
@@ -39,7 +40,7 @@ public:
     /**
      * Abstract object position detector.
      * All concrete object position detector types implement this ABC.
-     * @param image_source_name Image SOURCE name
+     * @param image_source_name Frame SOURCE name
      * @param position_sink_name Position SINK name
      */
     PositionDetector(const std::string& image_source_name, const std::string& position_sink_name) :

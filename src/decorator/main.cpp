@@ -23,6 +23,8 @@
 #include <csignal>
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/IOFormat.h"
+
 #include "Decorator.h"
 
 namespace po = boost::program_options;
@@ -66,7 +68,6 @@ int main(int argc, char *argv[]) {
     bool print_timestamp = false;
     bool print_sample_number = false;
     bool encode_sample_number = false;
-    po::options_description visible_options("OPTIONS");
 
     try {
 
@@ -137,13 +138,13 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("framesource")) {
             printUsage(visible_options);
-            std::cout << "Error: at least a single FRAME_SOURCE must be specified. Exiting.\n";
+            std::cout <<  oat::Error("At least a single FRAME_SOURCE must be specified. \n");
             return -1;
         }
 
         if (!variable_map.count("framesink")) {
             printUsage(visible_options);
-            std::cout << "Error: at least a single FRAME_SINK must be specified. Exiting.\n";
+            std::cout <<  oat::Error("At least a single FRAME_SINK must be specified.\n");
             return -1;
         }
         
@@ -168,10 +169,11 @@ int main(int argc, char *argv[]) {
         }
 
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        std::cerr << oat::Error(e.what()) << "\n";
+        return -1;
     } catch (...) {
-        std::cerr << "Exception of unknown type! " << std::endl;
+        std::cerr << oat::Error("Exception of unknown type.\n");
+        return -1;
     }
 
     // Make the decorator
@@ -189,11 +191,27 @@ int main(int argc, char *argv[]) {
             << oat::whoMessage(decorator.get_name(),
             "Press CTRL+C to exit.\n");
 
-    run(&decorator);
-    
-    // Tell user
-    std::cout << oat::whoMessage(decorator.get_name(), "Exiting.\n");
+    try {
+        
+        // Infinite loop until ctrl-c or end of stream signal
+        run(&decorator);
 
-    // Exit
-    return 0;
+        // Tell user
+        std::cout << oat::whoMessage(decorator.get_name(), "Exiting.\n");
+
+        // Exit
+        return 0;
+
+    } catch (const std::runtime_error ex) {
+        std::cerr << oat::whoError(decorator.get_name(), ex.what())
+                << "\n";
+    } catch (const cv::Exception ex) {
+        std::cerr << oat::whoError(decorator.get_name(), ex.msg)
+                << "\n";
+    } catch (...) {
+        std::cerr << oat::whoError(decorator.get_name(), "Unknown exception.\n");
+    }
+
+    // Exit failure
+    return -1;
 }

@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   Decorator.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,7 +15,7 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//****************************************************************************
 
 #ifndef DECORATOR_H
 #define DECORATOR_H
@@ -25,16 +28,31 @@
 #include "../../lib/shmem/MatServer.h"
 #include "../../lib/datatypes/Position2D.h"
 
+/**
+ * Frame decorator. 
+ * Adds positional, sample, and date information to frames.
+ */
 class Decorator {
-    
 public:
     
+    /**
+     * Frame decorator. 
+     * Adds positional, sample, and date information to frames.
+     * @param position_source_names Position SOURCE names
+     * @param frame_source_name Frame SOURCE name
+     * @param frame_sink_name Decorated frame SINK name
+     */
     Decorator(const std::vector<std::string>& position_source_names,
               const std::string& frame_source_name,
               const std::string& frame_sink_name);
 
     ~Decorator(void);
     
+    /**
+     * Acquire frame and positions from all SOURCES. Decorate the frame with 
+     * information specified by user options. Publish decorated frame to SINK.
+     * @return SOURCE end-of-stream signal. If true, this component should exit.
+     */
     bool decorateFrame(void);
     
     //Accessors
@@ -46,6 +64,7 @@ public:
 
 private:
 
+    // Decorator name
     std::string name;
 
     // Image data
@@ -65,6 +84,7 @@ private:
     boost::dynamic_bitset<>::size_type number_of_position_sources;
     boost::dynamic_bitset<> position_read_required;
 
+    // Sources EOF flag
     bool sources_eof;
 
     // Drawing constants 
@@ -81,7 +101,7 @@ private:
     const double font_scale = 1.0; 
     const cv::Scalar font_color;
     const int encode_bit_size = 5;
-    const double PI  = 3.141592653589793238463;
+    static const constexpr double PI {3.141592653589793238463};
 
     void drawPosition(void);
     void drawHeading(void);
@@ -93,4 +113,4 @@ private:
     void encodeSampleNumber(void);
 };
 
-#endif //VIEWER_H
+#endif /* DECORATOR_H */

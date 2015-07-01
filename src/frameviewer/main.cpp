@@ -23,6 +23,7 @@
 #include <ostream>
 #include <string>
 #include <boost/program_options.hpp>
+#include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 
@@ -152,12 +153,27 @@ int main(int argc, char *argv[]) {
               << oat::whoMessage(viewer.get_name(),
               "Press CTRL+C to exit.\n");
 
-    // Infinite loop until ctrl-c or end of stream signal
-    run(&viewer);
+    try {
+        
+        // Infinite loop until ctrl-c or end of stream signal
+        run(&viewer);
 
-    // Tell user
-    std::cout << oat::whoMessage(viewer.get_name(), "Exiting.\n");
+        // Tell user
+        std::cout << oat::whoMessage(viewer.get_name(), "Exiting.\n");
 
-    // Exit
-    return 0;
+        // Exit
+        return 0;
+
+    } catch (const std::runtime_error& ex) {
+        std::cerr << oat::whoError(viewer.get_name(), ex.what())
+                  << "\n";
+    } catch (const cv::Exception& ex) {
+        std::cerr << oat::whoError(viewer.get_name(), ex.msg)
+                  << "\n";
+    } catch (...) {
+        std::cerr << oat::whoError(viewer.get_name(), "Unknown exception.\n");
+    }
+
+    // Exit failure
+    return -1;
 }

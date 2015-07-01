@@ -451,9 +451,7 @@ cd lib
     - ~~positest~~
     - ~~record~~
     - ~~view~~
-    - decorate
-- [x] Recorder buffer anomolies
-    - Recorder deadlocks when frame buffer is filled. Of course the buffer should never fill, but obviously a deadlock is not the right thing to do if it does...
+    - ~~decorate~~
 - [ ] Use PMPL for library classes to hide implementation (private member properties/functions)
 
 ####  Setting up a Point-grey PGE camera in Linux

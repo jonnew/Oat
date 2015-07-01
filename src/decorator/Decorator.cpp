@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   Decorator.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,7 +15,7 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//****************************************************************************
 
 #include "Decorator.h"
 
@@ -210,6 +213,7 @@ void Decorator::printSampleNumber() {
 /**
  * Encode the current sample number into the first row of the matrix
  */
+
 void Decorator::encodeSampleNumber() {
 
     uint32_t sample_number = frame_source.get_current_sample_number();
