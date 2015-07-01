@@ -48,13 +48,13 @@ void run(Viewer* viewer) {
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: view [INFO]\n"
-            << "     or: view SOURCE [CONFIGURATION]\n"
-            << "View the output of a frame SOURCE.\n\n"
-            << options << "\n";
+              << "   or: view SOURCE [CONFIGURATION]\n"
+              << "View the output of a frame SOURCE.\n\n"
+              << options << "\n";
 }
 
 int main(int argc, char *argv[]) {
-    
+
     std::signal(SIGINT, sigHandler);
 
     std::string source;
@@ -74,17 +74,16 @@ int main(int argc, char *argv[]) {
         config.add_options()
                 ("filename,n", po::value<std::string>(&file_name),
                 "The base snapshot file name.\n"
-                "The the name of the SOURCE for this viewer will be appended to this name.\n"
-                "The timestamp of the snapshot will be prepended to this name.")
+                "The timestamp of the snapshot will be prepended to this name."
+                "If not provided, the SOURCE name will be used.\n")
                 ("folder,f", po::value<std::string>(&save_path),
-				 "The folder to which snapshots will be saved.")
+                "The folder in which snapshots will be saved.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
                 ("source", po::value<std::string>(&source),
-                "The name of the server that supplies images to view."
-                "The server must be of type server<SharedCVMatHeader>\n")
+                "The name of the frame SOURCE that supplies frames to view.\n")
                 ;
 
         po::positional_options_description positional_options;
@@ -112,8 +111,8 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("version")) {
             std::cout << "Oat Frame Viewer version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
@@ -144,7 +143,7 @@ int main(int argc, char *argv[]) {
 
     // Make the viewer
     Viewer viewer(source, save_path, file_name);
-    
+
     // Tell user
     std::cout << oat::whoMessage(viewer.get_name(),
               "Listening to source " + oat::sourceText(source) + ".\n")
@@ -154,7 +153,7 @@ int main(int argc, char *argv[]) {
               "Press CTRL+C to exit.\n");
 
     try {
-        
+
         // Infinite loop until ctrl-c or end of stream signal
         run(&viewer);
 

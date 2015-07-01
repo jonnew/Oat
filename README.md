@@ -151,8 +151,9 @@ frame──> │ framefilt │ ──> frame
 ```
 
 #### `view`
-Frame viewer. Displays video stream from named shard memory in a window. Also 
-permits the user to take snapshots of the viewed stream.
+Frame viewer. Displays video stream from named shard memory on a mointor. Also 
+permits the user to take snapshots of the viewed stream by pressing <kbd>s</kbd>
+while the display window is in focus.
 
 ##### Signature
 ```
@@ -163,8 +164,8 @@ frame ──> │ view │
 
 ##### Usage
 ```
-Usage: viewer [INFO]
-   or: viewer SOURCE [CONFIGURATION] 
+Usage: view [INFO]
+   or: view SOURCE [CONFIGURATION] 
 
 INFO:
   --help                 Produce help message.
@@ -172,14 +173,13 @@ INFO:
 
 CONFIGURATION:
   -n [ --filename ] arg  The base snapshot file name.
-                         The the name of the SOURCE for this viewer will be 
-                         appended to this name.
                          The timestamp of the snapshot will be prepended to 
                          this name.
+                		 If not provided, the SOURCE name will be used.
   -f [ --folder ] arg    The folder to which snapshots will be saved
 
 NOTE:
-  To take a snapshot of the currently displayed frame, press 's' while 
+  To take a snapshot of the currently displayed frame, press 's' key while 
   the display window is in focus.
 ```
 
@@ -187,6 +187,10 @@ NOTE:
 ```bash
 # View frame stream named raw
 oat view raw 
+
+# View frame stream named raw and specify that snapshots should be saved
+# to the Desktop with base name 'snapshot'
+oat view raw -f ~/Desktop -n snapshot
 ```
 
 #### `posidet`

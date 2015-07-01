@@ -45,14 +45,14 @@ Viewer::Viewer(const std::string& frame_source_name,
 , save_path(save_path)
 , file_name(file_name)
 , append_date(append_date) {
-    
+
     tick = Clock::now();
     tock = Clock::now();
 
     // Name *this according the the source name and the client number
     // to keep it unique
     name = name + std::to_string(frame_source.get_number_of_clients());
-    
+
 #ifdef OAT_USE_OPENGL
     try {
         cv::namedWindow(name, cv::WINDOW_OPENGL);   
@@ -63,16 +63,13 @@ Viewer::Viewer(const std::string& frame_source_name,
 #else
     cv::namedWindow(name, cv::WINDOW_NORMAL);
 #endif
- 
+
     // Snapshot file saving
     // First check that the save_path is valid
     bfs::path path(save_path.c_str());
     if (!bfs::exists(path) || !bfs::is_directory(path)) {
-        std::cout << "Warning: requested snapshot save path, " + save_path + ", "
-                  << "does not exist, or is not a valid directory.\n"
-                  << "Using the current directory instead.\n";
-
-        save_path = ".";
+        throw (std::runtime_error ("Requested snapshot save path, "
+            + save_path + ", does not exist, or is not a valid directory.\n"));
     }
 
     // Snapshot encoding
@@ -133,7 +130,7 @@ std::string Viewer::makeFileName() {
 
     // Generate file name for this video
     if (!file_name.empty())
-        frame_fid = save_path + "/" + date_now + "_" + file_name + "_" + frame_source.get_name();
+        frame_fid = save_path + "/" + date_now + "_" + file_name;
     else
         frame_fid = save_path + "/" + date_now + "_" + frame_source.get_name();
 
