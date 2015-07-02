@@ -145,9 +145,9 @@ Frame filter.
 
 ##### Signature
 ```
-         ┌───────────┐          
-frame──> │ framefilt │ ──> frame
-         └───────────┘          
+          ┌───────────┐          
+frame ──> │ framefilt │ ──> frame
+          └───────────┘          
 ```
 
 #### `view`
@@ -437,6 +437,7 @@ cd lib
 - [ ] Cmake improvements
     - ~~Global build script to make all of the programs in the project~~
     - ~~CMake managed versioning~~
+    - Option for building with/without point-grey support
     - Output messages detailing required and recommended pacakges.
     - Windows build?
 - [ ] Travis CI
