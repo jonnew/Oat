@@ -61,7 +61,8 @@ void printUsage(po::options_description options) {
               << "  gige: Point Grey GigE camera.\n"
               << "  file: Video from file (*.mpg, *.avi, etc.).\n\n"
               << "SINK:\n"
-              << "  User supplied sink name (e.g. raw).\n\n"
+              << "  User-supplied name of the memory segment to publish frames "
+              << "to (e.g. raw).\n\n"
               << options << "\n";
 }
 

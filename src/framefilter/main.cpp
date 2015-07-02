@@ -42,15 +42,18 @@ volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options){
     std::cout << "Usage: framefilt [INFO]\n"
-              << "   or: framefilt TYPE SOURCE SINK [CONFIG]\n"
-              << "Filter a frames from SOURCE and published filtered frames to SINK.\n"
+              << "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
+              << "Filter frames from SOURCE and published filtered frames "
+              << "to SINK.\n"
               << "TYPE\n"
               << "  bsub: Background subtraction\n"
               << "  mask: Binary mask\n\n"
               << "SOURCE:\n"
-              << "  User supplied source name (e.g. raw).\n\n"
+              << "  User-supplied name of the memory segment to receive frames "
+              << "from (e.g. raw).\n\n"
               << "SINK:\n"
-              << "  User supplied sink name (e.g. filt).\n\n"
+              << "  User-supplied name of the memory segment to publish frames "
+              << "to (e.g. filt).\n\n"
               << options << "\n";
 }
 
@@ -67,7 +70,7 @@ void run(FrameFilter* filter) {
 }
 
 int main(int argc, char *argv[]) {
-    
+
     std::signal(SIGINT, sigHandler);
 
     std::string type;
@@ -78,7 +81,7 @@ int main(int argc, char *argv[]) {
     bool config_used = false;
     bool invert_mask = false;
     po::options_description visible_options("OPTIONS");
-    
+
     std::unordered_map<std::string, char> type_hash;
     type_hash["bsub"] = 'a';
     type_hash["mask"] = 'b';

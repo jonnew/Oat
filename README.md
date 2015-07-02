@@ -101,8 +101,8 @@ parameters, examples, and configuration options are provided for each Oat
 component.
 
 
-#### `frameserve`
-Video frame server. Serves video streams to named shared memory from physical 
+#### frameserve
+`oat-frameserve` - Serves video streams to named shared memory from physical 
 devices (e.g. webcam or GIGE camera) or from file.
 
 ##### Signature
@@ -118,7 +118,7 @@ Usage: frameserve [INFO]
    or: frameserve TYPE SINK [CONFIGURATION]
 
 SINK
-  The name of the memory segment to stream to.
+  User-supplied name of the memory segment to publish frames to (e.g. raw).
 
 TYPE
   wcam: Onboard or USB webcam.
@@ -136,6 +136,34 @@ CONFIGURATION:
                             server TYPE.
 ```
 
+##### Configuration Options
+
+TYPE=`gige`
+
+- `index [+int]` User specified camera index. Useful in multi-camera imaging
+  configurations.
+- `exposure [float]` Automatically adjust both shutter and gain to achieve
+  given exposure. Specified in dB.
+- `shutter [+int]` Shutter time in milliseconds. Specifying `exposure`
+  overrides this option.
+- `gain [float]` Sensor gain value. Specifying `exposure` overrides this
+  option.
+- `white_bal [{+int, +int}]` White balance in [red blue] intensity value.
+- `roi [{+int, +int, +int, +int}]` Region of interest to extract from the
+  camera or video stream specified as `[x_offset, y_offset, width, height]`
+- `trigger_on [bool]` True to use camera trigger, false to use software
+  polling.
+- `triger_polarity [bool]` True to trigger on rising edge, false to trigger on
+  falling edge.
+- `trigger_mode [+int]` Point-grey trigger mode. Common values are 7 and 14 for
+  [TODO]
+
+TYPE=`file`
+
+- `frame_rate [float]` Frame rate in frames per second
+- `roi [{+int, +int, +int, +int}]` Region of interest to extract from the
+  camera or video stream specified as `[x_offset, y_offset, width, height]`
+
 ##### Examples
 ```bash
 # Serve to the 'wraw' stream from a webcam 
@@ -150,29 +178,12 @@ oat frameserve gige graw -c config.toml -k gige_config
 oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ```
 
-##### Configuration
-
-TYPE: `gige`
-
-- `index [+int]` User specified camera index. Useful in multi-camera imaging configurations.
-- `exposure [float]` Automatically adjust both shutter and gain to achieve given exposure. Specified in dB.
-- `shutter [+int]` Shutter time in milliseconds. Specifying `exposure` overrides this option.
-- `gain [float]` Sensor gain value. Specifying `exposure` overrides this option.
-- `white_bal [{+int, +int}]`
-- `roi [{+int, +int, +int, +int}]`
-- `trigger_on [bool]`
-- `triger_polarity [bool]`
-- `trigger_mode [+int]`
-
-TYPE:`file`
-
-- `frame_rate [float]` Frame rate in frames per second
-- `roi [{+int, +int, +int, +int}]`
-
-
-
-#### `framefilt`
-Frame filter.
+#### framefilt
+`oat-framefilt` - Receive frames from named shared memory, filter, and publish
+to a second memory segment. Generally, used to pre-process frames prior to
+object position detection. For instance, `framefilt` could be used to perform
+background subtraction or application of a mask to isolate a region of
+interest.
 
 ##### Signature
 ```
@@ -181,10 +192,59 @@ frame ──> │ framefilt │ ──> frame
           └───────────┘          
 ```
 
-#### `view`
-Frame viewer. Displays video stream from named shard memory on a mointor. Also 
-permits the user to take snapshots of the viewed stream by pressing <kbd>s</kbd>
-while the display window is in focus.
+##### Usage
+```
+Usage: framefilt [INFO]
+   or: framefilt TYPE SOURCE SINK [CONFIGURATION]
+Filter frames from SOURCE and published filtered frames to SINK.
+TYPE
+  bsub: Background subtraction
+  mask: Binary mask
+
+SOURCE:
+  User-supplied name of the memory segment to receive frames from (e.g. raw).
+
+SINK:
+  User-supplied name of the memory segment to publish frames to (e.g. filt).
+
+OPTIONS:
+
+INFO:
+  --help                    Produce help message.
+  -v [ --version ]          Print version information.
+
+CONFIGURATION:
+  -c [ --config-file ] arg  Configuration file.
+  -k [ --config-key ] arg   Configuration key.
+  -m [ --invert-mask ]      If using TYPE=mask, invert the mask before applying
+```
+
+##### Configuration Options
+
+TYPE=`bsub`
+
+- `background [string]` Path to a background image to be subtracted from the
+  SOURCE frames. This image must have the same dimensions as frames from SOURCE.
+
+TYPE=`mask`
+
+- `mask [string]` Path to a binary image used to mask frames from SOURCE.
+  SOURCE frame pixels with indices corresponding to non-zero value pixels in
+  the mask image will be unaffected. Others will be set to zero. This image must
+  have the same dimensions as frames from SOURCE.
+
+##### Examples
+```bash
+# Receive frames from 'raw' stream
+# Perform background subtraction using the first frame as the background
+# Publish result to 'sub' stream
+oat framefilt bsub raw sub
+
+# Receive frames from 'raw' stream
+# Apply a mask specified in a configuration file
+# Publish result to 'roi' stream
+oat framefilt mask raw roi -c config.toml -k mask-config
+```
 
 ##### Signature
 ```
