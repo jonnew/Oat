@@ -13,15 +13,14 @@ Oat components are a set of programs that communicate through shared memory to
 capture, process, and record video streams. Oat components act on two basic 
 data types: `frames` and `positions`. 
 
-* `frame` - a shared-memory abstraction of a 
-  [cv::Mat object](http://docs.opencv.org/modules/core/doc/basic_structures.html#mat).
-* `position` - 2D position type.
+* `frame` - Video frame.
+* `position` - 2D position.
 
-Oat components can be chained together to execute data processing pipelines, 
-with individual components executing largely in parallel. Processing pipelines 
-can be split and merged while maintaining thread-safety and sample synchronization. 
-For example, a script to detect the position of a single object in pre-recorded 
-video file might look like this:
+Oat components are be chained together to realize custom data processing
+pipelines, with individual components executing largely in parallel. Processing
+pipelines can be split and merged while maintaining thread-safety and sample
+synchronization.  For example, a script to detect the position of a single
+object in pre-recorded video file might look like this:
 
 ```bash
 # Serve frames from a video file to the 'raw' stream
@@ -31,9 +30,9 @@ oat frameserve file raw -f ./video.mpg &
 # Serve the result to the 'filt' stream
 oat framefilt bsub raw filt &
 
-# Perform color-based object detection on the 'filt' stream
+# Perform color-based object position detection on the 'filt' stream 
 # Serve the object positionto the 'pos' stream
-oat detect hsv filt pos &
+oat posidet hsv filt pos &
 
 # Decorate the 'raw' stream with the detected position form the `pos` stream
 # Serve the decorated images to the 'dec' stream
@@ -57,22 +56,38 @@ Generally, an Oat component is called in the following pattern:
 ```
 oat <subcommand> [TYPE] [IO] [CONFIGURATION]
 ```
-`subcommand` indicates the component that will be executed. Components
-are classified according to their type signature. For instance, `framefilt` 
-(frame filter) accepts a frame and produces a frame. `posifilt` (position filter) 
-accepts a position and produces a position. `frameserve` (frame server) produces 
-a frame, and so on.  The `TYPE` parameter specifies a concrete type of transform 
-(e.g. for the framefilt subcommand this could be `bsub` for background subtraction). 
-The `IO` specification indicates where the component is receiving data from 
-and to where the processed data should be published. The `CONFIGURATION` 
-specification is used to provide parameters to the component. Below, the type 
-signature, usage information, examples, and configuration options are provided 
-for each Oat component.
+`subcommand` indicates the component that will be executed. Components are
+classified according to their type signature. For instance, `framefilt` (frame
+filter) accepts a frame and produces a frame. `posifilt` (position filter)
+accepts a position and produces a position. `frameserve` (frame server)
+produces a frame, and so on.  The `TYPE` parameter specifies a concrete type of
+transform (e.g. for the framefilt subcommand this could be `bsub` for
+background subtraction).  The `IO` specification indicates where the component
+is receiving data from and to where the processed data should be published. The
+`CONFIGURATION` specification is used to provide parameters to the component.
+Aside from command line options, which are specified using the the --help
+option for each subcommand, CONFIGURATION options often allow the user to
+specify a configuration file and key that can hold parameter values.
+Configuration file/key pairs are provided using
+[TOML](https://github.com/toml-lang/toml).  Parameter keys are specified using
+a top level table, like so
+
+```toml
+[key]
+paramter_0 = 1                  # Integer
+parameter_1 = true              # Boolean
+parameter_2 = 3.14              # Double
+parameter_3 = [1.0, 2.0, 3.0]   # Array of doubles
+```
+The type and sanity of parameter values are checked by Oat before they are
+used.  Below, the type signature, usage information, available configuration
+parameters, examples, and configuration options are provided for each Oat
+component.
 
 
 #### `frameserve`
 Video frame server. Serves video streams to named shared memory from physical 
-devices (e.g. webcam or GIGE camera) or from disk.
+devices (e.g. webcam or GIGE camera) or from file.
 
 ##### Signature
 ```
@@ -121,7 +136,7 @@ oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 
 ##### Configuration
 
-###### `TYPE=gige`
+TYPE: `gige`
 
 - `index [+int]` User specified camera index. Useful in multi-camera imaging configurations.
 - `exposure [float]` Automatically adjust both shutter and gain to achieve given exposure. Specified in dB.
@@ -133,7 +148,7 @@ oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 - `triger_polarity [bool]`
 - `trigger_mode [+int]`
 
-###### `TYPE=file`
+TYPE:`file`
 
 - `frame_rate [float]` Frame rate in frames per second
 - `roi [{+int, +int, +int, +int}]`
