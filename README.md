@@ -53,34 +53,50 @@ frameserve ──> framefilt ──> posidet ──> decorate ───> view
 ```
 
 Generally, an Oat component is called in the following pattern:
+
 ```
 oat <subcommand> [TYPE] [IO] [CONFIGURATION]
 ```
-`subcommand` indicates the component that will be executed. Components are
-classified according to their type signature. For instance, `framefilt` (frame
-filter) accepts a frame and produces a frame. `posifilt` (position filter)
-accepts a position and produces a position. `frameserve` (frame server)
+The `<subcommand>` indicates the component that will be executed. Components
+are classified according to their type signature. For instance, `framefilt`
+(frame filter) accepts a frame and produces a frame. `posifilt` (position
+filter) accepts a position and produces a position. `frameserve` (frame server)
 produces a frame, and so on.  The `TYPE` parameter specifies a concrete type of
 transform (e.g. for the framefilt subcommand this could be `bsub` for
 background subtraction).  The `IO` specification indicates where the component
-is receiving data from and to where the processed data should be published. The
-`CONFIGURATION` specification is used to provide parameters to the component.
-Aside from command line options, which are specified using the the --help
-option for each subcommand, CONFIGURATION options often allow the user to
-specify a configuration file and key that can hold parameter values.
-Configuration file/key pairs are provided using
-[TOML](https://github.com/toml-lang/toml).  Parameter keys are specified using
-a top level table, like so
+will receive data from and to where the processed data should be published. The
+`CONFIGURATION` specification is used to provide parameters to shape the
+component's operation.  Aside from command line options and switches, which are
+listed using the `--help` option for each subcommand, the user can often
+provide an external file containing a configuration table to pass parameters to
+a component. Some configuration parameters can only be specified using a
+configuration file.  Configuration files are written in plain text using
+[TOML](https://github.com/toml-lang/toml). A multi-component processing script
+can share a configuration file because each component accesses parameter
+information using a file/key pair, like so
 
 ```toml
 [key]
-paramter_0 = 1                  # Integer
+parameter_0 = 1                 # Integer
 parameter_1 = true              # Boolean
 parameter_2 = 3.14              # Double
 parameter_3 = [1.0, 2.0, 3.0]   # Array of doubles
 ```
+
+or more concretely,
+
+```toml
+# Example configuration file for frameserve ──> framefilt
+[frameserve-par]
+frame_rate = 30                 # FPS
+roi = [10, 10, 100, 100]        # Region of interest
+
+[framefilt-par]
+mask = "~/Desktop/mask.png"     # Path to mask file
+```
+
 The type and sanity of parameter values are checked by Oat before they are
-used.  Below, the type signature, usage information, available configuration
+used. Below, the type signature, usage information, available configuration
 parameters, examples, and configuration options are provided for each Oat
 component.
 
