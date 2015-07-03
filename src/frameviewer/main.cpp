@@ -49,7 +49,10 @@ void run(Viewer* viewer) {
 void printUsage(po::options_description options) {
     std::cout << "Usage: view [INFO]\n"
               << "   or: view SOURCE [CONFIGURATION]\n"
-              << "View the output of a frame SOURCE.\n\n"
+              << "Display frame SOURCE on a monitor.\n\n"
+              << "SOURCE:\n"
+              << "  User-supplied name of the memory segment to receive frames "
+              << "from (e.g. raw).\n\n"
               << options << "\n";
 }
 

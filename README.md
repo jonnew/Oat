@@ -136,7 +136,7 @@ CONFIGURATION:
                             server TYPE.
 ```
 
-##### Configuration Options
+##### Configuration file options
 
 TYPE=`gige`
 
@@ -178,7 +178,7 @@ oat frameserve gige graw -c config.toml -k gige_config
 oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ```
 
-#### framefilt
+#### Frame filter
 `oat-framefilt` - Receive frames from named shared memory, filter, and publish
 to a second memory segment. Generally, used to pre-process frames prior to
 object position detection. For instance, `framefilt` could be used to perform
@@ -207,8 +207,6 @@ SOURCE:
 SINK:
   User-supplied name of the memory segment to publish frames to (e.g. filt).
 
-OPTIONS:
-
 INFO:
   --help                    Produce help message.
   -v [ --version ]          Print version information.
@@ -219,7 +217,7 @@ CONFIGURATION:
   -m [ --invert-mask ]      If using TYPE=mask, invert the mask before applying
 ```
 
-##### Configuration Options
+##### Configuration file options
 
 TYPE=`bsub`
 
@@ -246,6 +244,12 @@ oat framefilt bsub raw sub
 oat framefilt mask raw roi -c config.toml -k mask-config
 ```
 
+#### Viewer
+`oat-view` - Receive frames from named shared memory and display them on a 
+monitor. Additionally, allow the user to take snapshots of the currently
+displayed frame by pressing <kbd>s</kbd> while the display window is
+in focus.
+
 ##### Signature
 ```
           ┌──────┐
@@ -256,7 +260,11 @@ frame ──> │ view │
 ##### Usage
 ```
 Usage: view [INFO]
-   or: view SOURCE [CONFIGURATION] 
+   or: view SOURCE [CONFIGURATION]
+Display frame SOURCE on a monitor.
+
+SOURCE:
+  User-supplied name of the memory segment to receive frames from (e.g. raw).
 
 INFO:
   --help                 Produce help message.
@@ -265,13 +273,10 @@ INFO:
 CONFIGURATION:
   -n [ --filename ] arg  The base snapshot file name.
                          The timestamp of the snapshot will be prepended to 
-                         this name.
-                		 If not provided, the SOURCE name will be used.
-  -f [ --folder ] arg    The folder to which snapshots will be saved
-
-NOTE:
-  To take a snapshot of the currently displayed frame, press 's' key while 
-  the display window is in focus.
+                         this name.If not provided, the SOURCE name will be 
+                         used.
+                         
+  -f [ --folder ] arg    The folder in which snapshots will be saved.
 ```
 
 ##### Example
@@ -284,9 +289,10 @@ oat view raw
 oat view raw -f ~/Desktop -n snapshot
 ```
 
-#### `posidet`
-Position detector. Detects object position within a frame stream using one of 
-several methods.
+#### Position detector
+`oat-posidet` - Receive frames from named shared memory and perform object
+position detection within a frame stream using one of several methods. Publish
+detected positions to a second segment of shared memory.
 
 ##### Signature
 ```
@@ -294,6 +300,51 @@ several methods.
 frame ──> │ posidet │ ──> position
           └─────────┘
 ```
+
+##### Usage
+```
+Usage: posidet [INFO]
+   or: posidet TYPE SOURCE SINK [CONFIGURATION]
+Perform object position detection on frames from SOURCE.
+Publish detected object positions to SINK.
+
+TYPE
+  diff: Difference detector (grey-scale, motion)
+  hsv : HSV detector (color)
+
+SOURCE:
+  User-supplied name of the memory segment to receive 
+  frames from (e.g. raw).
+
+SINK:
+  User-supplied name of the memory segment to publish 
+  detected positions to (e.g. pos).
+
+INFO:
+  --help                    Produce help message.
+  -v [ --version ]          Print version information.
+
+CONFIGURATION:
+  -c [ --config-file ] arg  Configuration file.
+  -k [ --config-key ] arg   Configuration key.
+```
+
+##### Configuration file options
+
+TYPE=`hsv`
+- `tune` [bool] Provide sliders for tuning hsv parameters
+- `erode` [+int] Candidate object erosion kernel size (pixels)
+- `dilate` [+int] Candidate object dilation kernel size (pixels)
+- `min_area` [+int] Minimum object area (pixels^2)
+- `max_area` [+int] Maximum object area (pixels^2)
+- `h_thresholds` = {min [+int], max [+int]} Hue pass band
+- `s_thresholds` = {min [+int], max [+int]} Saturation pass band 
+- `v_thresholds` = {min [+int], max [+int]} Value pass band
+
+TYPE=`diff`
+- `tune [bool] Provide sliders for tuning diff parameters
+- `blur` [+int] Blurring kernel size (normalized box filter; pixels)
+- `diff_threshold` [+int] Intensity difference threshold 
 
 ##### Example
 ```bash

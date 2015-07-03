@@ -48,9 +48,11 @@ void printUsage(po::options_description options) {
               << "  diff: Difference detector (grey-scale, motion)\n"
               << "  hsv : HSV detector (color)\n\n"
               << "SOURCE:\n"
-              << "  User supplied source name (e.g. raw).\n\n"
+              << "  User-supplied name of the memory segment to receive frames "
+              << "from (e.g. raw).\n\n"
               << "SINK:\n"
-              << "  User supplied sink name (e.g. pos).\n\n"
+              << "  User-supplied name of the memory segment to publish detected "
+              << "positions to (e.g. pos).\n\n"
               << options << "\n";
 }
 
