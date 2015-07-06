@@ -38,16 +38,18 @@ volatile sig_atomic_t source_eof = 0;
 void printUsage(po::options_description options) {
     std::cout << "Usage: posifilt [INFO]\n"
               << "   or: posifilt TYPE SOURCE SINK [CONFIGURATION]\n"
-              << "Perform TYPE position filtering on the position stream from SOURCE.\n"
-              << "Publish filtered object positions to SINK.\n\n"
+              << "Filter positions from SOURCE and published filtered positions "
+              << "to SINK.\n\n"
               << "TYPE\n"
               << "  kalman: Kalman filter\n"
               << "  homo: homography transform\n"
               << "  region: position region annotation\n\n"
               << "SOURCE:\n"
-              << "  User supplied position source name (e.g. rpos).\n\n"
+              << "  User-supplied name of the memory segment to receive " 
+              << "positions from (e.g. rpos).\n\n"
               << "SINK:\n"
-              << "  User supplied position sink name (e.g. lpos).\n\n"
+              << "  User-supplied name of the memory segment to publish "
+              << "positions to (e.g. rpos).\n\n"
               << options << "\n";
 }
 

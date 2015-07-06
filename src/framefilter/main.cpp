@@ -44,7 +44,7 @@ void printUsage(po::options_description options){
     std::cout << "Usage: framefilt [INFO]\n"
               << "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
               << "Filter frames from SOURCE and published filtered frames "
-              << "to SINK.\n"
+              << "to SINK.\n\n"
               << "TYPE\n"
               << "  bsub: Background subtraction\n"
               << "  mask: Binary mask\n\n"
@@ -60,13 +60,6 @@ void printUsage(po::options_description options){
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int s) {
     quit = 1;
-}
-
-void run(FrameFilter* filter) {
-
-    while (!quit && !source_eof) {
-        source_eof = filter->processSample();
-    }
 }
 
 int main(int argc, char *argv[]) {
@@ -197,20 +190,20 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    FrameFilter* filter;
+    std::unique_ptr<FrameFilter> filter;
     switch (type_hash[type]) {
         case 'a':
         {
 #ifndef OAT_USE_CUDA
-            filter = new BackgroundSubtractor(source, sink);
+            filter.reset(new BackgroundSubtractor(source, sink));
 #else
-            filter = new BackgroundSubtractorCUDA(source, sink);
+            filter.reset(new BackgroundSubtractorCUDA(source, sink));
 #endif
             break;
         }
         case 'b':
         {
-            filter = new FrameMasker(source, sink, invert_mask);
+            filter.reset(new FrameMasker(source, sink, invert_mask));
             if (!config_used)
                  std::cerr << oat::whoWarn(filter->get_name(), 
                          "No mask configuration was provided." 
@@ -225,8 +218,8 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    // At this point, the new'ed component exists and must be deleted in the case
-    // any exception
+    // The new'ed component will be automatically deleted in the case of any
+    // exception
     try { 
         
         if (config_used)
@@ -241,19 +234,20 @@ int main(int argc, char *argv[]) {
                 "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
-        run(filter);
+        while (!quit && !source_eof) {
+            source_eof = filter->processSample();
+        }
 
         // Tell user
         std::cout << oat::whoMessage(filter->get_name(), "Exiting.\n");
         
-        // Free heap memory allocated to filter
-        delete filter;
-
         // Exit success
         return 0;
 
     } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(filter->get_name(), "Failed to parse configuration file " + config_file + "\n")
+        std::cerr << oat::whoError(filter->get_name(), 
+                     "Failed to parse configuration file " 
+                     + config_file + "\n")
                   << oat::whoError(filter->get_name(), ex.what())
                   << "\n";
     } catch (const std::runtime_error ex) {
@@ -266,9 +260,6 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::whoError(filter->get_name(), "Unknown exception.\n");
     }
     
-    // Free heap memory allocated to filter
-    delete filter;
-
     // Exit failure
     return -1;
 

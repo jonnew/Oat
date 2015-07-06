@@ -1,17 +1,17 @@
-__Oat__ is a set of programs for processing images, extracting object
-position information, and streaming data to disk and the network in real-time.
-Oat subcommands are independent programs that each perform a single operation. 
-However, programs can communicate through shared memory. This allows a user 
-to chain operations together in arrangements suitable for particular context or 
-tracking requirement. This architecture enables quick, scripted construction of 
-custom data processing chains. Oat is primarily used for real-time animal 
-position tracking in the context of experimental neuroscience, but can be used 
-in any circumstance that requires real-time object tracking.
+__Oat__ is a set of programs for processing images, extracting object position
+information, and streaming data to disk and/or the network in real-time.  Oat
+subcommands are independent programs that each perform a single operation but
+that can communicate through shared memory. This allows a user to chain
+operations together in arrangements suitable for particular context or tracking
+requirement. This architecture enables scripted construction of custom data
+processing chains. Oat is primarily used for real-time animal position tracking
+in the context of experimental neuroscience, but can be used in any
+circumstance that requires real-time object tracking.
 
 ### Manual
-Oat components are a set of programs that communicate through shared memory to 
-capture, process, and record video streams. Oat components act on two basic 
-data types: `frames` and `positions`. 
+Oat components are a set of programs that communicate through shared memory to
+capture, process, perform object detection within, and record video streams.
+Oat components act on two basic data types: `frames` and `positions`. 
 
 * `frame` - Video frame.
 * `position` - 2D position.
@@ -101,9 +101,9 @@ parameters, examples, and configuration options are provided for each Oat
 component.
 
 
-#### frameserve
-`oat-frameserve` - Serves video streams to named shared memory from physical 
-devices (e.g. webcam or GIGE camera) or from file.
+#### Frame server
+`oat-frameserve` - Serves video streams to shared memory from physical devices
+(e.g. webcam or GIGE camera) or from file.
 
 ##### Signature
 ```
@@ -222,14 +222,15 @@ CONFIGURATION:
 TYPE=`bsub`
 
 - `background [string]` Path to a background image to be subtracted from the
-  SOURCE frames. This image must have the same dimensions as frames from SOURCE.
+  SOURCE frames. This image must have the same dimensions as frames from
+  SOURCE.
 
 TYPE=`mask`
 
 - `mask [string]` Path to a binary image used to mask frames from SOURCE.
   SOURCE frame pixels with indices corresponding to non-zero value pixels in
-  the mask image will be unaffected. Others will be set to zero. This image must
-  have the same dimensions as frames from SOURCE.
+  the mask image will be unaffected. Others will be set to zero. This image
+  must have the same dimensions as frames from SOURCE.
 
 ##### Examples
 ```bash
@@ -350,7 +351,7 @@ TYPE=`diff`
 ```bash
 # Use color-based object detection on the 'raw' frame stream 
 # publish the result to the 'cpos' position stream
-# Use detector settings supplied by the hsv_config tag in config.toml
+# Use detector settings supplied by the hsv_config key in config.toml
 oat posidet hsv raw cpos -c config.toml -k hsv_config
 
 # Use motion-based object detection on the 'raw' frame stream 
@@ -358,9 +359,12 @@ oat posidet hsv raw cpos -c config.toml -k hsv_config
 oat posidet diff raw mpos  
 ```
 
-#### `posifilt`
-Position filter. Filters position stream to, for example, remove discontinuities 
-due to noise or discontinuities in position detection. 
+#### Position filter
+`oat-posifilt` - Receive positions from named shared memory, filter, and
+publish to a second memory segment. Can be used to, for example, remove
+discontinuities due to noise or discontinuities in position detection with a
+Kalman filter or annote categorical postion information based on user supplied
+region contours.
 
 ##### Signature
 ```
@@ -370,7 +374,113 @@ position ──> │ posifilt │ ──> position
 ```
 
 ##### Usage
-TODO
+```
+Usage: posifilt [INFO]
+   or: posifilt TYPE SOURCE SINK [CONFIGURATION]
+Filter positions from SOURCE and published filtered positions to SINK.
+
+TYPE
+  kalman: Kalman filter
+  homo: homography transform
+  region: position region annotation
+
+SOURCE:
+  User-supplied name of the memory segment to receive positions from (e.g. rpos).
+
+SINK:
+  User-supplied name of the memory segment to publish positions to (e.g. rpos).
+
+INFO:
+  --help                    Produce help message.
+  -v [ --version ]          Print version information.
+
+CONFIGURATION:
+  -c [ --config-file ] arg  Configuration file.
+  -k [ --config-key ] arg   Configuration key.
+```
+
+##### Configuration file options
+
+TYPE=`kalman`
+- dt = 0.02			# Sample period, seconds (Should be automatically provided)
+- timeout = 2.0                   # Seconds to perform position estimation detection with lack of position measure
+- sigma_accel = 200.0 		# Position units/s^2 (e.g. Pixels/s^2)
+- sigma_noise = 10.0		# Noise measurement (position units)
+- tune = true                     # Use the GUI to tweak parameters
+
+[homo]
+# Homography matrix for 2D position
+homography =  [ 4.4708341438051686e+00, 1.1030803466026207e-01, -1.6637627408844000e+03, 
+		1.6538020239166329e-01, -4.8791297859318021e+00, 1.6150394484415021e+03, 
+		0.00000000000000000000, 0.00000000000000000000, 1.000000000000000000000 ]
+
+[region]
+CN = [[336.00, 272.50], 
+      [290.00, 310.00],
+      [289.00, 369.50], 
+      [332.67, 417.33], 
+      [389.33, 413.33], 
+      [430.00, 375.33], 
+      [433.33, 319.33], 
+      [395.00, 272.00]]
+
+R0 = [[654.00, 380.00],
+      [717.33, 386.67], 
+      [714.00, 316.67], 
+      [655.33, 319.33]]
+
+- `tune` [bool] Provide sliders for tuning hsv parameters
+- `erode` [+int] Candidate object erosion kernel size (pixels)
+- `dilate` [+int] Candidate object dilation kernel size (pixels)
+- `min_area` [+int] Minimum object area (pixels^2)
+- `max_area` [+int] Maximum object area (pixels^2)
+- `h_thresholds` = {min [+int], max [+int]} Hue pass band
+- `s_thresholds` = {min [+int], max [+int]} Saturation pass band 
+- `v_thresholds` = {min [+int], max [+int]} Value pass band
+
+TYPE=`diff`
+- `tune [bool] Provide sliders for tuning diff parameters
+- `blur` [+int] Blurring kernel size (normalized box filter; pixels)
+- `diff_threshold` [+int] Intensity difference threshold 
+
+##### Example
+```bash
+# Use color-based object detection on the 'raw' frame stream 
+# publish the result to the 'cpos' position stream
+# Use detector settings supplied by the hsv_config key in config.toml
+oat posidet hsv raw cpos -c config.toml -k hsv_config
+
+# Use motion-based object detection on the 'raw' frame stream 
+# publish the result to the 'mpos' position stream
+oat posidet diff raw mpos  
+```
+
+TYPE=`hsv`
+- `tune` [bool] Provide sliders for tuning hsv parameters
+- `erode` [+int] Candidate object erosion kernel size (pixels)
+- `dilate` [+int] Candidate object dilation kernel size (pixels)
+- `min_area` [+int] Minimum object area (pixels^2)
+- `max_area` [+int] Maximum object area (pixels^2)
+- `h_thresholds` = {min [+int], max [+int]} Hue pass band
+- `s_thresholds` = {min [+int], max [+int]} Saturation pass band 
+- `v_thresholds` = {min [+int], max [+int]} Value pass band
+
+TYPE=`diff`
+- `tune [bool] Provide sliders for tuning diff parameters
+- `blur` [+int] Blurring kernel size (normalized box filter; pixels)
+- `diff_threshold` [+int] Intensity difference threshold 
+
+##### Example
+```bash
+# Use color-based object detection on the 'raw' frame stream 
+# publish the result to the 'cpos' position stream
+# Use detector settings supplied by the hsv_config key in config.toml
+oat posidet hsv raw cpos -c config.toml -k hsv_config
+
+# Use motion-based object detection on the 'raw' frame stream 
+# publish the result to the 'mpos' position stream
+oat posidet diff raw mpos  
+```
 
 #### `posicom`
 Position combiner. Combines position inputs according to a specified operation.
