@@ -402,46 +402,34 @@ CONFIGURATION:
 ##### Configuration file options
 
 TYPE=`kalman`
-- dt = 0.02			# Sample period, seconds (Should be automatically provided)
-- timeout = 2.0                   # Seconds to perform position estimation detection with lack of position measure
-- sigma_accel = 200.0 		# Position units/s^2 (e.g. Pixels/s^2)
-- sigma_noise = 10.0		# Noise measurement (position units)
-- tune = true                     # Use the GUI to tweak parameters
+- `dt` [+float] Sample period (seconds)
+- `timeout` [+float] Seconds to perform position estimation detection with lack
+  of updated position measure
+- `sigma_accel` [+float] Standard deviation of normally distributed, random
+  accelerations used by the internal model of object motion (Position
+  units/s^2; e.g. Pixels/s^2)
+- `sigma_noise` [+float] Standard deviation of randomly distributed position
+  measurement noise (Position units; e.g. Pixels)
+- `tune` [bool] Use the GUI to tweak parameters
 
-[homo]
-# Homography matrix for 2D position
-homography =  [ 4.4708341438051686e+00, 1.1030803466026207e-01, -1.6637627408844000e+03, 
-		1.6538020239166329e-01, -4.8791297859318021e+00, 1.6150394484415021e+03, 
-		0.00000000000000000000, 0.00000000000000000000, 1.000000000000000000000 ]
-
-[region]
-CN = [[336.00, 272.50], 
+TYPE=`homo`
+- `homography` [[+float], [+float], [+float], Homography matrix for 2D position
+                [+float], [+float], [+float],
+                [+float], [+float], [+float]]
+TYPE=`region` //TODO
+CN = [[336.00, 272.50],
       [290.00, 310.00],
-      [289.00, 369.50], 
-      [332.67, 417.33], 
-      [389.33, 413.33], 
-      [430.00, 375.33], 
-      [433.33, 319.33], 
+      [289.00, 369.50],
+      [332.67, 417.33],
+      [389.33, 413.33],
+      [430.00, 375.33],
+      [433.33, 319.33],
       [395.00, 272.00]]
 
 R0 = [[654.00, 380.00],
-      [717.33, 386.67], 
-      [714.00, 316.67], 
+      [717.33, 386.67],
+      [714.00, 316.67],
       [655.33, 319.33]]
-
-- `tune` [bool] Provide sliders for tuning hsv parameters
-- `erode` [+int] Candidate object erosion kernel size (pixels)
-- `dilate` [+int] Candidate object dilation kernel size (pixels)
-- `min_area` [+int] Minimum object area (pixels^2)
-- `max_area` [+int] Maximum object area (pixels^2)
-- `h_thresholds` = {min [+int], max [+int]} Hue pass band
-- `s_thresholds` = {min [+int], max [+int]} Saturation pass band 
-- `v_thresholds` = {min [+int], max [+int]} Value pass band
-
-TYPE=`diff`
-- `tune [bool] Provide sliders for tuning diff parameters
-- `blur` [+int] Blurring kernel size (normalized box filter; pixels)
-- `diff_threshold` [+int] Intensity difference threshold 
 
 ##### Example
 ```bash
