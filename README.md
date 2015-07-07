@@ -8,6 +8,55 @@ processing chains. Oat is primarily used for real-time animal position tracking
 in the context of experimental neuroscience, but can be used in any
 circumstance that requires real-time object tracking.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Manual](#manual)
+  - [Frame server](#frame-server)
+    - [Signature](#signature)
+    - [Usage](#usage)
+    - [Configuration file options](#configuration-file-options)
+    - [Examples](#examples)
+  - [Frame filter](#frame-filter)
+    - [Signature](#signature-1)
+    - [Usage](#usage-1)
+    - [Configuration file options](#configuration-file-options-1)
+    - [Examples](#examples-1)
+  - [Viewer](#viewer)
+    - [Signature](#signature-2)
+    - [Usage](#usage-2)
+    - [Example](#example)
+  - [Position detector](#position-detector)
+    - [Signature](#signature-3)
+    - [Usage](#usage-3)
+    - [Configuration file options](#configuration-file-options-2)
+    - [Example](#example-1)
+  - [Position filter](#position-filter)
+    - [Signature](#signature-4)
+    - [Usage](#usage-4)
+    - [Configuration file options](#configuration-file-options-3)
+    - [Example](#example-2)
+  - [Position combiner](#position-combiner)
+    - [Signature](#signature-5)
+  - [Frame decorator](#frame-decorator)
+    - [Signature](#signature-6)
+    - [Usage](#usage-5)
+    - [Configuration file options](#configuration-file-options-4)
+  - [Recorder](#recorder)
+    - [Signature](#signature-7)
+    - [Usage](#usage-6)
+    - [Example](#example-3)
+- [Installation](#installation)
+  - [Flycapture SDK (If point-grey camera is used)](#flycapture-sdk-if-point-grey-camera-is-used)
+  - [[Boost](http://www.boost.org/)](#boosthttpwwwboostorg)
+  - [[OpenCV](http://opencv.org/)](#opencvhttpopencvorg)
+  - [[RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)](#rapidjsonhttpsgithubcommiloyiprapidjson-and-cpptomlhttpsgithubcomskystrifecpptoml)
+- [TODO](#todo)
+  - [Setting up a Point-grey PGE camera in Linux](#setting-up-a-point-grey-pge-camera-in-linux)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ### Manual
 Oat components are a set of programs that communicate through shared memory to
 capture, process, perform object detection within, and record video streams.
@@ -137,32 +186,41 @@ CONFIGURATION:
 ```
 
 ##### Configuration file options
+__TYPE=`gige`__
 
-TYPE=`gige`
-
-- `index [+int]` User specified camera index. Useful in multi-camera imaging
+- __`index`__=`+int` User specified camera index. Useful in multi-camera imaging
   configurations.
-- `exposure [float]` Automatically adjust both shutter and gain to achieve
-  given exposure. Specified in dB.
-- `shutter [+int]` Shutter time in milliseconds. Specifying `exposure`
+- __`exposure`__=`float` Automatically adjust both shutter and gain to achieve
+  given exposure (dB).
+- __`shutter`__=`+int` Shutter time in milliseconds. Specifying `exposure`
   overrides this option.
-- `gain [float]` Sensor gain value. Specifying `exposure` overrides this
+- __`gain`__=`float` Sensor gain value. Specifying `exposure` overrides this
   option.
-- `white_bal [{+int, +int}]` White balance in [red blue] intensity value.
-- `roi [{+int, +int, +int, +int}]` Region of interest to extract from the
-  camera or video stream specified as `[x_offset, y_offset, width, height]`
-- `trigger_on [bool]` True to use camera trigger, false to use software
+- __`white_bal`__=`{+int, +int}` White-balance specified as `{red blue}` 
+  intensity value (0-255).
+- __`roi`__=`{+int, +int, +int, +int}` Region of interest to extract from the
+  camera or video stream specified as `{x_offset, y_offset, width, height}` 
+  (pixels).
+- __`trigger_on`__=`bool` True to use camera trigger, false to use software
   polling.
-- `triger_polarity [bool]` True to trigger on rising edge, false to trigger on
+- __`triger_polarity`__=`bool` True to trigger on rising edge, false to trigger on
   falling edge.
-- `trigger_mode [+int]` Point-grey trigger mode. Common values are 7 and 14 for
-  [TODO]
+- __`trigger_mode`__=`+int`` Point-grey trigger mode. Common values are:
+    - 0 - Standard external trigger. Trigger edge causes sensor exposure, then sensor
+      readout to internal memory.
+    - 1 - Blub shutter mode. Same as 0, except that sensor exposure duration is 
+      determined by trigger active duration.
+    - 7 - Continuous internal trigger. No external trigger required, but not synchronized
+      to an external clock.
+    - 14 - Overlapped exposure/readout external trigger. Sensor exposure occurs
+      during sensory readout to internal memory. This is the astest external trigger
+      mode.
 
-TYPE=`file`
+__TYPE=`file`__
 
-- `frame_rate [float]` Frame rate in frames per second
-- `roi [{+int, +int, +int, +int}]` Region of interest to extract from the
-  camera or video stream specified as `[x_offset, y_offset, width, height]`
+- __`frame_rate`__=`float` Frame rate in frames per second
+- __`roi`__=`{+int, +int, +int, +int}` Region of interest to extract from the (pixels).
+  camera or video stream specified as `{x_offset, y_offset, width, height}` (pixels).
 
 ##### Examples
 ```bash
@@ -218,16 +276,15 @@ CONFIGURATION:
 ```
 
 ##### Configuration file options
+__TYPE=`bsub`__
 
-TYPE=`bsub`
-
-- `background [string]` Path to a background image to be subtracted from the
+- __`background`__=`string` Path to a background image to be subtracted from the
   SOURCE frames. This image must have the same dimensions as frames from
   SOURCE.
 
-TYPE=`mask`
+__TYPE=`mask`__
 
-- `mask [string]` Path to a binary image used to mask frames from SOURCE.
+- __`mask`__=`string` Path to a binary image used to mask frames from SOURCE.
   SOURCE frame pixels with indices corresponding to non-zero value pixels in
   the mask image will be unaffected. Others will be set to zero. This image
   must have the same dimensions as frames from SOURCE.
@@ -331,21 +388,22 @@ CONFIGURATION:
 ```
 
 ##### Configuration file options
+__TYPE=`hsv`__
 
-TYPE=`hsv`
-- `tune` [bool] Provide sliders for tuning hsv parameters
-- `erode` [+int] Candidate object erosion kernel size (pixels)
-- `dilate` [+int] Candidate object dilation kernel size (pixels)
-- `min_area` [+int] Minimum object area (pixels^2)
-- `max_area` [+int] Maximum object area (pixels^2)
-- `h_thresholds` = {min [+int], max [+int]} Hue pass band
-- `s_thresholds` = {min [+int], max [+int]} Saturation pass band 
-- `v_thresholds` = {min [+int], max [+int]} Value pass band
+- __`tune`__=`bool` Provide sliders for tuning hsv parameters
+- __`erode`__=`+int` Candidate object erosion kernel size (pixels)
+- __`dilate`__=`+int` Candidate object dilation kernel size (pixels)
+- __`min_area`__=`+int` Minimum object area (pixels<sup>2</sup>)
+- __`max_area`__=`+int` Maximum object area (pixels<sup>2</sup>)
+- __`h_thresholds`__=`{min=+int, max=+int}` Hue pass band
+- __`s_thresholds`__=`{min=+int, max=+int}` Saturation pass band 
+- __`v_thresholds`__=`{min=+int, max=+int}` Value pass band
 
-TYPE=`diff`
-- `tune [bool] Provide sliders for tuning diff parameters
-- `blur` [+int] Blurring kernel size (normalized box filter; pixels)
-- `diff_threshold` [+int] Intensity difference threshold 
+__TYPE=`diff`__
+
+- __`tune`__=`bool` Provide sliders for tuning diff parameters
+- __`blur`__=`+int` Blurring kernel size (normalized box filter; pixels)
+- __`diff_threshold`__=`+int` Intensity difference threshold 
 
 ##### Example
 ```bash
@@ -382,7 +440,7 @@ Filter positions from SOURCE and published filtered positions to SINK.
 TYPE
   kalman: Kalman filter
   homo: homography transform
-  region: position region annotation
+  region: position region label annotation
 
 SOURCE:
   User-supplied name of the memory segment to receive positions from (e.g. rpos).
@@ -400,23 +458,28 @@ CONFIGURATION:
 ```
 
 ##### Configuration file options
+__TYPE=`kalman`__
 
-TYPE=`kalman`
-- `dt` [+float] Sample period (seconds)
-- `timeout` [+float] Seconds to perform position estimation detection with lack
-  of updated position measure
-- `sigma_accel` [+float] Standard deviation of normally distributed, random
-  accelerations used by the internal model of object motion (Position
-  units/s^2; e.g. Pixels/s^2)
-- `sigma_noise` [+float] Standard deviation of randomly distributed position
-  measurement noise (Position units; e.g. Pixels)
-- `tune` [bool] Use the GUI to tweak parameters
+- __`dt`__=`+float` Sample period (seconds).
+- __`timeout`__=`+float` Time to perform position estimation detection with lack
+  of updated position measure (seconds).
+- __`sigma_accel`__=`+float` Standard deviation of normally distributed, random
+  accelerations used by the internal model of object motion (position
+  units/s<sup>2</sup>; e.g. pixels/s<sup>2</sup>).
+- __`sigma_noise`__=`+float` Standard deviation of randomly distributed position
+  measurement noise (position units; e.g. pixels).
+- __`tune`__=`bool` Use the GUI to tweak parameters.
 
-TYPE=`homo`
-- `homography` [[+float], [+float], [+float], Homography matrix for 2D position
-                [+float], [+float], [+float],
-                [+float], [+float], [+float]]
-TYPE=`region` //TODO
+__TYPE=`homo`__
+
+- __`homography`__=`[[+float,+float,+float],[+float,+float,+float],[+float,+float,+float]]`, Homography matrix for 2D position (3x3; world units/pixel).
+             
+__TYPE=`region`__ 
+
+- __`<regions>`__=`[[+float, +float],[+float, +float],...,[+float, +float]]` User-named region countours (pixels). Regions countors are specified as `n`-point matracies,  `[[x0, y0],[x1, y1],...,[xn, yn]]`, which define the verticies of a polygon. The name of the contour is used as the region label. For example, here is an octagonal region called `CN` and a tetragonal region called `R0`:
+
+```
+# These regions could be named anything...
 CN = [[336.00, 272.50],
       [290.00, 310.00],
       [289.00, 369.50],
@@ -430,48 +493,18 @@ R0 = [[654.00, 380.00],
       [717.33, 386.67],
       [714.00, 316.67],
       [655.33, 319.33]]
-
+```
+  
 ##### Example
 ```bash
-# Use color-based object detection on the 'raw' frame stream 
-# publish the result to the 'cpos' position stream
-# Use detector settings supplied by the hsv_config key in config.toml
-oat posidet hsv raw cpos -c config.toml -k hsv_config
-
-# Use motion-based object detection on the 'raw' frame stream 
-# publish the result to the 'mpos' position stream
-oat posidet diff raw mpos  
+# Perform Kalman filtering on object position from the 'pos' position stream 
+# publish the result to the 'kpos' position stream
+# Use detector settings supplied by the kalman_config key in config.toml
+oat posifilt kalman pos kfilt -c config.toml -k kalman_config
 ```
 
-TYPE=`hsv`
-- `tune` [bool] Provide sliders for tuning hsv parameters
-- `erode` [+int] Candidate object erosion kernel size (pixels)
-- `dilate` [+int] Candidate object dilation kernel size (pixels)
-- `min_area` [+int] Minimum object area (pixels^2)
-- `max_area` [+int] Maximum object area (pixels^2)
-- `h_thresholds` = {min [+int], max [+int]} Hue pass band
-- `s_thresholds` = {min [+int], max [+int]} Saturation pass band 
-- `v_thresholds` = {min [+int], max [+int]} Value pass band
-
-TYPE=`diff`
-- `tune [bool] Provide sliders for tuning diff parameters
-- `blur` [+int] Blurring kernel size (normalized box filter; pixels)
-- `diff_threshold` [+int] Intensity difference threshold 
-
-##### Example
-```bash
-# Use color-based object detection on the 'raw' frame stream 
-# publish the result to the 'cpos' position stream
-# Use detector settings supplied by the hsv_config key in config.toml
-oat posidet hsv raw cpos -c config.toml -k hsv_config
-
-# Use motion-based object detection on the 'raw' frame stream 
-# publish the result to the 'mpos' position stream
-oat posidet diff raw mpos  
-```
-
-#### `posicom`
-Position combiner. Combines position inputs according to a specified operation.
+#### Position combiner
+`oat-posifilt` - Combine positions according to a specified operation.
 
 ##### Signature
 ```
@@ -483,8 +516,8 @@ position N ──> │        │
                └────────┘
 ```
 
-#### `decorate`
-Frame decorator. Annotates frames with sample times, dates, and/or positional 
+#### Frame decorator
+`oat-decorate` - Annotate frames with sample times, dates, and/or positional 
 information.
 
 ##### Signature
@@ -501,8 +534,10 @@ position N ──> │         │
 ##### Usage
 TODO
 
-#### `record`
-Stream recorder. Saves frame and positions streams to disk. 
+##### Configuration file options
+
+#### Recorder
+`oat-record` - Save frame and position streams to file. 
 
 * `frame` streams are compressed and saved as individual video files (
   [H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI file).
@@ -510,6 +545,7 @@ Stream recorder. Saves frame and positions streams to disk.
   Position files have the following structure:
 
 ```javascript
+{oat-version: XX.XX},
 {header:  [ {timestamp: YYYY-MM-DD-hh-mm-ss}, 
             {sample_rate_hz: Fs}, 
             {sources: [s1, s2, ..., sN]}                   ] }
