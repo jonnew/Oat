@@ -45,6 +45,7 @@ void sigHandler(int s) {
     quit = 1;
 }
 
+// Processing loop
 void run(Recorder* recorder) {
 
     while (!quit && !source_eof) {
@@ -183,7 +184,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // Make the decorator
+    // Create component
     Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date, fps, allow_overwrite);
 
     // Tell user
@@ -212,6 +213,7 @@ int main(int argc, char *argv[]) {
     std::cout << oat::whoMessage(recorder.get_name(), 
                  "Press CTRL+C to exit.\n");
 
+    // The business
     try {
         
         // Infinite loop until ctrl-c or end of stream signal
@@ -225,10 +227,10 @@ int main(int argc, char *argv[]) {
         
     } catch (const std::runtime_error& ex) {
         std::cerr << oat::whoError(recorder.get_name(), ex.what())
-                << "\n";
+                  << "\n";
     } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(recorder.get_name(), ex.msg)
-                << "\n";
+        std::cerr << oat::whoError(recorder.get_name(), ex.what())
+                  << "\n";
     } catch (...) {
         std::cerr << oat::whoError(recorder.get_name(), "Unknown exception.\n");
     }
