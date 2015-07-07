@@ -53,10 +53,10 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(PositionCombiner* combiner) {
+// Processing loop
+void run(const std::shared_ptr<PositionCombiner>& combiner) {
     
     while (!quit && !source_eof) { 
-        
         source_eof = combiner->process(); 
     }
 }
@@ -177,11 +177,14 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    PositionCombiner* combiner; //(ant_source, pos_source, sink);
+    // Create component
+    std::shared_ptr<PositionCombiner> combiner; 
+    
+    // Refine component type
     switch (type_hash[type]) {
         case 'a':
         {
-            combiner = new MeanPosition(sources, sink);
+            combiner = std::make_shared<MeanPosition>(sources, sink);
             break;
         }
         default:
@@ -192,8 +195,7 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    // At this point, the new'ed component exists and must be deleted in the case
-    // any exception
+    // The business
     try { 
 
         if (config_used)
@@ -209,14 +211,11 @@ int main(int argc, char *argv[]) {
                 << oat::whoMessage(combiner->get_name(),
                 "Press CTRL+C to exit.\n");
 
-        // Infinite loop until ctrl-c or end of stream signal
+        // Infinite loop until ctrl-c or server end-of-stream signal
         run(combiner);
 
         // Tell user
         std::cout << oat::whoMessage(combiner->get_name(), "Exiting.\n");
-
-        // Free heap memory allocated to combiner
-        delete combiner;
 
         // Exit
         return 0;
@@ -229,14 +228,11 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::whoError(combiner->get_name(),ex.what())
                   << "\n";
     } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(combiner->get_name(), ex.msg)
+        std::cerr << oat::whoError(combiner->get_name(), ex.what())
                   << "\n";
     } catch (...) {
         std::cerr << oat::whoError(combiner->get_name(), "Unknown exception.\n");
     }
-    
-    // Free heap memory allocated to filter
-    delete combiner;
 
     // Exit failure
     return -1;

@@ -21,11 +21,14 @@
 #include <ctime>
 #include <iomanip>
 #include <mutex>
+#include <vector>
 
 #include <sys/stat.h>
 #include <boost/filesystem.hpp>
 #include <boost/dynamic_bitset.hpp>
-#include <vector>
+
+
+#include "../../lib/utility/make_unique.h"
 
 #include "Recorder.h"
 
@@ -81,8 +84,8 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         
         for (auto &s : position_source_names) {
 
-            position_sources.push_back(new oat::SMClient<oat::Position2D>(s));
-            source_positions.push_back(new oat::Position2D);
+            position_sources.push_back(std::make_unique<oat::SMClient< oat::Position2D> >(s));
+            source_positions.push_back(std::make_unique<oat::Position2D>());
         }
 
         // Create a single position file
@@ -108,7 +111,8 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
             exit(EXIT_FAILURE);
         }
 
-        file_stream = new rapidjson::FileWriteStream(position_fp, position_write_buffer, sizeof (position_write_buffer));
+        file_stream.reset(new rapidjson::FileWriteStream(position_fp, 
+                position_write_buffer, sizeof (position_write_buffer)));
         json_writer.Reset(*file_stream);
         
         // Main object, end this object before write flush
@@ -158,18 +162,20 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
             }
 
             video_file_names.push_back(frame_fid);
-            frame_sources.push_back(new oat::MatClient(frame_source_name));
+            frame_sources.push_back(std::make_unique<oat::MatClient>(frame_source_name));
             
-            frame_write_buffers.push_back(new
-                    boost::lockfree::spsc_queue
-                    < cv::Mat, boost::lockfree::capacity < FRAME_WRITE_BUFFER_SIZE> >);
-            video_writers.push_back(new cv::VideoWriter());
+            frame_write_buffers.push_back(
+                std::make_unique< boost::lockfree::spsc_queue
+                                < cv::Mat, boost::lockfree::capacity 
+                                < FRAME_WRITE_BUFFER_SIZE> > >());
+            video_writers.push_back(std::make_unique<cv::VideoWriter>());
 
 
             // Spawn frame writer threads and synchronize to incoming data
-            frame_write_mutexes.push_back(new std::mutex());
-            frame_write_condition_variables.push_back(new std::condition_variable());
-            frame_write_threads.push_back(new std::thread(&Recorder::writeFramesToFileFromBuffer, this, idx++));
+            frame_write_mutexes.push_back(std::make_unique<std::mutex>());
+            frame_write_condition_variables.push_back(std::make_unique<std::condition_variable>());
+            frame_write_threads.push_back(std::make_unique<std::thread>
+                    (&Recorder::writeFramesToFileFromBuffer, this, idx++));
 
         }    
     } 
@@ -189,41 +195,15 @@ Recorder::~Recorder() {
     }
     
     // Join all threads
-    // Free all dynamically allocated resources
     for (auto &value : frame_write_threads) {
         value->join();
-        delete value;
-    }
-    
-    for (auto &value : video_writers) {
-        delete value;
     }
 
-    for (auto &value : frame_write_mutexes) {
-        delete value;
-    }
-
-    for (auto &value : frame_write_condition_variables) {
-        delete value;
-    }
-
-    for (auto &value : frame_write_buffers) {
-        delete value;
-    }
-
-    for (auto &value : position_sources) {
-        delete value;
-    }
-    
-    for (auto &value : frame_sources) {
-        delete value;
-    }
-
+    // Flush the position writer
     if (position_fp) {
         json_writer.EndArray();
         json_writer.EndObject();
         file_stream->Flush();
-        delete file_stream;
     }
 }
 
@@ -324,7 +304,7 @@ void Recorder::writePositionsToFile() {
         json_writer.StartArray();
 
         int idx = 0;
-        for (auto pos : source_positions) {
+        for (auto &pos : source_positions) {
 
             json_writer.Uint(position_sources[idx]->get_current_time_stamp());
             pos->Serialize(json_writer, position_labels[idx]);

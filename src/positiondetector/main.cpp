@@ -61,7 +61,8 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(PositionDetector* detector) {
+// Processing loop
+void run(const std::shared_ptr<PositionDetector>& detector) {
 
     while (!quit && !source_eof) {
         source_eof = detector->process();
@@ -182,20 +183,22 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // Create the specified TYPE of detector
-    PositionDetector* detector;
+    // Create component
+    std::shared_ptr<PositionDetector> detector;
+    
+    // Refine component type
     switch (type_hash[type]) {
         case 'a':
         {
-            detector = new DifferenceDetector2D(source, sink);
+            detector = std::make_shared<DifferenceDetector2D>(source, sink);
             break;
         }
         case 'b':
         {
 #ifndef OAT_USE_CUDA
-            detector = new HSVDetector(source, sink);
+            detector = std::make_shared<HSVDetector>(source, sink);
 #else
-            detector = new HSVDetectorCUDA(source, sink);
+            detector = std::make_shared<HSVDetectorCUDA>(source, sink);
 #endif
             break;
         }
@@ -207,8 +210,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // At this point, the new'ed component exists and must be deleted in the case
-    // any exception
+    // The business
     try {
 
         if (config_used)
@@ -229,9 +231,6 @@ int main(int argc, char *argv[]) {
         // Tell user
         std::cout << oat::whoMessage(detector->get_name(), "Exiting.\n");
 
-        // Free heap memory allocated to detector 
-        delete detector;
-
         // Exit
         return 0;
 
@@ -243,15 +242,12 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::whoError(detector->get_name(), ex.what())
                   << "\n";
     } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(detector->get_name(), ex.msg)
+        std::cerr << oat::whoError(detector->get_name(), ex.what())
                   << "\n";
     } catch (...) {
         std::cerr << oat::whoError(detector->get_name(), "Unknown exception.\n");
     }
-
-    // Free heap memory allocated to filter
-    delete detector;
-
+    
     // Exit failure
     return -1;
 }

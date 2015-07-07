@@ -709,6 +709,9 @@ cd lib
     - ~~record~~
     - ~~view~~
     - ~~decorate~~
+- [ ] Use smart pointers to ensure proper resource management.
+    - ~~Start with `recorder`, which has huge amounts of heap allocated objects pointed to with raw
+      pointers~~
 - [ ] Use PMPL for library classes to hide implementation (private member properties/functions)
 
 ####  Setting up a Point-grey PGE camera in Linux

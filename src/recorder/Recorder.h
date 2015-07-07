@@ -90,37 +90,47 @@ private:
     
     // Video files
     const int frames_per_second;
-    std::vector<std::string> video_file_names;
-    std::vector<cv::VideoWriter*> video_writers;
+    std::vector< std::string > video_file_names;
+    std::vector< std::unique_ptr
+               < cv::VideoWriter > > video_writers;
     
     // Position file
     FILE* position_fp;
     char position_write_buffer[65536];
-    rapidjson::FileWriteStream * file_stream;
+    std::unique_ptr<rapidjson::FileWriteStream> file_stream;
     rapidjson::Writer<rapidjson::FileWriteStream> json_writer;
 
     // Frame sources
     boost::dynamic_bitset<>::size_type number_of_frame_sources;
-    std::vector<oat::MatClient* > frame_sources;
+    std::vector< std::unique_ptr
+               < oat::MatClient> > frame_sources;
     cv::Mat current_frame;
     boost::dynamic_bitset<> frame_read_required;
     static const int FRAME_WRITE_BUFFER_SIZE {1000};
 
-    std::vector< std::thread* > frame_write_threads;
-    std::vector< std::mutex* > frame_write_mutexes;
-    std::vector< std::condition_variable* > frame_write_condition_variables;
-    std::vector< boost::lockfree::spsc_queue
+    // Multi video writer multi-threading
+    std::vector< std::unique_ptr
+               < std::thread > > frame_write_threads;
+    std::vector< std::unique_ptr
+               < std::mutex > > frame_write_mutexes;
+    std::vector< std::unique_ptr
+               < std::condition_variable > > frame_write_condition_variables;
+    std::vector< std::unique_ptr
+               < boost::lockfree::spsc_queue
                < cv::Mat, boost::lockfree::capacity
-               < FRAME_WRITE_BUFFER_SIZE> > * > frame_write_buffers;
+               < FRAME_WRITE_BUFFER_SIZE > > > > frame_write_buffers;
     
     // Position sources
     boost::dynamic_bitset<>::size_type number_of_position_sources;
-    std::vector<oat::SMClient<oat::Position2D>* > position_sources;
-    std::vector<oat::Position2D* > source_positions;
+    std::vector< std::unique_ptr
+               < oat::SMClient
+               < oat::Position2D > > > position_sources;
+    std::vector< std::unique_ptr
+               < oat::Position2D > > source_positions;
     boost::dynamic_bitset<> position_read_required;
     std::vector<std::string> position_labels;
     
-    // Sources EOF flag
+    // SOURCES EOF flag
     bool sources_eof;
 
     void openFiles(const std::vector<std::string>& save_path,

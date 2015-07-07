@@ -58,7 +58,8 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(PositionFilter* positionFilter) {
+// Processing loop
+void run(std::shared_ptr<PositionFilter> positionFilter) {
 
     while (!quit && !source_eof) {
         source_eof = positionFilter->process();
@@ -186,22 +187,24 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // Make the viewer
-    PositionFilter* filter;
+    // Create component
+    std::shared_ptr<PositionFilter> filter;
+    
+    // Refine component type
     switch (type_hash[type]) {
         case 'a':
         {
-            filter = new KalmanFilter2D(source, sink);
+            filter = std::make_shared<KalmanFilter2D>(source, sink);
             break;
         }
         case 'b':
         {
-            filter = new HomographyTransform2D(source, sink);
+            filter = std::make_shared<HomographyTransform2D>(source, sink);
             break;
         }
         case 'c':
         {
-            filter = new RegionFilter2D(source, sink);
+            filter = std::make_shared<RegionFilter2D>(source, sink);
             break;
         }
         default:
@@ -211,9 +214,8 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
-    
-    // At this point, the new'ed component exists and must be deleted in the case
-    // any exception
+
+    // The business
     try { 
 
         if (config_used)
@@ -227,14 +229,11 @@ int main(int argc, char *argv[]) {
                 << oat::whoMessage(filter->get_name(),
                 "Press CTRL+C to exit.\n");
 
-        // Infinite loop until ctrl-c or end of stream signal
+        // Infinite loop until ctrl-c or server end-of-stream signal
         run(filter);
 
         // Tell user
         std::cout << oat::whoMessage(filter->get_name(), "Exiting.\n");
-
-        // Deallocate heap
-        delete filter;
 
         // Exit
         return 0;
@@ -247,14 +246,11 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::whoError(filter->get_name(),ex.what())
                   << "\n";
     } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(filter->get_name(), ex.msg)
+        std::cerr << oat::whoError(filter->get_name(), ex.what())
                   << "\n";
     } catch (...) {
         std::cerr << oat::whoError(filter->get_name(), "Unknown exception.\n");
     }
-    
-    // Free heap memory allocated to filter
-    delete filter;
 
     // Exit failure
     return -1; 

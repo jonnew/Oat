@@ -62,6 +62,14 @@ void sigHandler(int s) {
     quit = 1;
 }
 
+// Processing loop
+void run(const std::shared_ptr<FrameFilter>& frameFilter) {
+
+    while (!quit && !source_eof) {
+        source_eof = frameFilter->processSample();
+    }
+}
+
 int main(int argc, char *argv[]) {
 
     std::signal(SIGINT, sigHandler);
@@ -99,8 +107,8 @@ int main(int argc, char *argv[]) {
                 ("type", po::value<std::string>(&type), 
                 "Type of frame filter to use.\n\n"
                 "Values:\n"
-                "  bsub: Background subtrator.\n"
-                "  mask: Frame mask.")
+                "  bsub: Background subtractor.\n"
+                "  mask: Binary mask.")
                 ("source", po::value<std::string>(&source),
                 "The name of the SOURCE that supplies images on which to perform background subtraction."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
@@ -190,20 +198,22 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    std::unique_ptr<FrameFilter> filter;
+    std::shared_ptr<FrameFilter> filter;
+    
+    // Refine component type
     switch (type_hash[type]) {
         case 'a':
         {
 #ifndef OAT_USE_CUDA
-            filter.reset(new BackgroundSubtractor(source, sink));
+            filter = std::make_shared<BackgroundSubtractor>(source, sink);
 #else
-            filter.reset(new BackgroundSubtractorCUDA(source, sink));
+            filter = std::make_shared<BackgroundSubtractorCUDA>(source, sink);
 #endif
             break;
         }
         case 'b':
         {
-            filter.reset(new FrameMasker(source, sink, invert_mask));
+            filter = std::make_shared<FrameMasker>(source, sink, invert_mask);
             if (!config_used)
                  std::cerr << oat::whoWarn(filter->get_name(), 
                          "No mask configuration was provided." 
@@ -218,8 +228,7 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    // The new'ed component will be automatically deleted in the case of any
-    // exception
+    // The business
     try { 
         
         if (config_used)
@@ -234,9 +243,7 @@ int main(int argc, char *argv[]) {
                 "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
-        while (!quit && !source_eof) {
-            source_eof = filter->processSample();
-        }
+        run(filter);
 
         // Tell user
         std::cout << oat::whoMessage(filter->get_name(), "Exiting.\n");
@@ -254,7 +261,7 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::whoError(filter->get_name(),ex.what())
                   << "\n";
     } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(filter->get_name(), ex.msg)
+        std::cerr << oat::whoError(filter->get_name(), ex.what())
                   << "\n";
     } catch (...) {
         std::cerr << oat::whoError(filter->get_name(), "Unknown exception.\n");
