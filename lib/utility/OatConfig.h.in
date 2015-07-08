@@ -21,5 +21,6 @@
 #define Oat_VERSION_MAJOR @Oat_VERSION_MAJOR@
 #define Oat_VERSION_MINOR @Oat_VERSION_MINOR@
 
+#cmakedefine OAT_USE_FLYCAP
 #cmakedefine OAT_USE_OPENGL
 #cmakedefine OAT_USE_CUDA

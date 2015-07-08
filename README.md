@@ -185,7 +185,7 @@ CONFIGURATION:
                             server TYPE.
 ```
 
-##### Configuration file options
+##### Configuration File Options
 __TYPE = `gige`__
 
 - __`index`__ = `+int` User specified camera index. Useful in multi-camera
@@ -237,7 +237,7 @@ oat frameserve gige graw -c config.toml -k gige_config
 oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ```
 
-#### Frame filter
+#### Frame Filter
 `oat-framefilt` - Receive frames from named shared memory, filter, and publish
 to a second memory segment. Generally, used to pre-process frames prior to
 object position detection. For instance, `framefilt` could be used to perform
@@ -276,7 +276,7 @@ CONFIGURATION:
   -m [ --invert-mask ]      If using TYPE=mask, invert the mask before applying
 ```
 
-##### Configuration file options
+##### Configuration File Options
 __TYPE = `bsub`__
 
 - __`background`__ = `string` Path to a background image to be subtracted from the
@@ -348,7 +348,7 @@ oat view raw
 oat view raw -f ~/Desktop -n snapshot
 ```
 
-#### Position detector
+#### Position Detector
 `oat-posidet` - Receive frames from named shared memory and perform object
 position detection within a frame stream using one of several methods. Publish
 detected positions to a second segment of shared memory.
@@ -388,7 +388,7 @@ CONFIGURATION:
   -k [ --config-key ] arg   Configuration key.
 ```
 
-##### Configuration file options
+##### Configuration File Options
 __TYPE = `hsv`__
 
 - __`tune`__ = `bool` Provide sliders for tuning hsv parameters
@@ -418,11 +418,11 @@ oat posidet hsv raw cpos -c config.toml -k hsv_config
 oat posidet diff raw mpos  
 ```
 
-#### Position filter
+#### Position Filter
 `oat-posifilt` - Receive positions from named shared memory, filter, and
 publish to a second memory segment. Can be used to, for example, remove
 discontinuities due to noise or discontinuities in position detection with a
-Kalman filter or annote categorical postion information based on user supplied
+Kalman filter or annotate categorical position information based on user supplied
 region contours.
 
 ##### Signature
@@ -458,7 +458,7 @@ CONFIGURATION:
   -k [ --config-key ] arg   Configuration key.
 ```
 
-##### Configuration file options
+##### Configuration File Options
 __TYPE = `kalman`__
 
 - __`dt`__ = `+float` Sample period (seconds).
@@ -524,7 +524,7 @@ position N ──> │        │
                └────────┘
 ```
 
-#### Frame decorator
+#### Frame Decorator
 `oat-decorate` - Annotate frames with sample times, dates, and/or positional 
 information.
 
@@ -541,8 +541,6 @@ position N ──> │         │
 
 ##### Usage
 TODO
-
-##### Configuration file options
 
 #### Recorder
 `oat-record` - Save frame and position streams to file. 
@@ -629,12 +627,11 @@ oat record -i raw
 # Save frame stream 'raw' and positional stream 'pos' to Desktop 
 # directory and prepend the timestamp and 'my_data' to each filename
 oat record -i raw -p pos -d -f ~/Desktop -n my_data
-
 ```
 
 ### Installation
 
-#### Flycapture SDK (If point-grey camera is used)
+#### Flycapture SDK (if Point-Grey camera is used)
 - Go to [point-grey website](www.ptgrey.com)
 - Download the FlyCapture2 SDK (version > 2.7.3)
 - Extract the archive and use the `install_flycapture.sh` script to install the SDK on your computer.

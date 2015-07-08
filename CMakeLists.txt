@@ -18,6 +18,7 @@ include_directories("${PROJECT_BINARY_DIR}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
 # Add preprossor defintion to compile with OpenGL support
+option (OAT_USE_FLYCAP "Compile with support for Point-Grey cameras" ON)
 option (OAT_USE_OPENGL "Use OpenGL functionality in OpenCV" OFF)
 option (OAT_USE_CUDA "Use CUDA GPU functionality in OpenCV" OFF)
 
@@ -28,6 +29,26 @@ link_directories (${Boost_LIBRARY_DIR})
 
 # OpenCV
 find_package (OpenCV REQUIRED)
+if (OpenCV_FOUND)
+    message (STATUS "Found OpenCV")
+else (OpenCV_FOUND)
+    message (CRITICAL_ERROR "OpenCV not found")
+endif (OpenCV_FOUND)
+
+# Flycapture
+if (${OAT_USE_FLYCAP})
+    # Required for point-grey cameras
+    # TODO: super fragile. Need to provide a user flag to specify flycapture dir
+    include_directories ("/usr/include/flycapture")
+    find_library(FLYCAPTURE2 flycapture)
+    
+    if (FLYCAPTURE2)
+         message (STATUS "Found Flycapture.")
+     else (FLYCAPTURE2)
+         message (CRITICAL_ERROR "Flycapture not found. 
+            Did you install in /usr/include/flycapture?")
+     endif (FLYCAPTURE2)
+endif (${OAT_USE_FLYCAP})
 
 # oat shared memory lib
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem 

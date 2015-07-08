@@ -26,9 +26,11 @@
 #include "../../lib/utility/IOFormat.h"
 
 #include "FrameServer.h"
-#include "PGGigECam.h"
-#include "WebCam.h"
 #include "FileReader.h"
+#include "WebCam.h"
+#ifdef OAT_USE_FLYCAP
+    #include "PGGigECam.h"
+#endif
 
 namespace po = boost::program_options;
 
@@ -40,15 +42,15 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(FrameServer* camera) {
+void run(const std::shared_ptr<FrameServer>& server) {
 
     while (!quit && !source_eof) {
         
         if (quit) {
-            camera->stop();
+            server->stop();
         }
         
-        source_eof = camera->serveFrame();
+        source_eof = server->serveFrame();
     }
 }
 
@@ -179,22 +181,30 @@ int main(int argc, char *argv[]) {
     }
 
     // Create the specified TYPE of detector
-    FrameServer* server;
+    std::shared_ptr<FrameServer> server;
     
     switch (type_hash[type]) {
         case 'a':
         {
-            server = new WebCam(sink);
+            server = std::make_shared<WebCam>(sink);
             break;
         }
+        
         case 'b':
         {
-            server = new PGGigECam(sink);
+            
+#ifndef OAT_USE_FLYCAP
+            std::cerr << oat::Error("Oat was not compiled with Point-Grey "
+                    "flycapture support, so TYPE=gige is not available.\n");
+            return -1;
+#else
+            server = std::make_shared<PGGigECam>(sink);
+#endif      
             break;
         }
         case 'c':
         {
-            server = new FileReader(video_file, sink, frames_per_second);
+            server = std::make_shared<FileReader>(video_file, sink, frames_per_second);
             break;
         }
         default:
@@ -211,7 +221,7 @@ int main(int argc, char *argv[]) {
         server->configure();
     
     
-        // Tell user
+    // Tell user
     std::cout << oat::whoMessage(server->get_name(),
                  "Steaming to sink " + oat::sinkText(sink) + ".\n")
               << oat::whoMessage(server->get_name(), 
@@ -223,9 +233,6 @@ int main(int argc, char *argv[]) {
     // Tell user
     std::cout << oat::whoMessage(server->get_name(), "Exiting.\n");
     
-    // Free heap memory allocated to camera 
-    delete server;
-
     // Exit
     return 0;
 }
