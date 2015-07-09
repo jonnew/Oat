@@ -748,35 +748,43 @@ cd lib
 the setup process to be straightforward and robust, but only after cobling together
 the following notes:
 
-- First you must assign your camera a static IP address. 
-    - The easiest way to do this is to use a Windows machine to run the the IP 
-      configurator program provided by Point Grey. If someone has a way to do this
-      without Windows, please tell me.
-- The ipv4 method should be set to __manual__.
-- Finally, you must the PG POE gigabit interface to (1) have the same network prefix and (2) be on the same subnet as your Gigabit camera. 
-    - For instance, assume that your camera was assigned the following private ipv4 configuration:
-        - Camera IP: 192.168.0.1
-        - Subnet mask: 255.255.255.0
-    - In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
+##### Camera IP Address Configuration
+First, assign your camera a static IP address. The easiest way to do this is to use a Windows machine to run the the Point Grey 'GigE Configurator'. If someone knows a way to do this without Windows, please tell me. An example IP Configuration might be:
+- Camera IP: 192.168.0.1
+- Subnet mask: 255.255.255.0
+- Default gateway: 192.168.0.64
+
+##### PG POE GigE Host Adapter Card Configuration
+Using network manager or something similar, you must configure the IPv4 configuration of the GigE host adapter card you are using to interface the camear with your computer.
+- First, set the ipv4 method to __manual__.
+- Next, you must configure the interface to (1) have the same network prefix and (2) be on the same subnet as the camera you setup in the previous section. 
+    - Assuming you used the camera IP configuration specified above, your host adapter card should be assigned the following private IPv4 configuration:
         - POE gigabit card IP: 192.168.0.100
         - Subnet mask: 255.255.255.0
-        - DNS server IP: 192.168.1.1
-- Note that if you want to add another network interface for another camera, it must exist on a separate subnet!    
-    - For instance, we could repeat the above configuration steps for the second camera using the following settings:
-        - Camera IP: 192.168.1.1
+        - DNS server IP: 192.168.0.1
+- Next, you must enable jumbo frames on the network interface. Assuming that the camera is using `eth2`, then entering
+
+        sudo ifconfig eth2 mtu 9000
+
+  into the terminal will enable 9000 MB frames for the `eth2` adapter.
+- Finally, to prevent image tearing, you should increase the amount of memory Linux uses for network receive buffers using the `sysctl` interface by typing
+ 
+        sudo sysctl -w net.core.rmem_max=1048576 net.core.rmem_default=1048576
+
+  into the terminal. _In order for these changes to persist after system reboots, the following lines must be added to the bottom of the `/etc/sysctl.conf` file_:
+
+        net.core.rmem_max=1048576
+        net.core.rmem_default=1048576
+
+##### Multiple Cameras
+- If you have two or more cameras/host adapter cards,  they can be configured as above but _must exist on a separate subnets_. For instance, we could repeat the above configuration steps for a second camera/host adapter card using the following settings:
+    - Camera Configuration:
+        - Camera IP: 192.168.__1__.1
         - Subnet mask: 255.255.255.0
-    - In this case, a functional ipv4 configuration for the POE Gigabit Ethernet card in the host PC could be:
+        - Default gateway: 192.168.__1__.64
+    - Host adapter configuration:
         - POE gigabit card IP: 192.168.__1__.100
         - Subnet mask: 255.255.255.0
-        - DNS server IP: 192.168.1.1
-- Next, you must enable jumbo frames on the network interface
-   - Assume that the camera is using eth2
-   - `sudo ifconfig eth2 mtu 9000` 
-- Finally, increase the amount of memory Linux uses for receive buffers using the sysctl interface
-    - `sudo sysctl -w net.core.rmem_max=1048576 net.core.rmem_default=1048576`
-	- _Note_: In order for these changes to persist after system reboots, the following lines must be manually added to the bottom of the /etc/sysctl.conf file:
-	- net.core.rmem_max=1048576
-	- net.core.rmem_default=1048576
-
+        - DNS server IP: 192.168.__1__.1
 
 
