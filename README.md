@@ -188,24 +188,23 @@ CONFIGURATION:
 ##### Configuration File Options
 __TYPE = `gige`__
 
-- __`index`__ = `+int` User specified camera index. Useful in multi-camera
+- __`index`__=`+int` User specified camera index. Useful in multi-camera
   imaging configurations.
-- __`exposure`__ = `float` Automatically adjust both shutter and gain to
+- __`exposure`__=`float` Automatically adjust both shutter and gain to
   achieve given exposure (dB).
-- __`shutter`__ = `+int` Shutter time in milliseconds. Specifying `exposure`
+- __`shutter`__=`+int` Shutter time in milliseconds. Specifying `exposure`
   overrides this option.
-- __`gain`__ = `float` Sensor gain value. Specifying `exposure` overrides this
+- __`gain`__=`float` Sensor gain value. Specifying `exposure` overrides this
   option.
-- __`white_bal`__ = `[+int, +int]` White-balance specified as `[red blue]`
+- __`white_bal`__=`[+int, +int]` White-balance specified as `[red blue]`
   intensity value (0-255).
-- __`roi`__ = `[+int, +int, +int, +int]` Region of interest to extract from the
-  camera or video stream specified as `[x_offset, y_offset, width, height]`
-  (pixels).
-- __`trigger_on`__ = `bool` True to use camera trigger, false to use software
+- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of 
+  interest to extract from the camera or video stream (pixels).
+- __`trigger_on`__=`bool` True to use camera trigger, false to use software
   polling.
-- __`triger_polarity`__ = `bool` True to trigger on rising edge, false to
+- __`triger_polarity`__=`bool` True to trigger on rising edge, false to
   trigger on falling edge.
-- __`trigger_mode`__ = `+int` Point-grey trigger mode. Common values are:
+- __`trigger_mode`__=`+int` Point-grey trigger mode. Common values are:
     - 0 - Standard external trigger. Trigger edge causes sensor exposure, then
       sensor readout to internal memory.
     - 1 - Blub shutter mode. Same as 0, except that sensor exposure duration is
@@ -213,15 +212,19 @@ __TYPE = `gige`__
     - 7 - Continuous internal trigger. No external trigger required, but not
       synchronized to an external clock.
     - 14 - Overlapped exposure/readout external trigger. Sensor exposure occurs
-      during sensory readout to internal memory. This is the astest external
+      during sensory readout to internal memory. This is the fastest external
       trigger mode.
 
 __TYPE = `file`__
 
-- __`frame_rate`__ = `float` Frame rate in frames per second
-- __`roi`__ = `[+int, +int, +int, +int]` Region of interest to extract from the
-  (pixels).  camera or video stream specified as `[x_offset, y_offset, width,
-  height]` (pixels).
+- __`frame_rate`__=`float` Frame rate in frames per second
+- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of 
+  interest to extract from the camera or video stream (pixels).
+
+__TYPE = `wcam`__
+- __`index`__=`+int` User specified camera index. Useful in multi-camera
+  imaging configurations.
+
 
 ##### Examples
 ```bash
@@ -279,13 +282,13 @@ CONFIGURATION:
 ##### Configuration File Options
 __TYPE = `bsub`__
 
-- __`background`__ = `string` Path to a background image to be subtracted from the
+- __`background`__=`string` Path to a background image to be subtracted from the
   SOURCE frames. This image must have the same dimensions as frames from
   SOURCE.
 
 __TYPE = `mask`__
 
-- __`mask`__ = `string` Path to a binary image used to mask frames from SOURCE.
+- __`mask`__=`string` Path to a binary image used to mask frames from SOURCE.
   SOURCE frame pixels with indices corresponding to non-zero value pixels in
   the mask image will be unaffected. Others will be set to zero. This image
   must have the same dimensions as frames from SOURCE.
@@ -391,20 +394,20 @@ CONFIGURATION:
 ##### Configuration File Options
 __TYPE = `hsv`__
 
-- __`tune`__ = `bool` Provide sliders for tuning hsv parameters
-- __`erode`__ = `+int` Candidate object erosion kernel size (pixels)
-- __`dilate`__ = `+int` Candidate object dilation kernel size (pixels)
-- __`min_area`__ = `+int` Minimum object area (pixels<sup>2</sup>)
-- __`max_area`__ = `+int` Maximum object area (pixels<sup>2</sup>)
-- __`h_thresholds`__ = `{min=+int, max=+int}` Hue pass band
-- __`s_thresholds`__ = `{min=+int, max=+int}` Saturation pass band 
-- __`v_thresholds`__ = `{min=+int, max=+int}` Value pass band
+- __`tune`__=`bool` Provide sliders for tuning hsv parameters
+- __`erode`__=`+int` Candidate object erosion kernel size (pixels)
+- __`dilate`__=`+int` Candidate object dilation kernel size (pixels)
+- __`min_area`__=`+int` Minimum object area (pixels<sup>2</sup>)
+- __`max_area`__=`+int` Maximum object area (pixels<sup>2</sup>)
+- __`h_thresholds`__=`{min=+int, max=+int}` Hue pass band
+- __`s_thresholds`__=`{min=+int, max=+int}` Saturation pass band 
+- __`v_thresholds`__=`{min=+int, max=+int}` Value pass band
 
 __TYPE = `diff`__
 
-- __`tune`__ = `bool` Provide sliders for tuning diff parameters
-- __`blur`__ = `+int` Blurring kernel size (normalized box filter; pixels)
-- __`diff_threshold`__ = `+int` Intensity difference threshold 
+- __`tune`__=`bool` Provide sliders for tuning diff parameters
+- __`blur`__=`+int` Blurring kernel size (normalized box filter; pixels)
+- __`diff_threshold`__=`+int` Intensity difference threshold 
 
 ##### Example
 ```bash
@@ -461,15 +464,15 @@ CONFIGURATION:
 ##### Configuration File Options
 __TYPE = `kalman`__
 
-- __`dt`__ = `+float` Sample period (seconds).
-- __`timeout`__ = `+float` Time to perform position estimation detection with
+- __`dt`__=`+float` Sample period (seconds).
+- __`timeout`__=`+float` Time to perform position estimation detection with
   lack of updated position measure (seconds).
-- __`sigma_accel`__ = `+float` Standard deviation of normally distributed,
+- __`sigma_accel`__=`+float` Standard deviation of normally distributed,
   random accelerations used by the internal model of object motion (position
   units/s<sup>2</sup>; e.g. pixels/s<sup>2</sup>).
-- __`sigma_noise`__ = `+float` Standard deviation of randomly distributed
+- __`sigma_noise`__=`+float` Standard deviation of randomly distributed
   position measurement noise (position units; e.g. pixels).
-- __`tune`__ = `bool` Use the GUI to tweak parameters.
+- __`tune`__=`bool` Use the GUI to tweak parameters.
 
 __TYPE = `homo`__
 
@@ -479,7 +482,7 @@ __TYPE = `homo`__
              
 __TYPE = `region`__ 
 
-- __`<regions>`__ = `[[+float, +float],[+float, +float],...,[+float, +float]]`
+- __`<regions>`__=`[[+float, +float],[+float, +float],...,[+float, +float]]`
   User-named region contours (pixels). Regions counters are specified as
   `n`-point matrices, `[[x0, y0],[x1, y1],...,[xn, yn]]`, which define the
   vertices of a polygon. The name of the contour is used as the region label.
@@ -777,6 +780,3 @@ the following notes:
 	- _Note_: In order for these changes to persist after system reboots, the following lines must be manually added to the bottom of the /etc/sysctl.conf file:
 	- net.core.rmem_max=1048576
 	- net.core.rmem_default=1048576
-
-
-

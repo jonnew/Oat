@@ -40,7 +40,8 @@ private:
     bool aquisition_started;
 
     // The webcam object
-    cv::VideoCapture cv_camera;
+    unsigned int index;
+    std::unique_ptr<cv::VideoCapture> cv_camera;
 
 };
 #endif //WEBCAM_H

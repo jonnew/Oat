@@ -7,8 +7,7 @@
 # ```
 
 [gige]
-roi_mask = "mask.png"
-index = 0 								# Index of camera on the bus
+index = 0 								# Index of camera on the bus (there can be more than one)
 exposure = 0.0							# EV
 shutter = 3 							# ms (ignored if exposure on)
 gain = 0 								# dB (ignored if exposure on)
@@ -25,7 +24,7 @@ calibration_file = "calibration.yml" 	# Camera matrix, distorition coefficients 
 
 [file]
 frame_rate = 50.0                       # Hz 
-#roi = {x_offset = 125, y_offset = 30, width = 490, height = 420} # Region of interest, pixels
+roi = {x_offset = 125, y_offset = 30, width = 490, height = 420} # Region of interest, pixels
 
 [wcam]
-
+index = 0 								# Index of camera on the bus (there can be more than one)

@@ -28,8 +28,7 @@
 #include "FlyCapture2.h"
 
 #include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/shmem/SharedCVMatHeader.h"
-#include "../../lib/shmem/BufferedMatServer.h"
+#include "../../lib/utility/IOFormat.h"
 
 #include "stdafx.h"
 
@@ -38,6 +37,8 @@ using namespace FlyCapture2;
 PGGigECam::PGGigECam(std::string frame_sink_name) : FrameServer(frame_sink_name)
 , num_cameras(0)
 , index(0)
+, frame_size(cv::Size(728, 728))
+, frame_offset(cv::Size(0, 0))
 , gain_dB(0)
 , shutter_ms(0)
 , exposure_EV(0)
@@ -49,23 +50,16 @@ PGGigECam::PGGigECam(std::string frame_sink_name) : FrameServer(frame_sink_name)
 , trigger_source_pin(0)
 , frames_per_second(30)
 , use_camera_frame_buffer(false)
-, number_transmit_retries(0) {
-
-    // Initialize the frame size
-    frame_size = cv::Size(728, 728);
-    frame_offset = cv::Size(0, 0);
-
-}
+, number_transmit_retries(0) { }
 
 /**
  * Set default camera configuration
  */
 void PGGigECam::configure() {
 
-    name = "Default";
     setCameraIndex(0);
     connectToCamera();
-    turnCameraOn();
+    //turnCameraOn();
     setupStreamChannels();
     setupExposure(true);
     setupShutter(true);
@@ -81,176 +75,170 @@ void PGGigECam::configure() {
  * @param config_file The configuration file.
  * @param key The configuration key specifying options for this instance.
  */
-void PGGigECam::configure(const std::string& config_file, const std::string& key) {
+void PGGigECam::configure(const std::string& config_file, const std::string& config_key) {
 
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
 
-        //std::cout << "Parsed the following configuration...\n" << "\n";
-        //std::cout << config << "\n";
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << "\n";
-    }
+        auto this_config = *config.get_table(config_key);
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(key)) {
-
-            auto camera_config = *config.get_table(key);
-            name = key;
-
-            // Set the camera index
-            if (camera_config.contains("index"))
-                index = (unsigned int) (*camera_config.get_as<int64_t>("index"));
-            else
-                setCameraIndex(0);
-
-            connectToCamera();
-            turnCameraOn();
-            setupStreamChannels();
-
-            // Set the exposure
-            if (camera_config.contains("exposure")) {
-                exposure_EV = (float) (*camera_config.get_as<double>("exposure"));
-                setupExposure(false);
-            } else {
-                // Default to auto exposure
-                setupExposure(true);
+        // Set the camera index
+        if (this_config.contains("index")) {
+            if (!this_config.get("index")->is_value()) {
+                throw (std::runtime_error(oat::configValueError(
+                        "index", config_key, config_file, "must be a TOML integer.")));
             }
-
-            // Set the shutter time
-            if (camera_config.contains("shutter") && !camera_config.contains("exposure")) {
-                shutter_ms = (float) (*camera_config.get_as<double>("shutter"));
-                setupShutter(false);
-            } else {
-                // Default to auto shutter
-                setupShutter(true);
-            }
-
-            // Set the gain
-            if (camera_config.contains("gain")&& !camera_config.contains("exposure")) {
-                gain_dB = (float) (*camera_config.get_as<double>("gain"));
-                setupGain(false);
-            } else {
-                // Default to auto gain
-                setupGain(true);
-            }
-
-            // Set white balance
-            if (camera_config.contains("white_bal")) {
-
-                auto wb = *camera_config.get_table("white_bal");
-
-                white_bal_red = (int) (*wb.get_as<int64_t>("red"));
-                white_bal_blue = (int) (*wb.get_as<int64_t>("blue"));
-                setupWhiteBalance(true);
-            } else {
-
-                // Default: turn white balance off
-                setupWhiteBalance(false);
-            }
-
-            // Set the ROI
-            if (camera_config.contains("roi")) {
-
-                auto roi = *camera_config.get_table("roi");
-
-                frame_offset.width = (int) (*roi.get_as<int64_t>("x_offset"));
-                frame_offset.height = (int) (*roi.get_as<int64_t>("y_offset"));
-                frame_size.width = (int) (*roi.get_as<int64_t>("width"));
-                frame_size.height = (int) (*roi.get_as<int64_t>("height"));
-                setupImageFormat();
-            } else {
-                setupDefaultImageFormat();
-            }
-
-            if (camera_config.contains("trigger_on")) {
-
-                use_trigger = *camera_config.get_as<bool>("trigger_on");
-
-                if (use_trigger) {
-
-                    if (camera_config.contains("trigger_polarity")) {
-                        trigger_polarity = *camera_config.get_as<int64_t>("trigger_polarity");
-                    } else {
-                        trigger_polarity = true;
-                    }
-
-                    if (camera_config.contains("trigger_mode")) {
-                        trigger_mode = *camera_config.get_as<int64_t>("trigger_mode");
-                    } else {
-                        trigger_mode = 14;
-                    }
-
-                    if (trigger_mode == 7)
-                        use_software_trigger = true;
-                    else
-                        use_software_trigger = false;
-
-                    if (camera_config.contains("trigger_source")) {
-                        trigger_source_pin = *camera_config.get_as<int64_t>("trigger_source");
-                    } else {
-                        trigger_source_pin = 0;
-                    }
-                }
-            } else {
-                use_trigger = false;
-            }
-
-            if (camera_config.contains("fps")) {
-                frames_per_second = *camera_config.get_as<double>("fps");
-            }
-
-            setupTrigger();
-
-            if (camera_config.contains("calibration_file")) {
-                std::string calibration_file = (*camera_config.get_as<std::string>("calibration_file"));
-
-                cv::FileStorage fs;
-                fs.open(calibration_file, cv::FileStorage::READ);
-
-                if (!fs.isOpened()) {
-                    std::cerr << "Failed to open " << calibration_file << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-
-                // TODO: Exception handling for missing entries
-                // Get calibration info
-                // TODO: use standard TOML format for these matracies instead 
-                // of the secondary YML config file
-                fs["calibration_valid"] >> undistort_image;
-                fs["camera_matrix"] >> camera_matrix;
-                fs["distortion_coefficients"] >> distortion_coefficients;
-
-                fs.release();
-            }
-
-            if (camera_config.contains("retry")) {
-
-                number_transmit_retries = *camera_config.get_as<int64_t>("retry");
-
-                if (number_transmit_retries > 0) {
-                    use_camera_frame_buffer = true;
-                } else {
-                    use_camera_frame_buffer = false;
-                }
-            }
-
-            setupCameraFrameBuffer();
-
-        } else {
-            std::cerr << "No camera configuration named \"" + key + "\" was provided. Exiting." << std::endl;
-            exit(EXIT_FAILURE);
+            index = (unsigned int) (*this_config.get_as<int64_t>("index"));
+            setCameraIndex(index);
         }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
+        else
+            setCameraIndex(0);
+
+        connectToCamera();
+        turnCameraOn();
+        setupStreamChannels();
+
+        // Set the exposure
+        if (this_config.contains("exposure")) {
+            exposure_EV = (float) (*this_config.get_as<double>("exposure"));
+            setupExposure(false);
+        } else {
+            // Default to auto exposure
+            setupExposure(true);
+        }
+
+        // Set the shutter time
+        if (this_config.contains("shutter") && !this_config.contains("exposure")) {
+            shutter_ms = (float) (*this_config.get_as<double>("shutter"));
+            setupShutter(false);
+        } else {
+            // Default to auto shutter
+            setupShutter(true);
+        }
+
+        // Set the gain
+        if (this_config.contains("gain")&& !this_config.contains("exposure")) {
+            gain_dB = (float) (*this_config.get_as<double>("gain"));
+            setupGain(false);
+        } else {
+            // Default to auto gain
+            setupGain(true);
+        }
+
+        // Set white balance
+        if (this_config.contains("white_bal")) {
+
+            auto wb = *this_config.get_table("white_bal");
+
+            white_bal_red = (int) (*wb.get_as<int64_t>("red"));
+            white_bal_blue = (int) (*wb.get_as<int64_t>("blue"));
+            setupWhiteBalance(true);
+        } else {
+
+            // Default: turn white balance off
+            setupWhiteBalance(false);
+        }
+
+        // Set the ROI
+        if (this_config.contains("roi")) {
+
+            auto roi = *this_config.get_table("roi");
+
+            frame_offset.width = (int) (*roi.get_as<int64_t>("x_offset"));
+            frame_offset.height = (int) (*roi.get_as<int64_t>("y_offset"));
+            frame_size.width = (int) (*roi.get_as<int64_t>("width"));
+            frame_size.height = (int) (*roi.get_as<int64_t>("height"));
+            setupImageFormat();
+        } else {
+            setupDefaultImageFormat();
+        }
+
+        if (this_config.contains("trigger_on")) {
+
+            use_trigger = *this_config.get_as<bool>("trigger_on");
+
+            if (use_trigger) {
+
+                if (this_config.contains("trigger_polarity")) {
+                    trigger_polarity = *this_config.get_as<int64_t>("trigger_polarity");
+                } else {
+                    trigger_polarity = true;
+                }
+
+                if (this_config.contains("trigger_mode")) {
+                    trigger_mode = *this_config.get_as<int64_t>("trigger_mode");
+                } else {
+                    trigger_mode = 14;
+                }
+
+                if (trigger_mode == 7)
+                    use_software_trigger = true;
+                else
+                    use_software_trigger = false;
+
+                if (this_config.contains("trigger_source")) {
+                    trigger_source_pin = *this_config.get_as<int64_t>("trigger_source");
+                } else {
+                    trigger_source_pin = 0;
+                }
+            }
+        } else {
+            use_trigger = false;
+        }
+
+        if (this_config.contains("fps")) {
+            frames_per_second = *this_config.get_as<double>("fps");
+        }
+
+        setupTrigger();
+
+        if (this_config.contains("calibration_file")) {
+            std::string calibration_file = (*this_config.get_as<std::string>("calibration_file"));
+
+            cv::FileStorage fs;
+            fs.open(calibration_file, cv::FileStorage::READ);
+
+            if (!fs.isOpened()) {
+                std::cerr << "Failed to open " << calibration_file << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            // TODO: Exception handling for missing entries
+            // Get calibration info
+            // TODO: use standard TOML format for these matracies instead 
+            // of the secondary YML config file
+            fs["calibration_valid"] >> undistort_image;
+            fs["camera_matrix"] >> camera_matrix;
+            fs["distortion_coefficients"] >> distortion_coefficients;
+
+            fs.release();
+        }
+
+        if (this_config.contains("retry")) {
+
+            number_transmit_retries = *this_config.get_as<int64_t>("retry");
+
+            if (number_transmit_retries > 0) {
+                use_camera_frame_buffer = true;
+            } else {
+                use_camera_frame_buffer = false;
+            }
+        }
+
+        setupCameraFrameBuffer();
+
+    } else {
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 
 }
 
-int PGGigECam::setCameraIndex(unsigned int requestedIdx) {
+int PGGigECam::setCameraIndex(unsigned int requested_idx) {
 
     // Find the number of cameras on the bus
     findNumCameras();
@@ -258,12 +246,12 @@ int PGGigECam::setCameraIndex(unsigned int requestedIdx) {
     // Print bus information and find the number of cameras on the bus
     printBusInfo();
 
-    if (num_cameras > 0) {
-        index = requestedIdx;
+    if (num_cameras > requested_idx) {
+        index = requested_idx;
 
     } else {
-        std::cerr << "No cameras were detected, so setting an index is not possible.\n";
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error("Requested camera index " + 
+                std::to_string(requested_idx) + " is not available.\n"));
     }
 
     return 0;
@@ -277,15 +265,13 @@ int PGGigECam::connectToCamera(void) {
     PGRGuid guid;
     Error error = busMgr.GetCameraFromIndex(index, &guid);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     // Connect to a camera
     error = camera.Connect(&guid);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     // Print camera information
@@ -299,16 +285,14 @@ int PGGigECam::setupStreamChannels() {
     unsigned int numStreamChannels = 0;
     Error error = camera.GetNumStreamChannels(&numStreamChannels);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     for (unsigned int i = 0; i < numStreamChannels; i++) {
         GigEStreamChannel streamChannel;
         error = camera.GetGigEStreamChannelInfo(i, &streamChannel);
         if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+            throw (std::runtime_error(error.GetDescription()));
         }
 
         // TODO: This is not going to be valid if cameras are on a switch...
@@ -324,8 +308,7 @@ int PGGigECam::setupStreamChannels() {
 
         error = camera.SetGigEStreamChannelInfo(i, &streamChannel);
         if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+            throw (std::runtime_error(error.GetDescription()));
         }
 
         std::cout << "Printing stream channel information for channel " << i << "\n";
@@ -343,8 +326,7 @@ int PGGigECam::setupShutter(bool is_auto) {
     prop.type = SHUTTER;
     Error error = camera.GetProperty(&prop);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     prop.autoManualMode = is_auto;
@@ -353,8 +335,7 @@ int PGGigECam::setupShutter(bool is_auto) {
 
     error = camera.SetProperty(&prop);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     if (is_auto) {
@@ -380,8 +361,7 @@ int PGGigECam::setupGain(bool is_auto) {
     prop.type = GAIN;
     Error error = camera.GetProperty(&prop);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     prop.autoManualMode = is_auto;
@@ -390,8 +370,7 @@ int PGGigECam::setupGain(bool is_auto) {
 
     error = camera.SetProperty(&prop);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     if (is_auto) {
@@ -420,8 +399,7 @@ int PGGigECam::setupExposure(bool is_auto) {
     prop.type = AUTO_EXPOSURE;
     Error error = camera.GetProperty(&prop);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     prop.onOff = true;
@@ -431,8 +409,7 @@ int PGGigECam::setupExposure(bool is_auto) {
 
     error = camera.SetProperty(&prop);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     if (is_auto) {
@@ -458,8 +435,7 @@ int PGGigECam::setupWhiteBalance(bool is_on) {
     prop.type = WHITE_BALANCE;
     Error error = camera.GetProperty(&prop);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     prop.onOff = is_on;
@@ -470,8 +446,7 @@ int PGGigECam::setupWhiteBalance(bool is_on) {
 
     error = camera.SetProperty(&prop);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     if (is_on) {
@@ -524,8 +499,7 @@ int PGGigECam::setupDefaultImageFormat() {
 
     error = camera.SetGigEImageSettings(&imageSettings);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     return 0;
@@ -542,22 +516,19 @@ int PGGigECam::setupImageFormat() {
 
     Error error = camera.GetGigEImageSettingsInfo(&image_settings_info);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     if (frame_offset.width > image_settings_info.maxWidth ||
             frame_offset.height > image_settings_info.maxHeight) {
-
-        std::cerr << "ROI pixel offsets are larger than the CCD array. Exiting.\n";
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error("ROI pixel offsets are larger than the CCD array. Exiting.\n"));
     }
 
     if ((frame_offset.width + frame_size.width) > image_settings_info.maxWidth) {
 
         frame_size.width = image_settings_info.maxWidth - frame_offset.width;
-        std::cout << "WARNING: Current X-axis ROI settings is off the CCD array\n";
-        std::cout << "WARNING: Cropping the ROI to fit on the array: \n";
+        std::cerr << "WARNING: Current X-axis ROI settings is off the CCD array\n";
+        std::cerr << "WARNING: Cropping the ROI to fit on the array: \n";
         std::cout << "\tFrame width: " + frame_size.width << "\n";
         std::cout << "\tFrame offset: " + frame_offset.width << "\n";
     }
@@ -565,8 +536,8 @@ int PGGigECam::setupImageFormat() {
     if ((frame_offset.height + frame_size.height) > image_settings_info.maxHeight) {
 
         frame_size.height = image_settings_info.maxHeight - frame_offset.height;
-        std::cout << "WARNING: Current Y-axis ROI settings is off the CCD array\n";
-        std::cout << "WARNING: Cropping the ROI to fit on the array: \n";
+        std::cerr << "WARNING: Current Y-axis ROI settings is off the CCD array\n";
+        std::cerr << "WARNING: Cropping the ROI to fit on the array: \n";
         std::cout << "\tFrame height: " + frame_size.height << "\n";
         std::cout << "\tFrame offset: " + frame_offset.height << "\n";
     }
@@ -582,8 +553,7 @@ int PGGigECam::setupImageFormat() {
 
     error = camera.SetGigEImageSettings(&imageSettings);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     return 0;
@@ -599,8 +569,7 @@ int PGGigECam::setupCameraFrameBuffer() {
 
         Error error = camera.ReadRegister(image_retransmit_addr, &image_retransmit_reg);
         if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+            throw (std::runtime_error(error.GetDescription()));
         }
 
         std::cout << "Setting up camera frame buffering...\n";
@@ -630,9 +599,8 @@ int PGGigECam::turnCameraOn() {
     const unsigned int k_cameraPower = 0x610;
     const unsigned int k_powerVal = 0x80000000;
     Error error = camera.WriteRegister(k_cameraPower, k_powerVal);
-    if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+    if (error != PGRERROR_OK && error != PGRERROR_NOT_IMPLEMENTED){
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     const unsigned int millisecondsToSleep = 100;
@@ -651,8 +619,7 @@ int PGGigECam::turnCameraOn() {
             // ignore timeout errors, camera may not be responding to
             // register reads during power-up
         } else if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+            throw (std::runtime_error(error.GetDescription()));
         }
 
         retries--;
@@ -660,8 +627,7 @@ int PGGigECam::turnCameraOn() {
 
     // Check for timeout errors after retrying
     if (error == PGRERROR_TIMEOUT) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     return 0;
@@ -672,20 +638,17 @@ int PGGigECam::setupTrigger() {
     // Get current trigger settings
     Error error = camera.GetTriggerModeInfo(&trigger_mode_info);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     if (trigger_mode_info.present != true) {
-        std::cout << "Camera does not support external trigger. Exiting...\n";
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     TriggerMode triggerMode;
     error = camera.GetTriggerMode(&triggerMode);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     triggerMode.onOff = use_trigger;
@@ -696,8 +659,7 @@ int PGGigECam::setupTrigger() {
 
     error = camera.SetTriggerMode(&triggerMode);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     // Setup frame buffering
@@ -709,8 +671,7 @@ int PGGigECam::setupTrigger() {
 
     error = camera.SetConfiguration(&flyCapConfig);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     //TODO: Custom frame rate
@@ -735,11 +696,9 @@ int PGGigECam::setupTrigger() {
     // Camera is ready, start capturing images
     error = camera.StartCapture();
     if (error == PGRERROR_ISOCH_BANDWIDTH_EXCEEDED) {
-        std::cout << "Bandwidth exceeded. Cannot start camera.\n";
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error("Interface bandwidth exceeded. Cannot start camera..\n"));
     } else if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     aquisition_started = true;
@@ -767,19 +726,18 @@ void PGGigECam::grabImage() {
 
     // Get the image
     if (!aquisition_started) {
-        std::cout << "Cannot grab image because acquisition has not been started.\n";
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error("Cannot grab image because acquisition has not been started.\n"));
     }
 
     Error error = camera.RetrieveBuffer(&raw_image);
     if (error == PGRERROR_IMAGE_CONSISTENCY_ERROR) {
-        std::cout << "WARNING: torn image detected.\n";
+        std::cerr << "WARNING: torn image detected.\n";
 
         // TODO: implement onboard buffer and perform retry a RetrieveBuffer
         // A single time if a torn image is detected.
     } else if (error != PGRERROR_OK) {
         printError(error);
-        std::cout << "WARNING: capture error.\n";
+        std::cerr << "WARNING: capture error.\n";
     }
 }
 
@@ -809,8 +767,7 @@ int PGGigECam::findNumCameras(void) {
 
     error = busMgr.GetNumOfCameras(&num_cameras);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     return 0;
@@ -832,8 +789,7 @@ bool PGGigECam::pollForTriggerReady() {
     do {
         error = camera.ReadRegister(k_softwareTrigger, &regVal);
         if (error != PGRERROR_OK) {
-            printError(error);
-            exit(EXIT_FAILURE);
+            throw (std::runtime_error(error.GetDescription()));
         }
 
     } while ((regVal >> 31) != 0);
@@ -853,8 +809,7 @@ int PGGigECam::printCameraInfo(void) {
 
     Error error = camera.GetCameraInfo(&camera_info);
     if (error != PGRERROR_OK) {
-        printError(error);
-        exit(EXIT_FAILURE);
+        throw (std::runtime_error(error.GetDescription()));
     }
 
     std::ostringstream macAddress;
@@ -917,7 +872,7 @@ void PGGigECam::printStreamChannelInfo(GigEStreamChannel *pStreamChannel) {
             (unsigned int) pStreamChannel->destinationIpAddress.octets[3];
 
     std::cout << "Network interface: " << pStreamChannel->networkInterfaceIndex << "\n";
-    std::cout << "Host Port: " << pStreamChannel->hostPort << "\n";
+    //std::cout << "Host Port: " << pStreamChannel->hostPort << "\n";
     std::cout << "Do not fragment bit: " << (pStreamChannel->doNotFragment ? "Enabled" : "Disabled") << "\n";
     std::cout << "Packet size: " << pStreamChannel->packetSize << "\n";
     std::cout << "Inter packet delay: " << pStreamChannel->interPacketDelay << "\n";

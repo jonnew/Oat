@@ -18,14 +18,41 @@
 
 #include <string>
 
+#include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/make_unique.h"
+
 WebCam::WebCam(std::string frame_sink_name) :
   FrameServer(frame_sink_name)
-, cv_camera(0) {
-}
+, index(0)
+, cv_camera(std::make_unique<cv::VideoCapture>(index)){ }
 
 void WebCam::grabFrame(cv::Mat& frame) {
-    cv_camera >> frame;
+    *cv_camera >> frame;
 }
 
 void WebCam::configure() { }
-void WebCam::configure(const std::string& file_name, const std::string& key) { }
+void WebCam::configure(const std::string& config_file, const std::string& config_key) {
+
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
+    cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
+
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
+        
+        auto this_config = *config.get_table(config_key);
+        
+        // Set the camera index
+        if (this_config.contains("index"))
+            index = (unsigned int) (*this_config.get_as<int64_t>("index"));
+        else
+            index = 0;
+        
+        cv_camera = std::make_unique<cv::VideoCapture>(index);
+        
+    } else {
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
+    }
+}

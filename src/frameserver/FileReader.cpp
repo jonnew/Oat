@@ -20,6 +20,7 @@
 #include <opencv2/videoio.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/utility/IOFormat.h"
 
 #include "FileReader.h"
 
@@ -56,68 +57,59 @@ void FileReader::configure() {
 
 void FileReader::configure(const std::string& config_file, const std::string& config_key) {
 
+    // This will throw cpptoml::parse_exception if a file 
+    // with invalid TOML is provided
     cpptoml::table config;
+    config = cpptoml::parse_file(config_file);
 
-    try {
-        config = cpptoml::parse_file(config_file);
-    } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse " << config_file << ": " << e.what() << std::endl;
-    }
+    // See if a camera configuration was provided
+    if (config.contains(config_key)) {
 
-    try {
-        // See if a camera configuration was provided
-        if (config.contains(config_key)) {
+        auto this_config = *config.get_table(config_key);
 
-            auto this_config = *config.get_table(config_key);
+        if (this_config.contains("frame_rate")) {
+            frame_rate_in_hz = (double) (*this_config.get_as<double>("frame_rate"));
+            calculateFramePeriod();
+        }
 
-            if (this_config.contains("frame_rate")) {
-                frame_rate_in_hz = (double) (*this_config.get_as<double>("frame_rate"));
-                calculateFramePeriod();
-            }
-            
-            if (this_config.contains("roi")) {
+        if (this_config.contains("roi")) {
 
-                auto roi = *this_config.get_table("roi");
-                
-                region_of_interest.x = (int) (*roi.get_as<int64_t>("x_offset"));
-                region_of_interest.y = (int) (*roi.get_as<int64_t>("y_offset"));
-                region_of_interest.width= (int) (*roi.get_as<int64_t>("width"));
-                region_of_interest.height = (int) (*roi.get_as<int64_t>("height"));
-                
-                use_roi = true;
+            auto roi = *this_config.get_table("roi");
 
-            } else {
-                
-                use_roi = false;
-            }
-            
-            if (this_config.contains("calibration_file")) {
-                
-                std::string calibration_file = (*this_config.get_as<std::string>("calibration_file"));
+            region_of_interest.x = (int) (*roi.get_as<int64_t>("x_offset"));
+            region_of_interest.y = (int) (*roi.get_as<int64_t>("y_offset"));
+            region_of_interest.width = (int) (*roi.get_as<int64_t>("width"));
+            region_of_interest.height = (int) (*roi.get_as<int64_t>("height"));
 
-                cv::FileStorage fs;
-                fs.open(calibration_file, cv::FileStorage::READ);
-
-                if (!fs.isOpened()) {
-                    std::cerr << "Failed to open " << calibration_file << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-
-                // TODO: Exception handling for missing entries
-                // Get calibration info
-                fs["calibration_valid"] >> undistort_image;
-                fs["camera_matrix"] >> camera_matrix;
-                fs["distortion_coefficients"] >> distortion_coefficients;
-                
-                fs.release();
-            }
+            use_roi = true;
 
         } else {
-            std::cerr << "No HSV detector configuration named \"" + config_key + "\" was provided. Exiting." << std::endl;
-            exit(EXIT_FAILURE);
+
+            use_roi = false;
         }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+
+        if (this_config.contains("calibration_file")) {
+
+            std::string calibration_file = (*this_config.get_as<std::string>("calibration_file"));
+
+            cv::FileStorage fs;
+            fs.open(calibration_file, cv::FileStorage::READ);
+
+            if (!fs.isOpened()) {
+                std::cerr << "Failed to open " << calibration_file << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            // TODO: Exception handling for missing entries
+            // Get calibration info
+            fs["calibration_valid"] >> undistort_image;
+            fs["camera_matrix"] >> camera_matrix;
+            fs["distortion_coefficients"] >> distortion_coefficients;
+
+            fs.release();
+        }
+    } else {
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
 

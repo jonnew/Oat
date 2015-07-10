@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <boost/program_options.hpp>
 
+#include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "FrameServer.h"
@@ -180,59 +181,79 @@ int main(int argc, char *argv[]) {
         std::cerr << "Exception of unknown type!" << std::endl;
     }
 
+    
     // Create the specified TYPE of detector
     std::shared_ptr<FrameServer> server;
     
-    switch (type_hash[type]) {
-        case 'a':
-        {
-            server = std::make_shared<WebCam>(sink);
-            break;
-        }
-        
-        case 'b':
-        {
-            
+    try {
+
+        switch (type_hash[type]) {
+            case 'a':
+            {
+                server = std::make_shared<WebCam>(sink);
+                break;
+            }
+
+            case 'b':
+            {
+
 #ifndef OAT_USE_FLYCAP
-            std::cerr << oat::Error("Oat was not compiled with Point-Grey "
-                    "flycapture support, so TYPE=gige is not available.\n");
-            return -1;
+                std::cerr << oat::Error("Oat was not compiled with Point-Grey "
+                        "flycapture support, so TYPE=gige is not available.\n");
+                return -1;
 #else
-            server = std::make_shared<PGGigECam>(sink);
+                server = std::make_shared<PGGigECam>(sink);
 #endif      
-            break;
+                break;
+            }
+            case 'c':
+            {
+                server = std::make_shared<FileReader>(video_file, sink, frames_per_second);
+                break;
+            }
+            default:
+            {
+                printUsage(visible_options);
+                std::cout << "Error: invalid TYPE specified. Exiting.\n";
+                return -1;
+            }
         }
-        case 'c':
-        {
-            server = std::make_shared<FileReader>(video_file, sink, frames_per_second);
-            break;
-        }
-        default:
-        {
-            printUsage(visible_options);
-            std::cout << "Error: invalid TYPE specified. Exiting.\n";
-            return -1;
-        }
+
+        if (config_used)
+            server->configure(config_file, config_key);
+        else
+            server->configure();
+
+
+        // Tell user
+        std::cout << oat::whoMessage(server->get_name(),
+                "Steaming to sink " + oat::sinkText(sink) + ".\n")
+                << oat::whoMessage(server->get_name(),
+                "Press CTRL+C to exit.\n");
+
+        // Infinite loop until ctrl-c or end of stream signal
+        run(server);
+
+        // Tell user
+        std::cout << oat::whoMessage(server->get_name(), "Exiting.\n");
+
+        // Exit
+        return 0;
+
+    } catch (const cpptoml::parse_exception& ex) {
+        std::cerr << oat::whoError(server->get_name(), "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(server->get_name(), ex.what())
+                  << "\n";
+    } catch (const std::runtime_error& ex) {
+        std::cerr << oat::whoError(server->get_name(), ex.what())
+                  << "\n";
+    } catch (const cv::Exception& ex) {
+        std::cerr << oat::whoError(server->get_name(), ex.what())
+                  << "\n";
+    } catch (...) {
+        std::cerr << oat::whoError(server->get_name(), "Unknown exception.\n");
     }
 
-    if (config_used)
-        server->configure(config_file, config_key);
-    else
-        server->configure();
-    
-    
-    // Tell user
-    std::cout << oat::whoMessage(server->get_name(),
-                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-              << oat::whoMessage(server->get_name(), 
-                 "Press CTRL+C to exit.\n");
-    
-    // Infinite loop until ctrl-c or end of stream signal
-    run(server);
-
-    // Tell user
-    std::cout << oat::whoMessage(server->get_name(), "Exiting.\n");
-    
-    // Exit
-    return 0;
+    // Exit failure
+    return -1;
 }

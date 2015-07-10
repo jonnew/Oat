@@ -30,21 +30,16 @@ public:
 
     // Use a configuration file to specify parameters
     void configure(void); // Default options
-    void configure(const std::string& config_file, const std::string& key);
+    void configure(const std::string& config_file, const std::string& config_key);
 
     void grabFrame(cv::Mat& frame);
-    //bool serveMat(void);
     void fireSoftwareTrigger(void);
 
 private:
-
-    // Camera name
-    std::string name;
-
-    // Size and offset of the image to aquire
-    cv::Size frame_size, frame_offset;
-
+    
+    // GigE Camera configuration
     unsigned int num_cameras, index;
+    cv::Size frame_size, frame_offset;
     float gain_dB, shutter_ms, exposure_EV;
     bool aquisition_started;
     bool use_trigger;
