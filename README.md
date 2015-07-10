@@ -708,27 +708,96 @@ cd lib
 ./updatelibs.sh
 ```
 
+####  Setting up a Point-grey PGE camera in Linux 
+`oat-frameserve` supports using Point Grey GIGE cameras to collect frames. I
+found the setup process to be straightforward and robust, but only after
+cobbling together the following notes.
+
+##### Camera IP Address Configuration 
+First, assign your camera a static IP address. The easiest way to do this is to
+use a Windows machine to run the Point Grey 'GigE Configurator'. If someone
+knows a way to do this without Windows, please tell me. An example IP
+Configuration might be:
+- Camera IP: 192.168.0.1
+- Subnet mask: 255.255.255.0
+- Default gateway: 192.168.0.64
+
+##### PG POE GigE Host Adapter Card Configuration 
+Using network manager or something similar, you must configure the IPv4
+configuration of the GigE host adapter card you are using to interface the
+camera with your computer.
+- First, set the ipv4 method to __manual__.
+- Next, you must configure the interface to (1) have the same network prefix
+  and (2) be on the same subnet as the camera you setup in the previous
+  section. 
+    - Assuming you used the camera IP configuration specified above, your host
+      adapter card should be assigned the following private IPv4 configuration:
+        - POE gigabit card IP: 192.168.0.100
+        - Subnet mask: 255.255.255.0
+        - DNS server IP: 192.168.0.1
+- Next, you must enable jumbo frames on the network interface. Assuming that
+  the camera is using `eth2`, then entering
+
+        sudo ifconfig eth2 mtu 9000
+
+  into the terminal will enable 9000 MB frames for the `eth2` adapter.
+- Finally, to prevent image tearing, you should increase the amount of memory
+  Linux uses for network receive buffers using the `sysctl` interface by typing
+ 
+        sudo sysctl -w net.core.rmem_max=1048576 net.core.rmem_default=1048576
+
+  into the terminal. _In order for these changes to persist after system
+  reboots, the following lines must be added to the bottom of the
+  `/etc/sysctl.conf` file_:
+
+        net.core.rmem_max=1048576 
+        net.core.rmem_default=1048576
+
+##### Multiple Cameras
+- If you have two or more cameras/host adapter cards,  they can be configured
+  as above but _must exist on a separate subnets_. For instance, we could
+  repeat the above configuration steps for a second camera/host adapter card
+  using the following settings:
+    - Camera Configuration:
+        - Camera IP: 192.168.__1__.1
+        - Subnet mask: 255.255.255.0
+        - Default gateway: 192.168.__1__.64
+    - Host adapter configuration:
+        - POE gigabit card IP: 192.168.__1__.100
+        - Subnet mask: 255.255.255.0
+        - DNS server IP: 192.168.__1__.1
+
 ### TODO
-- [ ] Networked communication with clients that use extracted positional information
-    - Strongly prefer to consume JSON over something ad hoc, opaque and untyped
+- [ ] Networked communication with clients that use extracted positional
+  information
+    - ~~Strongly prefer to consume JSON over something ad hoc, opaque and
+      untyped~~
+        - EDIT: Postion class is serialized to JSON object
     - Multiple clients
         - Broadcast over UDP
-        - Shared memory (no good for remote tracker)
         - TCP/IP with thread for each client 
 - [ ] Cmake improvements
     - ~~Global build script to make all of the programs in the project~~
     - ~~CMake managed versioning~~
-    - Option for building with/without point-grey support
-    - Output messages detailing required and recommended pacakges.
+    - ~~Option for building with/without point-grey support~~
+    - Author/project information injection into source files using either 
+      cmake or doxygen
     - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Dealing with dropped frames
-    - Right now, I poll the camera for frames. This is fine for a file, but not necessarily for a physical camera whose acquisitions is governed by an external, asynchronous clock
-    - Instead of polling, I need an event driven frame server. In the case of a dropped frame, the server __must__ increment the sample number, even if it does not serve the frame, to prevent offsets from occurring.
-- [ ] shmem type checking by clients, exit gracefully in the case of incorrect type
-   - e.g. a framefilter tries to use a position filter as a SOURCE. In this case, the framefilter needs to realize that the SOURCE type is wrong and exit.
-- [ ] Exception saftey for all components
+    - Right now, I poll the camera for frames. This is fine for a file, but not
+      necessarily for a physical camera whose acquisitions is governed by an
+      external, asynchronous clock
+    - Instead of polling, I need an event driven frame server. In the case of a
+      dropped frame, the server __must__ increment the sample number, even if
+      it does not serve the frame, to prevent offsets from occurring.
+- [ ] shmem type checking by clients, exit gracefully in the case of incorrect
+  type
+   - e.g. a framefilter tries to use a position filter as a SOURCE. In this
+     case, the framefilter needs to realize that the SOURCE type is wrong and
+     exit.
+- [ ] Exception safety for all components
     - frameserve
     - ~~framefilt~~
     - ~~posidet~~
@@ -739,52 +808,5 @@ cd lib
     - ~~view~~
     - ~~decorate~~
 - [ ] Use smart pointers to ensure proper resource management.
-    - ~~Start with `recorder`, which has huge amounts of heap allocated objects pointed to with raw
-      pointers~~
-- [ ] Use PMPL for library classes to hide implementation (private member properties/functions)
-
-####  Setting up a Point-grey PGE camera in Linux
-`oat frameserve` supports using Point Grey GIGE cameras to collect frames. I found
-the setup process to be straightforward and robust, but only after cobling together
-the following notes:
-
-##### Camera IP Address Configuration
-First, assign your camera a static IP address. The easiest way to do this is to use a Windows machine to run the the Point Grey 'GigE Configurator'. If someone knows a way to do this without Windows, please tell me. An example IP Configuration might be:
-- Camera IP: 192.168.0.1
-- Subnet mask: 255.255.255.0
-- Default gateway: 192.168.0.64
-
-##### PG POE GigE Host Adapter Card Configuration
-Using network manager or something similar, you must configure the IPv4 configuration of the GigE host adapter card you are using to interface the camear with your computer.
-- First, set the ipv4 method to __manual__.
-- Next, you must configure the interface to (1) have the same network prefix and (2) be on the same subnet as the camera you setup in the previous section. 
-    - Assuming you used the camera IP configuration specified above, your host adapter card should be assigned the following private IPv4 configuration:
-        - POE gigabit card IP: 192.168.0.100
-        - Subnet mask: 255.255.255.0
-        - DNS server IP: 192.168.0.1
-- Next, you must enable jumbo frames on the network interface. Assuming that the camera is using `eth2`, then entering
-
-        sudo ifconfig eth2 mtu 9000
-
-  into the terminal will enable 9000 MB frames for the `eth2` adapter.
-- Finally, to prevent image tearing, you should increase the amount of memory Linux uses for network receive buffers using the `sysctl` interface by typing
- 
-        sudo sysctl -w net.core.rmem_max=1048576 net.core.rmem_default=1048576
-
-  into the terminal. _In order for these changes to persist after system reboots, the following lines must be added to the bottom of the `/etc/sysctl.conf` file_:
-
-        net.core.rmem_max=1048576
-        net.core.rmem_default=1048576
-
-##### Multiple Cameras
-- If you have two or more cameras/host adapter cards,  they can be configured as above but _must exist on a separate subnets_. For instance, we could repeat the above configuration steps for a second camera/host adapter card using the following settings:
-    - Camera Configuration:
-        - Camera IP: 192.168.__1__.1
-        - Subnet mask: 255.255.255.0
-        - Default gateway: 192.168.__1__.64
-    - Host adapter configuration:
-        - POE gigabit card IP: 192.168.__1__.100
-        - Subnet mask: 255.255.255.0
-        - DNS server IP: 192.168.__1__.1
-
-
+    - ~~Start with `recorder`, which has huge amounts of heap allocated objects
+      pointed to with raw pointers~~
