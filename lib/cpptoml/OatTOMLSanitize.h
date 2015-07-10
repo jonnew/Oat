@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   Position.h 
+//* File:   OatTOMLSanitize.h 
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -17,35 +17,13 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef POSITION_H
-#define	POSITION_H
+// Aliases for TOML table and array types
 
-namespace oat {
 
-    enum coordinate_system_type {
-        PIXELS = 0, WORLD = 1
-    };
+// Single value type sanitization
+template <typename V>
+V getValue(const tomlTable& table, const std::string& value_key) 
 
-    struct Position {
-
-        Position() { }   
-        virtual ~Position() = 0;
-      
-        // Positions use one of two coordinate systems 
-        // PIXELS - units are referenced to the sensory array of the digital camera. 
-        //          origin in the upper left hand corner.
-        // WORLD  - Defined by the homography matrix.
-        int coord_system = PIXELS;
-        
-        // Position label (e.g. 'anterior')
-        //std::string label;
-    };
-    
-    // Required since this a base class w/ pure virtual destructor 
-    // (Meyers, Effective C++, 2nd Ed. pg. 63)
-    inline Position::~Position() {} 
-    
-} // namespace datatypes
-
-#endif	/* POSITION_H */
-
+// Single value that must be between two values
+template <typename V>
+V getBoundedValue(const tomlTable& table, const std::string& value_key, const V lower, const V upper)
