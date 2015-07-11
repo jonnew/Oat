@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   PGGigECam.cpp 
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -152,6 +155,8 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         }
 
         // Set the ROI
+        // TODO: Use the base class's included region_of_interest property instead of frame_offset
+        // and frame_size
         {
             oat::config::Table roi;
             if (oat::config::getTable(this_config, "roi", roi)) {

@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   FileReader.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify

@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   FileReader.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -20,6 +23,7 @@
 #include <opencv2/videoio.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "FileReader.h"
@@ -65,43 +69,46 @@ void FileReader::configure(const std::string& config_file, const std::string& co
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
 
-        auto this_config = *config.get_table(config_key);
+        auto this_config = config.get_table(config_key);
 
-        if (this_config.contains("frame_rate")) {
-            frame_rate_in_hz = (double) (*this_config.get_as<double>("frame_rate"));
-            calculateFramePeriod();
+        // Set the frame rate
+        oat::config::getValue(this_config, "frame-rate", frame_rate_in_hz, 0.0);
+        calculateFramePeriod();
+
+        // Set the ROI
+        {
+            oat::config::Table roi;
+            if (oat::config::getTable(this_config, "roi", roi)) {
+
+                int64_t val;
+                oat::config::getValue(roi, "x_offset", val, (int64_t)0, true);
+                region_of_interest.x = val;
+                oat::config::getValue(roi, "y_offset", val, (int64_t)0, true);
+                region_of_interest.y = val;
+                oat::config::getValue(roi, "width", val, (int64_t)0, true);
+                region_of_interest.width = val;
+                oat::config::getValue(roi, "height", val, (int64_t)0, true);
+                region_of_interest.height = val;
+                use_roi = true;
+            } else {
+                use_roi = false;
+            }
         }
 
-        if (this_config.contains("roi")) {
-
-            auto roi = *this_config.get_table("roi");
-
-            region_of_interest.x = (int) (*roi.get_as<int64_t>("x_offset"));
-            region_of_interest.y = (int) (*roi.get_as<int64_t>("y_offset"));
-            region_of_interest.width = (int) (*roi.get_as<int64_t>("width"));
-            region_of_interest.height = (int) (*roi.get_as<int64_t>("height"));
-
-            use_roi = true;
-
-        } else {
-
-            use_roi = false;
-        }
-
-        if (this_config.contains("calibration_file")) {
-
-            std::string calibration_file = (*this_config.get_as<std::string>("calibration_file"));
+        // TODO: Exception handling for missing entries
+        // Get calibration info
+        // TODO: use standard TOML format for these matracies instead 
+        // of the secondary YML config file
+        std::string calibration_file;
+        if (oat::config::getValue(this_config, "calibration_file", calibration_file)) {
 
             cv::FileStorage fs;
             fs.open(calibration_file, cv::FileStorage::READ);
 
             if (!fs.isOpened()) {
-                std::cerr << "Failed to open " << calibration_file << std::endl;
-                exit(EXIT_FAILURE);
+                throw (std::runtime_error("Failed to open calibration file " + calibration_file));
             }
 
-            // TODO: Exception handling for missing entries
-            // Get calibration info
             fs["calibration_valid"] >> undistort_image;
             fs["camera_matrix"] >> camera_matrix;
             fs["distortion_coefficients"] >> distortion_coefficients;
