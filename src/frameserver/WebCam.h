@@ -40,7 +40,8 @@ private:
     bool aquisition_started;
 
     // The webcam object
-    unsigned int index;
+    int64_t index;
+    static constexpr int64_t min_index {0};
     std::unique_ptr<cv::VideoCapture> cv_camera;
 
 };

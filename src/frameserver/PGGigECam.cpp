@@ -28,6 +28,7 @@
 #include "FlyCapture2.h"
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "stdafx.h"
@@ -36,6 +37,7 @@ using namespace FlyCapture2;
 
 PGGigECam::PGGigECam(std::string frame_sink_name) : FrameServer(frame_sink_name)
 , num_cameras(0)
+, max_index (0)
 , index(0)
 , frame_size(cv::Size(728, 728))
 , frame_offset(cv::Size(0, 0))
@@ -49,8 +51,11 @@ PGGigECam::PGGigECam(std::string frame_sink_name) : FrameServer(frame_sink_name)
 , trigger_mode(14)
 , trigger_source_pin(0)
 , frames_per_second(30)
-, use_camera_frame_buffer(false)
-, number_transmit_retries(0) { }
+, use_camera_frame_buffer(false) { 
+
+    // Find the number of cameras on the bus
+    findNumCameras();
+}
 
 /**
  * Set default camera configuration
@@ -85,133 +90,123 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
 
-        auto this_config = *config.get_table(config_key);
+        auto this_config = config.get_table(config_key);
 
-        // Set the camera index
-        if (this_config.contains("index")) {
-            if (!this_config.get("index")->is_value()) {
-                throw (std::runtime_error(oat::configValueError(
-                        "index", config_key, config_file, "must be a TOML integer.")));
+        // Camera index
+        {
+            int64_t val;
+            if (oat::config::getValue(this_config, "index", val, min_index, max_index)) {
+                index = val;
             }
-            index = (unsigned int) (*this_config.get_as<int64_t>("index"));
-            setCameraIndex(index);
         }
-        else
-            setCameraIndex(0);
-
+        
+        setCameraIndex(index);
         connectToCamera();
         turnCameraOn();
         setupStreamChannels();
 
         // Set the exposure
-        if (this_config.contains("exposure")) {
-            exposure_EV = (float) (*this_config.get_as<double>("exposure"));
-            setupExposure(false);
-        } else {
-            // Default to auto exposure
-            setupExposure(true);
+        {
+            double val;
+            if (oat::config::getValue(this_config, "exposure", val)) {
+                exposure_EV = val;
+                setupExposure(false);
+            } else {
+                setupExposure(true);
+            }
         }
 
         // Set the shutter time
-        if (this_config.contains("shutter") && !this_config.contains("exposure")) {
-            shutter_ms = (float) (*this_config.get_as<double>("shutter"));
-            setupShutter(false);
-        } else {
-            // Default to auto shutter
-            setupShutter(true);
+        {
+            double val;
+            if (!this_config->contains("exposure") && 
+                oat::config::getValue(this_config, "shutter", val, 0.0, 1000.0)) {
+                shutter_ms = val;
+                setupShutter(false);
+            } else {
+                setupShutter(true);
+            }
         }
 
         // Set the gain
-        if (this_config.contains("gain")&& !this_config.contains("exposure")) {
-            gain_dB = (float) (*this_config.get_as<double>("gain"));
-            setupGain(false);
-        } else {
-            // Default to auto gain
-            setupGain(true);
+        {
+            double val;
+            if (!this_config->contains("exposure") && 
+                oat::config::getValue(this_config, "gain", val)) {
+                gain_dB = val;
+                setupGain(false);
+            } else {
+                setupGain(true);
+            }
         }
-
+        
         // Set white balance
-        if (this_config.contains("white_bal")) {
-
-            auto wb = *this_config.get_table("white_bal");
-
-            white_bal_red = (int) (*wb.get_as<int64_t>("red"));
-            white_bal_blue = (int) (*wb.get_as<int64_t>("blue"));
-            setupWhiteBalance(true);
-        } else {
-
-            // Default: turn white balance off
-            setupWhiteBalance(false);
+        {
+            oat::config::Table wb;
+            if (oat::config::getTable(this_config, "white_bal", wb)) {
+                oat::config::getValue(wb, "red", white_bal_red, (int64_t)0, (int64_t)1000, true);
+                oat::config::getValue(wb, "blue", white_bal_blue , (int64_t)0, (int64_t)1000, true);
+            } else {
+                setupWhiteBalance(false);
+            }
         }
 
         // Set the ROI
-        if (this_config.contains("roi")) {
+        {
+            oat::config::Table roi;
+            if (oat::config::getTable(this_config, "roi", roi)) {
 
-            auto roi = *this_config.get_table("roi");
-
-            frame_offset.width = (int) (*roi.get_as<int64_t>("x_offset"));
-            frame_offset.height = (int) (*roi.get_as<int64_t>("y_offset"));
-            frame_size.width = (int) (*roi.get_as<int64_t>("width"));
-            frame_size.height = (int) (*roi.get_as<int64_t>("height"));
-            setupImageFormat();
-        } else {
-            setupDefaultImageFormat();
-        }
-
-        if (this_config.contains("trigger_on")) {
-
-            use_trigger = *this_config.get_as<bool>("trigger_on");
-
-            if (use_trigger) {
-
-                if (this_config.contains("trigger_polarity")) {
-                    trigger_polarity = *this_config.get_as<int64_t>("trigger_polarity");
-                } else {
-                    trigger_polarity = true;
-                }
-
-                if (this_config.contains("trigger_mode")) {
-                    trigger_mode = *this_config.get_as<int64_t>("trigger_mode");
-                } else {
-                    trigger_mode = 14;
-                }
-
-                if (trigger_mode == 7)
-                    use_software_trigger = true;
-                else
-                    use_software_trigger = false;
-
-                if (this_config.contains("trigger_source")) {
-                    trigger_source_pin = *this_config.get_as<int64_t>("trigger_source");
-                } else {
-                    trigger_source_pin = 0;
-                }
+                int64_t val;
+                oat::config::getValue(roi, "x_offset", val, (int64_t)0, true);
+                frame_offset.width = val;
+                oat::config::getValue(roi, "y_offset", val, (int64_t)0, true);
+                frame_offset.height = val;
+                oat::config::getValue(roi, "width", val, (int64_t)0, true);
+                frame_size.width = val;
+                oat::config::getValue(roi, "height", val, (int64_t)0, true);
+                frame_size.height = val;
+                setupImageFormat();
+            } else {
+                setupDefaultImageFormat();
             }
-        } else {
-            use_trigger = false;
         }
 
-        if (this_config.contains("fps")) {
-            frames_per_second = *this_config.get_as<double>("fps");
+        // Setup trigger
+        if (oat::config::getValue(this_config, "trigger_on", use_trigger)) {
+
+            oat::config::getValue(this_config, "trigger_rising", trigger_polarity);
+
+            if (!oat::config::getValue(this_config, "trigger_mode", trigger_mode))
+                trigger_mode = 14;
+
+            if (trigger_mode == 7)
+                use_software_trigger = true;
+            else
+                use_software_trigger = false;
+
+            if (!oat::config::getValue(this_config, "trigger_source", trigger_source_pin))
+                trigger_source_pin = 0;
         }
 
+        // Frame rate
+        oat::config::getValue(this_config, "fps", frames_per_second);
+      
         setupTrigger();
 
-        if (this_config.contains("calibration_file")) {
-            std::string calibration_file = (*this_config.get_as<std::string>("calibration_file"));
+        // TODO: Exception handling for missing entries
+        // Get calibration info
+        // TODO: use standard TOML format for these matracies instead 
+        // of the secondary YML config file
+        std::string calibration_file;
+        if (oat::config::getValue(this_config, "calibration_file", calibration_file)) {
 
             cv::FileStorage fs;
             fs.open(calibration_file, cv::FileStorage::READ);
 
             if (!fs.isOpened()) {
-                std::cerr << "Failed to open " << calibration_file << std::endl;
-                exit(EXIT_FAILURE);
+                throw (std::runtime_error("Failed to open calibration file " + calibration_file));
             }
 
-            // TODO: Exception handling for missing entries
-            // Get calibration info
-            // TODO: use standard TOML format for these matracies instead 
-            // of the secondary YML config file
             fs["calibration_valid"] >> undistort_image;
             fs["camera_matrix"] >> camera_matrix;
             fs["distortion_coefficients"] >> distortion_coefficients;
@@ -219,18 +214,18 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
             fs.release();
         }
 
-        if (this_config.contains("retry")) {
-
-            number_transmit_retries = *this_config.get_as<int64_t>("retry");
-
-            if (number_transmit_retries > 0) {
-                use_camera_frame_buffer = true;
-            } else {
-                use_camera_frame_buffer = false;
-            }
-        }
-
-        setupCameraFrameBuffer();
+//        if (this_config->contains("retry")) {
+//
+//            number_transmit_retries = *this_config->get_as<int64_t>("retry");
+//
+//            if (number_transmit_retries > 0) {
+//                use_camera_frame_buffer = true;
+//            } else {
+//                use_camera_frame_buffer = false;
+//            }
+//        }
+//
+//        setupCameraFrameBuffer();
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -240,18 +235,14 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
 
 int PGGigECam::setCameraIndex(unsigned int requested_idx) {
 
-    // Find the number of cameras on the bus
-    findNumCameras();
-
     // Print bus information and find the number of cameras on the bus
     printBusInfo();
 
     if (num_cameras > requested_idx) {
         index = requested_idx;
-
     } else {
         throw (std::runtime_error("Requested camera index " + 
-                std::to_string(requested_idx) + " is not available.\n"));
+                std::to_string(requested_idx) + " is out of range.\n"));
     }
 
     return 0;
@@ -766,6 +757,11 @@ int PGGigECam::findNumCameras(void) {
     BusManager busMgr;
 
     error = busMgr.GetNumOfCameras(&num_cameras);
+    if (num_cameras == 0) {
+        throw (std::runtime_error("No GigE cameras were detected.\n"));
+    }
+    
+    max_index = num_cameras - 1;
     if (error != PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }

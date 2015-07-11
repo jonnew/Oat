@@ -191,18 +191,18 @@ __TYPE = `gige`__
 - __`index`__=`+int` User specified camera index. Useful in multi-camera
   imaging configurations.
 - __`exposure`__=`float` Automatically adjust both shutter and gain to
-  achieve given exposure (dB).
-- __`shutter`__=`+int` Shutter time in milliseconds. Specifying `exposure`
+  achieve given exposure (EV).
+- __`shutter`__=`+float` Shutter time in milliseconds. Specifying `exposure`
   overrides this option.
 - __`gain`__=`float` Sensor gain value. Specifying `exposure` overrides this
-  option.
-- __`white_bal`__=`[+int, +int]` White-balance specified as `[red blue]`
-  intensity value (0-255).
+  option (dB).
+- __`white_bal`__=`{red=+int, blue=+int}` White-balance specified as red/blue
+  intensity values (0-1000).
 - __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of 
   interest to extract from the camera or video stream (pixels).
 - __`trigger_on`__=`bool` True to use camera trigger, false to use software
   polling.
-- __`triger_polarity`__=`bool` True to trigger on rising edge, false to
+- __`triger_rising`__=`bool` True to trigger on rising edge, false to
   trigger on falling edge.
 - __`trigger_mode`__=`+int` Point-grey trigger mode. Common values are:
     - 0 - Standard external trigger. Trigger edge causes sensor exposure, then
@@ -214,6 +214,8 @@ __TYPE = `gige`__
     - 14 - Overlapped exposure/readout external trigger. Sensor exposure occurs
       during sensory readout to internal memory. This is the fastest external
       trigger mode.
+- __`trigger_pin`__=`+int` Hardware pin number on Point-grey camera that
+  trigger is sent to.
 
 __TYPE = `file`__
 

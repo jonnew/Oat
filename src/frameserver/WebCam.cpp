@@ -19,6 +19,7 @@
 #include <string>
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/make_unique.h"
 
@@ -42,14 +43,10 @@ void WebCam::configure(const std::string& config_file, const std::string& config
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
         
-        auto this_config = *config.get_table(config_key);
+        auto this_config = config.get_table(config_key);
         
         // Set the camera index
-        if (this_config.contains("index"))
-            index = (unsigned int) (*this_config.get_as<int64_t>("index"));
-        else
-            index = 0;
-        
+        oat::config::getValue(this_config, "index", index, min_index);
         cv_camera = std::make_unique<cv::VideoCapture>(index);
         
     } else {

@@ -7,24 +7,23 @@
 # ```
 
 [gige]
-index = 0 								# Index of camera on the bus (there can be more than one)
-exposure = 0.0							# EV
-shutter = 3 							# ms (ignored if exposure on)
-gain = 0 								# dB (ignored if exposure on)
-#white_bal = {red = 500, blue = 800}	# Defaults to "off"
-roi = {x_offset = 300, y_offset = 0, width = 728, height = 728} # Region of interest, pixels
-trigger_on = false						# If false, free run
-trigger_polarity = 1					# Rising edge active
-trigger_mode = 14						# 14 = Overlapped Exposure/Readout Mode (see Camera manual)
-										# 7  = Software trigger
-trigger_source = 0						# GPIO pin that trigger will be sent to
-retry = 1 								# In case of corrupt data transmission, number of transmission
-  										# retries that should be attempted. Default is 0.
-calibration_file = "calibration.yml" 	# Camera matrix, distorition coefficients for lens correction
+index = 0				# Index of camera on the bus (there can be more than one)
+exposure = 0.0				# Automatically adjust shutter and gain to achieve given exposure (EV)
+shutter = 3.0 				# Shutter time (ms; ignored if exposure on)
+gain = 0.0 				# Sensor gain(dB; ignored if exposure on)
+white_bal = {red = 500, blue = 800}	# White balance (0-1000; if note specified, defaults to "off")
+roi = {x_offset = 300, y_offset = 0, width = 728, height = 728} # Region of interest (pixels)
+trigger_on = false			# If false, free run
+trigger_rising = true			# Rising edge active if true. Falling edge active if false.
+trigger_mode = 14			#   14 = Overlapped Exposure/Readout Mode (see Camera manual)
+					#   7  = Software trigger
+trigger_pin = 0                         # GPIO pin that trigger will be sent to
+
+calibration_file = "calibration.yml" 	# Camera matrix, distortion coefficients for lens correction
 
 [file]
 frame_rate = 50.0                       # Hz 
-roi = {x_offset = 125, y_offset = 30, width = 490, height = 420} # Region of interest, pixels
+roi = {x_offset = 125, y_offset = 30, width = 490, height = 420} # Region of interest (pixels)
 
 [wcam]
-index = 0 								# Index of camera on the bus (there can be more than one)
+index = 0 				# Index of camera on the bus (there can be more than one)

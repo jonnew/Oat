@@ -184,41 +184,41 @@ int main(int argc, char *argv[]) {
     
     // Create the specified TYPE of detector
     std::shared_ptr<FrameServer> server;
-    
-    try {
 
-        switch (type_hash[type]) {
-            case 'a':
-            {
-                server = std::make_shared<WebCam>(sink);
-                break;
-            }
-
-            case 'b':
-            {
-
-#ifndef OAT_USE_FLYCAP
-                std::cerr << oat::Error("Oat was not compiled with Point-Grey "
-                        "flycapture support, so TYPE=gige is not available.\n");
-                return -1;
-#else
-                server = std::make_shared<PGGigECam>(sink);
-#endif      
-                break;
-            }
-            case 'c':
-            {
-                server = std::make_shared<FileReader>(video_file, sink, frames_per_second);
-                break;
-            }
-            default:
-            {
-                printUsage(visible_options);
-                std::cout << "Error: invalid TYPE specified. Exiting.\n";
-                return -1;
-            }
+    switch (type_hash[type]) {
+        case 'a':
+        {
+            server = std::make_shared<WebCam>(sink);
+            break;
         }
 
+        case 'b':
+        {
+
+#ifndef OAT_USE_FLYCAP
+            std::cerr << oat::Error("Oat was not compiled with Point-Grey "
+                    "flycapture support, so TYPE=gige is not available.\n");
+            return -1;
+#else
+            server = std::make_shared<PGGigECam>(sink);
+#endif      
+            break;
+        }
+        case 'c':
+        {
+            server = std::make_shared<FileReader>(video_file, sink, frames_per_second);
+            break;
+        }
+        default:
+        {
+            printUsage(visible_options);
+            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            return -1;
+        }
+    }
+
+    // The business
+    try {
         if (config_used)
             server->configure(config_file, config_key);
         else

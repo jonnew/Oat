@@ -37,15 +37,21 @@ public:
 
 private:
     
+    unsigned int num_cameras;
+    
     // GigE Camera configuration
-    unsigned int num_cameras, index;
+    static constexpr int64_t min_index {0};
+    int64_t max_index;
+    unsigned int index;
+    
     cv::Size frame_size, frame_offset;
     float gain_dB, shutter_ms, exposure_EV;
     bool aquisition_started;
     bool use_trigger;
     bool use_software_trigger;
-    int trigger_polarity, trigger_mode, trigger_source_pin;
-    int white_bal_red, white_bal_blue;
+    bool trigger_polarity;
+    int64_t trigger_mode, trigger_source_pin;
+    int64_t white_bal_red, white_bal_blue;
     double frames_per_second;
     bool use_camera_frame_buffer;
     unsigned int number_transmit_retries;
@@ -104,4 +110,4 @@ private:
 
 };
 
-#endif //CAMERACONFIG_H
+#endif // CAMERACONFIG_H
