@@ -22,6 +22,7 @@
 
 #include <string>
 #include <typeinfo>
+#include <boost/core/demangle.hpp>
 
 #include "cpptoml.h"
 
@@ -31,41 +32,6 @@ namespace config {
 // Aliases for TOML table and array types
 using Value = std::shared_ptr<cpptoml::base>;
 using Table = std::shared_ptr<cpptoml::table>;
-
-#ifdef __GNUG__
-#include <cstdlib>
-#include <memory>
-#include <cxxabi.h>
-
-/**
- * Type ID Demangler
- * @param name Mangled type identifier
- * @return Demangled type string
- */
-inline std::string demangle(const char* name) {
-
-    int status = -4; // some arbitrary value to eliminate the compiler warning
-
-    std::unique_ptr<char, void(*)(void*)> res {
-        abi::__cxa_demangle(name, NULL, NULL, &status),
-        std::free
-    };
-
-    return (status==0) ? res.get() : name ;
-}
-
-#else
-
-/**
- * Type ID Demangler. Does nothing if not g++.
- * @param name Mangled type identifier
- * @return Demangled type string
- */
-inline std::string demangle(const char* name) {
-    return name;
-}
-
-#endif
 
 // Nested table with unspecified number of elements
 inline bool getTable(const Table table,
@@ -91,27 +57,6 @@ inline bool getTable(const Table table,
     }
 }
 
-// Implementation declarations
-std::string demangle(const char* name);
-bool getTable(const Table table, const std::string& key, Table& nested_table);
-
-/**
- * Demangle expression's type.
- */
-template <class T>
-std::string type(const T& t) {
-
-    return demangle(typeid(t).name());
-}
-
-/**
- * Demangle type's type.
- */
-template <class T>
-std::string type() {
-    return demangle(typeid(T).name());
-}
-
 // Single value type sanitization
 template <typename T>
 bool getValue(const Table table, 
@@ -131,7 +76,7 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error(key + " must be a TOML value of type "
-                    + type<T>() + ".\n"));
+                    + boost::core::demangle(typeid(T).name()) + ".\n"));
         }
 
     } else if (required) {
@@ -167,7 +112,7 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error(key + " must be a TOML value of type " 
-                    + type<T>() + ".\n"));
+                    + boost::core::demangle(typeid(T).name()) + ".\n"));
         }
     } else if (required) {
          throw (std::runtime_error("Required key " + key + " was not specified in.\n"));
@@ -202,7 +147,7 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error(key + " must be a TOML value of type "
-                    + type<T>() + ".\n"));
+                    + boost::core::demangle(typeid(T).name()) + ".\n"));
         }
     } else if (required) {
         throw (std::runtime_error("Required key '" + key + "' was not specified in.\n"));

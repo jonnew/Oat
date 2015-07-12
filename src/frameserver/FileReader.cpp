@@ -28,7 +28,9 @@
 
 #include "FileReader.h"
 
-FileReader::FileReader(std::string file_name_in, std::string image_sink_name, const double frames_per_second) :
+FileReader::FileReader(std::string file_name_in, 
+        std::string image_sink_name, 
+        const double frames_per_second) :
   FrameServer(image_sink_name)
 , file_name(file_name_in)
 , file_reader(file_name_in)
@@ -76,23 +78,22 @@ void FileReader::configure(const std::string& config_file, const std::string& co
         calculateFramePeriod();
 
         // Set the ROI
-        {
-            oat::config::Table roi;
-            if (oat::config::getTable(this_config, "roi", roi)) {
+        oat::config::Table roi;
+        if (oat::config::getTable(this_config, "roi", roi)) {
 
-                int64_t val;
-                oat::config::getValue(roi, "x_offset", val, (int64_t)0, true);
-                region_of_interest.x = val;
-                oat::config::getValue(roi, "y_offset", val, (int64_t)0, true);
-                region_of_interest.y = val;
-                oat::config::getValue(roi, "width", val, (int64_t)0, true);
-                region_of_interest.width = val;
-                oat::config::getValue(roi, "height", val, (int64_t)0, true);
-                region_of_interest.height = val;
-                use_roi = true;
-            } else {
-                use_roi = false;
-            }
+            int64_t val;
+            oat::config::getValue(roi, "x_offset", val, (int64_t)0, true);
+            region_of_interest.x = val;
+            oat::config::getValue(roi, "y_offset", val, (int64_t)0, true);
+            region_of_interest.y = val;
+            oat::config::getValue(roi, "width", val, (int64_t)0, true);
+            region_of_interest.width = val;
+            oat::config::getValue(roi, "height", val, (int64_t)0, true);
+            region_of_interest.height = val;
+            use_roi = true;
+
+        } else {
+            use_roi = false;
         }
 
         // TODO: Exception handling for missing entries
