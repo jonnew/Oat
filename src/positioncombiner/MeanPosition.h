@@ -53,7 +53,7 @@ private:
     bool generate_heading;
     
     // SOURCE position to be used ad an anchor when calculating headings
-    int heading_anchor_idx;
+    int64_t heading_anchor_idx;
 
 };
 

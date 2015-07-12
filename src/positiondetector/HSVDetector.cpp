@@ -23,6 +23,12 @@
 #include <limits>
 #include <math.h>
 #include <opencv2/opencv.hpp>
+#ifdef OAT_USE_CUDA
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudaarithm.hpp>
+#include <opencv2/cudafilters.hpp>
+#include <opencv2/cudaimgproc.hpp>
+#endif
 #include <cmath>
 
 #include "../../lib/datatypes/Position2D.h"
@@ -49,27 +55,47 @@ HSVDetector::HSVDetector(const std::string& image_source_name, const std::string
 
 oat::Position2D HSVDetector::detectPosition(cv::Mat& frame_in) {
 
-    // If we are able to get a an image
-    hsv_image = frame_in;
-    cv::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
+#ifdef OAT_USE_CUDA
+    hsv_image.upload(frame_in);
+    cv::cuda::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
+#else
+    cv::cvtColor(frame_in, hsv_image, cv::COLOR_BGR2HSV);
+#endif
+    
     applyThreshold();
     erodeDilate();
     siftBlobs();
     tune();
 
     return object_position;
-
 }
 
 void HSVDetector::applyThreshold() {
-
+    
+#ifdef OAT_USE_CUDA
+    hsv_lut->transform(hsv_image, lut_frame);
+    
+    std::vector<cv::cuda::GpuMat> channels;
+    cv::cuda::split(lut_frame, channels);
+    cv::cuda::bitwise_and(channels[0], channels[1], threshold_frame);
+    cv::cuda::bitwise_and(channels[2], threshold_frame, threshold_frame);
+#else  
     cv::inRange(hsv_image, cv::Scalar(h_min, s_min, v_min), cv::Scalar(h_max, s_max, v_max), threshold_image);
     hsv_image.setTo(0, threshold_image == 0);
-
+#endif
 }
 
 void HSVDetector::erodeDilate() {
+    
+#ifdef OAT_USE_CUDA
+    if (erode_on) {
+        erode_filter->apply(threshold_frame, threshold_frame);
+    }
 
+    if (dilate_on) {
+        dilate_filter->apply(threshold_frame, threshold_frame);
+    }
+#else     
     if (erode_on) {
         cv::erode(threshold_image, threshold_image, erode_element);
     }
@@ -77,12 +103,19 @@ void HSVDetector::erodeDilate() {
     if (dilate_on) {
         cv::dilate(threshold_image, threshold_image, dilate_element);
     }
-
+#endif
 }
 
 void HSVDetector::siftBlobs() {
 
-    cv::Mat thesh_cpy = threshold_image.clone();
+    cv::Mat thesh_cpy;
+    
+#ifdef OAT_USE_CUDA
+    threshold_frame.download(thesh_cpy);
+#else
+    thesh_cpy = threshold_image.clone();
+#endif
+    
     std::vector< std::vector < cv::Point > > contours;
     std::vector< cv::Vec4i > hierarchy;
 
@@ -292,6 +325,10 @@ void HSVDetector::tune() {
         }
         cv::imshow(tuning_image_title, hsv_image);
         cv::waitKey(1);
+        
+#ifdef OAT_USE_CUDA
+        createHSVLUT();
+#endif
     } else if (!tuning_on && tuning_windows_created) {
         
         // TODO: Window will not actually close!!
@@ -321,6 +358,65 @@ void HSVDetector::createTuningWindows() {
     tuning_windows_created = true;
 }
 
+#ifdef OAT_USE_CUDA
+
+void HSVDetector::createHSVLUT() {
+
+    std::vector<cv::Mat> lut_channels;
+    
+    lut_channels.push_back(cv::Mat(256, 1, CV_8UC1, cv::Scalar(0)));
+    if (h_min < h_max) {
+        auto h_inc = lut_channels[0].rowRange(h_min, h_max);
+        h_inc.setTo(cv::Scalar(1));
+    }
+
+    lut_channels.push_back(cv::Mat(256, 1, CV_8UC1, cv::Scalar(0)));
+    if (s_min < s_max) {
+        auto s_inc = lut_channels[1].rowRange(s_min, s_max);
+        s_inc.setTo(cv::Scalar(1));
+    }
+
+    lut_channels.push_back(cv::Mat(256, 1, CV_8UC1, cv::Scalar(0)));
+    if (v_min < v_max) {
+        auto v_inc = lut_channels[2].rowRange(v_min, v_max);
+        v_inc.setTo(cv::Scalar(1));
+    }
+    
+    cv::Mat lut;
+    cv::merge(lut_channels, lut);
+    hsv_lut = cv::cuda::createLookUpTable(lut);
+  
+}
+
+void HSVDetector::set_erode_size(int value) {
+
+    if (value > 0) {
+        erode_on = true;
+        erode_px = value;
+        cv::Mat erode_element = 
+            cv::getStructuringElement(cv::MORPH_RECT, cv::Size(erode_px, erode_px));
+        erode_filter = 
+            cv::cuda::createMorphologyFilter(cv::MORPH_ERODE, CV_8UC1, erode_element);
+    } else {
+        erode_on = false;
+    }
+}
+
+void HSVDetector::set_dilate_size(int value) {
+    if (value > 0) {
+        dilate_on = true;
+        dilate_px = value;
+        cv::Mat dilate_element = 
+            cv::getStructuringElement(cv::MORPH_RECT, cv::Size(dilate_px, dilate_px));
+        dilate_filter = 
+            cv::cuda::createMorphologyFilter(cv::MORPH_DILATE, CV_8UC1, dilate_element);
+    } else {
+        dilate_on = false;
+    }
+}
+
+#else
+
 void HSVDetector::set_erode_size(int value) {
 
     if (value > 0) {
@@ -341,6 +437,8 @@ void HSVDetector::set_dilate_size(int value) {
         dilate_on = false;
     }
 }
+#endif // OAT_USE_CUDA
+
 
 void HSVDetector::erodeSliderChangedCallback(int value, void* object) {
     HSVDetector* hsv_detector = (HSVDetector*) object;

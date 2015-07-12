@@ -52,8 +52,8 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-// Processing thread
-void run(TestPosition<oat::Position2D>* test_position) {
+// Processing loop
+void run(std::shared_ptr< TestPosition<oat::Position2D> > test_position) {
 
     while (!quit && !source_eof) {
         source_eof = test_position->process();
@@ -163,18 +163,19 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::Error("Exception of unknown type.\n");
         return -1;
     }
-
-    // Create the specified TYPE of detector
+    
     // TODO: Right now I need to use oat::Position2D as a template parameter
     // because otherwise this is no longer a valid base class for RandomAccel2D whose
     // base class is indeed TestPosition<oat::Position2D>
 
-    TestPosition<oat::Position2D>* test_position;
+    // Create component
+    std::shared_ptr<TestPosition<oat::Position2D>> test_position;
 
+    // Refine component type
     switch (type_hash[type]) {
         case 'a':
         {
-            test_position = new RandomAccel2D(sink, samples_per_second);
+            test_position =  std::make_shared<RandomAccel2D>(sink, samples_per_second);
             break;
         }
         default:
@@ -185,8 +186,7 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    // At this point, the new'ed component exists and must be deleted in the case
-    // any exception
+    // The business
     try {
 
         if (config_used)
@@ -204,9 +204,6 @@ int main(int argc, char *argv[]) {
         // Tell user
         std::cout << oat::whoMessage(test_position->get_name(), "Exiting.\n");
 
-        // Free heap memory allocated to test_position 
-        delete test_position;
-
         // Exit
         return 0;
 
@@ -223,9 +220,6 @@ int main(int argc, char *argv[]) {
     } catch (...) {
         std::cerr << oat::whoError(test_position->get_name(), "Unknown exception.\n");
     }
-
-    // Free heap memory allocated to filter
-    delete test_position;
 
     // Exit failure
     return -1;

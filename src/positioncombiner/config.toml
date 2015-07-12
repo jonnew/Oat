@@ -7,6 +7,6 @@
 # ```
 
 [mean]
-heading-anchor = 0; 						# Position used has anchor when calculating
+heading_anchor = 0; 						# Position used has anchor when calculating
 								# mean vector to other SOURCE positions
 								# If left unspecified, no heading will be generated        

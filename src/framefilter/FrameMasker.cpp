@@ -33,6 +33,9 @@ FrameMasker::FrameMasker(const std::string& source_name, const std::string& sink
 
 void FrameMasker::configure(const std::string& config_file, const std::string& config_key) {
 
+    // Available options
+    std::vector<std::string> options {"mask"};
+    
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
     cpptoml::table config;
@@ -41,7 +44,11 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
     // See if a configuration was provided
     if (config.contains(config_key)) {
 
+        // Get this components configuration table
         auto this_config = config.get_table(config_key);
+
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
 
         std::string mask_path;
         oat::config::getValue(this_config, "mask", mask_path, true);
@@ -61,15 +68,9 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
 cv::Mat FrameMasker::filter(cv::Mat& frame) {
 
     // Throws cv::Exception if there is a size mismatch between mask and frames
-    // received from SOURCE with custom message, or in any case where setTo()
-    // assertions fail.
+    // received from SOURCE or in any case where setTo() assertions fail.
     if (mask_set) {
-
-        if (roi_mask.size != frame.size) {
-            std::string error_message = "Mask frame and frames from SOURCE do not have equal sizes";
-            CV_Error(cv::Error::StsBadSize, error_message);
-        }
-
+        
         frame.setTo(0, roi_mask == 0);
     }
 

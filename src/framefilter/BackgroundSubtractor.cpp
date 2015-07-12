@@ -71,6 +71,9 @@ BackgroundSubtractor::BackgroundSubtractor(const std::string& source_name, const
 
 void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
 
+    // Available options
+    std::vector<std::string> options {"background"};
+    
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
     cpptoml::table config;
@@ -79,17 +82,22 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
 
+        // Get this components configuration table
         auto this_config = config.get_table(config_key);
+        
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
 
         std::string background_img_path;
-        oat::config::getValue(this_config, "background", background_img_path, true);
-        background_img = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
+        if (oat::config::getValue(this_config, "background", background_img_path)) {
+            background_img = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
 
-        if (background_img.data == NULL) {
-            throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
+            if (background_img.data == NULL) {
+                throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
+            }
+
+            background_set = true;
         }
-
-        background_set = true;
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -114,14 +122,6 @@ cv::Mat BackgroundSubtractor::filter(cv::Mat& frame) {
     
     // Only proceed with processing if we are getting a valid frame
     if (background_set) {
-
-        // TODO: I have a feeling this assertion is make during the CV subtraction operation a second time 
-        // and is not needed here
-        if (background_img.size != frame.size) {
-            std::string error_message = "Background frame and frames from SOURCE do not have equal sizes";
-            CV_Error(cv::Error::StsBadSize, error_message);
-
-        }
 
 #ifdef OAT_USE_CUDA
         current_frame.upload(frame);

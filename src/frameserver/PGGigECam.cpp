@@ -67,7 +67,7 @@ void PGGigECam::configure() {
 
     setCameraIndex(0);
     connectToCamera();
-    //turnCameraOn();
+    turnCameraOn();
     setupStreamChannels();
     setupExposure(true);
     setupShutter(true);
@@ -85,6 +85,20 @@ void PGGigECam::configure() {
  */
 void PGGigECam::configure(const std::string& config_file, const std::string& config_key) {
 
+    // Available options
+    std::vector<std::string> options {
+            "index", 
+            "exposure", 
+            "shutter", 
+            "gain", 
+            "white_bal", 
+            "roi", 
+            "trigger_on", 
+            "trigger_rising", 
+            "trigger_mode", 
+            "trigger_pin", 
+            "calibration_file" };
+    
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
     cpptoml::table config;
@@ -93,7 +107,11 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
 
+        // Get this components configuration table
         auto this_config = config.get_table(config_key);
+        
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
 
         // Camera index
         {

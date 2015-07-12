@@ -21,6 +21,7 @@
 #include <cmath>
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
 
 #include "MeanPosition.h"
 
@@ -31,6 +32,9 @@ MeanPosition::MeanPosition(std::vector<std::string> position_source_names, std::
 
 void MeanPosition::configure(const std::string& config_file, const std::string& config_key) {
     
+    // Available options
+    std::vector<std::string> options {"heading_anchor"};
+    
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
     cpptoml::table config;
@@ -39,29 +43,23 @@ void MeanPosition::configure(const std::string& config_file, const std::string& 
     // See if a configuration was provided
     if (config.contains(config_key)) {
 
-        auto this_config = *config.get_table(config_key);
+        // Get this components configuration table
+        auto this_config = config.get_table(config_key);
+        
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
 
-        if (this_config.contains("heading-anchor")) {
+        // Heading anchor
+        if (oat::config::getValue(this_config, "heading_anchor",
+                heading_anchor_idx, 
+                static_cast<int64_t>(0), 
+                static_cast<int64_t>(get_number_of_sources() - 1))) {
 
-            heading_anchor_idx = *this_config.get_as<int64_t>("heading-anchor");\
-
-            if (heading_anchor_idx >= get_number_of_sources() || heading_anchor_idx < 0) {
-                
-                throw (std::runtime_error(
-                        "Specified heading-anchor exceeds the number of "
-                        " position sources or is < 0.")
-                      );
-            }
-            
             generate_heading = true;
         }
-
+        
     } else {
-        throw (std::runtime_error(
-                "No configuration named " + config_key +
-                " was provided in the configuration file " + config_file)
-              );
-
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     } 
 }
 

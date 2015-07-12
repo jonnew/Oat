@@ -63,6 +63,9 @@ void FileReader::configure() {
 
 void FileReader::configure(const std::string& config_file, const std::string& config_key) {
 
+    // Available options
+    std::vector<std::string> options {"frame_rate", "roi"};
+
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
     cpptoml::table config;
@@ -70,11 +73,15 @@ void FileReader::configure(const std::string& config_file, const std::string& co
 
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
-
+        
+        // Get this components configuration table
         auto this_config = config.get_table(config_key);
-
+        
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
+        
         // Set the frame rate
-        oat::config::getValue(this_config, "frame-rate", frame_rate_in_hz, 0.0);
+        oat::config::getValue(this_config, "frame_rate", frame_rate_in_hz, 0.0);
         calculateFramePeriod();
 
         // Set the ROI

@@ -19,6 +19,7 @@
 
 #include "KalmanFilter2D.h"
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 /**
@@ -36,9 +37,9 @@ KalmanFilter2D::KalmanFilter2D(const std::string& position_source_name, const st
 , kf_predicted_state(4, 1, CV_64F)
 , kf_meas(2, 1, CV_64F)
 , found(false)
-, not_found_count_threshold(100) // TODO: good idea?
+, not_found_count_threshold(0)
 , sig_accel(5.0)
-, sig_measure_noise(5.0)
+, sig_measure_noise(0.0)
 , tuning_windows_created(false)
 , draw_scale(10.0)
 , tuning_image_title(position_sink_name + "_tuning") {
@@ -105,6 +106,14 @@ oat::Position2D KalmanFilter2D::filterPosition(oat::Position2D& raw_position) {
 
 void KalmanFilter2D::configure(const std::string& config_file, const std::string& config_key) {
 
+    // Available options
+    std::vector<std::string> options {
+                "dt", 
+                "timeout", 
+                "sigma_accel", 
+                "sigma_noise", 
+                "tune" };
+    
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
     cpptoml::table config;
@@ -112,65 +121,37 @@ void KalmanFilter2D::configure(const std::string& config_file, const std::string
 
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
+        
+        // Get this components configuration table
+        auto this_config = config.get_table(config_key);
+        
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
 
-        auto this_config = *config.get_table(config_key);
-
-        if (this_config.contains("dt")) {
-
-            dt = *this_config.get_as<double>("dt");
-
-            if (dt <= 0 || !this_config.get("dt")->is_value()) {
-                throw (std::runtime_error(oat::configValueError(
-                       "dt", config_key, config_file, "must be a double > 0."))
-                      );
-            }
+        // Time step
+        oat::config::getValue(this_config, "dt", dt, 0.0);
+        
+        // Occlusion timeout
+        double timeout_in_sec {0};
+        if (oat::config::getValue(this_config, "timeout", timeout_in_sec, 0.0)) {
+            not_found_count_threshold = static_cast<int>(timeout_in_sec / dt);
         }
+        
+        // Acceleration stdev
+        oat::config::getValue(this_config, "sigma_accel", sig_accel, 0.0);
+        
+        // Measurement noise stdev
+        oat::config::getValue(this_config, "sigma_noise", sig_measure_noise, 0.0);
 
-        if (this_config.contains("timeout")) {
-            
-            // Seconds to samples
-            double timeout_in_sec = *this_config.get_as<double>("timeout");
-            if (timeout_in_sec < 0 || !this_config.get("timeout")->is_value()) {
-                throw (std::runtime_error(oat::configValueError(
-                       "timeout", config_key, config_file, "must be a double > 0."))
-                      );
-            }
-
-            not_found_count_threshold = (int) (timeout_in_sec / dt);
+        // GUI for tuning
+        bool config_tune {false};
+        oat::config::getValue(this_config, "tune", config_tune);
+        
+        if (config_tune) {
+            tuning_on = true;
+            createTuningWindows();
         }
-
-        if (this_config.contains("sigma_accel")) {
-            sig_accel = *this_config.get_as<double>("sigma_accel");
-            if (sig_accel < 0 || !this_config.get("sigma_accel")->is_value()) {
-                throw (std::runtime_error(oat::configValueError(
-                       "sigma_accel", config_key, config_file, "must be a double >= 0."))
-                      );
-            }
-        }
-
-        if (this_config.contains("sigma_noise")) {
-            sig_measure_noise = *this_config.get_as<double>("sigma_noise");
-            if (sig_measure_noise < 0 || !this_config.get("sigma_noise")->is_value()) {
-                throw (std::runtime_error(oat::configValueError(
-                       "sigma_noise", config_key, config_file, "must be a double >= 0."))
-                      );
-            }
-        }
-
-        if (this_config.contains("tune")) {
-            
-            if (!this_config.get("tune")->is_value()) {
-                throw (std::runtime_error(oat::configValueError(
-                       "tune", config_key, config_file, "must be a boolean value."))
-                      );
-            }
-            
-            if (*this_config.get_as<bool>("tune")) {
-                tuning_on = true;
-                createTuningWindows();
-            }
-        }
-
+        
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }

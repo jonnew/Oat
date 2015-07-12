@@ -25,6 +25,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "RandomAccel2D.h"
@@ -45,6 +46,9 @@ RandomAccel2D::RandomAccel2D(std::string position_sink_name, const double sample
 
 void RandomAccel2D::configure(const std::string& config_file, const std::string& config_key) {
 
+    // Available options
+    std::vector<std::string> options {"dt"};
+    
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
     cpptoml::table config;
@@ -53,21 +57,18 @@ void RandomAccel2D::configure(const std::string& config_file, const std::string&
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
 
-        auto this_config = *config.get_table(config_key);
+        // Get this components configuration table
+        auto this_config = config.get_table(config_key);
+        
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
 
-        if (this_config.contains("dt")) {
-
-            double Ts = *this_config.get_as<double>("dt");
-
-            if (Ts < 0 || !this_config.get("dt")->is_value()) {
-                throw (std::runtime_error(oat::configValueError(
-                        "dt", config_key, config_file, "must be a double > 0."))
-                        );
-            }
-
-            generateSamplePeriod(Ts);
+        // Sample generation period
+        double dt;
+        if (oat::config::getValue(this_config, "dt", dt, 0)) {
+             generateSamplePeriod(1.0/dt);
         }
-
+     
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }

@@ -20,6 +20,7 @@
 #include "HomographyTransform2D.h"
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 HomographyTransform2D::HomographyTransform2D(const std::string& position_source_name, const std::string& position_sink_name) :
@@ -61,6 +62,9 @@ oat::Position2D HomographyTransform2D::filterPosition(oat::Position2D& raw_posit
 
 void HomographyTransform2D::configure(const std::string& config_file, const std::string& config_key) {
 
+    // Available options
+    std::vector<std::string> options {"homography"};
+    
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
     cpptoml::table config;
@@ -69,46 +73,31 @@ void HomographyTransform2D::configure(const std::string& config_file, const std:
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
 
-        auto this_config = *config.get_table(config_key);
+        // Get this components configuration table
+        auto this_config = config.get_table(config_key);
 
-        if (this_config.contains("homography")) {
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
+        
+        // Homography matrix
+        oat::config::Array homo_array;
+        if (oat::config::getArray(this_config, "homography", homo_array, 9, true)) {
 
-            // Check for array
-            if (!this_config.get("homography")->is_array()) {
-                throw (std::runtime_error(oat::configValueError(
-                       "homography", config_key, config_file, 
-                        "must be specified as 9 element TOML array of doubles."))
-                      );
-            }
+            auto homo_vec = homo_array->array_of<double>();
             
-            // Read array
-            cpptoml::array homo = (*this_config.get_array("homography"));
+            homography(0, 0) = homo_vec[0]->get();
+            homography(0, 1) = homo_vec[1]->get();
+            homography(0, 2) = homo_vec[2]->get();
+            homography(1, 0) = homo_vec[3]->get();
+            homography(1, 1) = homo_vec[4]->get();
+            homography(1, 2) = homo_vec[5]->get();
+            homography(2, 0) = homo_vec[6]->get();
+            homography(2, 1) = homo_vec[7]->get();
+            homography(2, 2) = homo_vec[8]->get();
 
-            // Assign array
-            auto homo_vec = homo.array_of<double>();
-            if (homo_vec.size() == 9) {
-
-                homography(0, 0) = homo_vec[0]->get();
-                homography(0, 1) = homo_vec[1]->get();
-                homography(0, 2) = homo_vec[2]->get();
-                homography(1, 0) = homo_vec[3]->get();
-                homography(1, 1) = homo_vec[4]->get();
-                homography(1, 2) = homo_vec[5]->get();
-                homography(2, 0) = homo_vec[6]->get();
-                homography(2, 1) = homo_vec[7]->get();
-                homography(2, 2) = homo_vec[8]->get();
-
-                homography_valid = true;
-            } else {
-                throw (std::runtime_error(oat::configValueError(
-                       "homography", config_key, config_file, 
-                        "must be specified as 9 element TOML array of doubles."))
-                      );
-            }
+            homography_valid = true;
         }
-
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
-
 }

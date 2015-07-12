@@ -25,6 +25,7 @@
 #include "RegionFilter2D.h"
 
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 RegionFilter2D::RegionFilter2D(const std::string& position_source_name, const std::string& position_sink_name) :
@@ -48,55 +49,37 @@ void RegionFilter2D::configure(const std::string& config_file, const std::string
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
 
-        // The config should be an array of tables, with one key-value
-        // pair per table, with the key specifying the region ID and the 
-        // Value an array specifying a vector of 2D points.
+        // The config should be an table of arrays.
+        // Each key specifies the region ID and its value specifies an array 
+        // defining a vector of 2D points.
 
-        auto region_tab = *config.get_table(config_key);
+        // Get this components configuration table
+        auto this_config = config.get_table(config_key);
+        
+        // Iterate through each region definition
+        auto it = this_config->begin();
+        while (it != this_config->end()) {
 
-        auto it = region_tab.begin();
-
-        while (it != region_tab.end()) {
-
-            auto region_val = *it;
-
-            if (!region_val.second->is_array()) {
-                 throw std::runtime_error(
-                         oat::configValueError(
-                         region_val.first,
-                         config_key, 
-                         config_file,
-                         "must be a nested, Nx2 TOML array of doubles to specify a region contour")
-                         );
-            }
+            //auto region_val = *it;
+            
+            oat::config::Array region_array;
+            oat::config::getArray(this_config, it->first, region_array);
             
             // Push the name of this region onto the id list
-            region_ids.push_back(region_val.first);
+            region_ids.push_back(it->first);
             region_contours.push_back(new std::vector<cv::Point>());
             
-            auto region = region_val.second->as_array()->nested_array();
+            auto region = region_array->nested_array();
             auto reg_it = region.begin();
 
             while (reg_it != region.end()) {
 
-                // This should be a 2-element vector
-                if (*reg_it == nullptr) {
-                    throw std::runtime_error(
-                         oat::configValueError(
-                         region_val.first,
-                         config_key, 
-                         config_file,
-                         "must be a nested, Nx2 TOML array of doubles to specify a region contour.")
-                         );
-                    
-                }
-                
                 auto point = (**reg_it).array_of<double>();
 
                 if (point.size() != 2) {
                     throw std::runtime_error(
                          oat::configValueError(
-                         region_val.first,
+                         it->first,
                          config_key, 
                          config_file,
                          "must be a nested, Nx2 TOML array of doubles to specify a region contour")
@@ -110,15 +93,16 @@ void RegionFilter2D::configure(const std::string& config_file, const std::string
             it++;
         }
 
-        //            //check the result
-        //            for (int i = 0; i < region_contours.size(); i++) {
-        //                std::cout << "Region ID: " + region_ids[i] + "\n";
-        //                for (int j = 0; j < region_contours[i]->size(); j++) {
-        //                    std::cout << "x: " + std::to_string(region_contours[i]->at(j).x) + " "
-        //                              << "y: " + std::to_string(region_contours[i]->at(j).y) + "\n";
-        //                }
-        //            }
-
+#ifndef NDEBUG
+        //check the result
+        for (int i = 0; i < region_contours.size(); i++) {
+            std::cout << oat::dbgMessage("Region ID: " + region_ids[i] + "\n");
+            for (int j = 0; j < region_contours[i]->size(); j++) {
+                std::cout << oat::dbgMessage("x: " + std::to_string(region_contours[i]->at(j).x) + " "
+                          + "y: " + std::to_string(region_contours[i]->at(j).y) + "\n");
+            }
+        }
+#endif
     } else {
          throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
