@@ -21,15 +21,52 @@
 
 #include <string>
 #include <iostream>
-#include <opencv2/core/mat.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/core.hpp>
+//#include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
+#ifdef OAT_USE_CUDA
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudaarithm.hpp>
+#endif
+
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 BackgroundSubtractor::BackgroundSubtractor(const std::string& source_name, const std::string& sink_name) :
   FrameFilter(source_name, sink_name) {
+    
+#ifdef OAT_USE_CUDA
+    
+    // Determine if a compatible device is available
+    int num_devices = cv::cuda::getCudaEnabledDeviceCount();
+    if (num_devices == 0)
+    {
+        throw(std::runtime_error("No GPU found or OpenCV was compiled without CUDA support."));
+    }
+        
+    // Set device 
+    int selected_gpu = 0; // TODO: should be user defined
+    
+    if (selected_gpu < 0 || selected_gpu > num_devices)
+    {
+        throw(std::runtime_error("Selected GPU index is invalid."));
+    } 
+    
+    cv::cuda::DeviceInfo gpu_info(selected_gpu);
+    if (!gpu_info.isCompatible())
+    {
+        throw(std::runtime_error("Selected GPU is not compatible with OpenCV."));
+    } 
+    
+    cv::cuda::setDevice(selected_gpu);
+    
+#ifndef NDEBUG
+    cv::cuda::printShortCudaDeviceInfo(selected_gpu);
+#endif
+
+#endif // OAT_USE_CUDA
 }
 
 void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
@@ -42,28 +79,18 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
 
-        auto this_config = *config.get_table(config_key);
+        auto this_config = config.get_table(config_key);
 
         std::string background_img_path;
-        if (this_config.contains("background")) {
+        oat::config::getValue(this_config, "background", background_img_path, true);
+        background_img = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
 
-            if (!this_config.get("background")->is_value()) {
-                throw (std::runtime_error(oat::configValueError(
-                       "background", config_key, config_file, "must be a TOML string "
-                        "specifying a path to a background image."))
-                      );
-            }
-
-            background_img_path = *this_config.get_as<std::string>("background");
-
-            background_img = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
-
-            if (background_img.data == NULL) {
-                throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
-            }
-
-            background_set = true;
+        if (background_img.data == NULL) {
+            throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
         }
+
+        background_set = true;
+
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
@@ -71,7 +98,13 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
 
 void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
 
+#ifdef OAT_USE_CUDA
+    background_frame.upload(frame);
+    result_frame.upload(frame);
+#else
     background_img = frame.clone();
+#endif
+
     background_set = true;
 }
 
@@ -82,18 +115,25 @@ cv::Mat BackgroundSubtractor::filter(cv::Mat& frame) {
     // Only proceed with processing if we are getting a valid frame
     if (background_set) {
 
+        // TODO: I have a feeling this assertion is make during the CV subtraction operation a second time 
+        // and is not needed here
         if (background_img.size != frame.size) {
             std::string error_message = "Background frame and frames from SOURCE do not have equal sizes";
             CV_Error(cv::Error::StsBadSize, error_message);
 
         }
 
+#ifdef OAT_USE_CUDA
+        current_frame.upload(frame);
+        cv::cuda::subtract(current_frame, background_frame, result_frame);
+        result_frame.download(frame);
+#else
         frame = frame - background_img;
-
+#endif
     } else {
 
-        // First image is always used as the default background image
-	// if one is not provided in a configuration file
+        // First image is always used as the default background image if one is
+        // not provided in a configuration file
         setBackgroundImage(frame);
     }
 

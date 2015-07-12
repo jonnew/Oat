@@ -28,11 +28,7 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 #include "FrameFilter.h"
-#ifndef OAT_USE_CUDA
 #include "BackgroundSubtractor.h"
-#else 
-#include "BackgroundSubtractorCUDA.h"
-#endif
 #include "FrameMasker.h"
 
 namespace po = boost::program_options;
@@ -204,11 +200,7 @@ int main(int argc, char *argv[]) {
     switch (type_hash[type]) {
         case 'a':
         {
-#ifndef OAT_USE_CUDA
             filter = std::make_shared<BackgroundSubtractor>(source, sink);
-#else
-            filter = std::make_shared<BackgroundSubtractorCUDA>(source, sink);
-#endif
             break;
         }
         case 'b':

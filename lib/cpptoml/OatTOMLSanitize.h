@@ -80,7 +80,7 @@ bool getValue(const Table table,
         }
 
     } else if (required) {
-         throw (std::runtime_error("Required key " + key + " was not specified in.\n"));
+         throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
     } else {
         return false;
     }
@@ -115,7 +115,7 @@ bool getValue(const Table table,
                     + boost::core::demangle(typeid(T).name()) + ".\n"));
         }
     } else if (required) {
-         throw (std::runtime_error("Required key " + key + " was not specified in.\n"));
+         throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
     } else {
         return false;
     }
@@ -150,7 +150,7 @@ bool getValue(const Table table,
                     + boost::core::demangle(typeid(T).name()) + ".\n"));
         }
     } else if (required) {
-        throw (std::runtime_error("Required key '" + key + "' was not specified in.\n"));
+         throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
     } else {
         return false;
     }
