@@ -45,7 +45,7 @@ public:
      * @param position_sink_name Position SINK to publish test positions
      * @param samples_per_second Sample rate in Hz
      */
-    TestPosition(std::string position_sink_name, const double samples_per_second = 30) : 
+    TestPosition(const std::string& position_sink_name, const double samples_per_second = 30) : 
       name("testpos[*->" + position_sink_name + "]")
     , position_sink(position_sink_name)
     , sample(0) { 
@@ -53,6 +53,8 @@ public:
         generateSamplePeriod(samples_per_second);
         tick = clock.now();
     }
+      
+    virtual ~TestPosition() { }
 
     /**
      * Generate test position. Publish test position to SINK.

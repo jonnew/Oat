@@ -30,7 +30,7 @@
 
 #include "RandomAccel2D.h"
 
-RandomAccel2D::RandomAccel2D(std::string position_sink_name, const double samples_per_second) :
+RandomAccel2D::RandomAccel2D(const std::string& position_sink_name, const double samples_per_second) :
   TestPosition<oat::Position2D>(position_sink_name, samples_per_second) 
 , accel_distribution(0.0, 5.0) {
 

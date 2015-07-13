@@ -38,7 +38,6 @@ using namespace boost::interprocess;
 Viewer::Viewer(const std::string& frame_source_name,
         std::string& save_path,
         const std::string& file_name) :
-
   name("viewer[" + frame_source_name + "]")
 , frame_source(frame_source_name)
 , min_update_period(33)

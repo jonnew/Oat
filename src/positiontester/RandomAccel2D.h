@@ -39,7 +39,7 @@ public:
      * @param position_sink_name Test position SINK name
      * @param samples_per_second Sample rate in Hz
      */
-    RandomAccel2D(std::string position_sink_name, const double samples_per_second=30);
+    RandomAccel2D(const std::string& position_sink_name, const double samples_per_second=30);
 
     void configure(const std::string& file_name, const std::string& key);
 
