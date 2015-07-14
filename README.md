@@ -399,8 +399,8 @@ __TYPE = `hsv`__
 - __`tune`__=`bool` Provide sliders for tuning hsv parameters
 - __`erode`__=`+int` Candidate object erosion kernel size (pixels)
 - __`dilate`__=`+int` Candidate object dilation kernel size (pixels)
-- __`min_area`__=`+int` Minimum object area (pixels<sup>2</sup>)
-- __`max_area`__=`+int` Maximum object area (pixels<sup>2</sup>)
+- __`min_area`__=`+double` Minimum object area (pixels<sup>2</sup>)
+- __`max_area`__=`+double` Maximum object area (pixels<sup>2</sup>)
 - __`h_thresholds`__=`{min=+int, max=+int}` Hue pass band
 - __`s_thresholds`__=`{min=+int, max=+int}` Saturation pass band 
 - __`v_thresholds`__=`{min=+int, max=+int}` Value pass band

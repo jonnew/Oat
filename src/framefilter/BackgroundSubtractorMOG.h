@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   BackgroundSubtractor.h
+//* File:   BackgroundSubtractorMOG.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -17,26 +17,29 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef BACKGROUNDSUBTRACTOR_H
-#define	BACKGROUNDSUBTRACTOR_H
+#ifndef BACKGROUNDSUBTRACTORMOG_H
+#define	BACKGROUNDSUBTRACTORMOG_H
+
+#ifdef OAT_USE_CUDA
+#include <opencv2/cudabgsegm.hpp>
+#else
+#include <opencv2/bgsegm.hpp>
+#endif
 
 #include "FrameFilter.h"
 
 /**
- * A basic background subtractor.
+ * A MOG background subtractor.
  */
-class BackgroundSubtractor : public FrameFilter {
+class BackgroundSubtractorMOG : public FrameFilter {
 public:
 
     /**
-     * A basic background subtractor.
-     * Subtract a frame image from a frame stream. The background frame is 
-     * the first frame obtained from the SOURCE frame stream, or can be 
-     * supplied via configuration file.
+     * A MOG background subtractor.
      * @param source_name raw frame source name
      * @param sink_name filtered frame sink name
      */
-    BackgroundSubtractor(const std::string& source_name, const std::string& sink_name);
+    BackgroundSubtractorMOG(const std::string& source_name, const std::string& sink_name);
 
     void configure(const std::string& config_file, const std::string& config_key);
     
@@ -49,16 +52,17 @@ private:
      */
     cv::Mat filter(cv::Mat& frame);
 
-    // Is the background frame set?
-    bool background_set = false;
-
-    // The background frame
-    cv::Mat background_frame;
+#ifdef OAT_USE_CUDA
+    cv::Ptr<cv::cuda::BackgroundSubtractorMOG> background_subtractor;
+    cv::cuda::GpuMat current_frame, background_mask;
+#else
+    cv::Ptr<cv::BackgroundSubtractorMOG> background_subtractor;
+    cv::Mat background_mask;
+#endif
     
-    // Set the background frame
-    void setBackgroundImage(const cv::Mat&);
+    double learning_coeff;
 
 };
 
-#endif	/* BACKGROUNDSUBTRACTOR_H */
+#endif	/* BACKGROUNDSUBTRACTORMOG_H */
 

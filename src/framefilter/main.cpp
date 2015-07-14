@@ -29,6 +29,7 @@
 
 #include "FrameFilter.h"
 #include "BackgroundSubtractor.h"
+#include "BackgroundSubtractorMOG.h"
 #include "FrameMasker.h"
 
 namespace po = boost::program_options;
@@ -43,7 +44,8 @@ void printUsage(po::options_description options){
               << "to SINK.\n\n"
               << "TYPE\n"
               << "  bsub: Background subtraction\n"
-              << "  mask: Binary mask\n\n"
+              << "  mask: Binary mask\n"
+              << "   mog: Mixture of Gaussians background segmentation.\n\n"
               << "SOURCE:\n"
               << "  User-supplied name of the memory segment to receive frames "
               << "from (e.g. raw).\n\n"
@@ -82,6 +84,7 @@ int main(int argc, char *argv[]) {
     std::unordered_map<std::string, char> type_hash;
     type_hash["bsub"] = 'a';
     type_hash["mask"] = 'b';
+    type_hash["mog"] = 'c';
     
     try {
 
@@ -210,6 +213,11 @@ int main(int argc, char *argv[]) {
                  std::cerr << oat::whoWarn(filter->get_name(), 
                          "No mask configuration was provided." 
                          " This filter does nothing but waste CPU cycles.\n");
+            break;
+        }
+        case 'c':
+        {
+            filter = std::make_shared<BackgroundSubtractorMOG>(source, sink);
             break;
         }
         default:

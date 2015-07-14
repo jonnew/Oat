@@ -23,5 +23,10 @@
 PositionUDPServer::PositionUDPServer(const std::string& position_source_name, unsigned short port) :
   PositionServer(position_source_name)
 , port(port)
-, socket(io_service, baiu::endpoint(baiu::v4(), port)) { }
+, socket(io_service, baiu::endpoint(baiu::v4(), port)) { 
+
+    baiu::resolver resolver(io_service);
+    baiu::resolver::query query(baiu::v4())
+
+}
 

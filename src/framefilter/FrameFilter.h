@@ -23,6 +23,11 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
+#ifdef OAT_USE_CUDA
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudaarithm.hpp>
+#endif
+
 #include "../../lib/shmem/SharedMemoryManager.h"
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/MatServer.h"
@@ -43,7 +48,37 @@ public:
     FrameFilter(const std::string& source_name, const std::string& sink_name) :
       name("framefilt[" + source_name + "->" + sink_name + "]")
     , frame_source(source_name)
-    , frame_sink(sink_name) { }
+    , frame_sink(sink_name) { 
+
+#ifdef OAT_USE_CUDA
+
+        // Determine if a compatible device is available
+        int num_devices = cv::cuda::getCudaEnabledDeviceCount();
+        if (num_devices == 0) {
+            throw (std::runtime_error("No GPU found or OpenCV was compiled without CUDA support."));
+        }
+
+        // Set device 
+        int selected_gpu = 0; // TODO: should be user defined
+
+        if (selected_gpu < 0 || selected_gpu > num_devices) {
+            throw (std::runtime_error("Selected GPU index is invalid."));
+        }
+
+        cv::cuda::DeviceInfo gpu_info(selected_gpu);
+        if (!gpu_info.isCompatible()) {
+            throw (std::runtime_error("Selected GPU is not compatible with OpenCV."));
+        }
+
+        cv::cuda::setDevice(selected_gpu);
+
+#ifndef NDEBUG
+        cv::cuda::printShortCudaDeviceInfo(selected_gpu);
+#endif
+        
+#endif // OAT_USE_CUDA
+
+    }
     
     virtual ~FrameFilter() { }
 

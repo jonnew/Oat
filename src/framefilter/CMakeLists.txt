@@ -4,6 +4,7 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 # Create a SOURCE variable containing all required .cpp filesj
 set (oat-framefilt_SOURCE 
      BackgroundSubtractor.cpp 
+     BackgroundSubtractorMOG.cpp 
      FrameMasker.cpp 
      main.cpp)
 

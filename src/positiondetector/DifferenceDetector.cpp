@@ -17,14 +17,14 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-
-#include "DifferenceDetector.h"
-
 #include <string>
 #include <opencv2/opencv.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/cpptoml/cpptoml.h"
+#include "../../lib/cpptoml/OatTOMLSanitize.h"
+
+#include "DifferenceDetector.h"
 
 DifferenceDetector2D::DifferenceDetector2D(const std::string& image_source_name, const std::string& position_sink_name) :
 PositionDetector(image_source_name, position_sink_name)
@@ -50,6 +50,9 @@ oat::Position2D DifferenceDetector2D::detectPosition(cv::Mat& frame) {
 
 void DifferenceDetector2D::configure(const std::string& config_file, const std::string& config_key) {
 
+    // Available options
+    std::vector<std::string> options {"blur", "diff_threshold", "tune"};
+    
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
     cpptoml::table config;
@@ -58,40 +61,34 @@ void DifferenceDetector2D::configure(const std::string& config_file, const std::
     // See if a camera configuration was provided
     if (config.contains(config_key)) {
 
-        auto this_config = *config.get_table(config_key);
+        // Get this components configuration table
+        auto this_config = config.get_table(config_key);
+        
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
 
-        if (this_config.contains("blur")) {
-            set_blur_size(*this_config.get_as<int64_t>("blur"));
-
-            if (blur_size.height < 0 || !this_config.get("blur")->is_value())
-                throw (std::runtime_error(
-                    "blur value in " + config_key + 
-                    " in" + config_file + " must be > 0.")
-                    );
+        // Blur
+        {
+            int64_t val;
+            oat::config::getValue(this_config, "blur", val, (int64_t)0);
+            set_blur_size(val);
         }
 
-        if (this_config.contains("diff_threshold")) {
-            difference_intensity_threshold = *this_config.get_as<int64_t>("diff_threshold");
-            
-            if (difference_intensity_threshold < 0)
-                throw (std::runtime_error(
-                    "diff_threshold value in " + config_key + 
-                    " in" + config_file + " must be > 0.")
-                    );
-        }
+        // Difference threshold
+        {
+            int64_t val;
+            oat::config::getValue(this_config, "diff_threshold", val, (int64_t)0);
+            difference_intensity_threshold = val;
+        }       
 
-        if (this_config.contains("tune")) {
-            if (*this_config.get_as<bool>("tune")) {
-                tuning_on = true;
-                createTuningWindows();
-            }
+        // Tuning
+        oat::config::getValue(this_config, "tune", tuning_on);
+        if (tuning_on) {
+            createTuningWindows();
         }
-
+        
     } else {
-        throw ( std::runtime_error(
-                "No configuration named " + config_key +
-                " was provided in the configuration file " + config_file)
-                );
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 
 }

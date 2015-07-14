@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   BackgroundSubtractor.cpp
+//* File:   BackgroundSubtractorMOG.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -23,24 +23,34 @@
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
-#ifdef NOIMP_OAT_USE_CUDA
-#include <opencv2/core/cuda.hpp>
+#include <opencv2/video/background_segm.hpp>
 #include <opencv2/cudaarithm.hpp>
+#ifdef OAT_USE_CUDA
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudabgsegm.hpp>
 #endif
 
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
-#include "BackgroundSubtractor.h"
+#include "BackgroundSubtractorMOG.h"
 
-BackgroundSubtractor::BackgroundSubtractor(const std::string& source_name, const std::string& sink_name) :
-  FrameFilter(source_name, sink_name) { }
+BackgroundSubtractorMOG::BackgroundSubtractorMOG(const std::string& source_name, const std::string& sink_name) :
+  FrameFilter(source_name, sink_name)
+, learning_coeff(0.0) { 
 
-void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
+#ifdef OAT_USE_CUDA
+    background_subtractor = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
+#else
+    background_subtractor = cv::createBackgroundSubtractorMOG(/*defaults OK?*/);
+#endif
+}
+
+void BackgroundSubtractorMOG::configure(const std::string& config_file, const std::string& config_key) { 
 
     // Available options
-    std::vector<std::string> options {"background"};
+    std::vector<std::string> options {"learning_coeff"};
     
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
@@ -56,54 +66,27 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
 
-        std::string background_img_path;
-        if (oat::config::getValue(this_config, "background", background_img_path)) {
-            background_frame = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
-
-            if (background_frame.data == NULL) {
-                throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
-            }
-
-            background_set = true;
-        }
+        // Learning coefficient
+        oat::config::getValue(this_config, "learning_coeff", learning_coeff, 0.0, 1.0);
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
+
 }
 
-void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
+cv::Mat BackgroundSubtractorMOG::filter(cv::Mat& frame) {
 
-//#ifdef NOIMP_OAT_USE_CUDA
-//    background_frame.upload(frame);
-//    result_frame.upload(frame);
-//#else
-    background_frame = frame.clone();
-//#endif
-
-    background_set = true;
-}
-
-cv::Mat BackgroundSubtractor::filter(cv::Mat& frame) {
-    // Throws cv::Exception if there is a size mismatch between frames,
-    // or in any case where cv assertions fail.
-    
-    // Only proceed with processing if we are getting a valid frame
-    if (background_set) {
-
-//#ifdef NOIMP_OAT_USE_CUDA
-//        current_frame.upload(frame);
-//        cv::cuda::subtract(current_frame, background_frame, result_frame);
-//        result_frame.download(frame);
-//#else
-        frame = frame - background_frame;
-//#endif
-    } else {
-
-        // First image is always used as the default background image if one is
-        // not provided in a configuration file
-        setBackgroundImage(frame);
-    }
-
-    return frame;
+#ifdef OAT_USE_CUDA
+        current_frame.upload(frame);
+        background_subtractor->apply(current_frame, background_mask, learning_coeff);
+        cv::cuda::bitwise_not(background_mask, background_mask);
+        current_frame.setTo(0, background_mask);
+        current_frame.download(frame);
+#else
+        background_subtractor->apply(frame, background_mask, learning_coeff);
+        frame.setTo(0, background_mask == 0);  
+#endif
+        
+        return frame;
 }
