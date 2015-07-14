@@ -1,7 +1,7 @@
 //******************************************************************************
 //* File:   PositionServer.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
@@ -21,6 +21,7 @@
 #define	POSITIONSERVER_H
 
 #include <string>
+#include <boost/asio.hpp>
 
 #include "../../lib/shmem/SMClient.h"
 
@@ -47,15 +48,16 @@ protected:
      */
     virtual void servePosition(T) = 0;
     
+    // IO service
+    boost::asio::io_service io_service;
+
 private:
     
     // Test position name
     std::string name;
-
+    
     // The test position SINK
     oat::SMClient<T> position_source;
 }
 
-
 #endif	/* POSITIONSERVER_H */
-

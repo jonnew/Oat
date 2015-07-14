@@ -5,9 +5,9 @@ case "$1" in
 	run)
 		#oat record -i final -f ./ -n result -F 30 &
 		#sleep 0.1
-		#oat record -p pix wld -f ./ -n result &
-		#sleep 0.1
-		#oat posifilt homo posi wld -c config.toml -k homo &
+		oat record -p pix wld -f ./ -n result &
+		sleep 0.1
+		oat posifilt homo posi wld -c config.toml -k homo &
 		sleep 0.1
 		oat view final &
 		sleep 0.1

@@ -27,7 +27,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/dynamic_bitset.hpp>
 
-
 #include "../../lib/utility/make_unique.h"
 
 #include "Recorder.h"
@@ -107,8 +106,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         
         position_fp = fopen(posi_fid.c_str(), "wb");
         if (!position_fp) {
-            std::cerr << "Error: unable to open, " + posi_fid + ". Exiting." << std::endl;
-            exit(EXIT_FAILURE);
+            throw (std::runtime_error("Error: unable to open, " + posi_fid + ".\n"));
         }
 
         file_stream.reset(new rapidjson::FileWriteStream(position_fp, 
@@ -300,18 +298,26 @@ void Recorder::writePositionsToFile() {
 
     if (position_fp) {
 
-        //json_writer.String("positions");
-        json_writer.StartArray();
+        json_writer.StartObject();
 
         int idx = 0;
         for (auto &pos : source_positions) {
 
-            json_writer.Uint(position_sources[idx]->get_current_time_stamp());
+            std::string sample_str = 
+                std::to_string(position_sources[idx]->get_current_time_stamp());
+            
+#ifdef RAPIDJSON_HAS_STDSTRING
+            json_writer.String(sample_str);
+#else
+            json_writer.String(sample_str.c_str(), 
+                    (rapidjson::SizeType)sample_str.length());
+#endif
+
             pos->Serialize(json_writer, position_labels[idx]);
             ++idx;
         }
 
-        json_writer.EndArray();
+        json_writer.EndObject();
     }
 }
 

@@ -98,7 +98,7 @@ private:
     FILE* position_fp;
     char position_write_buffer[65536];
     std::unique_ptr<rapidjson::FileWriteStream> file_stream;
-    rapidjson::Writer<rapidjson::FileWriteStream> json_writer;
+    rapidjson::PrettyWriter<rapidjson::FileWriteStream> json_writer {*file_stream};
 
     // Frame sources
     boost::dynamic_bitset<>::size_type number_of_frame_sources;

@@ -17,7 +17,7 @@ v_thresholds = {min = 065, max = 256}   # Value pass band
 [kalman]
 dt = 0.03333                            # Sample period in seonds that frames were actually
 										# recorded at
-not_found_timeout = 10.0                # Seconds 
+timeout = 10.0                # Seconds 
 sigma_accel = 500.0                     # Pixels/sec^2 
 sigma_noise = 10.0                      # Noise SD (pixesl)    
 tune = false                            # Use the GUI to tweak parameters
