@@ -69,6 +69,7 @@ void PGGigECam::configure() {
     connectToCamera();
     turnCameraOn();
     setupStreamChannels();
+    setupFrameRate(frames_per_second, true);
     setupExposure(true);
     setupShutter(true);
     setupGain(true);
@@ -87,6 +88,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
 
     // Available options
     std::vector<std::string> options {"index", 
+                                      "fps",
                                       "exposure", 
                                       "shutter", 
                                       "gain", 
@@ -126,6 +128,12 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         connectToCamera();
         turnCameraOn();
         setupStreamChannels();
+        
+        // Frame rate
+        if (oat::config::getValue(this_config, "fps", frames_per_second, 0.0))
+            setupFrameRate(frames_per_second, false);
+        else
+            setupFrameRate(frames_per_second, true);
 
         // Set the exposure
         {
@@ -226,9 +234,6 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
                 trigger_source_pin = 0;
         }
 
-        // Frame rate
-        oat::config::getValue(this_config, "fps", frames_per_second);
-      
         setupTrigger();
 
         // TODO: Exception handling for missing entries
@@ -345,6 +350,33 @@ int PGGigECam::setupStreamChannels() {
     }
 
     return 0;
+}
+
+int PGGigECam::setupFrameRate(double fps, bool is_auto) {
+    
+    std::cout << "Setting up frame rate...\n";
+    
+    Property prop;
+    prop.type = FRAME_RATE;
+    Error error = camera.GetProperty(&prop);
+    if (error != PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
+    
+    prop.autoManualMode = is_auto;
+    
+    if (!is_auto) {
+        prop.absValue = fps;
+        std::cout << "Frame rate set to " + std::to_string(prop.absValue) + " FPS.\n";
+    } else {
+        std::cout << "Frame rate set to auto.\n";
+    }
+    
+    error = camera.SetProperty(&prop);
+    if (error != PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
+    
 }
 
 int PGGigECam::setupShutter(bool is_auto) {

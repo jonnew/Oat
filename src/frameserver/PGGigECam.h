@@ -75,6 +75,7 @@ private:
 
     // Acquisition options 
     int setupStreamChannels(void);
+    int setupFrameRate(double fps, bool is_auto);
     int setupShutter(float shutter_ms);
     int setupShutter(bool is_auto);
     int setupGain(float gain_dB);
