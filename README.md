@@ -190,6 +190,8 @@ __TYPE = `gige`__
 
 - __`index`__=`+int` User specified camera index. Useful in multi-camera
   imaging configurations.
+- __`fps`__=`+float` Acquisition frame rate (Hz). Ignored if `trigger_on=true`.
+  If unspecified, then the maximum frame rate will be used.
 - __`exposure`__=`float` Automatically adjust both shutter and gain to
   achieve given exposure (EV).
 - __`shutter`__=`+float` Shutter time in milliseconds. Specifying `exposure`
