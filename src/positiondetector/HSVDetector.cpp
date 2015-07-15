@@ -181,8 +181,8 @@ void HSVDetector::configure(const std::string& config_file, const std::string& c
                                       "min_area", 
                                       "max_area", 
                                       "h_thresholds", 
-                                      "h_thresholds", 
-                                      "h_thresholds", 
+                                      "s_thresholds", 
+                                      "v_thresholds", 
                                       "tune" };
     
     // This will throw cpptoml::parse_exception if a file 
@@ -283,8 +283,16 @@ void HSVDetector::tune() {
 
 void HSVDetector::createTuningWindows() {
 
-    // Create window for sliders
+#ifdef OAT_USE_OPENGL
+    try {
+        cv::namedWindow(tuning_image_title, cv::WINDOW_OPENGL);
+    } catch (cv::Exception& ex) {
+        oat::whoWarn(tuning_image_title, "OpenCV not compiled with OpenGL support. Falling back to OpenCV's display driver.\n");
+        cv::namedWindow(name, cv::WINDOW_NORMAL);
+    }
+#else
     cv::namedWindow(tuning_image_title, cv::WINDOW_NORMAL);
+#endif
 
     // Create sliders and insert them into window
     cv::createTrackbar("H MIN", tuning_image_title, &h_min, 256);

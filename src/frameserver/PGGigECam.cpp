@@ -42,8 +42,8 @@ PGGigECam::PGGigECam(std::string frame_sink_name) : FrameServer(frame_sink_name)
 , num_cameras(0)
 , max_index (0)
 , index(0)
-, frame_size(cv::Size(728, 728))
-, frame_offset(cv::Size(0, 0))
+, x_bin(1)
+, y_bin(1)
 , gain_dB(0)
 , shutter_ms(0)
 , exposure_EV(0)
@@ -86,18 +86,19 @@ void PGGigECam::configure() {
 void PGGigECam::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {
-            "index", 
-            "exposure", 
-            "shutter", 
-            "gain", 
-            "white_bal", 
-            "roi", 
-            "trigger_on", 
-            "trigger_rising", 
-            "trigger_mode", 
-            "trigger_pin", 
-            "calibration_file" };
+    std::vector<std::string> options {"index", 
+                                      "exposure", 
+                                      "shutter", 
+                                      "gain", 
+                                      "white_bal", 
+                                      "roi", 
+                                      "x_bin",
+                                      "y_bin",
+                                      "trigger_on", 
+                                      "trigger_rising", 
+                                      "trigger_mode", 
+                                      "trigger_pin", 
+                                      "calibration_file" };
     
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
@@ -171,6 +172,20 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
                 setupWhiteBalance(false);
             }
         }
+        
+        // Pixel binning
+        {
+            int64_t val;
+            if (oat::config::getValue(this_config, "x_bin", val, (int64_t)0, (int64_t)8)) {
+                x_bin = val;
+            }
+            
+            if (oat::config::getValue(this_config, "y_bin", val, (int64_t)0, (int64_t)8)) {
+                y_bin = val;
+            }
+        }
+        
+        setupPixelBinning();
 
         // Set the ROI
         // TODO: Use the base class's included region_of_interest property instead of frame_offset
@@ -181,19 +196,19 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
 
                 int64_t val;
                 oat::config::getValue(roi, "x_offset", val, (int64_t)0, true);
-                frame_offset.width = val;
+                region_of_interest.x = val;
                 oat::config::getValue(roi, "y_offset", val, (int64_t)0, true);
-                frame_offset.height = val;
+                region_of_interest.y = val;
                 oat::config::getValue(roi, "width", val, (int64_t)0, true);
-                frame_size.width = val;
+                region_of_interest.width = val;
                 oat::config::getValue(roi, "height", val, (int64_t)0, true);
-                frame_size.height = val;
+                region_of_interest.height = val;
                 setupImageFormat();
             } else {
                 setupDefaultImageFormat();
             }
         }
-
+        
         // Setup trigger
         if (oat::config::getValue(this_config, "trigger_on", use_trigger)) {
 
@@ -497,16 +512,16 @@ int PGGigECam::setupDefaultImageFormat() {
         return -1;
     }
 
-    frame_offset.width = 0;
-    frame_offset.height = 0;
-    frame_size.width = image_settings_info.maxWidth;
-    frame_size.height = image_settings_info.maxHeight;
+    region_of_interest.x = 0;
+    region_of_interest.y = 0;
+    region_of_interest.width = image_settings_info.maxWidth;
+    region_of_interest.height = image_settings_info.maxHeight;
 
     GigEImageSettings imageSettings;
-    imageSettings.offsetX = frame_offset.width;
-    imageSettings.offsetY = frame_offset.height;
-    imageSettings.height = frame_size.height;
-    imageSettings.width = frame_size.width;
+    imageSettings.offsetX = region_of_interest.x;
+    imageSettings.offsetY = region_of_interest.y;
+    imageSettings.height = region_of_interest.height;
+    imageSettings.width = region_of_interest.width;
     imageSettings.pixelFormat = PIXEL_FORMAT_RAW12;
 
     std::cout << "Setting GigE image settings...\n";
@@ -533,34 +548,24 @@ int PGGigECam::setupImageFormat() {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    if (frame_offset.width > image_settings_info.maxWidth ||
-            frame_offset.height > image_settings_info.maxHeight) {
+    if (region_of_interest.x > image_settings_info.maxWidth ||
+            region_of_interest.y > image_settings_info.maxHeight) {
         throw (std::runtime_error("ROI pixel offsets are larger than the CCD array. Exiting.\n"));
     }
 
-    if ((frame_offset.width + frame_size.width) > image_settings_info.maxWidth) {
-
-        frame_size.width = image_settings_info.maxWidth - frame_offset.width;
-        std::cerr << "WARNING: Current X-axis ROI settings is off the CCD array\n";
-        std::cerr << "WARNING: Cropping the ROI to fit on the array: \n";
-        std::cout << "\tFrame width: " + frame_size.width << "\n";
-        std::cout << "\tFrame offset: " + frame_offset.width << "\n";
+    if ((region_of_interest.width + region_of_interest.x) > image_settings_info.maxWidth) {
+        throw (std::runtime_error("Current X-axis ROI settings are off the CCD array\n"));
     }
 
-    if ((frame_offset.height + frame_size.height) > image_settings_info.maxHeight) {
-
-        frame_size.height = image_settings_info.maxHeight - frame_offset.height;
-        std::cerr << "WARNING: Current Y-axis ROI settings is off the CCD array\n";
-        std::cerr << "WARNING: Cropping the ROI to fit on the array: \n";
-        std::cout << "\tFrame height: " + frame_size.height << "\n";
-        std::cout << "\tFrame offset: " + frame_offset.height << "\n";
+    if ((region_of_interest.height + region_of_interest.y) > image_settings_info.maxHeight) {
+        throw (std::runtime_error("Current Y-axis ROI settings are off the CCD array\n"));
     }
 
     GigEImageSettings imageSettings;
-    imageSettings.offsetX = frame_offset.width;
-    imageSettings.offsetY = frame_offset.height;
-    imageSettings.height = frame_size.height;
-    imageSettings.width = frame_size.width;
+    imageSettings.offsetX = region_of_interest.x;
+    imageSettings.offsetY = region_of_interest.y;
+    imageSettings.height = region_of_interest.height;
+    imageSettings.width = region_of_interest.width;
     imageSettings.pixelFormat = PIXEL_FORMAT_RAW12;
 
     std::cout << "Setting GigE image settings...\n";
@@ -570,6 +575,18 @@ int PGGigECam::setupImageFormat() {
         throw (std::runtime_error(error.GetDescription()));
     }
 
+    return 0;
+}
+
+int PGGigECam::setupPixelBinning() {  
+    
+    // On-board image binning
+    Error error;
+    error = camera.SetGigEImageBinningSettings(x_bin, y_bin);
+    if (error != PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
+    
     return 0;
 }
 
@@ -679,7 +696,7 @@ int PGGigECam::setupTrigger() {
     // Setup frame buffering
     FC2Config flyCapConfig;
     error = camera.GetConfiguration(&flyCapConfig);
-    flyCapConfig.grabMode = BUFFER_FRAMES;
+    flyCapConfig.grabMode = DROP_FRAMES; // TODO: buffering??
     flyCapConfig.highPerformanceRetrieveBuffer = true;
     flyCapConfig.numBuffers = 10;
 
@@ -689,12 +706,9 @@ int PGGigECam::setupTrigger() {
     }
 
     //TODO: Custom frame rate
-    //    // In the case where the trigger is not used, the config can specify a frame
-    //    // rate
-    //    VideoMode videoMode;
-    //    FrameRate frameRate;
-    //    camera.GetVideoModeAndFrameRate ( &videoMode, FRAMERATE_30);
-
+//    VideoMode videoMode;
+//    FrameRate frameRate;
+//    camera.GetVideoModeAndFrameRate ( &videoMode, &frameRate);
 
     // TODO: This hangs...
     //Poll to ensure camera is ready

@@ -90,12 +90,12 @@ protected:
      * @return detected object position.
      */
     virtual oat::Position2D detectPosition(cv::Mat& frame) = 0;
- 
-private:
     
     // Detector name
     const std::string name;
-    
+ 
+private:
+
     // Current frame
     cv::Mat current_frame;
 

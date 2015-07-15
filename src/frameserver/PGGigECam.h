@@ -44,7 +44,8 @@ private:
     int64_t max_index;
     unsigned int index;
     
-    cv::Size frame_size, frame_offset;
+    //cv::Size frame_size, frame_offset;
+    int x_bin, y_bin;
     float gain_dB, shutter_ms, exposure_EV;
     bool aquisition_started;
     bool use_trigger;
@@ -82,6 +83,7 @@ private:
     int setupExposure(bool is_auto);
     int setupWhiteBalance(int white_bal_red, int white_bal_blue);
     int setupWhiteBalance(bool is_on);
+    int setupPixelBinning(void);
     int setupImageFormat(void);
     int setupDefaultImageFormat(void);
     int setupCameraFrameBuffer(void);

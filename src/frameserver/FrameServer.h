@@ -85,8 +85,12 @@ public:
     void stop(void) { frame_sink.set_running(false); }
 
 protected:
-        // Cameras must be able to obtain a cv::Mat from some source (physical camera, file, etc)
+    
+    // Cameras must be able to obtain a cv::Mat from some source (physical camera, file, etc)
     virtual void grabFrame(cv::Mat& frame) = 0;
+    
+    // Server name
+    std::string name;
     
     // Cameras have a region of interest to crop images
     cv::Rect region_of_interest;
@@ -98,7 +102,7 @@ protected:
     cv::Mat distortion_coefficients; // TODO: change to Matx
    
 private:
-    std::string name;
+    
     
     // cv::Mat server for sending frames to shared memory
     oat::BufferedMatServer frame_sink;
