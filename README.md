@@ -16,44 +16,46 @@ circumstance that requires real-time object tracking.
   - [Frame server](#frame-server)
     - [Signature](#signature)
     - [Usage](#usage)
-    - [Configuration file options](#configuration-file-options)
+    - [Configuration File Options](#configuration-file-options)
     - [Examples](#examples)
-  - [Frame filter](#frame-filter)
+  - [Frame Filter](#frame-filter)
     - [Signature](#signature-1)
     - [Usage](#usage-1)
-    - [Configuration file options](#configuration-file-options-1)
+    - [Configuration File Options](#configuration-file-options-1)
     - [Examples](#examples-1)
-  - [Viewer](#viewer)
+  - [Frame Viewer](#frame-viewer)
     - [Signature](#signature-2)
     - [Usage](#usage-2)
     - [Example](#example)
-  - [Position detector](#position-detector)
+  - [Position Detector](#position-detector)
     - [Signature](#signature-3)
     - [Usage](#usage-3)
-    - [Configuration file options](#configuration-file-options-2)
+    - [Configuration File Options](#configuration-file-options-2)
     - [Example](#example-1)
-  - [Position filter](#position-filter)
+  - [Position Filter](#position-filter)
     - [Signature](#signature-4)
     - [Usage](#usage-4)
-    - [Configuration file options](#configuration-file-options-3)
+    - [Configuration File Options](#configuration-file-options-3)
     - [Example](#example-2)
   - [Position combiner](#position-combiner)
     - [Signature](#signature-5)
-  - [Frame decorator](#frame-decorator)
+  - [Frame Decorator](#frame-decorator)
     - [Signature](#signature-6)
     - [Usage](#usage-5)
-    - [Configuration file options](#configuration-file-options-4)
   - [Recorder](#recorder)
     - [Signature](#signature-7)
     - [Usage](#usage-6)
     - [Example](#example-3)
 - [Installation](#installation)
-  - [Flycapture SDK (If point-grey camera is used)](#flycapture-sdk-if-point-grey-camera-is-used)
+  - [Flycapture SDK (if Point-Grey camera is used)](#flycapture-sdk-if-point-grey-camera-is-used)
   - [[Boost](http://www.boost.org/)](#boosthttpwwwboostorg)
   - [[OpenCV](http://opencv.org/)](#opencvhttpopencvorg)
   - [[RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)](#rapidjsonhttpsgithubcommiloyiprapidjson-and-cpptomlhttpsgithubcomskystrifecpptoml)
-- [TODO](#todo)
   - [Setting up a Point-grey PGE camera in Linux](#setting-up-a-point-grey-pge-camera-in-linux)
+    - [Camera IP Address Configuration](#camera-ip-address-configuration)
+    - [PG POE GigE Host Adapter Card Configuration](#pg-poe-gige-host-adapter-card-configuration)
+    - [Multiple Cameras](#multiple-cameras)
+- [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -96,9 +98,9 @@ oat record -i dec -p pos -f ./
 
 This script has the following graphical representation:
 ```
-frameserve ──> framefilt ──> posidet ──> decorate ───> view
-           ╲                           ╱         ╲
-             ─────────────────────────             ──> record   	
+frameserve --> framefilt --> posidet --> decorate ---> view
+           \                           /         \
+             -------------------------            ---> record   	
 ```
 
 Generally, an Oat component is called in the following pattern:
@@ -135,7 +137,7 @@ parameter_3 = [1.0, 2.0, 3.0]   # Array of doubles
 or more concretely,
 
 ```toml
-# Example configuration file for frameserve ──> framefilt
+# Example configuration file for frameserve --> framefilt
 [frameserve-par]
 frame_rate = 30                 # FPS
 roi = [10, 10, 100, 100]        # Region of interest
@@ -155,11 +157,9 @@ component.
 (e.g. webcam or GIGE camera) or from file.
 
 ##### Signature
-```
-┌────────────┐          
-│ frameserve │ ──> frame
-└────────────┘          
-```
+<pre>
+<b>oat-frameview</b> --> frame
+</pre>
 
 ##### Usage
 ```
@@ -252,11 +252,9 @@ background subtraction or application of a mask to isolate a region of
 interest.
 
 ##### Signature
-```
-          ┌───────────┐          
-frame ──> │ framefilt │ ──> frame
-          └───────────┘          
-```
+<pre>
+frame --> <b>oat-framefilt</b> --> frame
+</pre>
 
 ##### Usage
 ```
@@ -310,18 +308,16 @@ oat framefilt bsub raw sub
 oat framefilt mask raw roi -c config.toml -k mask-config
 ```
 
-#### Viewer
+#### Frame Viewer
 `oat-view` - Receive frames from named shared memory and display them on a 
 monitor. Additionally, allow the user to take snapshots of the currently
 displayed frame by pressing <kbd>s</kbd> while the display window is
 in focus.
 
 ##### Signature
-```
-          ┌──────┐
-frame ──> │ view │
-          └──────┘
-```
+<pre>
+frame --> <b>oat-view</b>
+</pre>
 
 ##### Usage
 ```
@@ -361,11 +357,9 @@ position detection within a frame stream using one of several methods. Publish
 detected positions to a second segment of shared memory.
 
 ##### Signature
-```
-          ┌─────────┐
-frame ──> │ posidet │ ──> position
-          └─────────┘
-```
+<pre>
+frame --> <b>oat-posidet</b> --> position
+</pre>
 
 ##### Usage
 ```
@@ -433,11 +427,9 @@ Kalman filter or annotate categorical position information based on user supplie
 region contours.
 
 ##### Signature
-```
-             ┌──────────┐
-position ──> │ posifilt │ ──> position
-             └──────────┘
-```
+<pre>
+position --> <b>oat-posifilt</b> --> position
+</pre>
 
 ##### Usage
 ```
@@ -522,29 +514,25 @@ oat posifilt kalman pos kfilt -c config.toml -k kalman_config
 `oat-posifilt` - Combine positions according to a specified operation.
 
 ##### Signature
-```
-               ┌────────┐
-position 0 ──> │        │
-position 1 ──> │        │
-  :            │posicom │ ──> position
-position N ──> │        │
-               └────────┘
-```
+<pre>
+position 0 --> |
+position 1 --> |
+  :            | <b>oat-posicom</b> --> position
+position N --> |
+</pre>
 
 #### Frame Decorator
 `oat-decorate` - Annotate frames with sample times, dates, and/or positional 
 information.
 
 ##### Signature
-```
-               ┌─────────┐
-     frame ──> │         │
-position 0 ──> │         │
-position 1 ──> │decorate │ ──> frame
-  :            │         │
-position N ──> │         │
-               └─────────┘
-```
+<pre>
+     frame --> |
+position 0 --> |
+position 1 --> | <b>oat-decorate</b> --> frame
+  :            |
+position N --> |
+</pre>
 
 ##### Usage
 TODO
@@ -553,8 +541,9 @@ TODO
 `oat-record` - Save frame and position streams to file. 
 
 * `frame` streams are compressed and saved as individual video files (
-  [H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI file).
-* `position` streams are combined into a single [JSON](http://json.org/) file. 
+  [H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI
+  file).
+* `position` streams are combined into a single [JSON](http://json.org/) file.
   Position files have the following structure:
 
 ```javascript
@@ -573,22 +562,23 @@ where each position object is defined as:
 {TODO}
 ```
 
-All streams are saved with a single recorder have the same base file name and save location (see usage). Of course, multiple recorders can be used in parallel to (1) parallelize the computational load of video compression, which tends to be quite intense and (2) save to multiple locations simultaneously.
+All streams are saved with a single recorder have the same base file name and
+save location (see usage). Of course, multiple recorders can be used in
+parallel to (1) parallelize the computational load of video compression, which
+tends to be quite intense and (2) save to multiple locations simultaneously.
 
 ##### Signature
-```
-               ┌────────┐
-position 0 ──> │        │
-position 1 ──> │        │
-  :            │        │
-position N ──> │        │
-               │ record │
-   frame 0 ──> │        │
-   frame 1 ──> │        │
-     :         │        │
-   frame N ──> │        │
-               └────────┘
-```
+<pre>
+position 0 --> |
+position 1 --> |
+  :            |
+position N --> |
+               | <b>oat-record</b>
+   frame 0 --> |
+   frame 1 --> |
+     :         |
+   frame N --> |
+</pre>
 
 ##### Usage
 ```
