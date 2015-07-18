@@ -59,7 +59,8 @@ circumstance that requires real-time object tracking.
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-### Manual
+\newpage
+## Manual
 Oat components are a set of programs that communicate through shared memory to
 capture, process, perform object detection within, and record video streams.
 Oat components act on two basic data types: `frames` and `positions`. 
@@ -151,17 +152,15 @@ used. Below, the type signature, usage information, available configuration
 parameters, examples, and configuration options are provided for each Oat
 component.
 
-
-#### Frame server
+\newpage
+### Frame server
 `oat-frameserve` - Serves video streams to shared memory from physical devices
 (e.g. webcam or GIGE camera) or from file.
 
-##### Signature
-<pre>
-<b>oat-frameview</b> --> frame
-</pre>
+#### Signature
+    oat-frameview --> frame
 
-##### Usage
+#### Usage
 ```
 Usage: frameserve [INFO]
    or: frameserve TYPE SINK [CONFIGURATION]
@@ -185,7 +184,7 @@ CONFIGURATION:
                             server TYPE.
 ```
 
-##### Configuration File Options
+#### Configuration File Options
 __TYPE = `gige`__
 
 - __`index`__=`+int` User specified camera index. Useful in multi-camera
@@ -230,7 +229,7 @@ __TYPE = `wcam`__
   imaging configurations.
 
 
-##### Examples
+#### Examples
 ```bash
 # Serve to the 'wraw' stream from a webcam 
 oat frameserve wcam wraw 
@@ -244,19 +243,18 @@ oat frameserve gige graw -c config.toml -k gige_config
 oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
 ```
 
-#### Frame Filter
+\newpage
+### Frame Filter
 `oat-framefilt` - Receive frames from named shared memory, filter, and publish
 to a second memory segment. Generally, used to pre-process frames prior to
 object position detection. For instance, `framefilt` could be used to perform
 background subtraction or application of a mask to isolate a region of
 interest.
 
-##### Signature
-<pre>
-frame --> <b>oat-framefilt</b> --> frame
-</pre>
+#### Signature
+    frame --> oat-framefilt --> frame
 
-##### Usage
+#### Usage
 ```
 Usage: framefilt [INFO]
    or: framefilt TYPE SOURCE SINK [CONFIGURATION]
@@ -281,7 +279,7 @@ CONFIGURATION:
   -m [ --invert-mask ]      If using TYPE=mask, invert the mask before applying
 ```
 
-##### Configuration File Options
+#### Configuration File Options
 __TYPE = `bsub`__
 
 - __`background`__=`string` Path to a background image to be subtracted from the
@@ -295,7 +293,7 @@ __TYPE = `mask`__
   the mask image will be unaffected. Others will be set to zero. This image
   must have the same dimensions as frames from SOURCE.
 
-##### Examples
+#### Examples
 ```bash
 # Receive frames from 'raw' stream
 # Perform background subtraction using the first frame as the background
@@ -308,18 +306,17 @@ oat framefilt bsub raw sub
 oat framefilt mask raw roi -c config.toml -k mask-config
 ```
 
-#### Frame Viewer
+\newpage
+### Frame Viewer
 `oat-view` - Receive frames from named shared memory and display them on a 
 monitor. Additionally, allow the user to take snapshots of the currently
 displayed frame by pressing <kbd>s</kbd> while the display window is
 in focus.
 
-##### Signature
-<pre>
-frame --> <b>oat-view</b>
-</pre>
+#### Signature
+    frame --> oat-view
 
-##### Usage
+#### Usage
 ```
 Usage: view [INFO]
    or: view SOURCE [CONFIGURATION]
@@ -341,7 +338,7 @@ CONFIGURATION:
   -f [ --folder ] arg    The folder in which snapshots will be saved.
 ```
 
-##### Example
+#### Example
 ```bash
 # View frame stream named raw
 oat view raw 
@@ -351,17 +348,16 @@ oat view raw
 oat view raw -f ~/Desktop -n snapshot
 ```
 
-#### Position Detector
+\newpage
+### Position Detector
 `oat-posidet` - Receive frames from named shared memory and perform object
 position detection within a frame stream using one of several methods. Publish
 detected positions to a second segment of shared memory.
 
-##### Signature
-<pre>
-frame --> <b>oat-posidet</b> --> position
-</pre>
+#### Signature
+    frame --> oat-posidet --> position
 
-##### Usage
+#### Usage
 ```
 Usage: posidet [INFO]
    or: posidet TYPE SOURCE SINK [CONFIGURATION]
@@ -389,7 +385,7 @@ CONFIGURATION:
   -k [ --config-key ] arg   Configuration key.
 ```
 
-##### Configuration File Options
+#### Configuration File Options
 __TYPE = `hsv`__
 
 - __`tune`__=`bool` Provide sliders for tuning hsv parameters
@@ -407,7 +403,7 @@ __TYPE = `diff`__
 - __`blur`__=`+int` Blurring kernel size (normalized box filter; pixels)
 - __`diff_threshold`__=`+int` Intensity difference threshold 
 
-##### Example
+#### Example
 ```bash
 # Use color-based object detection on the 'raw' frame stream 
 # publish the result to the 'cpos' position stream
@@ -419,19 +415,18 @@ oat posidet hsv raw cpos -c config.toml -k hsv_config
 oat posidet diff raw mpos  
 ```
 
-#### Position Filter
+\newpage
+### Position Filter
 `oat-posifilt` - Receive positions from named shared memory, filter, and
 publish to a second memory segment. Can be used to, for example, remove
 discontinuities due to noise or discontinuities in position detection with a
 Kalman filter or annotate categorical position information based on user supplied
 region contours.
 
-##### Signature
-<pre>
-position --> <b>oat-posifilt</b> --> position
-</pre>
+#### Signature
+    position --> oat-posifilt --> position
 
-##### Usage
+#### Usage
 ```
 Usage: posifilt [INFO]
    or: posifilt TYPE SOURCE SINK [CONFIGURATION]
@@ -457,7 +452,7 @@ CONFIGURATION:
   -k [ --config-key ] arg   Configuration key.
 ```
 
-##### Configuration File Options
+#### Configuration File Options
 __TYPE = `kalman`__
 
 - __`dt`__=`+float` Sample period (seconds).
@@ -502,7 +497,7 @@ R0 = [[654.00, 380.00],
       [655.33, 319.33]]
 ```
   
-##### Example
+#### Example
 ```bash
 # Perform Kalman filtering on object position from the 'pos' position stream 
 # publish the result to the 'kpos' position stream
@@ -510,34 +505,41 @@ R0 = [[654.00, 380.00],
 oat posifilt kalman pos kfilt -c config.toml -k kalman_config
 ```
 
-#### Position combiner
+\newpage
+### Position combiner
 `oat-posifilt` - Combine positions according to a specified operation.
 
-##### Signature
-<pre>
-position 0 --> |
-position 1 --> |
-  :            | <b>oat-posicom</b> --> position
-position N --> |
-</pre>
+#### Signature
+    position 0 --> |
+    position 1 --> |
+      :            | oat-posicom --> position
+    position N --> |
 
-#### Frame Decorator
+#### Usage
+TODO
+
+#### Example
+TODO
+
+### Frame Decorator
 `oat-decorate` - Annotate frames with sample times, dates, and/or positional 
 information.
 
-##### Signature
-<pre>
-     frame --> |
-position 0 --> |
-position 1 --> | <b>oat-decorate</b> --> frame
-  :            |
-position N --> |
-</pre>
+#### Signature
+         frame --> |
+    position 0 --> |
+    position 1 --> | oat-decorate --> frame
+      :            |
+    position N --> |
 
-##### Usage
+#### Usage
 TODO
 
-#### Recorder
+#### Example
+TODO
+
+\newpage
+### Recorder
 `oat-record` - Save frame and position streams to file. 
 
 * `frame` streams are compressed and saved as individual video files (
@@ -567,20 +569,18 @@ save location (see usage). Of course, multiple recorders can be used in
 parallel to (1) parallelize the computational load of video compression, which
 tends to be quite intense and (2) save to multiple locations simultaneously.
 
-##### Signature
-<pre>
-position 0 --> |
-position 1 --> |
-  :            |
-position N --> |
-               | <b>oat-record</b>
-   frame 0 --> |
-   frame 1 --> |
-     :         |
-   frame N --> |
-</pre>
+#### Signature
+    position 0 --> |
+    position 1 --> |
+      :            |
+    position N --> |
+                   | oat-record
+       frame 0 --> |
+       frame 1 --> |
+         :         |
+       frame N --> |
 
-##### Usage
+#### Usage
 ```
 Usage: record [OPTIONS]
    or: record [CONFIGURATION]
@@ -606,7 +606,7 @@ CONFIGURATION:
 
 ```
 
-##### Example
+#### Example
 ```bash
 # Save positional stream 'pos' to current directory
 oat record -p pos 
@@ -626,9 +626,9 @@ oat record -i raw
 oat record -i raw -p pos -d -f ~/Desktop -n my_data
 ```
 
-### Installation
+## Installation
 
-#### Flycapture SDK (if Point-Grey camera is used)
+### Flycapture SDK (if Point-Grey camera is used)
 - Go to [point-grey website](www.ptgrey.com)
 - Download the FlyCapture2 SDK (version > 2.7.3)
 - Extract the archive and use the `install_flycapture.sh` script to install the SDK on your computer.
@@ -639,7 +639,7 @@ cd flycapture
 sudo ./install_flycapture
 ```
 
-#### [Boost](http://www.boost.org/)
+### [Boost](http://www.boost.org/)
 ```bash
 wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
 tar -xf download
@@ -649,7 +649,7 @@ sudo ./bootstrap.sh
 sudo ./b2 --with-program_options --with_system --with_thread
 ```
 
-#### [OpenCV](http://opencv.org/)
+### [OpenCV](http://opencv.org/)
 
 __Note__: OpenCV must be installed with ffmpeg support in order for offline analysis 
 of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreamer 
@@ -698,19 +698,19 @@ make
 sudo make install
 ```
 
-#### [RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)
+### [RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)
 Starting in the project root directory,
 ```bash
 cd lib
 ./updatelibs.sh
 ```
 
-####  Setting up a Point-grey PGE camera in Linux 
+###  Setting up a Point-grey PGE camera in Linux 
 `oat-frameserve` supports using Point Grey GIGE cameras to collect frames. I
 found the setup process to be straightforward and robust, but only after
 cobbling together the following notes.
 
-##### Camera IP Address Configuration 
+#### Camera IP Address Configuration 
 First, assign your camera a static IP address. The easiest way to do this is to
 use a Windows machine to run the Point Grey 'GigE Configurator'. If someone
 knows a way to do this without Windows, please tell me. An example IP
@@ -719,7 +719,7 @@ Configuration might be:
 - Subnet mask: 255.255.255.0
 - Default gateway: 192.168.0.64
 
-##### PG POE GigE Host Adapter Card Configuration 
+#### PG POE GigE Host Adapter Card Configuration 
 Using network manager or something similar, you must configure the IPv4
 configuration of the GigE host adapter card you are using to interface the
 camera with your computer.
@@ -750,7 +750,7 @@ camera with your computer.
         net.core.rmem_max=1048576 
         net.core.rmem_default=1048576
 
-##### Multiple Cameras
+#### Multiple Cameras
 - If you have two or more cameras/host adapter cards,  they can be configured
   as above but _must exist on a separate subnets_. For instance, we could
   repeat the above configuration steps for a second camera/host adapter card
@@ -764,7 +764,7 @@ camera with your computer.
         - Subnet mask: 255.255.255.0
         - DNS server IP: 192.168.__1__.1
 
-### TODO
+## TODO
 - [ ] Networked communication with clients that use extracted positional
   information
     - ~~Strongly prefer to consume JSON over something ad hoc, opaque and
