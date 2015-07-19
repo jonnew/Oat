@@ -31,8 +31,8 @@
  */
 class Viewer {
     
-    typedef std::chrono::high_resolution_clock Clock;
-    typedef std::chrono::milliseconds milliseconds;
+    using Clock = std::chrono::high_resolution_clock;
+    using Milliseconds = std::chrono::milliseconds;
     
 public:
     
@@ -63,7 +63,7 @@ private:
     
     // Minimum viewer refresh period
     Clock::time_point tick, tock;
-    const milliseconds min_update_period;
+    const Milliseconds min_update_period;
     
     // Used to request a snapshot of the current image, saved to disk
     std::string frame_fid;
@@ -71,7 +71,13 @@ private:
     std::string file_name;
     bool append_date;
     std::vector<int> compression_params;
+    const int compression_level;
 
+    /**
+     * Make the snapshot file path using the requested save folder
+     * and current timestamp.
+     * return Snapshot filepath
+     */
     std::string makeFileName(void);
 };
 

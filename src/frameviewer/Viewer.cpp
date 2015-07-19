@@ -31,7 +31,6 @@
 #include "Viewer.h"
 
 namespace bfs = boost::filesystem;
-
 using namespace boost::interprocess;
 
 Viewer::Viewer(const std::string& frame_source_name,
@@ -42,8 +41,8 @@ Viewer::Viewer(const std::string& frame_source_name,
 , min_update_period(33)
 , save_path(save_path)
 , file_name(file_name)
-, append_date(append_date) {
-
+, append_date(append_date) 
+, compression_level(9) { 
     tick = Clock::now();
     tock = Clock::now();
 
@@ -55,7 +54,8 @@ Viewer::Viewer(const std::string& frame_source_name,
     try {
         cv::namedWindow(name, cv::WINDOW_OPENGL);   
     } catch (cv::Exception& ex) {
-        oat::whoWarn(name, "OpenCV not compiled with OpenGL support. Falling back to OpenCV's display driver.\n");
+        oat::whoWarn(name, "OpenCV not compiled with OpenGL support. " +
+                "Falling back to OpenCV's display driver.\n");
         cv::namedWindow(name, cv::WINDOW_NORMAL);
     }
 #else
@@ -72,7 +72,7 @@ Viewer::Viewer(const std::string& frame_source_name,
 
     // Snapshot encoding
     compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
-    compression_params.push_back(9);
+    compression_params.push_back(compression_level);
 }
 
 bool Viewer::showImage() {
@@ -88,7 +88,9 @@ bool Viewer::showImage(const std::string title) {
 
         tick = Clock::now();
 
-        milliseconds duration = std::chrono::duration_cast<milliseconds>(tick - tock);
+        Milliseconds duration = 
+            std::chrono::duration_cast<Milliseconds>(tick - tock);
+
         if (duration > min_update_period) {
 
             try {
@@ -105,7 +107,7 @@ bool Viewer::showImage(const std::string title) {
                 }
 
             } catch (cv::Exception& ex) {
-                std::cerr << ex.what() << "\n";
+                std::cerr << oat::whoError(name, ex.what()) << "\n";
             }
         }
     }
@@ -158,3 +160,5 @@ std::string Viewer::makeFileName() {
 
     return file;
 }
+
+
