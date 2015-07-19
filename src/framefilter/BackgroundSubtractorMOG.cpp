@@ -24,7 +24,6 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
-#include <opencv2/cudaarithm.hpp>
 #ifdef OAT_USE_CUDA
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/cudabgsegm.hpp>
@@ -43,7 +42,7 @@ BackgroundSubtractorMOG::BackgroundSubtractorMOG(const std::string& source_name,
 #ifdef OAT_USE_CUDA
     background_subtractor = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
 #else
-    background_subtractor = cv::createBackgroundSubtractorMOG(/*defaults OK?*/);
+    background_subtractor = cv::createBackgroundSubtractorMOG2(/*defaults OK?*/);
 #endif
 }
 

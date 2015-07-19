@@ -10,10 +10,11 @@ circumstance that requires real-time object tracking.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+**Table of Contents**  
 
+  - [Contributors](#contributors)
 - [Manual](#manual)
-  - [Frame server](#frame-server)
+  - [Frame Server](#frame-server)
     - [Signature](#signature)
     - [Usage](#usage)
     - [Configuration File Options](#configuration-file-options)
@@ -37,15 +38,19 @@ circumstance that requires real-time object tracking.
     - [Usage](#usage-4)
     - [Configuration File Options](#configuration-file-options-3)
     - [Example](#example-2)
-  - [Position combiner](#position-combiner)
+  - [Position Combiner](#position-combiner)
     - [Signature](#signature-5)
+    - [Usage](#usage-5)
+    - [Configuration File Options](#configuration-file-options-4)
+    - [Example](#example-3)
   - [Frame Decorator](#frame-decorator)
     - [Signature](#signature-6)
-    - [Usage](#usage-5)
+    - [Usage](#usage-6)
+    - [Example](#example-4)
   - [Recorder](#recorder)
     - [Signature](#signature-7)
-    - [Usage](#usage-6)
-    - [Example](#example-3)
+    - [Usage](#usage-7)
+    - [Example](#example-5)
 - [Installation](#installation)
   - [Flycapture SDK (if Point-Grey camera is used)](#flycapture-sdk-if-point-grey-camera-is-used)
   - [[Boost](http://www.boost.org/)](#boosthttpwwwboostorg)
@@ -58,6 +63,9 @@ circumstance that requires real-time object tracking.
 - [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+### Contributors 
+- jonnew [http://www.mit.edu/~jpnewman/](http://www.mit.edu/~jpnewman/)
 
 \newpage
 ## Manual
@@ -153,7 +161,7 @@ parameters, examples, and configuration options are provided for each Oat
 component.
 
 \newpage
-### Frame server
+### Frame Server
 `oat-frameserve` - Serves video streams to shared memory from physical devices
 (e.g. webcam or GIGE camera) or from file.
 
@@ -259,9 +267,11 @@ interest.
 Usage: framefilt [INFO]
    or: framefilt TYPE SOURCE SINK [CONFIGURATION]
 Filter frames from SOURCE and published filtered frames to SINK.
+
 TYPE
   bsub: Background subtraction
   mask: Binary mask
+   mog: Mixture of Gaussians background segmentation (Zivkovic, 2004)
 
 SOURCE:
   User-supplied name of the memory segment to receive frames from (e.g. raw).
@@ -506,8 +516,8 @@ oat posifilt kalman pos kfilt -c config.toml -k kalman_config
 ```
 
 \newpage
-### Position combiner
-`oat-posifilt` - Combine positions according to a specified operation.
+### Position Combiner
+`oat-posicom` - Combine positions according to a specified operation.
 
 #### Signature
     position 0 --> |
@@ -516,10 +526,42 @@ oat posifilt kalman pos kfilt -c config.toml -k kalman_config
     position N --> |
 
 #### Usage
-TODO
+Usage: posicom [INFO]
+   or: posicom TYPE SOURCES SINK [CONFIGURATION]
+Combine positional information from two or more SOURCES.
+Publish combined position to SINK.
+
+TYPE
+  mean: Geometric mean of SOURCE positions
+
+SOURCES:
+  User-supplied position source names (e.g. pos1 pos2).
+
+SINK:
+  User-supplied position sink name (e.g. pos).
+
+INFO:
+  --help                    Produce help message.
+  -v [ --version ]          Print version information.
+
+CONFIGURATION:
+  -c [ --config-file ] arg  Configuration file.
+  -k [ --config-key ] arg   Configuration key.
+
+#### Configuration File Options
+__TYPE = `mean`__
+
+- __`heading_anchor`__=`+int` Index of the SOURCE position to use as an anchor
+  when calculating object heading. In this case the heading equals the mean
+  directional vector between this anchor position and all other SOURCE
+  positions. If unspecified, the heading is not calculated.
 
 #### Example
-TODO
+```bash
+# Generate the geometric mean of 'pos1' and 'pos2' streams
+# Publish the result to the 'com' stream
+oat posicom mean pos1 pos2 com
+```
 
 ### Frame Decorator
 `oat-decorate` - Annotate frames with sample times, dates, and/or positional 
@@ -533,10 +575,47 @@ information.
     position N --> |
 
 #### Usage
-TODO
+Usage: decorate [INFO]
+   or: decorate SOURCE SINK [CONFIGURATION]
+Decorate the frames from SOURCE, e.g. with object position markers and sample
+number. Publish decorated frames to SINK.
+
+SOURCE:
+  User-supplied name of the memory segment from which frames are received (e.g.
+  raw).
+
+SINK:
+  User-supplied name of the memory segment to publish frames to (e.g. out).
+
+OPTIONS:
+
+INFO:
+  --help                        Produce help message.
+  -v [ --version ]              Print version information.
+
+CONFIGURATION:
+  -p [ --position-sources ] arg  The name of position server(s) used to draw 
+                                object position markers.
+                                
+  -t [ --timestamp ]            Write the current date and time on each frame.
+                                
+  -s [ --sample ]               Write the frame sample number on each frame.
+                                
+  -S [ --sample-code ]           Write the binary encoded sample on the corner 
+                                of each frame.
+                                
+  -R [ --region ]               Write region information on each frame if there
+                                is a position stream that contains it.
 
 #### Example
-TODO
+```bash
+# Add textual sample number to each frame from the 'raw' stream
+oat decorate raw -s
+
+# Add position markers to each frame from the 'raw' stream to indicate
+# objection positions for the 'pos1' and 'pos2' streams
+oat decorate raw -p pos1 pos2 
+```
 
 \newpage
 ### Recorder
@@ -548,11 +627,11 @@ TODO
 * `position` streams are combined into a single [JSON](http://json.org/) file.
   Position files have the following structure:
 
-```javascript
-{oat-version: XX.XX},
-{header:  [ {timestamp: YYYY-MM-DD-hh-mm-ss}, 
-            {sample_rate_hz: Fs}, 
-            {sources: [s1, s2, ..., sN]}                   ] }
+```
+{oat-version: X.X},
+{header: {timestamp: YYYY-MM-DD-hh-mm-ss}, 
+         {sample_rate_hz: X.X}, 
+         {sources: [ID_1, ID_2, ..., ID_N]} }
 {samples: [ [0, {Position1}, {Position2}, ..., {PositionN} ],
             [1, {Position1}, {Position2}, ..., {PositionN} ],
              :
@@ -560,8 +639,30 @@ TODO
 ```
 where each position object is defined as:
 
-```javascript
-{TODO}
+```
+{ ID: String,                 | A string matching an ID from the header sources
+  unit: String,               | Enum spcifying length units (0=pixels, 1=meters)
+  pos_ok: Bool,               | Boolean indicating if position is valid 
+  pos_xy: [Double, Double],   | Position x,y values
+  vel_ok: Bool,               | Boolean indicating if velocity is valid 
+  vel_xy: [Double, Double],   | Velocity x,y values
+  head_ok: Bool,              | Boolean indicating if heading  is valid 
+  head_xy: [Double, Double],  | Heading x,y values
+  reg_ok: Bool,               | Boolean indicating if region tag  is valid 
+  reg: String }               | Region tagk
+```
+Data fields are only populated if the values are valid. For instance, in the
+case that only object position is valid, and the object velocity, heading, and
+region information are not calculated, an example position data point would
+look like this:
+```
+{ ID: "Example",
+  unit: 0,
+  pos_ok: True,
+  pos_xy: [300.0, 100.0],
+  vel_ok: False,
+  head_ok: False,
+  reg_ok: False }
 ```
 
 All streams are saved with a single recorder have the same base file name and
@@ -626,6 +727,7 @@ oat record -i raw
 oat record -i raw -p pos -d -f ~/Desktop -n my_data
 ```
 
+\newpage
 ## Installation
 
 ### Flycapture SDK (if Point-Grey camera is used)
@@ -764,6 +866,7 @@ camera with your computer.
         - Subnet mask: 255.255.255.0
         - DNS server IP: 192.168.__1__.1
 
+\newpage
 ## TODO
 - [ ] Networked communication with clients that use extracted positional
   information
@@ -807,3 +910,7 @@ camera with your computer.
 - [ ] Use smart pointers to ensure proper resource management.
     - ~~Start with `recorder`, which has huge amounts of heap allocated objects
       pointed to with raw pointers~~
+- [ ] Decorator is primitive
+    - Size of position markers, sample numbers, etc do not change with image
+      resolution
+    - How is multi-region tags displayed using the -R option?

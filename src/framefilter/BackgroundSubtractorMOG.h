@@ -23,7 +23,7 @@
 #ifdef OAT_USE_CUDA
 #include <opencv2/cudabgsegm.hpp>
 #else
-#include <opencv2/bgsegm.hpp>
+#include <opencv2/video.hpp>
 #endif
 
 #include "FrameFilter.h"
@@ -56,7 +56,7 @@ private:
     cv::Ptr<cv::cuda::BackgroundSubtractorMOG> background_subtractor;
     cv::cuda::GpuMat current_frame, background_mask;
 #else
-    cv::Ptr<cv::BackgroundSubtractorMOG> background_subtractor;
+    cv::Ptr<cv::BackgroundSubtractorMOG2> background_subtractor;
     cv::Mat background_mask;
 #endif
     

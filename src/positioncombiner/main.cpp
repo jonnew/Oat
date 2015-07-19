@@ -42,9 +42,9 @@ void printUsage(po::options_description options) {
               << "TYPE\n"
               << "  mean: Geometric mean of SOURCE positions\n\n"
               << "SOURCES:\n"
-              << "  User supplied position source names (e.g. pos1 pos2).\n\n"
+              << "  User-supplied position source names (e.g. pos1 pos2).\n\n"
               << "SINK:\n"
-              << "  User supplied position sink name (e.g. pos).\n\n"
+              << "  User-supplied position sink name (e.g. pos).\n\n"
               << options << "\n";
 }
 
@@ -55,14 +55,14 @@ void sigHandler(int s) {
 
 // Processing loop
 void run(const std::shared_ptr<PositionCombiner>& combiner) {
-    
+
     while (!quit && !source_eof) { 
         source_eof = combiner->process(); 
     }
 }
 
 int main(int argc, char *argv[]) {
-    
+
     std::signal(SIGINT, sigHandler);
 
     std::vector<std::string> sources;
@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
     std::string config_key;
     bool config_used = false;
     po::options_description visible_options("OPTIONS");
-    
-    
+
+
     std::unordered_map<std::string, char> type_hash;
     type_hash["mean"] = 'a';
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
-        
+
         po::options_description config("CONFIGURATION");
         config.add_options()
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
@@ -99,14 +99,14 @@ int main(int argc, char *argv[]) {
                 ("sink", po::value<std::string>(&sink),
                 "The name of the SINK to which combined position Position2D objects will be published.")
                 ;
-        
+
         po::positional_options_description positional_options;
         positional_options.add("type", 1);
         positional_options.add("sources", -1); // If not overridden by explicit --sink, last positional argument is sink.
 
         po::options_description all_options("OPTIONS");
         all_options.add(options).add(config).add(hidden);
-        
+
         visible_options.add(options).add(config);
 
         po::variables_map variable_map;
@@ -133,33 +133,33 @@ int main(int argc, char *argv[]) {
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
-        
+
         if (!variable_map.count("type")) {
             printUsage(visible_options);
             std::cerr << oat::Error("A TYPE must be specified.\n");
             return -1;
         }
-        
+
         if (!variable_map.count("sources")) {
             printUsage(visible_options);
             std::cerr << oat::Error("At least two SOURCES and a SINK must be specified.\n");
             return -1;
         }
-        
+
         sources = variable_map["sources"].as< std::vector<std::string> >();
         if (sources.size() < 3) {
             printUsage(visible_options);
             std::cerr << oat::Error("At least two SOURCES and a SINK must be specified.\n");
             return -1;
         }
-        
+
         if (!variable_map.count("sink")) {
-            
+
             // If not overridden by explicit --sink, last positional argument is the sink.
             sink = sources.back();
             sources.pop_back(); 
         }
-        
+
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
@@ -178,8 +178,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    std::shared_ptr<PositionCombiner> combiner; 
-    
+    std::shared_ptr<PositionCombiner> combiner;
+
     // Refine component type
     switch (type_hash[type]) {
         case 'a':
@@ -194,9 +194,9 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
-    
+
     // The business
-    try { 
+    try {
 
         if (config_used)
             combiner->configure(config_file, config_key);

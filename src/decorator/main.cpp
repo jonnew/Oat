@@ -41,14 +41,16 @@ void run(Decorator* decorator) {
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: decorate [INFO]\n"
-            << "   or: decorate SOURCE SINK [CONFIGURATION]\n"
-            << "Decorate the frames from SOURCE with, e.g., object positions and sample number.\n"
-            << "Publish decorated frames to SINK.\n\n"
-            << "SOURCE:\n"
-            << "  User supplied frame source name (e.g. raw).\n\n"
-            << "SINK:\n"
-            << "  User supplied frame sink name (e.g. dec).\n\n"
-            << options << "\n";
+              << "   or: decorate SOURCE SINK [CONFIGURATION]\n"
+              << "Decorate the frames from SOURCE, e.g. with object position "
+              << "markers and sample number. Publish decorated frames to SINK.\n\n"
+              << "SOURCE:\n"
+              << "  User-supplied name of the memory segment from which frames "
+              << "are received (e.g. raw).\n\n"
+              << "SINK:\n"
+              << "  User-supplied name of the memory segment to publish frames "
+              << "to (e.g. out).\n\n"
+              << options << "\n";
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
@@ -79,12 +81,11 @@ int main(int argc, char *argv[]) {
 
         po::options_description configuration("CONFIGURATION");
         configuration.add_options()
-                ("positionsources,p", po::value< std::vector<std::string> >()->multitoken(),
-                "The name of the server(s) that supply object position information."
-                "The server(s) must be of type SMServer<Position>\n")
+                ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
+                "The name of position server(s) used to draw object position markers.\n")
                 ("timestamp,t", "Write the current date and time on each frame.\n")
                 ("sample,s", "Write the frame sample number on each frame.\n")
-                ("samplecode,S", "Write the binary encoded sample on each frame.\n")
+                ("sample-code,S", "Write the binary encoded sample on the corner of each frame.\n")
                 ("region,R", "Write region information on each frame "
                 "if there is a position stream that contains it.\n")
                 ;
