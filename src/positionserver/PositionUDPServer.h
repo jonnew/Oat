@@ -37,7 +37,7 @@ private:
     
     void connect_handler(const boost::system::error_code& ec);
     void resolve_handler(const boost::system::error_code& ec);
-    void write_position_handler(const boost::system::error_code& ec, oat::Position2D position);
+    void write_position_handler(const boost::system::error_code& ec, const oat::Position2D& position);
 
     // Service object - binds to OS level io_service
     boost::asio::io_service io_service;
