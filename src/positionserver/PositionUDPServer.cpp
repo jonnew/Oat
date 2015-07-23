@@ -18,7 +18,10 @@
 //******************************************************************************
 
 
-#include "PositionUDPServer.h"
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/ip/udp.hpp>
+
+#include "../../lib/datatypes/Position2D.h"
 
 PositionUDPServer::PositionUDPServer(const std::string& position_source_name, unsigned short port) :
   PositionServer(position_source_name)

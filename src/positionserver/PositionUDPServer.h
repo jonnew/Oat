@@ -19,7 +19,10 @@
 #ifndef POSITIONUDPSERVER_H
 #define	POSITIONUDPSERVER_H
 
-#include <boost/asio.hpp>
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/ip/udp.hpp>
+
+#include "../../lib/datatypes/Position2D.h"
 
 #include "PositionServer.h"
 
@@ -31,11 +34,16 @@ public:
     PositionUDPServer(const std::string& position_source_name, unsigned short port=9000);
 
 private:
-
-    //
-    unsigned short port;
     
+    void connect_handler(const boost::system::error_code& ec);
+    void resolve_handler(const boost::system::error_code& ec);
+    void write_position_handler(const boost::system::error_code& ec, oat::Position2D position);
+
+    // Service object - binds to OS level io_service
     boost::asio::io_service io_service;
+    
+    // Address specification
+    unsigned short port;
     baiu::socket socket;
     baiu::endpoint remote_endpoint;
 };
