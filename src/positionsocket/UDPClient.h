@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   PositionUDPServer.h
+//* File:   UDPClient.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -16,8 +16,8 @@
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
-#ifndef POSITIONUDPSERVER_H
-#define	POSITIONUDPSERVER_H
+#ifndef UDPSERVER_H
+#define	UDPSERVER_H
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
@@ -25,20 +25,23 @@
 #include "../../lib/rapidjson/rapidjson.h"
 
 #include "SocketWriteStream.h"
-#include "PositionServer.h"
+#include "PositionSocket.h"
 
 // Forward declarations
 namespace oat { class Position2D; }
 
-class PositionUDPServer : public PositionServer {
+class UDPClient : public PositionSocket {
 
     using UDPSocket = boost::asio::ip::udp::socket;
     using UDPEndpoint = boost::asio::ip::udp::endpoint;
     using UDPResolver = boost::asio::ip::udp::resolver;
     
 public:
-    PositionUDPServer(const std::string& position_source_name, const std::string& host, const std::string& port);
-    ~PositionUDPServer();
+    UDPClient(const std::string& position_source_name, 
+              const std::string& host, 
+              const std::string& port);
+
+    ~UDPClient();
     
 private:
 
@@ -65,5 +68,5 @@ private:
    
 };
 
-#endif	/* POSITIONUDPSERVER_H */
+#endif	/* UDPSERVER_H */
 

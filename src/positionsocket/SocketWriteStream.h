@@ -25,16 +25,18 @@
 
 #include "../../lib/rapidjson/rapidjson.h"
 
+// TODO: Move to rapidjson lib?
 RAPIDJSON_NAMESPACE_BEGIN
 
-//! Wrapper of C network ouput stream using sendto().
-/*!
-    \note implements Stream concept
-*/
-template <typename S, typename E>
+/** Wrapper of C network ouput stream using sendto().
+ * This class implements the strem concept for the RapidJSON 
+ * library
+ */
+template <typename S, typename E> // Socket, Endpoint
 class SocketWriteStream {
+
 public:
-    typedef char Ch;    //!< Character type. Only support char.
+    using Ch = char;
 
     SocketWriteStream(S* socket, const E& endpoint, char* buffer, size_t bufferSize) : 
       socket_(socket)
@@ -97,7 +99,7 @@ private:
     char* current_;
 };
 
-//! TODO; SImplement specialized version of PutN() with memset() for better performance.
+// TODO: Implement specialized version of PutN() with memset() for better performance.
 //template <typename S, typename E>
 //inline void PutN(SocketWriteStream<S,E>& stream, char c, size_t n) {
 //    stream.PutN(c, n);

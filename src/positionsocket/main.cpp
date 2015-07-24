@@ -23,8 +23,8 @@
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/cpptoml/cpptoml.h"
 
-#include "PositionServer.h"
-#include "PositionUDPServer.h"
+#include "PositionSocket.h"
+#include "UDPClient.h"
 
 namespace po = boost::program_options;
 
@@ -32,12 +32,13 @@ volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: posiserve [OPTIONS]\n";
-    std::cout << "   or: posiserve TYPE SOURCE [CONFIGURATION]\n";
-    std::cout << "Serve positions from SOURCE to a remove endpoint.\n";
-    std::cout << "TYPE\n";
-    std::cout << "  udp: User Datagram Protocol to broadcast positions\n\n";
-    std::cout << options << "\n";
+    std::cout << "Usage: posisock [OPTIONS]\n"
+              << "   or: posisock TYPE SOURCE [CONFIGURATION]\n"
+              << "Send positions from SOURCE to a remove endpoint.\n"
+              << "TYPE\n"
+              << "  cudp: Client-side user datagram protocol.\n"
+              << "        Position data packets are sent whenever avialable.\n\n"
+              << options << "\n";
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
@@ -45,10 +46,10 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(std::shared_ptr<PositionServer> server) {
+void run(std::shared_ptr<PositionSocket> sock) {
 
     while (!quit && !source_eof) {
-        source_eof = server->process();
+        source_eof = sock->process();
     }
 }
 
@@ -158,7 +159,7 @@ int main(int argc, char *argv[]) {
     }
     
     // Create component
-    std::shared_ptr<PositionServer> server;
+    std::shared_ptr<PositionSocket> server;
      
     try {
         
@@ -166,7 +167,7 @@ int main(int argc, char *argv[]) {
         switch (type_hash[type]) {
             case 'a':
             {
-                server = std::make_shared<PositionUDPServer>(source, host, port);
+                server = std::make_shared<UDPClient>(source, host, port);
                 break;
             }
             default:

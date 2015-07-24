@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   PositionUDPServer.cpp
+//* File:   UDPClient.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -24,10 +24,10 @@
 #include "../../lib/rapidjson/rapidjson.h"
 
 #include "SocketWriteStream.h"
-#include "PositionUDPServer.h"
+#include "UDPClient.h"
 
-PositionUDPServer::PositionUDPServer(const std::string& position_source_name, const std::string& host, const std::string& port) :
-  PositionServer(position_source_name)
+UDPClient::UDPClient(const std::string& position_source_name, const std::string& host, const std::string& port) :
+  PositionSocket(position_source_name)
 , host_(host)
 , port_(port)
 , socket_(io_service, UDPEndpoint(boost::asio::ip::udp::v4(), 0)) { 
@@ -42,13 +42,13 @@ PositionUDPServer::PositionUDPServer(const std::string& position_source_name, co
     udp_writer_.StartObject();
 }
 
-PositionUDPServer::~PositionUDPServer() {
+UDPClient::~UDPClient() {
 
     udp_writer_.EndObject();
     upd_stream_->Flush();
 }
 
-void PositionUDPServer::servePosition(const oat::Position2D& current_position, const uint32_t sample) {
+void UDPClient::servePosition(const oat::Position2D& current_position, const uint32_t sample) {
     
     // TODO: Sample should be a data member of position type!
     std::string sample_str = std::to_string(sample);

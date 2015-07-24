@@ -65,7 +65,7 @@ add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positiondetector)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positionfilter)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positiontester)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/recorder)
-add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positionserver)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positionsocket)
 
 # oat API documentation
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")

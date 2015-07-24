@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   PositionServer.h
+//* File:   PositionSocket.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -30,15 +30,15 @@
  * Abstract position server.
  * All concrete position server types implement this ABC.
  */
-class PositionServer  {
+class PositionSocket  {
 
 public:
     
-    PositionServer(const std::string& position_source_name) : 
+    PositionSocket(const std::string& position_source_name) : 
       name("posiserve[" + position_source_name + "->*]")
     , position_source(position_source_name) { }
       
-    virtual ~PositionServer() { }
+    virtual ~PositionSocket() { }
     
     /**
      * Obtain position from SOURCE. Serve position to endpoint.
@@ -48,7 +48,7 @@ public:
 
         // If source position valid, serve it
         if (position_source.getSharedObject(position))
-            servePosition(position, position_source.get_current_time_stamp()); // position_source.get_current_time_stamp()
+            servePosition(position, position_source.get_current_time_stamp()); 
  
         // If server state is END, return true
         return (position_source.getSourceRunState() == oat::ServerRunState::END);  
