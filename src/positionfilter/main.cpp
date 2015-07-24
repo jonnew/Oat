@@ -187,36 +187,36 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+
     // Create component
     std::shared_ptr<PositionFilter> filter;
     
-    // Refine component type
-    switch (type_hash[type]) {
-        case 'a':
-        {
-            filter = std::make_shared<KalmanFilter2D>(source, sink);
-            break;
+    try {
+        
+        // Refine component type
+        switch (type_hash[type]) {
+            case 'a':
+            {
+                filter = std::make_shared<KalmanFilter2D>(source, sink);
+                break;
+            }
+            case 'b':
+            {
+                filter = std::make_shared<HomographyTransform2D>(source, sink);
+                break;
+            }
+            case 'c':
+            {
+                filter = std::make_shared<RegionFilter2D>(source, sink);
+                break;
+            }
+            default:
+            {
+                printUsage(visible_options);
+                std::cerr << oat::Error("Invalid TYPE specified.\n");
+                return -1;
+            }
         }
-        case 'b':
-        {
-            filter = std::make_shared<HomographyTransform2D>(source, sink);
-            break;
-        }
-        case 'c':
-        {
-            filter = std::make_shared<RegionFilter2D>(source, sink);
-            break;
-        }
-        default:
-        {
-            printUsage(visible_options);
-            std::cerr << oat::Error("Invalid TYPE specified.\n");
-            return -1;
-        }
-    }
-
-    // The business
-    try { 
 
         if (config_used)
             filter->configure(config_file, config_key);

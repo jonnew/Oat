@@ -29,14 +29,15 @@
 
 namespace oat {
 
-    typedef cv::Point2d Point2D;
-    typedef cv::Point2d Velocity2D;
-    typedef cv::Point2d UnitVector2D;
-    typedef char Region[100];
+    using Point2D = cv::Point2d;
+    using Velocity2D = cv::Point2d;
+    using UnitVector2D = cv::Point2d;
+    
+    class Position2D : public Position {
 
-    struct Position2D : public Position {
-
-        Position2D() : Position() { };
+    public:
+        
+        Position2D() : Position() { }
 
         bool position_valid {false};
         Point2D position;
@@ -48,20 +49,16 @@ namespace oat {
         UnitVector2D heading;
 
         bool region_valid {false};
-        Region region;
+        char region[100];
         
         template <typename Writer>
-        void Serialize(Writer& writer, const std::string& label) const {
+        void Serialize(Writer& writer) const {
             
             writer.StartObject();
 
             // Name
             writer.String("ID");
-#ifdef RAPIDJSON_HAS_STDSTRING
-            writer.String(label);
-#else
-            writer.String(label.c_str(), (rapidjson::SizeType)label.length()); // Supplying length of string is faster.
-#endif
+            writer.String(label_); 
 
             // Coordinate system
             writer.String("unit");
@@ -115,6 +112,7 @@ namespace oat {
             writer.EndObject();
 
         }
+
     };
 } // namespace datatypes
 

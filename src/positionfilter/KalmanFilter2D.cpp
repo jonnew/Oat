@@ -44,6 +44,7 @@ KalmanFilter2D::KalmanFilter2D(const std::string& position_source_name, const st
 , draw_scale(10.0)
 , tuning_image_title(position_sink_name + "_tuning") {
 
+    filtered_position.set_label(position_sink_name);
     sig_accel_tune = (int) (sig_measure_noise);
     sig_measure_noise_tune = (int) (sig_measure_noise);
 }
@@ -158,7 +159,6 @@ void KalmanFilter2D::configure(const std::string& config_file, const std::string
 }
 
 void KalmanFilter2D::initializeFilter(void) {
-
 
     initializeStaticMatracies();
 

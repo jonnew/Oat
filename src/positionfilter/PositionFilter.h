@@ -20,9 +20,6 @@
 #ifndef POSITIONFILTER_H
 #define	POSITIONFILTER_H
 
-#include <atomic>
-#include <boost/thread/mutex.hpp>
-
 #include "../../lib/shmem/SMServer.h"
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position2D.h"
@@ -43,7 +40,10 @@ public:
     PositionFilter(const std::string& position_source_name, const std::string& position_sink_name) :
       name("posifilt[" + position_source_name + "->" + position_sink_name + "]")
     , position_source(position_source_name)
-    , position_sink(position_sink_name) { }
+    , position_sink(position_sink_name) { 
+      
+          position.set_label(position_sink_name);
+    }
 
     virtual ~PositionFilter() { }
 
@@ -54,9 +54,9 @@ public:
      */
     bool process(void) {
 
-        if (position_source.getSharedObject(raw_position)) {
+        if (position_source.getSharedObject(position)) {
             
-            position_sink.pushObject(filterPosition(raw_position), 
+            position_sink.pushObject(filterPosition(position), 
                                      position_source.get_current_time_stamp());
    
         }
@@ -87,13 +87,13 @@ protected:
 private:
     
     // Filter name
-    std::string name;
+    const std::string name;
     
     // Un-filtered position SOURCE object
     oat::SMClient<oat::Position2D> position_source;
     
     // Un-filtered position
-    oat::Position2D raw_position;
+    oat::Position2D position;
     
     // Filtered position SINK object
     oat::SMServer<oat::Position2D> position_sink;

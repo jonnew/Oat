@@ -24,12 +24,12 @@
 #include <boost/asio.hpp>
 
 #include "../../lib/shmem/SMClient.h"
+#include "../../lib/datatypes/Position2D.h"
 
 /**
  * Abstract position server.
  * All concrete position server types implement this ABC.
  */
-template <class T>
 class PositionServer  {
 
 public:
@@ -40,13 +40,30 @@ public:
       
     virtual ~PositionServer() { }
     
+    /**
+     * Obtain position from SOURCE. Serve position to endpoint.
+     * @return SOURCE end-of-stream signal. If true, this component should exit.
+     */
+    bool process(void) {
+
+        // If source position valid, serve it
+        if (position_source.getSharedObject(position))
+            servePosition(position, position_source.get_current_time_stamp()); // position_source.get_current_time_stamp()
+ 
+        // If server state is END, return true
+        return (position_source.getSourceRunState() == oat::ServerRunState::END);  
+    }
+    
+    // Accessors
+    std::string get_name(void) const { return name; }
+    
 protected:    
     
     /**
      * Serve the position via specified IO protocol.
      * @param Position to serve.
      */
-    virtual void servePosition(T) = 0;
+    virtual void servePosition(const oat::Position2D& current_position, const uint32_t sample) = 0;
     
     // IO service
     boost::asio::io_service io_service;
@@ -54,10 +71,13 @@ protected:
 private:
     
     // Test position name
-    std::string name;
+    const std::string name;
     
     // The test position SINK
-    oat::SMClient<T> position_source;
-}
+    oat::SMClient<oat::Position2D> position_source;
+    
+    // The current position
+    oat::Position2D position;
+};
 
 #endif	/* POSITIONSERVER_H */

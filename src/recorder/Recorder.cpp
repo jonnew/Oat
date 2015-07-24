@@ -50,7 +50,6 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 , frame_read_required(number_of_frame_sources)
 , number_of_position_sources(position_source_names.size())
 , position_read_required(number_of_position_sources)
-, position_labels(position_source_names)
 , sources_eof(false) {
 
     // First check that the save_path is valid
@@ -110,7 +109,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         }
 
         file_stream.reset(new rapidjson::FileWriteStream(position_fp, 
-                position_write_buffer, sizeof (position_write_buffer)));
+                position_write_buffer, sizeof(position_write_buffer)));
         json_writer.Reset(*file_stream);
         
         // Main object, end this object before write flush
@@ -313,7 +312,7 @@ void Recorder::writePositionsToFile() {
                     (rapidjson::SizeType)sample_str.length());
 #endif
 
-            pos->Serialize(json_writer, position_labels[idx]);
+            pos->Serialize(json_writer);
             ++idx;
         }
 

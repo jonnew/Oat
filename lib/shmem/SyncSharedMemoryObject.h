@@ -29,7 +29,7 @@ namespace oat {
     class SyncSharedMemoryObject {
     public:
 
-        SyncSharedMemoryObject(void) :
+        SyncSharedMemoryObject() :
           mutex(1)
         , write_barrier(0)
         , read_barrier(0)

@@ -22,30 +22,47 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
 
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/rapidjson/rapidjson.h"
 
+#include "SocketWriteStream.h"
 #include "PositionServer.h"
 
-using baiu = boost::asio::ip::udp;
+// Forward declarations
+namespace oat { class Position2D; }
 
-class PositionUDPServer : PositionServer{
+class PositionUDPServer : public PositionServer {
+
+    using UDPSocket = boost::asio::ip::udp::socket;
+    using UDPEndpoint = boost::asio::ip::udp::endpoint;
+    using UDPResolver = boost::asio::ip::udp::resolver;
     
 public:
-    PositionUDPServer(const std::string& position_source_name, unsigned short port=9000);
-
-private:
+    PositionUDPServer(const std::string& position_source_name, const std::string& host, const std::string& port);
+    ~PositionUDPServer();
     
-    void connect_handler(const boost::system::error_code& ec);
-    void resolve_handler(const boost::system::error_code& ec);
-    void write_position_handler(const boost::system::error_code& ec, const oat::Position2D& position);
+private:
 
     // Service object - binds to OS level io_service
     boost::asio::io_service io_service;
     
     // Address specification
-    unsigned short port;
-    baiu::socket socket;
-    baiu::endpoint remote_endpoint;
+    std::string host_;
+    std::string port_; // TODO: What if user requests port less than 1000 without sudo?
+    UDPSocket socket_;
+    
+    // Custom RapidJSON UDP stream
+    char buffer_[10]; // TODO: This (1) May be redundant because boost::asio::buffer 
+                      // is being used during the udp send_to call (2) If not,
+                      // I need to make this so 1 position is sent every time
+                      // a position is read from source. Implement at the level of
+                      // SocketWriteStream?
+    std::unique_ptr < rapidjson::SocketWriteStream
+                    < UDPSocket, UDPEndpoint > > upd_stream_;
+    rapidjson::Writer < rapidjson::SocketWriteStream 
+                      < UDPSocket, UDPEndpoint > > udp_writer_ {*upd_stream_};
+    
+    void servePosition(const oat::Position2D& position, const uint32_t sample);
+   
 };
 
 #endif	/* POSITIONUDPSERVER_H */

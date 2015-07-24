@@ -54,8 +54,8 @@ Viewer::Viewer(const std::string& frame_source_name,
     try {
         cv::namedWindow(name, cv::WINDOW_OPENGL);   
     } catch (cv::Exception& ex) {
-        oat::whoWarn(name, "OpenCV not compiled with OpenGL support. " +
-                "Falling back to OpenCV's display driver.\n");
+        oat::whoWarn(name, "OpenCV not compiled with OpenGL support. "
+                           "Falling back to OpenCV's display driver.\n");
         cv::namedWindow(name, cv::WINDOW_NORMAL);
     }
 #else

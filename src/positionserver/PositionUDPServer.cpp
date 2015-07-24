@@ -17,19 +17,47 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/rapidjson/rapidjson.h"
 
-PositionUDPServer::PositionUDPServer(const std::string& position_source_name, unsigned short port) :
+#include "SocketWriteStream.h"
+#include "PositionUDPServer.h"
+
+PositionUDPServer::PositionUDPServer(const std::string& position_source_name, const std::string& host, const std::string& port) :
   PositionServer(position_source_name)
-, port(port)
-, socket(io_service, baiu::endpoint(baiu::v4(), port)) { 
+, host_(host)
+, port_(port)
+, socket_(io_service, UDPEndpoint(boost::asio::ip::udp::v4(), 0)) { 
 
-    baiu::resolver resolver(io_service);
-    baiu::resolver::query query(baiu::v4())
+    UDPResolver resolver(io_service);
+    UDPEndpoint endpoint = *resolver.resolve({boost::asio::ip::udp::v4(), host_, port_});
+    
+    upd_stream_.reset(new rapidjson::SocketWriteStream<UDPSocket, UDPEndpoint>(
+            &socket_, endpoint, buffer_, sizeof(buffer_)));
+    udp_writer_.Reset(*upd_stream_);
+    
+    udp_writer_.StartObject();
+}
 
+PositionUDPServer::~PositionUDPServer() {
+
+    udp_writer_.EndObject();
+    upd_stream_->Flush();
+}
+
+void PositionUDPServer::servePosition(const oat::Position2D& current_position, const uint32_t sample) {
+    
+    // TODO: Sample should be a data member of position type!
+    std::string sample_str = std::to_string(sample);
+    #ifdef RAPIDJSON_HAS_STDSTRING
+            udp_writer_.String(sample_str);
+#else
+            udp_writer_.String(sample_str.c_str(), 
+                    (rapidjson::SizeType)sample_str.length());
+#endif
+    current_position.Serialize(udp_writer_);
 }
 

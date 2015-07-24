@@ -128,7 +128,6 @@ private:
     std::vector< std::unique_ptr
                < oat::Position2D > > source_positions;
     boost::dynamic_bitset<> position_read_required;
-    std::vector<std::string> position_labels;
     
     // SOURCES EOF flag
     bool sources_eof;

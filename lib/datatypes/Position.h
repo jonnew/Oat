@@ -26,19 +26,40 @@ namespace oat {
         PIXELS = 0, WORLD = 1
     };
 
-    struct Position {
+    class Position {
 
-        Position() { }   
+    public:
+        
+        // TODO: How can label be incorporated as an argument to the Position constructor
+        //       without screwing up all the class templates that use Position as type parameter?
+        Position() {
+            std::strncpy(label_, "NA", sizeof(label_));
+        } 
+        
         virtual ~Position() = 0;
       
         // Positions use one of two coordinate systems 
         // PIXELS - units are referenced to the sensory array of the digital camera. 
         //          origin in the upper left hand corner.
         // WORLD  - Defined by the homography matrix.
-        int coord_system = PIXELS;
+        int coord_system {PIXELS};
         
-        // Position label (e.g. 'anterior')
-        //std::string label;
+        // Accessors
+        inline void set_label(const std::string& value) { 
+            std::strncpy(label_, value.c_str(), sizeof(label_));
+        }
+        
+        inline void set_label(const uint32_t value) { 
+            sample = value;
+        }
+        
+    protected:
+        
+        //Position label (e.g. "anterior")
+        char label_[100];
+        
+        // TODO: sample number should travel with the Position
+        uint32_t sample;
     };
     
     // Required since this a base class w/ pure virtual destructor 
