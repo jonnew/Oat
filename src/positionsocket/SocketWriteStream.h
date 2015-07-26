@@ -1,7 +1,7 @@
 //******************************************************************************
-//* File:   RJSocketWriteStream.h
+//* File:   SocketWriteStream.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
@@ -73,8 +73,12 @@ public:
 
     void Flush() {
         if (current_ != buffer_) {
-            // TODO: Blocks - should I use the async version?
-            socket_->send_to(boost::asio::buffer(buffer_, static_cast<size_t>(current_ - buffer_)), endpoint_);
+            socket_->async_send_to(
+                    boost::asio::buffer(buffer_, static_cast<size_t>(current_ - buffer_)), 
+                    endpoint_,
+                    // TODO: Should this handler do something
+                    //       Am I gaining anything from the async-ness here?
+                    [](boost::system::error_code /*ec*/, std::size_t /*bytes_sent*/){});
             current_ = buffer_;
         }
     }
@@ -99,13 +103,14 @@ private:
     char* current_;
 };
 
-// TODO: Implement specialized version of PutN() with memset() for better performance.
-//template <typename S, typename E>
-//inline void PutN(SocketWriteStream<S,E>& stream, char c, size_t n) {
-//    stream.PutN(c, n);
-//}
+// Specialized version of PutN() with memset() for better performance.
+template <typename S, typename E>
+inline void PutN(SocketWriteStream<S,E>& stream, char c, size_t n) {
+    stream.PutN(c, n);
+}
 
 RAPIDJSON_NAMESPACE_END
 
 #endif	/* RJSOCKETWRITESTREAM_H */
+
 

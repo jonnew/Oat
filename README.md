@@ -868,14 +868,18 @@ camera with your computer.
 
 \newpage
 ## TODO
-- [ ] Networked communication with clients that use extracted positional
+- [ ] Networked communication with remote endpoints that use extracted positional
   information
     - ~~Strongly prefer to consume JSON over something ad hoc, opaque and
       untyped~~
-        - EDIT: Postion class is serialized to JSON object
     - Multiple clients
-        - Broadcast over UDP
-        - TCP/IP with thread for each client 
+        - UDP with single endpoint
+            - ~~Client version (sends data without request)~~
+            - Server version (pipeline is heldup by client position requests)
+        - TCP/IP with single endpoint
+            - Client version (sends data without request)
+            - Server version (pipeline is heldup by client position requests)
+        - Broadcast over UDP?
 - [ ] Cmake improvements
     - ~~Global build script to make all of the programs in the project~~
     - ~~CMake managed versioning~~
@@ -914,3 +918,5 @@ camera with your computer.
     - Size of position markers, sample numbers, etc do not change with image
       resolution
     - How is multi-region tags displayed using the -R option?
+- [ ] When a position sink decrements the client reference count, positest
+  deadlocks instead of continuing to serve. Problem with SMServer?

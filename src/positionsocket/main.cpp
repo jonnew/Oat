@@ -136,19 +136,19 @@ int main(int argc, char *argv[]) {
         
         if (!variable_map.count("positionsource")) {
             printUsage(visible_options);
-            std::cout << "Error: a position SOURCE must be specified. Exiting.\n";
+            std::cerr << oat::Error("A position SOURCE must be specified.\n");
             return -1;
         }
 
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
-            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+            std::cerr << oat::Error("A config file must be supplied "
+                    "with a corresponding config-key.\n");
             return -1;
         } else if (variable_map.count("config-file")) {
             config_used = true;
         }
-
 
     } catch (std::exception& e) {
         std::cerr << oat::Error(e.what()) << "\n";
@@ -197,7 +197,8 @@ int main(int argc, char *argv[]) {
         return 0;
 
     } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(server->get_name(), "Failed to parse configuration file " + config_file + "\n")
+        std::cerr << oat::whoError(server->get_name(), 
+                     "Failed to parse configuration file " + config_file + "\n")
                   << oat::whoError(server->get_name(), ex.what())
                   << "\n";
     } catch (const std::runtime_error& ex) {
