@@ -49,9 +49,8 @@ private:
     boost::asio::io_service io_service;
     
     // Address specification
-    std::string host_;
-    std::string port_; // TODO: What if user requests port less than 1000 without sudo?
-    UDPSocket socket_;
+    //std::string host_;
+    //std::string port_; // TODO: What if user requests port less than 1000 without sudo?
     
     // Custom RapidJSON UDP stream
     char buffer_[10]; // TODO: This (1) May be redundant because boost::asio::buffer 

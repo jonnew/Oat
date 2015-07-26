@@ -21,7 +21,7 @@
 #define	SOCKETWRITESTREAM_H
 
 #include <cstdio>
-#include <boost/asio.hpp>
+#include <boost/asio/ip/udp.hpp>
 
 #include "../../lib/rapidjson/rapidjson.h"
 
@@ -32,7 +32,7 @@ RAPIDJSON_NAMESPACE_BEGIN
  * This class implements the strem concept for the RapidJSON 
  * library
  */
-template <typename S, typename E> // Socket, Endpoint
+template <class S, class E> // Socket, Endpoint
 class SocketWriteStream {
 
 public:
@@ -45,7 +45,7 @@ public:
     , bufferEnd_(buffer + bufferSize)
     , current_(buffer_) { 
         
-        RAPIDJSON_ASSERT(socket_ != 0);
+        RAPIDJSON_ASSERT(socket_ != nullptr);
     }
 
     void Put(char c) { 
@@ -103,9 +103,11 @@ private:
     char* current_;
 };
 
-// Specialized version of PutN() with memset() for better performance.
-template <typename S, typename E>
-inline void PutN(SocketWriteStream<S,E>& stream, char c, size_t n) {
+// Specialized versions of PutN() with memset() for better performance.
+template <>
+inline void PutN(SocketWriteStream < 
+        boost::asio::ip::udp::socket, 
+        boost::asio::ip::udp::endpoint>& stream, char c, size_t n) {
     stream.PutN(c, n);
 }
 
