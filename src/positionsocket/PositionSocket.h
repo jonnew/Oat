@@ -4,7 +4,7 @@
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
-//* This file is part of the Simple Tracker project.
+//* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
 //* it under the terms of the GNU General Public License as published by
 //* the Free Software Foundation, either version 3 of the License, or
@@ -35,8 +35,8 @@ class PositionSocket  {
 public:
     
     PositionSocket(const std::string& position_source_name) : 
-      name("posiserve[" + position_source_name + "->*]")
-    , position_source(position_source_name) { }
+      name_("posisock[" + position_source_name + "->*]")
+    , position_source_(position_source_name) { }
       
     virtual ~PositionSocket() { }
     
@@ -47,15 +47,15 @@ public:
     bool process(void) {
 
         // If source position valid, serve it
-        if (position_source.getSharedObject(position))
-            servePosition(position, position_source.get_current_time_stamp()); 
+        if (position_source_.getSharedObject(position_))
+            sendPosition(position_, position_source_.get_current_time_stamp()); 
  
         // If server state is END, return true
-        return (position_source.getSourceRunState() == oat::ServerRunState::END);  
+        return (position_source_.getSourceRunState() == oat::ServerRunState::END);  
     }
     
     // Accessors
-    std::string get_name(void) const { return name; }
+    std::string name(void) const { return name_; }
     
 protected:    
     
@@ -63,21 +63,21 @@ protected:
      * Serve the position via specified IO protocol.
      * @param Position to serve.
      */
-    virtual void servePosition(const oat::Position2D& current_position, const uint32_t sample) = 0;
+    virtual void sendPosition(const oat::Position2D& current_position, const uint32_t sample) = 0;
     
     // IO service
-    boost::asio::io_service io_service;
+    boost::asio::io_service io_service_;
 
 private:
     
     // Test position name
-    const std::string name;
+    const std::string name_;
     
     // The test position SINK
-    oat::SMClient<oat::Position2D> position_source;
+    oat::SMClient<oat::Position2D> position_source_;
     
     // The current position
-    oat::Position2D position;
+    oat::Position2D position_;
 };
 
 #endif	/* POSITIONSERVER_H */

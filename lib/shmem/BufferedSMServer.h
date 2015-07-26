@@ -1,7 +1,7 @@
 //******************************************************************************
 //* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
 //* All right reserved.
-//* This file is part of the Simple Tracker project.
+//* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
 //* it under the terms of the GNU General Public License as published by
 //* the Free Software Foundation, either version 3 of the License, or
@@ -54,7 +54,7 @@ namespace oat {
         std::string name;
 
         // Buffer
-        static const int SMSERVER_BUFFER_SIZE {1000};
+        static const int SMSERVER_BUFFER_SIZE {128};
         boost::lockfree::spsc_queue
         < std::pair<unsigned int, T>, boost::lockfree::capacity<SMSERVER_BUFFER_SIZE> > buffer;
 

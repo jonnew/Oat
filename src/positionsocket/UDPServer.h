@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   UDPClient.h
+//* File:   UDPServer.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef UDPCLIENT_H
-#define	UDPCLIENT_H
+#ifndef UDPSERVER_H
+#define	UDPSERVER_H
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
@@ -31,35 +31,54 @@
 // Forward declarations
 namespace oat { class Position2D; }
 
-class UDPClient : public PositionSocket {
-
+class UDPServer : public PositionSocket {
+    
     using UDPSocket = boost::asio::ip::udp::socket;
     using UDPEndpoint = boost::asio::ip::udp::endpoint;
     using UDPResolver = boost::asio::ip::udp::resolver;
+    using DeadlineTimer = boost::asio::deadline_timer;
     
 public:
-    // TODO: What if user requests port less than 1000 without sudo?
-    UDPClient(const std::string& position_source_name, 
-              const std::string& host, 
-              const unsigned short port);
+    
+    /**
+     * 
+     * @param position_source_name
+     * @param port
+     */
+    UDPServer(const std::string& position_source_name, 
+             const unsigned short port);
 
-    ~UDPClient();
+    /**
+     * Close socket connection. Flush TX buffer.
+     */
+    ~UDPServer();
     
 private:
 
-    // Custom RapidJSON UDP stream
+    // RX/TX buffers
     static const size_t MAX_LENGTH {32};
-    char buffer_[MAX_LENGTH]; 
+    char tx_buffer_[MAX_LENGTH];
+    char rx_buffer_[MAX_LENGTH];
     
+    // UDP communication specs
     UDPSocket socket_;
+    UDPEndpoint endpoint_;
+    DeadlineTimer input_deadline_;
+    
+    // Custom RapidJSON UDP stream and writer
     std::unique_ptr < rapidjson::SocketWriteStream
                     < UDPSocket, UDPEndpoint > > upd_stream_;
     rapidjson::Writer < rapidjson::SocketWriteStream 
                       < UDPSocket, UDPEndpoint > > udp_writer_ {*upd_stream_};
     
+    /**
+     * 
+     * @param position
+     * @param sample
+     */
     void sendPosition(const oat::Position2D& position, const uint32_t sample);
-   
+
 };
 
-#endif	/* UDPCLIENT_H */
+#endif	/* UDPSERVER_H */
 

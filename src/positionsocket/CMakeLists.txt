@@ -2,7 +2,7 @@
 set (CMAKE_INCLUDE_CURRENT_DIR ON)
  
 # Create a SOURCES variable containing all required .cpp files:
-set (oat-posisock_SOURCE UDPClient.cpp main.cpp)
+set (oat-posisock_SOURCE UDPClient.cpp UDPServer.cpp main.cpp)
 
 # Target
 add_executable (oat-posisock ${oat-posisock_SOURCE})
