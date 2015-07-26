@@ -1,7 +1,7 @@
 //******************************************************************************
 //* File:   UDPClient.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
@@ -52,7 +52,7 @@ void UDPClient::servePosition(const oat::Position2D& current_position, const uin
     
     // TODO: Sample should be a data member of position type!
     std::string sample_str = std::to_string(sample);
-    #ifdef RAPIDJSON_HAS_STDSTRING
+#ifdef RAPIDJSON_HAS_STDSTRING
             udp_writer_.String(sample_str);
 #else
             udp_writer_.String(sample_str.c_str(), 

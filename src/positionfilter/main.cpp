@@ -1,7 +1,7 @@
 //******************************************************************************
 //* File:   oat posifilt main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
@@ -178,7 +178,6 @@ int main(int argc, char *argv[]) {
             config_used = true;
         }
 
-
     } catch (std::exception& e) {
         std::cerr << oat::Error(e.what()) << "\n";
         return -1;
@@ -223,11 +222,11 @@ int main(int argc, char *argv[]) {
 
         // Tell user
         std::cout << oat::whoMessage(filter->get_name(),
-                "Listening to source " + oat::sourceText(source) + ".\n")
-                << oat::whoMessage(filter->get_name(),
-                "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(filter->get_name(),
-                "Press CTRL+C to exit.\n");
+                     "Listening to source " + oat::sourceText(source) + ".\n")
+                  << oat::whoMessage(filter->get_name(),
+                     "Steaming to sink " + oat::sinkText(sink) + ".\n")
+                  << oat::whoMessage(filter->get_name(),
+                     "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or server end-of-stream signal
         run(filter);
@@ -254,5 +253,4 @@ int main(int argc, char *argv[]) {
 
     // Exit failure
     return -1; 
-    
 }
