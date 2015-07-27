@@ -1,7 +1,7 @@
 //******************************************************************************
 //* File:   oat clean main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Oat project.

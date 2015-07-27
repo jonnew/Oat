@@ -130,7 +130,7 @@ void FileReader::configure(const std::string& config_file, const std::string& co
 
 void FileReader::calculateFramePeriod() {
     
-    std::chrono::duration<double> frame_period{1.0 / frame_rate_in_hz};
+    std::chrono::duration<double> frame_period {1.0 / frame_rate_in_hz};
 
     // Automatic conversion
     frame_period_in_sec = frame_period;

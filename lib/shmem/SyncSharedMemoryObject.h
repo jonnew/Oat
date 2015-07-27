@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   SyncSharedMemoryObject.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -12,7 +15,7 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//****************************************************************************
 
 #ifndef SYNCSHAREDMEMORYOBJECT_H
 #define	SYNCSHAREDMEMORYOBJECT_H
@@ -52,10 +55,10 @@ namespace oat {
          * is left in a valid but unspecified state after this operation.
          */
         void writeSample(uint32_t sample, T value) { sample_number = sample; object = std::move(value); }
-        T get_value(void) const { return object; } // Read-only (for clients, forces copy if they want to mess with object)
 
-        // Accessors
+        // Accessors (Read-only to force copy-on-write)
         uint32_t get_sample_number(void) const {return sample_number; }
+        T get_value(void) const { return object; }
         
     private:
 
@@ -65,7 +68,6 @@ namespace oat {
         // Sample number
         // Should respect buffer overruns
         uint32_t sample_number; // Sample number of this position, respecting buffer overruns
-
     };
 }
 

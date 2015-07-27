@@ -728,6 +728,27 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 ```
 
 \newpage
+### Position Network Socket
+`oat-posisock` - Stream detected object positions to the network in both client
+and/or server configurations.
+
+#### Signature
+    position 0 --> |
+    position 1 --> |
+      :            | oat-posisock
+    position N --> |
+
+#### Usage
+```bash
+TODO
+```
+
+#### Example
+```bash
+TODO
+```
+
+\newpage
 ## Installation
 
 ### Flycapture SDK (if Point-Grey camera is used)
@@ -889,19 +910,46 @@ camera with your computer.
     - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
-- [ ] Dealing with dropped frames
-    - Right now, I poll the camera for frames. This is fine for a file, but not
-      necessarily for a physical camera whose acquisitions is governed by an
-      external, asynchronous clock
-    - Instead of polling, I need an event driven frame server. In the case of a
-      dropped frame, the server __must__ increment the sample number, even if
-      it does not serve the frame, to prevent offsets from occurring.
+
+- [ ] Frame and position server sample sychronization
+    - [ ] Dealing with dropped frames
+        - Right now, I poll the camera for frames. This is fine for a file, but not
+          necessarily for a physical camera whose acquisitions is governed by an
+          external, asynchronous clock
+        - Instead of polling, I need an event driven frame server. In the case of a
+          dropped frame, the server __must__ increment the sample number, even if
+          it does not serve the frame, to prevent offsets from occurring.
+    - [ ] Pull-based synchronization with remote client.
+        - By virtue of the sychronization architecture I'm using to coordinate
+          samples between SOURCE and SINK components, I get both push and pull
+          based processing chain updates for free. This means if I use
+          `oat-posisock` in server mode, and it blocks until a remote client
+          requests a position, then the data processing chain update will be
+          sychronized to these remote requestions. The exception are `pure
+          SOURCE` components, which have internal ring-buffers
+          (`oat-frameserve` and `oat-positest`). These components will fill
+          their internal buffers at a rate driven by their internal clock
+          regardless of remote requests for data processing chain updates. If
+          remote sychronization is required, this is undesirable.
+        - Ideally, the sychronization and buffering architecture of `pure
+          SOURCE` components should be dependent on some globally enfornced
+          sychronization strategy. This might be accomplished via the creation
+          of a master, read only clock, existing in shmem, that dictates
+          sychronization strategy and keeps time. Instead of each `pure SOURCE`
+          keeping its own, asychronous clock (e.g. if two cameras are started
+          at different times, they can have different absolute sample numbers
+          at the same real-world time), this centrial clock would be in charge.
+          This would obviate all issues I'm having with sample number
+          propogation through multi-SOURCE components.
+     - In anycase, the `pure SOURCE` components, esspecially roat-frameserve`,
+       are by far the most primative components in the project at this point
+       and need refactoring to deal with these two issues in a reasonable way.
 - [ ] shmem type checking by clients, exit gracefully in the case of incorrect
   type
    - e.g. a framefilter tries to use a position filter as a SOURCE. In this
      case, the framefilter needs to realize that the SOURCE type is wrong and
      exit.
-- [ ] Exception safety for all components
+- [ ] Exception safety for all components and libs
     - frameserve
     - ~~framefilt~~
     - ~~posidet~~
@@ -911,6 +959,9 @@ camera with your computer.
     - ~~record~~
     - ~~view~~
     - ~~decorate~~
+    - There are a bunch of unsafe exit conditions in the shmem library,
+      especially having to do with EXITs after boost interprocess exceptions
+      during shmem segment setup.
 - [ ] Use smart pointers to ensure proper resource management.
     - ~~Start with `recorder`, which has huge amounts of heap allocated objects
       pointed to with raw pointers~~
