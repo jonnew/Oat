@@ -10,7 +10,7 @@ circumstance that requires real-time object tracking.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  
+**Table of Contents**
 
   - [Contributors](#contributors)
 - [Manual](#manual)
@@ -51,11 +51,15 @@ circumstance that requires real-time object tracking.
     - [Signature](#signature-7)
     - [Usage](#usage-7)
     - [Example](#example-5)
+  - [Position Network Socket](#position-network-socket)
+    - [Signature](#signature-8)
+    - [Usage](#usage-8)
+    - [Example](#example-6)
 - [Installation](#installation)
   - [Flycapture SDK (if Point-Grey camera is used)](#flycapture-sdk-if-point-grey-camera-is-used)
-  - [[Boost](http://www.boost.org/)](#boosthttpwwwboostorg)
-  - [[OpenCV](http://opencv.org/)](#opencvhttpopencvorg)
-  - [[RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)](#rapidjsonhttpsgithubcommiloyiprapidjson-and-cpptomlhttpsgithubcomskystrifecpptoml)
+  - [Boost](#boost)
+  - [OpenCV](#opencv)
+  - [RapidJSON andc cpptoml](#rapidjson-andc-cpptoml)
   - [Setting up a Point-grey PGE camera in Linux](#setting-up-a-point-grey-pge-camera-in-linux)
     - [Camera IP Address Configuration](#camera-ip-address-configuration)
     - [PG POE GigE Host Adapter Card Configuration](#pg-poe-gige-host-adapter-card-configuration)
@@ -762,7 +766,9 @@ cd flycapture
 sudo ./install_flycapture
 ```
 
-### [Boost](http://www.boost.org/)
+### Boost
+To install the [Boost libraries](http://www.boost.org/), and compile required non
+header-only components (program options, system and thread):
 ```bash
 wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
 tar -xf download
@@ -772,7 +778,16 @@ sudo ./bootstrap.sh
 sudo ./b2 --with-program_options --with_system --with_thread
 ```
 
-### [OpenCV](http://opencv.org/)
+### OpenCV
+[OpenCV](http://opencv.org/) is required to compile the following Oat components:
+- `oat-frameserve`
+- `oat-framefilt`
+- `oat-view`
+- `oat-record`
+- `oat-posidet`
+- `oat-posifilt`
+- `oat-decorate`
+- `oat-positest`
 
 __Note__: OpenCV must be installed with ffmpeg support in order for offline analysis 
 of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreamer 
@@ -788,6 +803,7 @@ with ffmpeg support if something like
 ```
 appears in the cmake output text. 
 
+
 __Note__: To increase Oat's video visualization performance using `oat view`, you can 
 build OpenCV with OpenGL support. This will open up significant processing bandwidth 
 to other Oat components and make for faster processing pipelines. To compile OpenCV
@@ -795,16 +811,21 @@ with OpenGL support, add the `-DWITH_OPENGL=ON` flag in the cmake command below.
 OpenCV will be build with OpenGL support if `OpenGL support: YES` appears in the 
 cmake output text.
 
-__Note__: If you have [NVIDA GPU that supports CUDA](https://developer.nvidia.com/cuda-gpus), 
-you can build OpenCV with CUDA support to enable GPU accelerated video processing. 
-To do this, will first need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit). 
-Be sure to read the [installation instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/index.html) 
-since it is a multistep process.To compile OpenCV with CUDA support, add the 
+__Note__: If you have [NVIDA GPU that supports
+CUDA](https://developer.nvidia.com/cuda-gpus), you can build OpenCV with CUDA
+support to enable GPU accelerated video processing.  To do this, will first
+need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit).
+Be sure to read the [installation
+instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/index.html)
+since it is a multistep process.To compile OpenCV with CUDA support, add the
 `-DWITH_CUDA=ON` flag in the cmake command below.
 
+To install OpenCV:
 ```bash
 # Install dependencies
-sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev
+libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev
+libtiff-dev libjasper-dev libdc1394-22-dev
 sudo ldconfig -v
 
 # Get OpenCV
@@ -821,8 +842,20 @@ make
 sudo make install
 ```
 
-### [RapidJSON](https://github.com/miloyip/rapidjson) and [cpptoml](https://github.com/skystrife/cpptoml)
-Starting in the project root directory,
+### RapidJSON and cpptoml
+[RapidJSON](https://github.com/miloyip/rapidjson) is required by the following Oat components:
+- `oat-record`
+- `oat-posisock`
+
+[cpptoml](https://github.com/skystrife/cpptoml) is required by the following Oat components:
+- `oat-frameserve`
+- `oat-framefilt`
+- `oat-posidet`
+- `oat-posifilt`
+- `oat-posicom`
+- `oat-positest`
+
+To install both of these libraries, starting in the project root directory, run:
 ```bash
 cd lib
 ./updatelibs.sh

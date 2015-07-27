@@ -7,7 +7,7 @@ mask = "./mask.png"
 [hsv]
 erode = 4                               # Pixels                        
 dilate = 13                             # Pixels
-tune = false                             # Provide sliders for tuning hsv thresholds
+tune = true                             # Provide sliders for tuning hsv thresholds
 min_area = 0                            # Pixels^2, minimum object area 
 max_area = 5000                         # Pixels^2, maximum object areajjh
 h_thresholds = {min = 000, max = 256}   # Hue pass band
@@ -17,7 +17,7 @@ v_thresholds = {min = 065, max = 256}   # Value pass band
 [kalman]
 dt = 0.03333                            # Sample period in seonds that frames were actually
 										# recorded at
-timeout = 10.0                # Seconds 
+timeout = 10.0                          # Seconds 
 sigma_accel = 500.0                     # Pixels/sec^2 
 sigma_noise = 10.0                      # Noise SD (pixesl)    
 tune = false                            # Use the GUI to tweak parameters

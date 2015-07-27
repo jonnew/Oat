@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
         po::options_description configuration("CONFIGURATION");
         configuration.add_options()
                 ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
-                "The name of position server(s) used to draw object position markers.\n")
+                "The name of position SOURCE(s) used to draw object position markers.\n")
                 ("timestamp,t", "Write the current date and time on each frame.\n")
                 ("sample,s", "Write the frame sample number on each frame.\n")
                 ("sample-code,S", "Write the binary encoded sample on the corner of each frame.\n")
@@ -149,8 +149,8 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         
-        if (variable_map.count("positionsources")) {
-            position_sources = variable_map["positionsources"].as< std::vector<std::string> >();
+        if (variable_map.count("position-sources")) {
+            position_sources = variable_map["position-sources"].as< std::vector<std::string> >();
         }
 
         if (variable_map.count("timestamp")) {
@@ -204,11 +204,9 @@ int main(int argc, char *argv[]) {
         return 0;
 
     } catch (const std::runtime_error ex) {
-        std::cerr << oat::whoError(decorator.get_name(), ex.what())
-                << "\n";
+        std::cerr << oat::whoError(decorator.get_name(), ex.what()) << "\n";
     } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(decorator.get_name(), ex.msg)
-                << "\n";
+        std::cerr << oat::whoError(decorator.get_name(), ex.what()) << "\n";
     } catch (...) {
         std::cerr << oat::whoError(decorator.get_name(), "Unknown exception.\n");
     }
