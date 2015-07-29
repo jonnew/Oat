@@ -8,11 +8,15 @@ processing chains. Oat is primarily used for real-time animal position tracking
 in the context of experimental neuroscience, but can be used in any
 circumstance that requires real-time object tracking.
 
+__Contributors__
+
+- jonnew [http://www.mit.edu/~jpnewman/](http://www.mit.edu/~jpnewman/)
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 **Table of Contents**
 
-  - [Contributors](#contributors)
 - [Manual](#manual)
   - [Frame Server](#frame-server)
     - [Signature](#signature)
@@ -68,8 +72,6 @@ circumstance that requires real-time object tracking.
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-### Contributors 
-- jonnew [http://www.mit.edu/~jpnewman/](http://www.mit.edu/~jpnewman/)
 
 \newpage
 ## Manual
@@ -754,17 +756,38 @@ TODO
 
 \newpage
 ## Installation
+First, ensure that you have installed all dependencies required for the
+components and build configuration you are interested in in using. For more
+information on dependencies, see the following sections. To compile and install
+Oat, starting in the top project directory
 
-### Flycapture SDK (if Point-Grey camera is used)
+TODO: configuration options, setting env variables to make accessible to all.
+```bash
+# Individual components can be build using make [component-name] 
+# (e.g. make oat-view)
+```
+
+## Dependencies
+### Flycapture SDK 
+__Note:__ The Flycapture SDK is required only if a Point Grey camera is to be
+  to be used with the `oat-frameserve` component to acquire images. If you
+  simply want to process pre-recorded files or use a web cam, e.g. via
+
+        oat-frameserve file raw -f video.mpg
+        oat-frameserve wcam raw
+
+then this library is not required.
+
+To install the Point Grey SDK:
+
 - Go to [point-grey website](www.ptgrey.com)
 - Download the FlyCapture2 SDK (version > 2.7.3)
-- Extract the archive and use the `install_flycapture.sh` script to install the SDK on your computer.
+- Extract the archive and use the `install_flycapture.sh` script to install the
+  SDK on your computer and run
 
-```bash
-tar xf flycapture.tar.gz
-cd flycapture
-sudo ./install_flycapture
-```
+        tar xf flycapture.tar.gz
+        cd flycapture
+        sudo ./install_flycapture
 
 ### Boost
 To install the [Boost libraries](http://www.boost.org/), and compile required non
@@ -780,6 +803,7 @@ sudo ./b2 --with-program_options --with_system --with_thread
 
 ### OpenCV
 [OpenCV](http://opencv.org/) is required to compile the following Oat components:
+
 - `oat-frameserve`
 - `oat-framefilt`
 - `oat-view`
@@ -836,18 +860,24 @@ unzip opencv.zip -d opencv
 cd opencv/opencv-3.0.0-rc1 
 mkdir release
 cd release
+
+# Run cmake to generate Makefile
 # Add -DWITH_CUDA=ON for CUDA support and -DWITH_OPENGL for OpenGL support 
 cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
+
+# Build the project and install
 make
 sudo make install
 ```
 
 ### RapidJSON and cpptoml
 [RapidJSON](https://github.com/miloyip/rapidjson) is required by the following Oat components:
+
 - `oat-record`
 - `oat-posisock`
 
 [cpptoml](https://github.com/skystrife/cpptoml) is required by the following Oat components:
+
 - `oat-frameserve`
 - `oat-framefilt`
 - `oat-posidet`
@@ -871,14 +901,16 @@ First, assign your camera a static IP address. The easiest way to do this is to
 use a Windows machine to run the Point Grey 'GigE Configurator'. If someone
 knows a way to do this without Windows, please tell me. An example IP
 Configuration might be:
+
 - Camera IP: 192.168.0.1
 - Subnet mask: 255.255.255.0
 - Default gateway: 192.168.0.64
 
-#### PG POE GigE Host Adapter Card Configuration 
+#### Point Greg GigE Host Adapter Card Configuration 
 Using network manager or something similar, you must configure the IPv4
 configuration of the GigE host adapter card you are using to interface the
 camera with your computer.
+
 - First, set the ipv4 method to __manual__.
 - Next, you must configure the interface to (1) have the same network prefix
   and (2) be on the same subnet as the camera you setup in the previous
