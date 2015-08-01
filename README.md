@@ -746,7 +746,28 @@ and/or server configurations.
 
 #### Usage
 ```bash
-TODO
+Usage: posisock [OPTIONS]
+   or: posisock TYPE SOURCE [CONFIGURATION]
+Send positions from SOURCE to a remove endpoint.
+
+TYPE
+  udp: User datagram protocol.
+
+OPTIONS:
+
+INFO:
+  --help                    Produce help message.
+  -v [ --version ]          Print version information.
+
+CONFIGURATION:
+  -h [ --host ] arg         Remote host to send positions to.
+  -p [ --port ] arg         Port on which to send positions.
+  --server                  Server-side socket sychronization. Position data 
+                            packets are sent whenever requestedby a remote 
+                            client. TODO: explain request protocol...
+  -c [ --config-file ] arg  Configuration file.
+  -k [ --config-key ] arg   Configuration key.
+
 ```
 
 #### Example

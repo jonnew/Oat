@@ -35,12 +35,9 @@ volatile sig_atomic_t source_eof = 0;
 void printUsage(po::options_description options) {
     std::cout << "Usage: posisock [OPTIONS]\n"
               << "   or: posisock TYPE SOURCE [CONFIGURATION]\n"
-              << "Send positions from SOURCE to a remove endpoint.\n"
+              << "Send positions from SOURCE to a remove endpoint.\n\n"
               << "TYPE\n"
-              << "  cudp: Client-side user datagram protocol.\n"
-              << "        Position datagram packets are sent whenever available.\n\n"
-              << "  sudp: Server-side user datagram protocol.\n"
-              << "        Position datagram packets are sent whenever requested.\n\n"            
+              << "  udp: User datagram protocol.\n\n"
               << options << "\n";
 }
 
@@ -65,14 +62,14 @@ int main(int argc, char *argv[]) {
     std::string source;
     std::string host;
     unsigned short port;
+    bool server_side = false;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
     po::options_description visible_options("OPTIONS");
 
     std::unordered_map<std::string, char> type_hash;
-    type_hash["cudp"] = 'a';
-    type_hash["sudp"] = 'b';
+    type_hash["udp"] = 'a';
 
     try {
         
@@ -86,6 +83,9 @@ int main(int argc, char *argv[]) {
         config.add_options()
                 ("host,h", po::value<std::string>(&host), "Remote host to send positions to.")
                 ("port,p", po::value<unsigned short>(&port), "Port on which to send positions.")
+                ("server", "Server-side socket sychronization. "
+                           "Position data packets are sent whenever requested"
+                           "by a remote client. TODO: explain request protocol...")            
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
                 ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
                 ;
@@ -151,6 +151,10 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
+        if (variable_map.count("server")) {
+             server_side = true;
+        }
+
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
@@ -178,12 +182,10 @@ int main(int argc, char *argv[]) {
         switch (type_hash[type]) {
             case 'a':
             {
-                socket = std::make_shared<UDPClient>(source, host, port);
-                break;
-            }
-            case 'b':
-            {
-                socket = std::make_shared<UDPServer>(source, port);
+                if (server_side) 
+                    socket = std::make_shared<UDPServer>(source, port);
+                else
+                    socket = std::make_shared<UDPClient>(source, host, port);
                 break;
             }
             default:
