@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   oat posisock main.cpp
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -84,8 +87,9 @@ int main(int argc, char *argv[]) {
                 ("host,h", po::value<std::string>(&host), "Remote host to send positions to.")
                 ("port,p", po::value<unsigned short>(&port), "Port on which to send positions.")
                 ("server", "Server-side socket sychronization. "
-                           "Position data packets are sent whenever requested"
+                           "Position data packets are sent whenever requested "
                            "by a remote client. TODO: explain request protocol...")            
+                //TODO: Serialization protocol (JSON, binary, etc)
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
                 ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
                 ;
@@ -137,13 +141,6 @@ int main(int argc, char *argv[]) {
             std::cout <<  oat::Error("A TYPE must be specified.\n");
             return -1;
         }
-
-        if (variable_map.count("host")) {
-            if (type_hash[type] == 'b') {
-                std::cerr << oat::Warn("Posisock role is server, but host address was specified. ")
-                          << oat::Warn("Host address " + host + " will be ignored.\n");
-            }
-        }
         
         if (!variable_map.count("positionsource")) {
             printUsage(visible_options);
@@ -153,6 +150,11 @@ int main(int argc, char *argv[]) {
 
         if (variable_map.count("server")) {
              server_side = true;
+        }
+
+        if (variable_map.count("host") && server_side ) {
+            std::cerr << oat::Warn("Posisock role is server, but host address was specified. ")
+                      << oat::Warn("Host address " + host + " will be ignored.\n");
         }
 
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
