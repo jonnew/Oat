@@ -532,6 +532,7 @@ oat posifilt kalman pos kfilt -c config.toml -k kalman_config
     position N --> |
 
 #### Usage
+```
 Usage: posicom [INFO]
    or: posicom TYPE SOURCES SINK [CONFIGURATION]
 Combine positional information from two or more SOURCES.
@@ -553,6 +554,7 @@ INFO:
 CONFIGURATION:
   -c [ --config-file ] arg  Configuration file.
   -k [ --config-key ] arg   Configuration key.
+```
 
 #### Configuration File Options
 __TYPE = `mean`__
@@ -581,6 +583,7 @@ information.
     position N --> |
 
 #### Usage
+```
 Usage: decorate [INFO]
    or: decorate SOURCE SINK [CONFIGURATION]
 Decorate the frames from SOURCE, e.g. with object position markers and sample
@@ -612,6 +615,7 @@ CONFIGURATION:
                                 
   -R [ --region ]               Write region information on each frame if there
                                 is a position stream that contains it.
+```
 
 #### Example
 ```bash

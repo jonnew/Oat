@@ -22,7 +22,7 @@
 
 namespace oat {
 
-    enum coordinate_system_type {
+    enum length_unit {
         PIXELS = 0, WORLD = 1
     };
 
