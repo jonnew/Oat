@@ -787,21 +787,39 @@ information on dependencies, see the following sections. To compile and install
 Oat, starting in the top project directory
 
 TODO: configuration options, setting env variables to make accessible to all.
+
 ```bash
-# Individual components can be build using make [component-name] 
+mkdir release
+cd release
+cmake -DCMAKE_BUILD_TYPE=Release [CMAKE OPTIONS] ..
+make
+make install
+
+# Individual components can be built using make [component-name] 
 # (e.g. make oat-view)
 ```
 
+Available cmake options and their default values are:
+
+        OAT_USE_FLYCAP=Off // Compile with support for Point Grey Cameras
+        OAT_USE_OPENGL=Off // Compile with support for OpenGL rendering
+        OAT_USE_CUDA=Off   // Compile with NVIDIA GPU accerated processing
+
+See the following installation instructions to make sure you have the required
+dependencies to support each of these options if you plan to set them to `On`.
+
 ## Dependencies
 ### Flycapture SDK 
-__Note:__ The Flycapture SDK is required only if a Point Grey camera is to be
-  to be used with the `oat-frameserve` component to acquire images. If you
-  simply want to process pre-recorded files or use a web cam, e.g. via
+The FlyCapture SDK is used to communicate with Point Grey digital cameras. It
+is not required to compile any Oat components.  However, the Flycapture SDK is
+required if a Point Grey camera is to be to be used with the `oat-frameserve`
+component to acquire images. If you simply want to process pre-recorded files
+or use a web cam, e.g. via
 
         oat-frameserve file raw -f video.mpg
         oat-frameserve wcam raw
 
-then this library is not required.
+then this library is _not_ required.
 
 To install the Point Grey SDK:
 
@@ -817,17 +835,18 @@ To install the Point Grey SDK:
 ### Boost
 To install the [Boost libraries](http://www.boost.org/), and compile required non
 header-only components (program options, system and thread):
+
 ```bash
 wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
 tar -xf download
 sudo cp -r boost_1_58_0 /opt
 cd opt/boost_1_58_0/
 sudo ./bootstrap.sh
-sudo ./b2 --with-program_options --with_system --with_thread
+sudo ./b2 --with_program_options --with_system --with_thread
 ```
 
 ### OpenCV
-[OpenCV](http://opencv.org/) is required to compile the following Oat components:
+[opencv](http://opencv.org/) is required to compile the following oat components:
 
 - `oat-frameserve`
 - `oat-framefilt`
@@ -843,15 +862,14 @@ of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreame
 will be used to serve from video files at the rate the files were recorded. No cmake 
 flags are required to configure the build to use ffmpeg. OpenCV will be built 
 with ffmpeg support if something like
-```bash
--- FFMPEG:          YES
--- codec:           YES (ver 54.35.0)
--- format:          YES (ver 54.20.4)
--- util:            YES (ver 52.3.0)
--- swscale:         YES (ver 2.1.1)
-```
-appears in the cmake output text. 
 
+        -- FFMPEG:          YES
+        -- codec:           YES (ver 54.35.0)
+        -- format:          YES (ver 54.20.4)
+        -- util:            YES (ver 52.3.0)
+        -- swscale:         YES (ver 2.1.1)
+
+appears in the cmake output text. 
 
 __Note__: To increase Oat's video visualization performance using `oat view`, you can 
 build OpenCV with OpenGL support. This will open up significant processing bandwidth 
@@ -860,7 +878,7 @@ with OpenGL support, add the `-DWITH_OPENGL=ON` flag in the cmake command below.
 OpenCV will be build with OpenGL support if `OpenGL support: YES` appears in the 
 cmake output text.
 
-__Note__: If you have [NVIDA GPU that supports
+__Note__: If you have [NVIVIA GPU that supports
 CUDA](https://developer.nvidia.com/cuda-gpus), you can build OpenCV with CUDA
 support to enable GPU accelerated video processing.  To do this, will first
 need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit).
@@ -979,7 +997,7 @@ camera with your computer.
 
 \newpage
 ## TODO
-- [ ] Networked communication with remote endpoints that use extracted positional
+- [x] Networked communication with remote endpoints that use extracted positional
   information
     - ~~Strongly prefer to consume JSON over something ad hoc, opaque and
       untyped~~
@@ -991,17 +1009,18 @@ camera with your computer.
             - Client version (sends data without request)
             - Server version (pipeline is heldup by client position requests)
         - Broadcast over UDP?
-- [ ] Cmake improvements
+- [ ] Cmake/build improvements
     - ~~Global build script to make all of the programs in the project~~
     - ~~CMake managed versioning~~
     - ~~Option for building with/without point-grey support~~
-    - Author/project information injection into source files using either 
-      cmake or doxygen
+    - ~~Author/project information injection into source files using either 
+      cmake or doxygen~~
+    - Put boost in a more standard location
+    - Clang build
     - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
-
-- [ ] Frame and position server sample sychronization
+- [ ] Frame and position server sample synchronization
     - [ ] Dealing with dropped frames
         - Right now, I poll the camera for frames. This is fine for a file, but not
           necessarily for a physical camera whose acquisitions is governed by an
@@ -1058,6 +1077,6 @@ camera with your computer.
 - [ ] Decorator is primitive
     - Size of position markers, sample numbers, etc do not change with image
       resolution
-    - How is multi-region tags displayed using the -R option?
+    - How are multi-region tags displayed using the -R option?
 - [ ] When a position sink decrements the client reference count, positest
   deadlocks instead of continuing to serve. Problem with SMServer?
