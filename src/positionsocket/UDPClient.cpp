@@ -33,31 +33,39 @@ UDPClient::UDPClient(const std::string& position_source_name, const std::string&
     UDPResolver resolver(io_service_);
     UDPEndpoint endpoint = *resolver.resolve({boost::asio::ip::udp::v4(), host, std::to_string(port)});
     
-    upd_stream_.reset(new rapidjson::SocketWriteStream<UDPSocket, UDPEndpoint>(
+    udp_stream_.reset(new rapidjson::SocketWriteStream<UDPSocket, UDPEndpoint>(
             &socket_, endpoint, buffer_, sizeof(buffer_)));
-    udp_writer_.Reset(*upd_stream_);
+    //udp_writer_.Reset(*upd_stream_);
 
     // Open root JSON object
-    udp_writer_.StartObject();
+    //udp_writer_.StartObject();
 }
 
 UDPClient::~UDPClient() {
 
     // Close root JSON object
-    udp_writer_.EndObject();
-    upd_stream_->Flush();
+    //udp_writer_.EndObject();
+    //upd_stream_->Flush();
 }
 
+// Each position is sent in a single UDP packet
 void UDPClient::sendPosition(const oat::Position2D& current_position, const uint32_t sample) {
-    
-    // TODO: Sample should be a data member of position type!
-    std::string sample_str = std::to_string(sample);
-#ifdef RAPIDJSON_HAS_STDSTRING
-    udp_writer_.String(sample_str);
-#else
-    udp_writer_.String(sample_str.c_str(), 
-            (rapidjson::SizeType)sample_str.length());
-#endif
+
+    rapidjson::Writer < rapidjson::SocketWriteStream 
+                      < UDPSocket, UDPEndpoint > > udp_writer_ {*udp_stream_};
+
     current_position.Serialize(udp_writer_);
+    
+    udp_stream_->Flush();
+
+//    // TODO: Sample should be a data member of position type!
+//    std::string sample_str = std::to_string(sample);
+//#ifdef RAPIDJSON_HAS_STDSTRING
+//    udp_writer_.String(sample_str);
+//#else
+//    udp_writer_.String(sample_str.c_str(), 
+//            (rapidjson::SizeType)sample_str.length());
+//#endif
+//    current_position.Serialize(udp_writer_);
 }
 

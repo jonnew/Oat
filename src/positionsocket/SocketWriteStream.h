@@ -82,6 +82,7 @@ public:
                     // TODO: Should this handler do something
                     //       Am I gaining anything from the async-ness here?
                     [](boost::system::error_code /*ec*/, std::size_t /*bytes_sent*/){ });
+
             current_ = buffer_;
         }
     }
