@@ -38,7 +38,7 @@ volatile sig_atomic_t source_eof = 0;
 void printUsage(po::options_description options) {
     std::cout << "Usage: posisock [OPTIONS]\n"
               << "   or: posisock TYPE SOURCE [CONFIGURATION]\n"
-              << "Send positions from SOURCE to a remove endpoint.\n\n"
+              << "Send positions from SOURCE to a remote endpoint.\n\n"
               << "TYPE\n"
               << "  udp: User datagram protocol.\n\n"
               << options << "\n";
