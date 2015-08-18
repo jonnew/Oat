@@ -48,14 +48,14 @@ public:
 private:
 
     // Custom RapidJSON UDP stream
-    static const size_t MAX_LENGTH {32};
+    static const size_t MAX_LENGTH {65507};
     char buffer_[MAX_LENGTH]; 
     
     UDPSocket socket_;
     std::unique_ptr < rapidjson::SocketWriteStream
-                    < UDPSocket, UDPEndpoint > > upd_stream_;
-    rapidjson::Writer < rapidjson::SocketWriteStream 
-                      < UDPSocket, UDPEndpoint > > udp_writer_ {*upd_stream_};
+                    < UDPSocket, UDPEndpoint > > udp_stream_;
+//    rapidjson::Writer < rapidjson::SocketWriteStream 
+//                      < UDPSocket, UDPEndpoint > > udp_writer_ {*upd_stream_};
     
     void sendPosition(const oat::Position2D& position, const uint32_t sample);
    
