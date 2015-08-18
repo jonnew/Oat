@@ -943,8 +943,7 @@ camera with your computer.
     - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
-
-- [ ] Frame and position server sample sychronization
+- [ ] Frame and position server sample synchronization
     - [ ] Dealing with dropped frames
         - Right now, I poll the camera for frames. This is fine for a file, but not
           necessarily for a physical camera whose acquisitions is governed by an
