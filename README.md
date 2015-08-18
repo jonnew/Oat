@@ -8,11 +8,15 @@ processing chains. Oat is primarily used for real-time animal position tracking
 in the context of experimental neuroscience, but can be used in any
 circumstance that requires real-time object tracking.
 
+__Contributors__
+
+- jonnew [http://www.mit.edu/~jpnewman/](http://www.mit.edu/~jpnewman/)
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 **Table of Contents**
 
-  - [Contributors](#contributors)
 - [Manual](#manual)
   - [Frame Server](#frame-server)
     - [Signature](#signature)
@@ -68,8 +72,6 @@ circumstance that requires real-time object tracking.
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-### Contributors 
-- jonnew [http://www.mit.edu/~jpnewman/](http://www.mit.edu/~jpnewman/)
 
 \newpage
 ## Manual
@@ -530,6 +532,7 @@ oat posifilt kalman pos kfilt -c config.toml -k kalman_config
     position N --> |
 
 #### Usage
+```
 Usage: posicom [INFO]
    or: posicom TYPE SOURCES SINK [CONFIGURATION]
 Combine positional information from two or more SOURCES.
@@ -551,6 +554,7 @@ INFO:
 CONFIGURATION:
   -c [ --config-file ] arg  Configuration file.
   -k [ --config-key ] arg   Configuration key.
+```
 
 #### Configuration File Options
 __TYPE = `mean`__
@@ -579,6 +583,7 @@ information.
     position N --> |
 
 #### Usage
+```
 Usage: decorate [INFO]
    or: decorate SOURCE SINK [CONFIGURATION]
 Decorate the frames from SOURCE, e.g. with object position markers and sample
@@ -610,6 +615,7 @@ CONFIGURATION:
                                 
   -R [ --region ]               Write region information on each frame if there
                                 is a position stream that contains it.
+```
 
 #### Example
 ```bash
@@ -744,7 +750,28 @@ and/or server configurations.
 
 #### Usage
 ```bash
-TODO
+Usage: posisock [OPTIONS]
+   or: posisock TYPE SOURCE [CONFIGURATION]
+Send positions from SOURCE to a remove endpoint.
+
+TYPE
+  udp: User datagram protocol.
+
+OPTIONS:
+
+INFO:
+  --help                    Produce help message.
+  -v [ --version ]          Print version information.
+
+CONFIGURATION:
+  -h [ --host ] arg         Remote host to send positions to.
+  -p [ --port ] arg         Port on which to send positions.
+  --server                  Server-side socket sychronization. Position data 
+                            packets are sent whenever requestedby a remote 
+                            client. TODO: explain request protocol...
+  -c [ --config-file ] arg  Configuration file.
+  -k [ --config-key ] arg   Configuration key.
+
 ```
 
 #### Example
@@ -754,32 +781,73 @@ TODO
 
 \newpage
 ## Installation
+First, ensure that you have installed all dependencies required for the
+components and build configuration you are interested in in using. For more
+information on dependencies, see the following sections. To compile and install
+Oat, starting in the top project directory
 
-### Flycapture SDK (if Point-Grey camera is used)
-- Go to [point-grey website](www.ptgrey.com)
-- Download the FlyCapture2 SDK (version > 2.7.3)
-- Extract the archive and use the `install_flycapture.sh` script to install the SDK on your computer.
+TODO: configuration options, setting env variables to make accessible to all.
 
 ```bash
-tar xf flycapture.tar.gz
-cd flycapture
-sudo ./install_flycapture
+mkdir release
+cd release
+cmake -DCMAKE_BUILD_TYPE=Release [CMAKE OPTIONS] ..
+make
+make install
+
+# Individual components can be built using make [component-name] 
+# (e.g. make oat-view)
 ```
+
+Available cmake options and their default values are:
+
+        OAT_USE_FLYCAP=Off // Compile with support for Point Grey Cameras
+        OAT_USE_OPENGL=Off // Compile with support for OpenGL rendering
+        OAT_USE_CUDA=Off   // Compile with NVIDIA GPU accerated processing
+
+See the following installation instructions to make sure you have the required
+dependencies to support each of these options if you plan to set them to `On`.
+
+## Dependencies
+### Flycapture SDK 
+The FlyCapture SDK is used to communicate with Point Grey digital cameras. It
+is not required to compile any Oat components.  However, the Flycapture SDK is
+required if a Point Grey camera is to be to be used with the `oat-frameserve`
+component to acquire images. If you simply want to process pre-recorded files
+or use a web cam, e.g. via
+
+        oat-frameserve file raw -f video.mpg
+        oat-frameserve wcam raw
+
+then this library is _not_ required.
+
+To install the Point Grey SDK:
+
+- Go to [point-grey website](www.ptgrey.com)
+- Download the FlyCapture2 SDK (version > 2.7.3)
+- Extract the archive and use the `install_flycapture.sh` script to install the
+  SDK on your computer and run
+
+        tar xf flycapture.tar.gz
+        cd flycapture
+        sudo ./install_flycapture
 
 ### Boost
 To install the [Boost libraries](http://www.boost.org/), and compile required non
 header-only components (program options, system and thread):
+
 ```bash
 wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
 tar -xf download
 sudo cp -r boost_1_58_0 /opt
 cd opt/boost_1_58_0/
 sudo ./bootstrap.sh
-sudo ./b2 --with-program_options --with_system --with_thread
+sudo ./b2 --with_program_options --with_system --with_thread
 ```
 
 ### OpenCV
-[OpenCV](http://opencv.org/) is required to compile the following Oat components:
+[opencv](http://opencv.org/) is required to compile the following oat components:
+
 - `oat-frameserve`
 - `oat-framefilt`
 - `oat-view`
@@ -794,15 +862,14 @@ of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreame
 will be used to serve from video files at the rate the files were recorded. No cmake 
 flags are required to configure the build to use ffmpeg. OpenCV will be built 
 with ffmpeg support if something like
-```bash
--- FFMPEG:          YES
--- codec:           YES (ver 54.35.0)
--- format:          YES (ver 54.20.4)
--- util:            YES (ver 52.3.0)
--- swscale:         YES (ver 2.1.1)
-```
-appears in the cmake output text. 
 
+        -- FFMPEG:          YES
+        -- codec:           YES (ver 54.35.0)
+        -- format:          YES (ver 54.20.4)
+        -- util:            YES (ver 52.3.0)
+        -- swscale:         YES (ver 2.1.1)
+
+appears in the cmake output text. 
 
 __Note__: To increase Oat's video visualization performance using `oat view`, you can 
 build OpenCV with OpenGL support. This will open up significant processing bandwidth 
@@ -811,7 +878,7 @@ with OpenGL support, add the `-DWITH_OPENGL=ON` flag in the cmake command below.
 OpenCV will be build with OpenGL support if `OpenGL support: YES` appears in the 
 cmake output text.
 
-__Note__: If you have [NVIDA GPU that supports
+__Note__: If you have [NVIVIA GPU that supports
 CUDA](https://developer.nvidia.com/cuda-gpus), you can build OpenCV with CUDA
 support to enable GPU accelerated video processing.  To do this, will first
 need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit).
@@ -836,18 +903,24 @@ unzip opencv.zip -d opencv
 cd opencv/opencv-3.0.0-rc1 
 mkdir release
 cd release
+
+# Run cmake to generate Makefile
 # Add -DWITH_CUDA=ON for CUDA support and -DWITH_OPENGL for OpenGL support 
 cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
+
+# Build the project and install
 make
 sudo make install
 ```
 
 ### RapidJSON and cpptoml
 [RapidJSON](https://github.com/miloyip/rapidjson) is required by the following Oat components:
+
 - `oat-record`
 - `oat-posisock`
 
 [cpptoml](https://github.com/skystrife/cpptoml) is required by the following Oat components:
+
 - `oat-frameserve`
 - `oat-framefilt`
 - `oat-posidet`
@@ -871,14 +944,16 @@ First, assign your camera a static IP address. The easiest way to do this is to
 use a Windows machine to run the Point Grey 'GigE Configurator'. If someone
 knows a way to do this without Windows, please tell me. An example IP
 Configuration might be:
+
 - Camera IP: 192.168.0.1
 - Subnet mask: 255.255.255.0
 - Default gateway: 192.168.0.64
 
-#### PG POE GigE Host Adapter Card Configuration 
+#### Point Greg GigE Host Adapter Card Configuration 
 Using network manager or something similar, you must configure the IPv4
 configuration of the GigE host adapter card you are using to interface the
 camera with your computer.
+
 - First, set the ipv4 method to __manual__.
 - Next, you must configure the interface to (1) have the same network prefix
   and (2) be on the same subnet as the camera you setup in the previous
@@ -922,7 +997,7 @@ camera with your computer.
 
 \newpage
 ## TODO
-- [ ] Networked communication with remote endpoints that use extracted positional
+- [x] Networked communication with remote endpoints that use extracted positional
   information
     - ~~Strongly prefer to consume JSON over something ad hoc, opaque and
       untyped~~
@@ -934,12 +1009,14 @@ camera with your computer.
             - Client version (sends data without request)
             - Server version (pipeline is heldup by client position requests)
         - Broadcast over UDP?
-- [ ] Cmake improvements
+- [ ] Cmake/build improvements
     - ~~Global build script to make all of the programs in the project~~
     - ~~CMake managed versioning~~
     - ~~Option for building with/without point-grey support~~
-    - Author/project information injection into source files using either 
-      cmake or doxygen
+    - ~~Author/project information injection into source files using either 
+      cmake or doxygen~~
+    - Put boost in a more standard location
+    - Clang build
     - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
@@ -1000,6 +1077,6 @@ camera with your computer.
 - [ ] Decorator is primitive
     - Size of position markers, sample numbers, etc do not change with image
       resolution
-    - How is multi-region tags displayed using the -R option?
+    - How are multi-region tags displayed using the -R option?
 - [ ] When a position sink decrements the client reference count, positest
   deadlocks instead of continuing to serve. Problem with SMServer?

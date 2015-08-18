@@ -110,10 +110,8 @@ namespace oat {
             }
 
             writer.EndObject();
-
         }
-
     };
-} // namespace datatypes
+} // namespace oat
 
 #endif	/* POSITION2D_H */
