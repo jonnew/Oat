@@ -790,6 +790,16 @@ TODO: configuration options, setting env variables to make accessible to all.
 ```bash
 # Individual components can be build using make [component-name] 
 # (e.g. make oat-view)
+
+make install
+```
+To make Oat avaiable from anywhere, add the following to your `.bashrc`
+```
+# Boost shared libraries
+export LD_LIBRARY_PATH=/opt/boost_1_58_0/stage/lib:$LD_LIBRARY_PATH
+
+# Make OAT commands available to user
+eval "$(/home/pancho/Oat/oat/bin/oat init -)"
 ```
 
 ## Dependencies
