@@ -43,22 +43,18 @@ public:
               const std::string& host, 
               const unsigned short port);
 
-    ~UDPClient();
-    
 private:
 
     // Custom RapidJSON UDP stream
-    static const size_t MAX_LENGTH {32};
-    char buffer_[MAX_LENGTH]; 
+    static const size_t MAX_LENGTH {65507}; // max udp buffer size
+    char buffer_[MAX_LENGTH]; // Buffer is flushed after each position read
     
     UDPSocket socket_;
     std::unique_ptr < rapidjson::SocketWriteStream
-                    < UDPSocket, UDPEndpoint > > upd_stream_;
-    rapidjson::Writer < rapidjson::SocketWriteStream 
-                      < UDPSocket, UDPEndpoint > > udp_writer_ {*upd_stream_};
+                    < UDPSocket, UDPEndpoint > > udp_stream_;
     
     void sendPosition(const oat::Position2D& position, const uint32_t sample);
-   
+
 };
 
 #endif	/* UDPCLIENT_H */

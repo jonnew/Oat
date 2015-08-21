@@ -29,7 +29,7 @@
 RAPIDJSON_NAMESPACE_BEGIN
 
 /** Wrapper of C network ouput stream using sendto().
- * This class implements the strem concept for the RapidJSON 
+ * This class implements the stream concept for the RapidJSON 
  * library
  */
 template <class S, class E> // Socket, Endpoint
@@ -73,15 +73,19 @@ public:
 
     void Flush() {
         if (current_ != buffer_) {
-            // TODO: Don't know whether async operation is the way to go. For instance,
-            // can buffer be invalidated or overwritten before message is sent?
-            //socket_->send_to(boost::asio::buffer(buffer_, static_cast<size_t>(current_ - buffer_)), endpoint_);
-            socket_->async_send_to(
-                    boost::asio::buffer(buffer_, static_cast<size_t>(current_ - buffer_)), 
-                    endpoint_,
-                    // TODO: Should this handler do something
-                    //       Am I gaining anything from the async-ness here?
-                    [](boost::system::error_code /*ec*/, std::size_t /*bytes_sent*/){ });
+
+            socket_->send_to(boost::asio::buffer(buffer_, 
+                        static_cast<size_t>(current_ - buffer_)), endpoint_);
+
+            // Async version. I think this could be troublesome if, for instance,
+            // it is recalled before the async operation completes.
+            //socket_->async_send_to(
+            //        boost::asio::buffer(buffer_, static_cast<size_t>(current_ - buffer_)), 
+            //        endpoint_,
+            //        // TODO: Should this handler do something
+            //        //       Am I gaining anything from the async-ness here?
+            //        [](boost::system::error_code /*ec*/, std::size_t /*bytes_sent*/){ });
+
             current_ = buffer_;
         }
     }
