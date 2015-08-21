@@ -35,17 +35,6 @@ UDPClient::UDPClient(const std::string& position_source_name, const std::string&
     
     udp_stream_.reset(new rapidjson::SocketWriteStream<UDPSocket, UDPEndpoint>(
             &socket_, endpoint, buffer_, sizeof(buffer_)));
-    //udp_writer_.Reset(*upd_stream_);
-
-    // Open root JSON object
-    //udp_writer_.StartObject();
-}
-
-UDPClient::~UDPClient() {
-
-    // Close root JSON object
-    //udp_writer_.EndObject();
-    //upd_stream_->Flush();
 }
 
 // Each position is sent in a single UDP packet
@@ -55,7 +44,9 @@ void UDPClient::sendPosition(const oat::Position2D& current_position, const uint
                       < UDPSocket, UDPEndpoint > > udp_writer_ {*udp_stream_};
 
     current_position.Serialize(udp_writer_);
-    
+
+    // Flush the stream after each Serialization call so that each UDP packet
+    // corresponds to a single position value
     udp_stream_->Flush();
 
 //    // TODO: Sample should be a data member of position type!
