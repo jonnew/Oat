@@ -18,13 +18,15 @@ include_directories("${PROJECT_BINARY_DIR}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
 # Add preprossor defintion to compile with OpenGL support
-option (OAT_USE_FLYCAP "Compile with support for Point-Grey cameras" ON)
+option (OAT_USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
 option (OAT_USE_OPENGL "Use OpenGL functionality in OpenCV" OFF)
 option (OAT_USE_CUDA "Use CUDA GPU functionality in OpenCV" OFF)
 
 # Boost
-set (BOOST_ROOT /opt/boost_1_57_0 )
+set (BOOST_ROOT /opt/boost_1_58_0 )
+#set (BOOST_INCLUDE_DIR /opt/boost_1_58_0)
 find_package (Boost REQUIRED system thread program_options filesystem)
+include_directories (${Boost_INCLUDE_DIRS})
 link_directories (${Boost_LIBRARY_DIR})
 
 # OpenCV

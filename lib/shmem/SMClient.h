@@ -20,6 +20,7 @@
 #ifndef SMCLIENT_H
 #define	SMCLIENT_H
 
+#include <iostream>
 #include <string>
 #include <boost/thread/thread_time.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
