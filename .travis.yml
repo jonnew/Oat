@@ -23,16 +23,16 @@ install:
 
   # RapidJSON and cpptoml
   - cd
-  - cd Oat/lib
+  - cd jonnew/Oat/lib
   - sudo ./update_libs.sh
   - cd
 
   # Build and install
   - cd
-  - cd Oat
+  - cd jonnew/Oat
   - mkdir release
   - cd release
-  - cmake -DCMAKE_BUILD_TYPE=RELEASE
+  - cmake -DCMAKE_BUILD_TYPE=RELEASE ..
   - make
   - make install
 
