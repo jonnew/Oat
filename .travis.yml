@@ -1,16 +1,12 @@
 language: cpp
 
-before_install:
+before_script:
   - sudo apt-get update
   - sudo apt-get install libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+  - sudo apt-get install doxygen
   - sudo apt-get install libboost-all-dev
-  - cd ~
-  - ls
 
-install:
-  
   # Install OpenCV 3.0
-  - cd ~
   - git clone https://github.com/Itseez/opencv.git
   - cd opencv
   - mkdir release
@@ -20,16 +16,15 @@ install:
   - sudo make install
 
   # RapidJSON and cpptoml
-  - cd ~
-  - cd jonnew/Oat/lib
+  - cd TRAVIS_BUILD_DIR
+  - cd lib
   - sudo ./update_libs.sh
 
   # Build and install
-  - cd ~
-  - cd jonnew/Oat
+  - cd TRAVIS_BUILD_DIR
   - mkdir release
   - cd release
-  - cmake -DCMAKE_BUILD_TYPE=RELEASE
-  - make
-  - make install
+  - cmake -DCMAKE_BUILD_TYPE=RELEASE ..
+
+script: make
 

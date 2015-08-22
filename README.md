@@ -822,8 +822,10 @@ required if a Point Grey camera is to be to be used with the `oat-frameserve`
 component to acquire images. If you simply want to process pre-recorded files
 or use a web cam, e.g. via
 
-        oat-frameserve file raw -f video.mpg
-        oat-frameserve wcam raw
+```
+oat-frameserve file raw -f video.mpg
+oat-frameserve wcam raw
+```
 
 then this library is _not_ required.
 
