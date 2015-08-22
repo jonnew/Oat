@@ -784,9 +784,8 @@ TODO
 First, ensure that you have installed all dependencies required for the
 components and build configuration you are interested in in using. For more
 information on dependencies, see the following sections. To compile and install
-Oat, starting in the top project directory
-
-TODO: configuration options, setting env variables to make accessible to all.
+Oat, starting in the top project directory, create a build directory, navigate
+to it, and run cmake on the top-level CMakeLists.txt:
 
 ```bash
 mkdir release
@@ -794,29 +793,26 @@ cd release
 cmake -DCMAKE_BUILD_TYPE=Release [CMAKE OPTIONS] ..
 make
 make install
-
-# Individual components can be built using make [component-name] 
-# (e.g. make oat-view)
-
-make install
-```
-To make Oat avaiable from anywhere, add the following to your `.bashrc`
-```
-# Boost shared libraries
-export LD_LIBRARY_PATH=/opt/boost_1_58_0/stage/lib:$LD_LIBRARY_PATH
-
-# Make OAT commands available to user
-eval "$(/home/pancho/Oat/oat/bin/oat init -)"
 ```
 
-Available cmake options and their default values are:
+If you just want to build one component, individual components can be built
+using `make [component-name]`, e.g. `make oat-view`. Available cmake options
+and their default values are:
 
         OAT_USE_FLYCAP=Off // Compile with support for Point Grey Cameras
         OAT_USE_OPENGL=Off // Compile with support for OpenGL rendering
         OAT_USE_CUDA=Off   // Compile with NVIDIA GPU accerated processing
 
-See the following installation instructions to make sure you have the required
-dependencies to support each of these options if you plan to set them to `On`.
+See the following sections to make sure you have the required dependencies to
+support each of these options if you plan to set them to `On`.
+
+To complete installation, add the following to your `.bashrc`. This makes Oat
+command available within your user profile:
+
+```bash
+# Make Oat commands available to user
+eval "$(path/to/Oat/oat/bin/oat init -)"
+```
 
 ## Dependencies
 ### Flycapture SDK 
@@ -834,25 +830,24 @@ then this library is _not_ required.
 To install the Point Grey SDK:
 
 - Go to [point-grey website](www.ptgrey.com)
-- Download the FlyCapture2 SDK (version > 2.7.3)
+- Download the FlyCapture2 SDK (version >= 2.7.3). Annoyingly, this requires you
+  to create an account with Point Grey.
 - Extract the archive and use the `install_flycapture.sh` script to install the
   SDK on your computer and run
 
-        tar xf flycapture.tar.gz
-        cd flycapture
-        sudo ./install_flycapture
+```bash
+tar xf flycapture.tar.gz
+cd flycapture
+sudo ./install_flycapture
+```
 
 ### Boost
-To install the [Boost libraries](http://www.boost.org/), and compile required non
-header-only components (program options, system and thread):
+The [Boost libraries](http://www.boost.org/) are required to compile all Oat We
+have had success with Boost versions >= 1.54. To install Boost, use your package
+manager,
 
 ```bash
-wget http://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz/download
-tar -xf download
-sudo cp -r boost_1_58_0 /opt
-cd opt/boost_1_58_0/
-sudo ./bootstrap.sh
-sudo ./b2 --with_program_options --with_system --with_thread
+sudo apt-get install libboost-all-dev
 ```
 
 ### OpenCV
@@ -879,7 +874,11 @@ with ffmpeg support if something like
         -- util:            YES (ver 52.3.0)
         -- swscale:         YES (ver 2.1.1)
 
-appears in the cmake output text. 
+appears in the cmake output text. To compile OpenCV with ffmpeg support, use:
+
+```bash
+TODO
+```
 
 __Note__: To increase Oat's video visualization performance using `oat view`, you can 
 build OpenCV with OpenGL support. This will open up significant processing bandwidth 
@@ -924,12 +923,14 @@ sudo make install
 ```
 
 ### RapidJSON and cpptoml
-[RapidJSON](https://github.com/miloyip/rapidjson) is required by the following Oat components:
+[RapidJSON](https://github.com/miloyip/rapidjson) is required by the following
+Oat components:
 
 - `oat-record`
 - `oat-posisock`
 
-[cpptoml](https://github.com/skystrife/cpptoml) is required by the following Oat components:
+[cpptoml](https://github.com/skystrife/cpptoml) is required by the following
+Oat components:
 
 - `oat-frameserve`
 - `oat-framefilt`

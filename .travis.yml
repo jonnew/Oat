@@ -3,20 +3,10 @@ language: cpp
 before_install:
   - sudo apt-get update
   - sudo apt-get install libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+  - sudo apt-get install libboost-all-dev
 
 install:
   
-  # Install latest boost
-  - cd
-  - wget http://sourceforge.net/projects/boost/files/latest/download?source=files -O tarboost
-  - tar -xf tarboost
-  - cd ./boost*
-  - ./bootstrap.sh
-  - ./b2 --with-program_options --with-system --with-thread
-  - cd ..
-  - sudo mv boost* /opt
-  - cd
-
   # Install OpenCV 3.0
   #- wget https://github.com/Itseez/opencv/archive/3.0.0.zip -O opencv.zip
   #- unzip opencv.zip -d opencv
@@ -33,16 +23,16 @@ install:
 
   # RapidJSON and cpptoml
   - cd
-  - cd simple-tracker/lib
+  - cd Oat/lib
   - sudo ./update_libs.sh
   - cd
 
-  # Build
+  # Build and install
   - cd
-  - cd simple-tracker
+  - cd Oat
   - mkdir release
   - cd release
   - cmake -DCMAKE_BUILD_TYPE=RELEASE
   - make
-  - sudo make install
+  - make install
 

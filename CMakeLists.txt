@@ -3,6 +3,8 @@ cmake_minimum_required (VERSION 2.8)
 project (Oat)
 set (Oat_VERSION_MAJOR 0)
 set (Oat_VERSION_MINOR 1)
+set (Oat_VERSION_LIST "${Oat_VERSION_MAJOR}"
+                      ".${Oat_VERSION_MINOR}")
 
 # Configure a header file to pass CMake settings to source code
 configure_file (
@@ -23,7 +25,7 @@ option (OAT_USE_OPENGL "Use OpenGL functionality in OpenCV" OFF)
 option (OAT_USE_CUDA "Use CUDA GPU functionality in OpenCV" OFF)
 
 # Boost
-set (BOOST_ROOT /opt/boost_1_58_0 )
+#set (BOOST_ROOT /opt/boost_1_58_0 )
 #set (BOOST_INCLUDE_DIR /opt/boost_1_58_0)
 find_package (Boost REQUIRED system thread program_options filesystem)
 include_directories (${Boost_INCLUDE_DIRS})
@@ -52,11 +54,11 @@ if (${OAT_USE_FLYCAP})
      endif (FLYCAPTURE2)
 endif (${OAT_USE_FLYCAP})
 
-# oat shared memory lib
+# Oat shared memory lib
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem 
 				 "${CMAKE_CURRENT_BINARY_DIR}/shmem")
 
-# oat components
+# Oat components
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/cleaner)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/decorator)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/framefilter)
@@ -69,8 +71,15 @@ add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positiontester)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/recorder)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positionsocket)
 
-# oat API documentation
+# Oat API documentation
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
 
-# All executables should be installed in oat/libexec
+# All executables should be installed in Oat/libexec
 set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "Default install path" FORCE)
+
+# Show options summary
+message (STATUS "Oat version: " ${Oat_VERSION_LIST})
+message (STATUS "Oat compilation options:" )
+message (STATUS "   Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
+message (STATUS "   Compile with CUDA Support: ${OAT_USE_CUDA}")
+message (STATUS "   Compile with OpenGL Support: ${OAT_USE_OPENGL}")
