@@ -718,6 +718,7 @@ CONFIGURATION:
 ```
 
 #### Example
+
 ```bash
 # Save positional stream 'pos' to current directory
 oat record -p pos 
@@ -749,7 +750,7 @@ and/or server configurations.
     position N --> |
 
 #### Usage
-```bash
+```
 Usage: posisock [OPTIONS]
    or: posisock TYPE SOURCE [CONFIGURATION]
 Send positions from SOURCE to a remove endpoint.
@@ -783,9 +784,10 @@ TODO
 ## Installation
 First, ensure that you have installed all dependencies required for the
 components and build configuration you are interested in in using. For more
-information on dependencies, see the following sections. To compile and install
-Oat, starting in the top project directory, create a build directory, navigate
-to it, and run cmake on the top-level CMakeLists.txt:
+information on dependencies, see the [Dependencies](#dependencies) section
+below. To compile and install Oat, starting in the top project directory,
+create a build directory, navigate to it, and run cmake on the top-level
+CMakeLists.txt like so:
 
 ```bash
 mkdir release
@@ -795,16 +797,19 @@ make
 make install
 ```
 
-If you just want to build one component, individual components can be built
-using `make [component-name]`, e.g. `make oat-view`. Available cmake options
-and their default values are:
+If you just want to build a single component component, individual components
+can be built using `make [component-name]`, e.g. `make oat-view`. Available
+cmake options and their default values are:
 
-        OAT_USE_FLYCAP=Off // Compile with support for Point Grey Cameras
-        OAT_USE_OPENGL=Off // Compile with support for OpenGL rendering
-        OAT_USE_CUDA=Off   // Compile with NVIDIA GPU accerated processing
+```
+OAT_USE_FLYCAP=Off // Compile with support for Point Grey Cameras
+OAT_USE_OPENGL=Off // Compile with support for OpenGL rendering
+OAT_USE_CUDA=Off   // Compile with NVIDIA GPU accerated processing
+```
 
-See the following sections to make sure you have the required dependencies to
-support each of these options if you plan to set them to `On`.
+See the [Dependencies](#dependencies) sections to make sure you have the
+required dependencies to support each of these options if you plan to set them
+to `On`.
 
 To complete installation, add the following to your `.bashrc`. This makes Oat
 command available within your user profile:
@@ -882,12 +887,16 @@ appears in the cmake output text. To compile OpenCV with ffmpeg support, use:
 TODO
 ```
 
-__Note__: To increase Oat's video visualization performance using `oat view`, you can 
-build OpenCV with OpenGL support. This will open up significant processing bandwidth 
-to other Oat components and make for faster processing pipelines. To compile OpenCV
-with OpenGL support, add the `-DWITH_OPENGL=ON` flag in the cmake command below.
-OpenCV will be build with OpenGL support if `OpenGL support: YES` appears in the 
-cmake output text.
+__Note__: To increase Oat's video visualization performance using `oat view`,
+you can build OpenCV with OpenGL and/or OpenCL support. Both will open up
+significant processing bandwidth to other Oat components and make for faster
+processing pipelines. To compile OpenCV with OpenGL and OpenCL support, add the
+`-DWITH_OPENGL=ON` and the `-DWITH_OPENCL=ON` flags to the cmake command below.
+OpenCV will be build with OpenGL and OpenCL support if `OpenGL support: YES`
+and `Use OpenCL: YES` appear in the cmake output text. If OpenCV is compiled
+with OpenCL support, the performance benefits will be automatic. For OpenGL,
+you need to set a flag when building Oat to see the performance gains. See the
+[Installation](#installation) section for details.
 
 __Note__: If you have [NVIVIA GPU that supports
 CUDA](https://developer.nvidia.com/cuda-gpus), you can build OpenCV with CUDA
@@ -900,10 +909,13 @@ since it is a multistep process.To compile OpenCV with CUDA support, add the
 
 To install OpenCV:
 ```bash
-# Install dependencies
-sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev
-libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev
-libtiff-dev libjasper-dev libdc1394-22-dev
+# Install OpenCV's dependencies
+
+# Compilation
+sudo apt-get install cmake libgtk2.0-dev pkg-config libavcodec-dev
+
+# ffmpeg and image manipulation support
+sudo apt-get install libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
 sudo ldconfig -v
 
 # Get OpenCV
@@ -1010,8 +1022,8 @@ camera with your computer.
 
 \newpage
 ## TODO
-- [x] Networked communication with remote endpoints that use extracted positional
-  information
+- [ ] Networked communication with remote endpoints that use extracted
+  positional information
     - ~~Strongly prefer to consume JSON over something ad hoc, opaque and
       untyped~~
     - Multiple clients
@@ -1026,7 +1038,7 @@ camera with your computer.
     - ~~Global build script to make all of the programs in the project~~
     - ~~CMake managed versioning~~
     - ~~Option for building with/without point-grey support~~
-    - ~~Author/project information injection into source files using either 
+    - ~~Author/project information injection into source files using either
       cmake or doxygen~~
     - Put boost in a more standard location
     - Clang build
@@ -1035,12 +1047,13 @@ camera with your computer.
     - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Frame and position server sample synchronization
     - [ ] Dealing with dropped frames
-        - Right now, I poll the camera for frames. This is fine for a file, but not
-          necessarily for a physical camera whose acquisitions is governed by an
-          external, asynchronous clock
-        - Instead of polling, I need an event driven frame server. In the case of a
-          dropped frame, the server __must__ increment the sample number, even if
-          it does not serve the frame, to prevent offsets from occurring.
+        - Right now, I poll the camera for frames. This is fine for a file, but
+          not necessarily for a physical camera whose acquisitions is governed
+          by an external, asynchronous clock
+        - Instead of polling, I need an event driven frame server. In the case
+          of a dropped frame, the server __must__ increment the sample number,
+          even if it does not serve the frame, to prevent offsets from
+          occurring.
     - [ ] Pull-based synchronization with remote client.
         - By virtue of the sychronization architecture I'm using to coordinate
           samples between SOURCE and SINK components, I get both push and pull
@@ -1071,7 +1084,16 @@ camera with your computer.
    - e.g. a framefilter tries to use a position filter as a SOURCE. In this
      case, the framefilter needs to realize that the SOURCE type is wrong and
      exit.
-- [ ] Exception safety for all components and libs
+- [ ] GigE interface cleanup
+    - The PGGigeCam class is a big mess. It has has tons of code redundancy.
+    - Additionally, it needs to be optimized for performance. Are their
+      unnessesary copies of images being made during conversion from PG Image
+      to cv::Mat? Can I employ some move casts to help?
+    - There are a couple examples of GigE interfaces in OpenCV targeting other
+      3rd party APIs: `modules/videoio/src/cap_giganetix.cpp` and
+      `opencv/modules/videoio/src/cap_pvapi.cpp`. I don't know that these are
+      great pieces of code, but I should at least use them for inspiration.
+-  [ ] Exception safety for all components and libs
     - frameserve
     - ~~framefilt~~
     - ~~posidet~~
@@ -1093,3 +1115,8 @@ camera with your computer.
     - How are multi-region tags displayed using the -R option?
 - [ ] When a position sink decrements the client reference count, positest
   deadlocks instead of continuing to serve. Problem with SMServer?
+- [ ] `oat-calibrate` is a complete hack. It would be best to move this
+  component out of oat-frameserve source directory and make it its own utility
+  component that can listen to a frame-stream from oat-frameserve
+- [ ] For config file specification, there should be a single command line
+  option with two values (file, key) instead of a single option for each.
