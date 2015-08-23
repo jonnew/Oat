@@ -79,7 +79,7 @@ set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PAT
 
 # Show options summary
 message (STATUS "Oat version: " ${Oat_VERSION_LIST})
-message (STATUS "Oat compilation options:" )
-message (STATUS "   Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
-message (STATUS "   Compile with CUDA Support: ${OAT_USE_CUDA}")
-message (STATUS "   Compile with OpenGL Support: ${OAT_USE_OPENGL}")
+message (STATUS "Compilation options:" )
+message (STATUS "  Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
+message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
+message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")
