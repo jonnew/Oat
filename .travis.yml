@@ -7,9 +7,8 @@ before_install:
   - sudo apt-get install -y libboost-all-dev
 
   # Install OpenCV 3.0
-  - wget https://github.com/Itseez/opencv/archive/3.0.0.zip
-  - unzip 3.0.0.zip
-  - cd opencv-3*
+  - git clone https://github.com/Itseez/opencv.git
+  - cd opencv
   - mkdir release
   - cd release
   - cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
