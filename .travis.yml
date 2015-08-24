@@ -6,14 +6,15 @@ before_install:
   - sudo apt-get install -y doxygen
   - sudo apt-get install -y libboost-all-dev
 
+before_script:
   # Install OpenCV 3.0
   - git clone https://github.com/Itseez/opencv.git
   - cd opencv
   - mkdir release
   - cd release
   - cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
-  - make
-  - sudo make install
+  - make -j4
+  - sudo make j4 install
 
   # RapidJSON and cpptoml
   - cd $TRAVIS_BUILD_DIR
