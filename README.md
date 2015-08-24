@@ -955,7 +955,7 @@ Oat components:
 To install both of these libraries, starting in the project root directory, run:
 ```bash
 cd lib
-./updatelibs.sh
+./update_libs.sh
 ```
 
 ###  Setting up a Point-grey PGE camera in Linux 
