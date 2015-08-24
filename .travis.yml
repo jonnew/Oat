@@ -14,7 +14,7 @@ before_script:
   - cd release
   - cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
   - make -j1
-  - sudo make j1 install
+  - sudo make -j1 install
 
   # RapidJSON and cpptoml
   - cd $TRAVIS_BUILD_DIR
