@@ -1,14 +1,14 @@
 language: cpp
 
-before_script:
-  - sudo apt-get update
-  - sudo apt-get install libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
-  - sudo apt-get install doxygen
-  - sudo apt-get install libboost-all-dev
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+  - sudo apt-get install -y doxygen
+  - sudo apt-get install -y libboost-all-dev
 
   # Install OpenCV 3.0
   - wget https://github.com/Itseez/opencv/archive/3.0.0.zip
-  - unzip opencv-3.0.0.zip
+  - unzip 3.0.0.zip
   - cd opencv-3*
   - mkdir release
   - cd release
@@ -17,12 +17,12 @@ before_script:
   - sudo make install
 
   # RapidJSON and cpptoml
-  - cd TRAVIS_BUILD_DIR
+  - cd $TRAVIS_BUILD_DIR
   - cd lib
   - sudo ./update_libs.sh
 
   # Build and install
-  - cd TRAVIS_BUILD_DIR
+  - cd $TRAVIS_BUILD_DIR
   - mkdir release
   - cd release
   - cmake -DCMAKE_BUILD_TYPE=RELEASE ..
