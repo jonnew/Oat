@@ -910,12 +910,11 @@ since it is a multistep process.To compile OpenCV with CUDA support, add the
 To install OpenCV:
 ```bash
 # Install OpenCV's dependencies
-
-# Compilation
-sudo apt-get install cmake libgtk2.0-dev pkg-config libavcodec-dev
-
-# ffmpeg and image manipulation support
-sudo apt-get install libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+sudo apt-get install build-essential # Compiler
+sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev # Required
+sudo apt-get install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev # Optional
+sudo apt-get install # ffmpeg support [TODO]
+sudo apt-get install # OpenGL support [TODO]
 sudo ldconfig -v
 
 # Get OpenCV
