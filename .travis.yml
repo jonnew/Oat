@@ -1,7 +1,18 @@
 language: cpp
 
+# This method for installing apt-based dependencies works in
+# container-based build (sudoless). Should use it if possible.
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.8 # Get -std=c++11 support
+    - g++-4.8
+
 before_install:
   - sudo apt-get update -qq
+  - sudo apt-get install -y 
   - sudo apt-get install -y libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
   - sudo apt-get install -y doxygen
   - sudo apt-get install -y libboost-all-dev
