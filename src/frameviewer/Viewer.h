@@ -45,10 +45,9 @@ public:
 
     bool showImage(void);
     bool showImage(std::string title);
-    void stop(void);
 
     // Accessors
-    std::string get_name(void) { return name; }
+    std::string get_name(void) const { return name; }
     
 private:
 
@@ -56,7 +55,7 @@ private:
     std::string name;
 
     // Image data
-    cv::Mat current_frame;;
+    cv::Mat current_frame;
 
     // Frame SOURCE to get frames to display
     oat::MatClient frame_source;

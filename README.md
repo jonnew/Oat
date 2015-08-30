@@ -14,60 +14,60 @@ __Contributors__
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
-**Table of Contents**
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Manual](#manual)
-  - [Frame Server](#frame-server)
-    - [Signature](#signature)
-    - [Usage](#usage)
-    - [Configuration File Options](#configuration-file-options)
-    - [Examples](#examples)
-  - [Frame Filter](#frame-filter)
-    - [Signature](#signature-1)
-    - [Usage](#usage-1)
-    - [Configuration File Options](#configuration-file-options-1)
-    - [Examples](#examples-1)
-  - [Frame Viewer](#frame-viewer)
-    - [Signature](#signature-2)
-    - [Usage](#usage-2)
-    - [Example](#example)
-  - [Position Detector](#position-detector)
-    - [Signature](#signature-3)
-    - [Usage](#usage-3)
-    - [Configuration File Options](#configuration-file-options-2)
-    - [Example](#example-1)
-  - [Position Filter](#position-filter)
-    - [Signature](#signature-4)
-    - [Usage](#usage-4)
-    - [Configuration File Options](#configuration-file-options-3)
-    - [Example](#example-2)
-  - [Position Combiner](#position-combiner)
-    - [Signature](#signature-5)
-    - [Usage](#usage-5)
-    - [Configuration File Options](#configuration-file-options-4)
-    - [Example](#example-3)
-  - [Frame Decorator](#frame-decorator)
-    - [Signature](#signature-6)
-    - [Usage](#usage-6)
-    - [Example](#example-4)
-  - [Recorder](#recorder)
-    - [Signature](#signature-7)
-    - [Usage](#usage-7)
-    - [Example](#example-5)
-  - [Position Network Socket](#position-network-socket)
-    - [Signature](#signature-8)
-    - [Usage](#usage-8)
-    - [Example](#example-6)
+    - [Frame Server](#frame-server)
+        - [Signature](#signature)
+        - [Usage](#usage)
+        - [Configuration File Options](#configuration-file-options)
+        - [Examples](#examples)
+    - [Frame Filter](#frame-filter)
+        - [Signature](#signature-1)
+        - [Usage](#usage-1)
+        - [Configuration File Options](#configuration-file-options-1)
+        - [Examples](#examples-1)
+    - [Frame Viewer](#frame-viewer)
+        - [Signature](#signature-2)
+        - [Usage](#usage-2)
+        - [Example](#example)
+    - [Position Detector](#position-detector)
+        - [Signature](#signature-3)
+        - [Usage](#usage-3)
+        - [Configuration File Options](#configuration-file-options-2)
+        - [Example](#example-1)
+    - [Position Filter](#position-filter)
+        - [Signature](#signature-4)
+        - [Usage](#usage-4)
+        - [Configuration File Options](#configuration-file-options-3)
+        - [Example](#example-2)
+    - [Position Combiner](#position-combiner)
+        - [Signature](#signature-5)
+        - [Usage](#usage-5)
+        - [Configuration File Options](#configuration-file-options-4)
+        - [Example](#example-3)
+    - [Frame Decorator](#frame-decorator)
+        - [Signature](#signature-6)
+        - [Usage](#usage-6)
+        - [Example](#example-4)
+    - [Recorder](#recorder)
+        - [Signature](#signature-7)
+        - [Usage](#usage-7)
+        - [Example](#example-5)
+    - [Position Network Socket](#position-network-socket)
+        - [Signature](#signature-8)
+        - [Usage](#usage-8)
+        - [Example](#example-6)
 - [Installation](#installation)
-  - [Flycapture SDK (if Point-Grey camera is used)](#flycapture-sdk-if-point-grey-camera-is-used)
-  - [Boost](#boost)
-  - [OpenCV](#opencv)
-  - [RapidJSON andc cpptoml](#rapidjson-andc-cpptoml)
-  - [Setting up a Point-grey PGE camera in Linux](#setting-up-a-point-grey-pge-camera-in-linux)
-    - [Camera IP Address Configuration](#camera-ip-address-configuration)
-    - [PG POE GigE Host Adapter Card Configuration](#pg-poe-gige-host-adapter-card-configuration)
-    - [Multiple Cameras](#multiple-cameras)
+    - [Dependencies](#dependencies)
+        - [Flycapture SDK](#flycapture-sdk)
+        - [Boost](#boost)
+        - [OpenCV](#opencv)
+        - [RapidJSON and cpptoml](#rapidjson-and-cpptoml)
+        - [Setting up a Point-grey PGE camera in Linux](#setting-up-a-point-grey-pge-camera-in-linux)
+            - [Camera IP Address Configuration](#camera-ip-address-configuration)
+            - [Point Greg GigE Host Adapter Card Configuration](#point-greg-gige-host-adapter-card-configuration)
+            - [Multiple Cameras](#multiple-cameras)
 - [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -781,10 +781,10 @@ TODO
 ```
 
 \newpage
-## Installation
+# Installation
 First, ensure that you have installed all dependencies required for the
 components and build configuration you are interested in in using. For more
-information on dependencies, see the [Dependencies](#dependencies) section
+information on dependencies, see the [dependencies](#dependencies) section
 below. To compile and install Oat, starting in the top project directory,
 create a build directory, navigate to it, and run cmake on the top-level
 CMakeLists.txt like so:
@@ -809,10 +809,8 @@ OAT_USE_CUDA=Off   // Compile with NVIDIA GPU accerated processing
 
 See the [Dependencies](#dependencies) sections to make sure you have the
 required dependencies to support each of these options if you plan to set them
-to `On`.
-
-To complete installation, add the following to your `.bashrc`. This makes Oat
-command available within your user profile:
+to `On`. To complete installation, add the following to your `.bashrc` or equivalent.
+This makes Oat commands available within your user profile:
 
 ```bash
 # Make Oat commands available to user
@@ -849,9 +847,9 @@ sudo ./install_flycapture
 ```
 
 ### Boost
-The [Boost libraries](http://www.boost.org/) are required to compile all Oat We
-have had success with Boost versions >= 1.54. To install Boost, use your package
-manager,
+The [Boost libraries](http://www.boost.org/) are required to compile all Oat
+components. We have tested and had success with Boost versions >= 1.54. To
+install Boost, use APT or equivalent,
 
 ```bash
 sudo apt-get install libboost-all-dev
@@ -869,19 +867,22 @@ sudo apt-get install libboost-all-dev
 - `oat-decorate`
 - `oat-positest`
 
-__Note__: OpenCV must be installed with ffmpeg support in order for offline analysis 
-of pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreamer 
-will be used to serve from video files at the rate the files were recorded. No cmake 
-flags are required to configure the build to use ffmpeg. OpenCV will be built 
-with ffmpeg support if something like
+__Note__: OpenCV must be installed with ffmpeg support in order for offline
+analysis of pre-recorded videos to occur at arbitrary frame rates. If it is
+not, gstreamer will be used to serve from video files at the rate the files
+were recorded. No cmake flags are required to configure the build to use
+ffmpeg. OpenCV will be built with ffmpeg support if something like
 
-        -- FFMPEG:          YES
-        -- codec:           YES (ver 54.35.0)
-        -- format:          YES (ver 54.20.4)
-        -- util:            YES (ver 52.3.0)
-        -- swscale:         YES (ver 2.1.1)
+```
+-- FFMPEG:          YES
+-- codec:           YES (ver 54.35.0)
+-- format:          YES (ver 54.20.4)
+-- util:            YES (ver 52.3.0)
+-- swscale:         YES (ver 2.1.1)
+```
 
-appears in the cmake output text. To compile OpenCV with ffmpeg support, use:
+appears in the cmake output text. The dependencies required to compile OpenCV
+with ffmpeg support, can be obtained as follows:
 
 ```bash
 TODO
@@ -898,16 +899,17 @@ with OpenCL support, the performance benefits will be automatic. For OpenGL,
 you need to set a flag when building Oat to see the performance gains. See the
 [Installation](#installation) section for details.
 
-__Note__: If you have [NVIVIA GPU that supports
+__Note__: If you have [NVIDIA GPU that supports
 CUDA](https://developer.nvidia.com/cuda-gpus), you can build OpenCV with CUDA
 support to enable GPU accelerated video processing.  To do this, will first
 need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit).
 Be sure to read the [installation
 instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/index.html)
-since it is a multistep process.To compile OpenCV with CUDA support, add the
+since it is a multistep process. To compile OpenCV with CUDA support, add the
 `-DWITH_CUDA=ON` flag in the cmake command below.
 
 To install OpenCV:
+
 ```bash
 # Install OpenCV's dependencies
 sudo apt-get install build-essential # Compiler
@@ -927,7 +929,7 @@ mkdir release
 cd release
 
 # Run cmake to generate Makefile
-# Add -DWITH_CUDA=ON for CUDA support and -DWITH_OPENGL for OpenGL support 
+# Add -DWITH_CUDA=ON for CUDA support and -DWITH_OPENGL for OpenGL support
 cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
 
 # Build the project and install
@@ -1020,7 +1022,8 @@ camera with your computer.
         - DNS server IP: 192.168.__1__.1
 
 \newpage
-## TODO
+
+# TODO
 - [ ] Networked communication with remote endpoints that use extracted
   positional information
     - ~~Strongly prefer to consume JSON over something ad hoc, opaque and
@@ -1112,10 +1115,14 @@ camera with your computer.
     - Size of position markers, sample numbers, etc do not change with image
       resolution
     - How are multi-region tags displayed using the -R option?
-- [ ] When a position sink decrements the client reference count, positest
+- [x] When a position sink decrements the client reference count, positest
   deadlocks instead of continuing to serve. Problem with SMServer?
+    - EDIT: Could not replicate with positest --> posifilt. Need to get
+      breakage scenario to reopen.
 - [ ] `oat-calibrate` is a complete hack. It would be best to move this
   component out of oat-frameserve source directory and make it its own utility
   component that can listen to a frame-stream from oat-frameserve
 - [ ] For config file specification, there should be a single command line
   option with two values (file, key) instead of a single option for each.
+    - See [this SO post](http://stackoverflow.com/questions/8175723/vector-arguments-in-boost-program-options)
+      for how.

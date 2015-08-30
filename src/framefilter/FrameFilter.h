@@ -75,11 +75,10 @@ public:
 #ifndef NDEBUG
         cv::cuda::printShortCudaDeviceInfo(selected_gpu);
 #endif
-        
-#endif // OAT_USE_CUDA
 
+#endif // OAT_USE_CUDA
     }
-    
+
     virtual ~FrameFilter() { }
 
     /**
@@ -88,7 +87,7 @@ public:
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
     bool processSample(void) {
-        
+
         // Only proceed with processing if we are getting a valid frame
         if (frame_source.getSharedMat(current_frame)) {
 
@@ -105,15 +104,15 @@ public:
      * @param config_key configuration key
      */
     virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
-    
+
     /**
      * Get frame filter name
-     * @return name 
+     * @return name
      */
     std::string get_name(void) const { return name; }
-    
+
 protected:
-    
+
     /**
      * Perform frame filtering.
      * @param frame unfiltered frame
@@ -125,13 +124,13 @@ private:
 
     // Filter name.
     const std::string name;
-    
+
     //Currently processed frame
     cv::Mat current_frame;
-    
+
     // Frame SOURCE object for receiving raw frames
     oat::MatClient frame_source;
-    
+
     // Frame SINK object for publishing filtered frames
     oat::MatServer frame_sink;
 };

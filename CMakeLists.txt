@@ -27,7 +27,7 @@ option (OAT_USE_CUDA "Use CUDA GPU functionality in OpenCV" OFF)
 # Boost
 #set (BOOST_ROOT /opt/boost_1_58_0 )
 #set (BOOST_INCLUDE_DIR /opt/boost_1_58_0)
-find_package (Boost REQUIRED system thread program_options filesystem)
+find_package (Boost 1.53.0  REQUIRED system thread program_options filesystem)
 include_directories (${Boost_INCLUDE_DIRS})
 link_directories (${Boost_LIBRARY_DIR})
 
