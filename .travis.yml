@@ -1,8 +1,5 @@
 language: cpp
 
-compiler: 
-  - g++
-
 # This method for installing apt-based dependencies works in
 # container-based build (sudoless). Should use it if possible.
 addons:
@@ -12,14 +9,15 @@ addons:
     packages:
     - gcc-4.8 # Get -std=c++11 support
     - g++-4.8
-    - libboost1.55-all-dev
-    - doxygen
 
 before_install:
   - sudo apt-get update -qq
+  - if [ "$CXX" = "g++" ]; then sudo apt-get install -y g++-4.8; fi
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - sudo apt-get install -y 
   - sudo apt-get install -y libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
-  #- sudo apt-get install -y libboost-system-dev libboost-program-options-dev libboost-thread-dev libboost-filesystem-dev
+  - sudo apt-get install -y doxygen
+  - sudo apt-get install -y libboost-all-dev
 
 before_script:
   # Install OpenCV 3.0
@@ -43,3 +41,4 @@ before_script:
   - cmake -DCMAKE_BUILD_TYPE=RELEASE ..
 
 script: make
+
