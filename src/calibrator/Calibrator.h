@@ -49,10 +49,11 @@ public:
         // Only proceed with processing if we are getting a valid frame
         if (frame_source.getSharedMat(current_frame)) {
 
-            // Push filtered frame forward, along with frame_source sample number
+            // Use the current frame for calibration
             calibrate(current_frame);
         }
-
+        
+        // Check for end of frame stream
         return (frame_source.getSourceRunState() == oat::ServerRunState::END);
     }
 
@@ -65,6 +66,7 @@ public:
 
     // Accessors
     std::string name(void) const { return name_; }
+
 protected:
 
     /**
@@ -84,7 +86,7 @@ private:
     // Frame SOURCE to get frames for calibration
     oat::MatClient frame_source_;
 
-    // Used to request a snapshot of the current image, saved to disk
+    // Path to save calibration parameters 
     std::string file_name_;
     std::string save_path_;
     const bool append_date_;
