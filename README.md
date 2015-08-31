@@ -72,7 +72,6 @@ __Contributors__
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-
 \newpage
 ## Manual
 Oat components are a set of programs that communicate through shared memory to
@@ -128,7 +127,7 @@ are classified according to their type signature. For instance, `framefilt`
 (frame filter) accepts a frame and produces a frame. `posifilt` (position
 filter) accepts a position and produces a position. `frameserve` (frame server)
 produces a frame, and so on.  The `TYPE` parameter specifies a concrete type of
-transform (e.g. for the framefilt subcommand this could be `bsub` for
+transform (e.g. for the `framefilt` subcommand, this could be `bsub` for
 background subtraction).  The `IO` specification indicates where the component
 will receive data from and to where the processed data should be published. The
 `CONFIGURATION` specification is used to provide parameters to shape the
@@ -1042,6 +1041,8 @@ camera with your computer.
     - ~~Option for building with/without point-grey support~~
     - ~~Author/project information injection into source files using either
       cmake or doxygen~~
+    - Automatically detect if OpenCV was compiled with OpenGL or CUDA and automatically set
+      `-DOAT_USE_OPENGL` and `-DOAT_USE_CUDA` accordingly
     - Put boost in a more standard location
     - Clang build
     - Windows build?
