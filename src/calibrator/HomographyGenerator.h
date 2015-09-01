@@ -23,8 +23,6 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/MatClient.h"
-
 #include "Calibrator.h"
 
 /**
@@ -64,7 +62,15 @@ protected:
     void calibrate(cv::Mat& frame);
 
 private:
+
+    // User-supplied world unit definition. Defaults to meters.
+    std::string world_units_;
+
+    // 
+    // Is homography well-defined?
+    bool homography_valid_;
     
+    // Show frame and start interactive session 
     showFrame(const cv::Mat& frame);
     
     // Propossed methods 
