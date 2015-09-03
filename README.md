@@ -907,12 +907,18 @@ instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/i
 since it is a multistep process. To compile OpenCV with CUDA support, add the
 `-DWITH_CUDA=ON` flag in the cmake command below.
 
+[__WIP__]
+__Note__: GUI functionality is enhanced in OpenCV is compiled with Qt support.
+You can build OpenCV with Qt by first installing the [Qt
+SDK](http://download.qt.io/official_releases/online_installers/qt-unified-linux-x64-online.run)
+and the adding the `-DWITH_QT=ON` flag to the cmake command below.
+
 To install OpenCV:
 
 ```bash
 # Install OpenCV's dependencies
 sudo apt-get install build-essential # Compiler
-sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev # Required
+sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev# Required
 sudo apt-get install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev # Optional
 sudo apt-get install # ffmpeg support [TODO]
 sudo apt-get install # OpenGL support [TODO]
@@ -1116,6 +1122,9 @@ camera with your computer.
     - Size of position markers, sample numbers, etc do not change with image
       resolution
     - How are multi-region tags displayed using the -R option?
+- [ ] Maybe use OpenCV's Qt integration to improve GUIs overall
+    - `oat-view`
+    - `oat-calibrate`
 - [x] When a position sink decrements the client reference count, positest
   deadlocks instead of continuing to serve. Problem with SMServer?
     - EDIT: Could not replicate with positest --> posifilt. Need to get

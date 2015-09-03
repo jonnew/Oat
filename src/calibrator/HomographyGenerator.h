@@ -22,6 +22,7 @@
 
 #include <string>
 #include <opencv2/core/mat.hpp>
+#include <opencv2/core/matx.hpp>
 
 #include "Calibrator.h"
 
@@ -30,7 +31,7 @@
  */
 class HomographyGenerator : public Calibrator {
 
-    using dat_size_t = std::vector<cv::Point2f>::size_type;
+    using point_size_t = std::vector<cv::Point2f>::size_type;
 
 public:
 
@@ -50,10 +51,7 @@ public:
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    void configure(const std::string& config_file, const std::string& config_key) = 0;
-
-    // Accessors
-    std::string name(void) const { return name_; }
+    void configure(const std::string& config_file, const std::string& config_key);
 
 protected:
 
@@ -70,21 +68,32 @@ private:
 
     // Is homography well-defined?
     bool homography_valid_;
+    cv::Matx33d homography_;
    
     // Data used to create homography
+    bool added_ {false};
     std::vector<cv::Point2f> pixels_, world_points_;
+    
+    // Current mouse point
+    bool clicked_ {false};
+    cv::Point mouse_pt_;
 
-    // Show frame and start interactive session 
-    showFrame(const cv::Mat& frame);
-
+    // Show frame and start interactive session
+    //void showFrame(const cv::Mat& frame);
+    void printDataPoints();
+    cv::Mat addMousePoint(cv::Mat& frame);
+    void onMouseEvent(int event, int x, int y);
+    static void onMouseEvent(int event, int x, int y, int, void* _this);
+    
     // Data list manipulation 
-    addDataPoint(const std::pair<cv::Point2f, cv::Point2f>&& new_point);
-    removeDataPoint(const dat_size_t index_to_remove); 
+    void addDataPoint(const std::pair<cv::Point2f, cv::Point2f>&& new_point);
+    void removeDataPoint(const point_size_t index_to_remove); 
 
     // Propossed methods 
     //void catchLeftClick();
     //void getPositionFromStdIO();
-    //void generateHomography(std::vector<cv::Point<double> > pixels, 
-    //        std::vector<cv::Point<double> > world_units);
+    void generateHomography(void);
 
 };
+
+#endif //HOMOGRAPHYGENERATOR_H

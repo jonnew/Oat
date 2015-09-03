@@ -29,9 +29,8 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 #include "Calibrator.h"
-#include "CameraParameterGenerator.h"
+//#include "CameraParameterGenerator.h"
 #include "HomographyGenerator.h"
-#include "FrameMasker.h"
 
 namespace po = boost::program_options;
 
@@ -45,7 +44,7 @@ void printUsage(po::options_description options){
               << "frame SOURCE.\n\n"
               << "TYPE\n"
               << "  cal: Generate calibration parameters (camera matrix and distortion coefficients).\n"
-              <  "  homo: Generate homography transform between pixels and world units.\n\n"
+              << "  homo: Generate homography transform between pixels and world units.\n\n"
               << "SOURCE:\n"
               << "  User-supplied name of the memory segment to receive frames "
               << "from (e.g. raw).\n\n"
@@ -71,11 +70,10 @@ int main(int argc, char *argv[]) {
 
     std::string type;
     std::string source;
-    std::string sink;
+    std::string save_path;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
-    bool invert_mask = false;
     po::options_description visible_options("OPTIONS");
 
     std::unordered_map<std::string, char> type_hash;
@@ -180,11 +178,11 @@ int main(int argc, char *argv[]) {
     
     // Refine component type
     switch (type_hash[type]) {
-        case 'a':
-        {
-            calibrator = std::make_shared<CameraParameterGenerator>(source);
-            break;
-        }
+//        case 'a':
+//        {
+//            calibrator = std::make_shared<CameraParameterGenerator>(source);
+//            break;
+//        }
         case 'b':
         {
             calibrator = std::make_shared<HomographyGenerator>(source);
@@ -205,36 +203,34 @@ int main(int argc, char *argv[]) {
             calibrator->configure(config_file, config_key);
 
         // Tell user
-        std::cout << oat::whoMessage(calibrator->get_name(),
+        std::cout << oat::whoMessage(calibrator->name(),
                 "Listening to source " + oat::sourceText(source) + ".\n")
-                << oat::whoMessage(calibrator->get_name(),
-                "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(calibrator->get_name(),
+                << oat::whoMessage(calibrator->name(),
                 "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
         run(calibrator);
 
         // Tell user
-        std::cout << oat::whoMessage(calibrator->get_name(), "Exiting.\n");
+        std::cout << oat::whoMessage(calibrator->name(), "Exiting.\n");
         
         // Exit success
         return 0;
 
     } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(calibrator->get_name(), 
+        std::cerr << oat::whoError(calibrator->name(), 
                      "Failed to parse configuration file " 
                      + config_file + "\n")
-                  << oat::whoError(calibrator->get_name(), ex.what())
+                  << oat::whoError(calibrator->name(), ex.what())
                   << "\n";
     } catch (const std::runtime_error ex) {
-        std::cerr << oat::whoError(calibrator->get_name(),ex.what())
+        std::cerr << oat::whoError(calibrator->name(),ex.what())
                   << "\n";
     } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(calibrator->get_name(), ex.what())
+        std::cerr << oat::whoError(calibrator->name(), ex.what())
                   << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(calibrator->get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(calibrator->name(), "Unknown exception.\n");
     }
     
     // Exit failure

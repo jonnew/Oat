@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, sigHandler);
 
     std::string source;
-    std::string file_name;
+    std::string file_name; //TODO: figure out if path is file or folder.
     std::string save_path;
     po::options_description visible_options("OPTIONS");
 

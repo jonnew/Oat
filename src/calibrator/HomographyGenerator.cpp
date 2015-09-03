@@ -21,30 +21,42 @@
 
 #include <string>
 
-#include <opencv/highgui>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
-#include "HomographyGenerator"
+#include "HomographyGenerator.h"
 
 HomographyGenerator::HomographyGenerator(const std::string& frame_source_name) :
   Calibrator(frame_source_name)
 , world_units_("meters")
-, homography_valid_(false) { 
+, homography_valid_(false)
+, homography_(cv::Matx<double, 3, 3>::eye()) { 
 
-    // Create (Qt?) named window
-    cv::namedWindow("Homography", 1);
+#ifdef OAT_USE_OPENGL
+    try {
+        cv::namedWindow(name(), cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);   
+    } catch (cv::Exception& ex) {
+        oat::whoWarn(name(), "OpenCV not compiled with OpenGL support. "
+                           "Falling back to OpenCV's display driver.\n");
+        cv::namedWindow(name(), cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+    }
+#else
+    cv::namedWindow(name(), cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+#endif
 
-    //set the callback function for any mouse event
-    cv::Point mouse_pt;
-    cv::setMouseCallback("Image View", mouseEvent, &mouse_pt);
+    //set the callback function for any mouse event    
+    cv::setMouseCallback(name(), onMouseEvent, this);
+    
+}
 
-void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
+void HomographyGenerator::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {""};
+    std::vector<std::string> options {"rigid"};
     
     // This will throw cpptoml::parse_exception if a file 
     // with invalid TOML is provided
@@ -62,6 +74,134 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
+    }
+}
+
+void HomographyGenerator::calibrate(cv::Mat& frame) {
+    
+    if (clicked_) {
+        frame = addMousePoint(frame);
+    }
+    
+    cv::imshow(name(), frame);  
+    
+    char command = cv::waitKey(1);
+    
+    switch (command) {
+        
+    case 'a':
+        {
+
+            try {
+                
+                if (added_) {
+                    std::cout << "This point already exists in the data set.\n"
+                              << "Select another point or delete this one.\n";
+                    break;
+                }
+                if (!clicked_) {
+                    std::cout << "Click a point on the image to add it to the data set.\n"; 
+                    break;
+                }
+
+                std::cout << "Enter spaced-separated world coordinate:\n";
+                
+                cv::Point2f dst_pt;
+                std::string p, input_coords;
+                std::cin >> input_coords;
+                
+                // TODO: Input sanity checking
+                std::stringstream s(input_coords);
+                s >> p;
+                dst_pt.x = std::stof(p);
+                
+                s >> p;
+                dst_pt.y = std::stof(p);
+
+                pixels_.push_back(cv::Point2f(mouse_pt_.x, mouse_pt_.y));
+                world_points_.push_back(dst_pt);
+
+                std::cout << "Point added to map.\n\n";
+                added_ = true;
+
+            } catch (std::invalid_argument ex) {
+                // TODO: Somehow, 'flush' the cin at this point?
+                std::cerr << oat::Error(ex.what()) << oat::Error(": invalid argument\n\n");
+            }
+            
+            break;
+        }
+    
+        case 'd':
+        {
+            point_size_t idx;
+            std::cout << "Enter data index to delete. Prese Enter to do nothing.\n";
+            std::cin >> idx;
+            
+            if (idx < 0 || idx >= pixels_.size()) {
+                std::cerr << oat::Error("Index was out of bounds. Delete was unsuccessful.\n\n");
+                printDataPoints();
+                break;
+            }
+
+            pixels_.erase(pixels_.begin() + idx);
+            world_points_.erase(world_points_.begin() + idx);
+            
+            std::cout << "Data point " << idx << " was deleted.\n\n";
+            
+            break;
+        }
+        case 'p':
+        {
+            printDataPoints();
+            break;
+        }
+    }
+    
+}
+
+void HomographyGenerator::printDataPoints() {
+
+    std::cout << "      pixels\t world\n";
+    for(point_size_t i = 0; i != pixels_.size(); i++) {
+        
+        std::cout << "[" << i << "]: " 
+                  << "(" << pixels_[i].x << ", " << pixels_[i].y << ")\t"
+                  << "(" << world_points_[i].x << ", " << world_points_[i].y << ")\n";
+
+    }
+    
+    std::cout << "\n";
+}
+
+cv::Mat HomographyGenerator::addMousePoint(cv::Mat& frame) {
+
+    // Write the click point coords on the frame
+    cv::circle(frame, mouse_pt_, 2, cv::Scalar(0, 0, 255), -1);
+    std::string coord = "(" + std::to_string(mouse_pt_.x) + ", " + std::to_string(mouse_pt_.y) + ")";
+    cv::Point coord_text_origin(mouse_pt_.x + 10.0, mouse_pt_.y + 10.0);
+    cv::putText(frame, coord, coord_text_origin, 1, 1, cv::Scalar(0, 0, 255));
+    
+    return frame;
+}
+
+void HomographyGenerator::onMouseEvent(int event, int x, int y, int, void* _this) {
+
+    static_cast<HomographyGenerator*>(_this)->onMouseEvent(event, x, y);
+}
+
+void HomographyGenerator::onMouseEvent(int event, int x, int y) {
+
+    if (event == cv::EVENT_LBUTTONDOWN) {
+        mouse_pt_.x = x;
+        mouse_pt_.y = y;
+
+        clicked_ = true;
+        added_ = false;
+
+        // TODO: Display overlay instructions
+        //cv::displayOverlay(name(), "Enter world coordinates in terminal...", 5000);
+        //std::cout << "Current position (" << x << ", " << y << ")\n";
     }
 }
 

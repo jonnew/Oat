@@ -52,14 +52,14 @@ Viewer::Viewer(const std::string& frame_source_name,
 
 #ifdef OAT_USE_OPENGL
     try {
-        cv::namedWindow(name, cv::WINDOW_OPENGL);   
+        cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);   
     } catch (cv::Exception& ex) {
         oat::whoWarn(name, "OpenCV not compiled with OpenGL support. "
                            "Falling back to OpenCV's display driver.\n");
-        cv::namedWindow(name, cv::WINDOW_NORMAL);
+        cv::namedWindow(name, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
     }
 #else
-    cv::namedWindow(name, cv::WINDOW_NORMAL);
+    cv::namedWindow(name, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
 #endif
 
     // Snapshot file saving
@@ -95,12 +95,10 @@ bool Viewer::showImage(const std::string title) {
 
             try {
 
-                char command;
-
                 cv::imshow(title, current_frame);
                 tock = Clock::now();
 
-                command = cv::waitKey(1);
+                char command = cv::waitKey(1);
 
                 if (command == 's') {
                     cv::imwrite(makeFileName(), current_frame, compression_params);

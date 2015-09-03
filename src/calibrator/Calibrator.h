@@ -37,7 +37,10 @@ public:
      * Abstract calibrator.
      * All concrete calibrator types implement this ABC.
      */
-    Calibrator(const std::string& frame_source_name);
+    Calibrator(const std::string& frame_source_name) :
+      name_("calibrate[" + frame_source_name + "]")
+    , frame_source_(frame_source_name)
+    , append_date_ (false) { }
 
     virtual ~Calibrator() { }
 
@@ -47,14 +50,14 @@ public:
     bool process(void) {
 
         // Only proceed with processing if we are getting a valid frame
-        if (frame_source.getSharedMat(current_frame)) {
+        if (frame_source_.getSharedMat(current_frame_)) {
 
             // Use the current frame for calibration
-            calibrate(current_frame);
+            calibrate(current_frame_);
         }
         
         // Check for end of frame stream
-        return (frame_source.getSourceRunState() == oat::ServerRunState::END);
+        return (frame_source_.getSourceRunState() == oat::ServerRunState::END);
     }
 
     /**
@@ -98,3 +101,5 @@ private:
      */
     std::string makeFileName(void);
 };
+
+#endif //CALIBRATOR_H

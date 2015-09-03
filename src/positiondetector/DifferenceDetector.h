@@ -70,7 +70,7 @@ private:
     cv::Mat tune_image;
     void tune(void);
     void createTuningWindows(void);
-    static void blurSliderChangedCallback(int, void*);
+    static void blurSliderChangedCallback(int value, void*);
 
     // Processing segregation 
     // TODO: These are terrible - no IO signature other than void -> void,
