@@ -21,6 +21,8 @@
 
 #include <string>
 
+#include <opencv/highgui>
+
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/cpptoml/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
@@ -30,7 +32,14 @@
 HomographyGenerator::HomographyGenerator(const std::string& frame_source_name) :
   Calibrator(frame_source_name)
 , world_units_("meters")
-, homography_valid_(false) { }
+, homography_valid_(false) { 
+
+    // Create (Qt?) named window
+    cv::namedWindow("Homography", 1);
+
+    //set the callback function for any mouse event
+    cv::Point mouse_pt;
+    cv::setMouseCallback("Image View", mouseEvent, &mouse_pt);
 
 void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
 

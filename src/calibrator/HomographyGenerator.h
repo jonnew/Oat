@@ -30,6 +30,8 @@
  */
 class HomographyGenerator : public Calibrator {
 
+    using dat_size_t = std::vector<cv::Point2f>::size_type;
+
 public:
 
     /**
@@ -66,13 +68,19 @@ private:
     // User-supplied world unit definition. Defaults to meters.
     std::string world_units_;
 
-    // 
     // Is homography well-defined?
     bool homography_valid_;
-    
+   
+    // Data used to create homography
+    std::vector<cv::Point2f> pixels_, world_points_;
+
     // Show frame and start interactive session 
     showFrame(const cv::Mat& frame);
-    
+
+    // Data list manipulation 
+    addDataPoint(const std::pair<cv::Point2f, cv::Point2f>&& new_point);
+    removeDataPoint(const dat_size_t index_to_remove); 
+
     // Propossed methods 
     //void catchLeftClick();
     //void getPositionFromStdIO();
