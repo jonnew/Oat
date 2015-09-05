@@ -34,6 +34,9 @@ class HomographyGenerator : public Calibrator {
     using point_size_t = std::vector<cv::Point2f>::size_type;
 
 public:
+    
+    // Homography estimation procedure
+    enum class EstimationMethod { ROBUST = 0, REGULAR, EXACT };
 
     /**
      * Interactive homography transform generator.  The user is presented with
@@ -44,7 +47,7 @@ public:
      * user-supplied positions is displayed. 
      * @param frame_source_name imaging setup frame source name
      */
-    HomographyGenerator(const std::string& frame_source_name);
+    HomographyGenerator(const std::string& frame_source_name, EstimationMethod method);
 
     /**
      * Configure calibration parameters.
@@ -52,9 +55,6 @@ public:
      * @param config_key configuration key
      */
     void configure(const std::string& config_file, const std::string& config_key) override;
-
-    // Homography estimation procedure
-    enum class EstimationMethod { ROBUST = 0, REGULAR, EXACT };
 
 protected:
 
@@ -71,27 +71,27 @@ private:
     cv::Mat homography_;
 
     // Default esimation method
-    EstimationMethod method {EstimationMethod::ROBUST};
+    EstimationMethod method_ {EstimationMethod::ROBUST};
 
     // Data used to create homography    
-    std::vector<cv::Point2f> pixels_ 
-    {
-                cv::Point2f(678, 349), 
-                cv::Point2f(672, 25), 
-                cv::Point2f(687, 682),
-                cv::Point2f(352, 364),
-                cv::Point2f(1010, 353)
-    };
+    std::vector<cv::Point2f> pixels_; 
+//    {
+//                cv::Point2f(678, 349), 
+//                cv::Point2f(672, 25), 
+//                cv::Point2f(687, 682),
+//                cv::Point2f(352, 364),
+//                cv::Point2f(1010, 353)
+//    };
 
 
-    std::vector<cv::Point2f> world_points_
-    {
-                cv::Point2f(0, 0), 
-                cv::Point2f(0, 1), 
-                cv::Point2f(0, -1),
-                cv::Point2f(-1, 0),
-                cv::Point2f(1, 0)
-    };
+    std::vector<cv::Point2f> world_points_;
+//    {
+//                cv::Point2f(0, 0), 
+//                cv::Point2f(0, 1), 
+//                cv::Point2f(0, -1),
+//                cv::Point2f(-1, 0),
+//                cv::Point2f(1, 0)
+//    };
     
     // Current mouse point
     bool clicked_ {false};

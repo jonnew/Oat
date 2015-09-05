@@ -46,7 +46,7 @@ void printUsage(po::options_description options){
               << "frame SOURCE.\n\n"
               << "TYPE\n"
               << "  camera: Generate calibration parameters (camera matrix and distortion coefficients).\n"
-              << "  homo: Generate homography transform between pixels and world units.\n\n"
+              << "  homography: Generate homography transform between pixels and world units.\n\n"
               << "SOURCE:\n"
               << "  User-supplied name of the memory segment to receive frames "
               << "from (e.g. raw).\n\n"
@@ -70,18 +70,28 @@ int main(int argc, char *argv[]) {
 
     std::signal(SIGINT, sigHandler);
 
+    // Switches and options
     std::string type;
     std::string source;
     std::string save_path;
-    HomographyGenerator::EstimationMethod homo_method {HomographyGenerator::EstimationMethod::ROBUST};
+    std::string homography_method {"robust"};
     std::string config_file;
     std::string config_key;
-    bool config_used = false;
+    bool config_used {false};
+    
+    // Visible program options
     po::options_description visible_options("OPTIONS");
 
+    // Component sub-type
     std::unordered_map<std::string, char> type_hash;
     type_hash["camera"] = 'a';
-    type_hash["homo"] = 'b';
+    type_hash["homography"] = 'b';
+    
+    // Homography estimation method
+    std::unordered_map<std::string, HomographyGenerator::EstimationMethod> homo_meth_hash;
+    homo_meth_hash["robust"] = HomographyGenerator::EstimationMethod::ROBUST;
+    homo_meth_hash["regular"] = HomographyGenerator::EstimationMethod::REGULAR;
+    homo_meth_hash["exact"] = HomographyGenerator::EstimationMethod::EXACT;
 
     try {
 
@@ -97,6 +107,12 @@ int main(int argc, char *argv[]) {
                 "The base configuration file location.\n"
                 "The timestamp of the calibration will be prepended to th name."
                 "If not provided, the calibration info will be printed to STDOUT.")
+                ("homography-method", po::value<std::string>(&homography_method),
+                "Homography estimation method.\n\n"
+                "Values:\n"
+                "  robust (default): RANSAC-based robust estimation method (automatic outlier rejection).\n"
+                "  regular: Best-fit using all data points.\n"
+                "  exact: Compute the homography that fits four points. Useful when frames contain know fiducial marks.\n")
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
                 ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
                 ;
@@ -106,8 +122,9 @@ int main(int argc, char *argv[]) {
                 ("type", po::value<std::string>(&type),
                 "Type of frame calibrator to use.\n\n"
                 "Values:\n"
-                "  cal: Generate calibration parameters (camera matrix and distortion coefficients).\n"
-                "  homo: Generate homography transform between pixels and world units.")
+                "  camera: Generate calibration parameters (camera matrix and distortion coefficients).\n"
+                "  homography: Generate homography transform between pixels and world units.")
+                
                 ("source", po::value<std::string>(&source),
                 "The name of the SOURCE that supplies images on which to perform background subtraction."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
@@ -149,18 +166,25 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("type")) {
             printUsage(visible_options);
-            std::cout << oat::Error("A TYPE must be specified.\n");
+            std::cerr << oat::Error("A TYPE must be specified.\n");
             return -1;
         }
 
         if (!variable_map.count("source")) {
             printUsage(visible_options);
-            std::cout << oat::Error("A SOURCE must be specified.\n");
+            std::cerr << oat::Error("A SOURCE must be specified.\n");
             return -1;
         }
 
-         if (!variable_map.count("calibration-path")) {
+        if (!variable_map.count("calibration-path")) {
             save_path = bfs::current_path().string();
+        }
+        
+        // Check to see that homography-method is valid
+        if (homo_meth_hash.find(homography_method) == homo_meth_hash.end()) {
+            printUsage(visible_options);
+            std::cerr << oat::Error("Unrecognized homography-method.\n");
+            return -1;
         }
 
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
@@ -185,14 +209,15 @@ int main(int argc, char *argv[]) {
 
     // Refine component type
     switch (type_hash[type]) {
-//        case 'a':
-//        {
-//            calibrator = std::make_shared<CameraParameterGenerator>(source);
-//            break;
-//        }
+            //        case 'a':
+            //        {
+            //            calibrator = std::make_shared<CameraParameterGenerator>(source);
+            //            break;
+            //        }
         case 'b':
         {
-            calibrator = std::make_shared<HomographyGenerator>(source);
+            auto meth = homo_meth_hash.at(homography_method);
+            calibrator = std::make_shared<HomographyGenerator>(source, meth);
             break;
         }
         default:
@@ -203,9 +228,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // The business
-    try {
 
+    try{
         if (config_used)
             calibrator->configure(config_file, config_key);
 
@@ -236,10 +260,10 @@ int main(int argc, char *argv[]) {
                      + config_file + "\n")
                   << oat::whoError(calibrator->name(), ex.what())
                   << "\n";
-    } catch (const std::runtime_error ex) {
+    } catch (const std::runtime_error& ex) {
         std::cerr << oat::whoError(calibrator->name(),ex.what())
                   << "\n";
-    } catch (const cv::Exception ex) {
+    } catch (const cv::Exception& ex) {
         std::cerr << oat::whoError(calibrator->name(), ex.what())
                   << "\n";
     } catch (...) {

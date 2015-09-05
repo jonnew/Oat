@@ -36,9 +36,10 @@
 
 #include "HomographyGenerator.h"
 
-HomographyGenerator::HomographyGenerator(const std::string& frame_source_name) :
+HomographyGenerator::HomographyGenerator(const std::string& frame_source_name, const EstimationMethod method) :
   Calibrator(frame_source_name)
-, homography_valid_(false) {
+, homography_valid_(false)
+, method_(method) {
 
 #ifdef OAT_USE_OPENGL
     try {
@@ -254,7 +255,7 @@ int HomographyGenerator::generateHomography() {
     }
 
     // TODO: User options to choose the homography generation method
-    switch (method) {
+    switch (method_) {
         case EstimationMethod::ROBUST :
         {
             homography_ = cv::findHomography(pixels_, world_points_, cv::RANSAC);
@@ -267,12 +268,17 @@ int HomographyGenerator::generateHomography() {
         }
         case EstimationMethod::EXACT :
         {
-            // TODO: Check that there are 4 points in the map
-            homography_ = cv::getPerspectiveTransform(pixels_, world_points_);
+            if (pixels_.size() != 4) {
+                std::cerr << oat::Error("Exactly 4 points are used to calculate an exact homography.\n")
+                          << oat::Error("Ensure there are exactly 4 points in your data set by adding or deleting.\n");
+                printDataPoints();
+                return -1;
+            } else {
+                homography_ = cv::getPerspectiveTransform(pixels_, world_points_);
+            }
             break;
         }
     }
-
 
     if (!homography_.empty()) {
         homography_valid_ = true;
