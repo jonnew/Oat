@@ -2,7 +2,7 @@
 //* File:   oat calibrate main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     std::unordered_map<std::string, char> type_hash;
     type_hash["cal"] = 'a';
     type_hash["homo"] = 'b';
-    
+
     try {
 
         po::options_description options("INFO");
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
-        
+
         po::options_description config("CONFIGURATION");
         config.add_options()
                 ("calibration-path,f", po::value<std::string>(&save_path),
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("type", po::value<std::string>(&type), 
+                ("type", po::value<std::string>(&type),
                 "Type of frame calibrator to use.\n\n"
                 "Values:\n"
                 "  cal: Generate calibration parameters (camera matrix and distortion coefficients).\n"
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
         po::positional_options_description positional_options;
         positional_options.add("type", 1);
         positional_options.add("source", 1);
-        
+
         visible_options.add(options).add(config);
 
         po::options_description all_options("All options");
@@ -138,14 +138,14 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("version")) {
             std::cout << "Oat calibrator version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
-        
+
         if (!variable_map.count("type")) {
             printUsage(visible_options);
             std::cout << oat::Error("A TYPE must be specified.\n");
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
             std::cout << oat::Error("A SOURCE must be specified.\n");
             return -1;
         }
-        
+
          if (!variable_map.count("calibration-path")) {
             save_path = bfs::current_path().string();
         }
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 
     // Create component
     std::shared_ptr<Calibrator> calibrator;
-    
+
     // Refine component type
     switch (type_hash[type]) {
 //        case 'a':
@@ -201,16 +201,17 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
-    
+
     // The business
-    try { 
-        
+    try {
+
         if (config_used)
             calibrator->configure(config_file, config_key);
-        
+
         if (calibrator->generateSavePath(save_path))
             std::cerr << oat::whoWarn(calibrator->name(),
-                    "An existing calibration file will be overwritten by the current calibration routine.\n"
+                    "An existing calibration file will be overwritten by the current calibration routine.\n")
+                      << oat::whoWarn(calibrator->name(),
                     "Specify a different calibration-path value if this is undesirable.\n");
 
         // Tell user
@@ -224,13 +225,13 @@ int main(int argc, char *argv[]) {
 
         // Tell user
         std::cout << oat::whoMessage(calibrator->name(), "Exiting.\n");
-        
+
         // Exit success
         return 0;
 
     } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(calibrator->name(), 
-                     "Failed to parse configuration file " 
+        std::cerr << oat::whoError(calibrator->name(),
+                     "Failed to parse configuration file "
                      + config_file + "\n")
                   << oat::whoError(calibrator->name(), ex.what())
                   << "\n";
@@ -243,7 +244,7 @@ int main(int argc, char *argv[]) {
     } catch (...) {
         std::cerr << oat::whoError(calibrator->name(), "Unknown exception.\n");
     }
-    
+
     // Exit failure
     return -1;
 }
