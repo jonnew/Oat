@@ -53,6 +53,9 @@ public:
      */
     void configure(const std::string& config_file, const std::string& config_key) override;
 
+    // Homography estimation procedure
+    enum class EstimationMethod { ROBUST = 0, REGULAR, EXACT };
+
 protected:
 
     /**
@@ -63,13 +66,13 @@ protected:
 
 private:
 
-    // User-supplied world unit definition. Defaults to meters.
-    std::string world_units_;
-
     // Is homography well-defined?
     bool homography_valid_;
     cv::Mat homography_;
-   
+
+    // Default esimation method
+    EstimationMethod method {EstimationMethod::ROBUST};
+
     // Data used to create homography    
     std::vector<cv::Point2f> pixels_ 
     {

@@ -45,7 +45,7 @@ void printUsage(po::options_description options){
               << "Generate camera calibration and homography transform for a "
               << "frame SOURCE.\n\n"
               << "TYPE\n"
-              << "  cal: Generate calibration parameters (camera matrix and distortion coefficients).\n"
+              << "  camera: Generate calibration parameters (camera matrix and distortion coefficients).\n"
               << "  homo: Generate homography transform between pixels and world units.\n\n"
               << "SOURCE:\n"
               << "  User-supplied name of the memory segment to receive frames "
@@ -73,13 +73,14 @@ int main(int argc, char *argv[]) {
     std::string type;
     std::string source;
     std::string save_path;
+    HomographyGenerator::EstimationMethod homo_method {HomographyGenerator::EstimationMethod::ROBUST};
     std::string config_file;
     std::string config_key;
     bool config_used = false;
     po::options_description visible_options("OPTIONS");
 
     std::unordered_map<std::string, char> type_hash;
-    type_hash["cal"] = 'a';
+    type_hash["camera"] = 'a';
     type_hash["homo"] = 'b';
 
     try {

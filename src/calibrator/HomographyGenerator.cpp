@@ -38,7 +38,6 @@
 
 HomographyGenerator::HomographyGenerator(const std::string& frame_source_name) :
   Calibrator(frame_source_name)
-, world_units_("meters")
 , homography_valid_(false) {
 
 #ifdef OAT_USE_OPENGL
@@ -255,7 +254,25 @@ int HomographyGenerator::generateHomography() {
     }
 
     // TODO: User options to choose the homography generation method
-    homography_ = cv::findHomography(pixels_, world_points_, cv::RANSAC);
+    switch (method) {
+        case EstimationMethod::ROBUST :
+        {
+            homography_ = cv::findHomography(pixels_, world_points_, cv::RANSAC);
+            break;
+        }
+        case EstimationMethod::REGULAR :
+        {
+            homography_ = cv::findHomography(pixels_, world_points_, 0);
+            break;
+        }
+        case EstimationMethod::EXACT :
+        {
+            // TODO: Check that there are 4 points in the map
+            homography_ = cv::getPerspectiveTransform(pixels_, world_points_);
+            break;
+        }
+    }
+
 
     if (!homography_.empty()) {
         homography_valid_ = true;
@@ -337,7 +354,7 @@ int HomographyGenerator::saveHomography() {
         std::cout << "Homography matrix saved to " + calibration_save_path_ + "\n";
         fs.close();
     } catch (std::ofstream::failure& ex) {
-        std::cerr << oat::whoError(name(), "Could not write to " + calibration_save_path_ + ".\n")
+        std::cerr << oat::whoError(name(), "Could not write to " + calibration_save_path_ + ".\n");
     }
 
     return 0;
