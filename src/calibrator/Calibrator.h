@@ -21,16 +21,19 @@
 #define CALIBRATOR_H
 
 #include <string>
+#include <boost/filesystem.hpp>
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/shmem/MatClient.h"
+
+namespace bfs = boost::filesystem;
 
 /**
  * Abstract calibrator.
  * All concrete calibrator types implement this ABC.
  */
 class Calibrator {
-
+    
 public:
 
     /**
@@ -39,8 +42,11 @@ public:
      */
     Calibrator(const std::string& frame_source_name) :
       name_("calibrate[" + frame_source_name + "]")
-    , frame_source_(frame_source_name)
-    , append_date_ (false) { }
+    , frame_source_(frame_source_name) { 
+      
+      
+    
+      }
 
     virtual ~Calibrator() { }
 
@@ -67,6 +73,32 @@ public:
      */
     virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
 
+    /**
+     * Make the calibration file path.
+     * return True if file already exists.
+     */
+    virtual bool generateSavePath(const std::string& save_path) {
+
+        // Check that the save folder is valid
+        bfs::path path(save_path.c_str());
+        if (!bfs::exists(path.parent_path())) {
+            throw (std::runtime_error("Requested calibration save path, " +
+                    save_path + ", does not exist.\n"));
+        }
+
+        std::string file_name_ = path.stem().string();
+        if (file_name_.empty())
+            file_name_ = "calibration";
+
+        // Generate file name for this configuration
+        std::string folder = bfs::path(save_path.c_str()).parent_path().string();
+        calibration_save_path_ = folder + "/" + file_name_ + ".toml";
+
+
+       
+        return bfs::exists(calibration_save_path_.c_str());
+    }
+    
     // Accessors
     std::string name(void) const { return name_; }
 
@@ -77,7 +109,11 @@ protected:
      * @param frame frame to use for generating calibration parameters
      */
     virtual void calibrate(cv::Mat& frame) = 0;
-
+    
+    // Path to save calibration parameters 
+    std::string calibration_save_path_;
+    
+    
 private:
 
     // Viewer name
@@ -88,18 +124,6 @@ private:
 
     // Frame SOURCE to get frames for calibration
     oat::MatClient frame_source_;
-
-    // Path to save calibration parameters 
-    std::string file_name_;
-    std::string save_path_;
-    const bool append_date_;
-
-    /**
-     * Make the calibration file path using the requested save folder
-     * and current timestamp.
-     * return Calibration file path
-     */
-    std::string makeFileName(void);
 };
 
 #endif //CALIBRATOR_H

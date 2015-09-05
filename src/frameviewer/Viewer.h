@@ -40,8 +40,7 @@ public:
      * View a frame stream on the monitor.
      */
     Viewer(const std::string& frame_source_name, 
-           std::string& save_path,
-           const std::string& file_name);
+           const std::string& save_path);
 
     bool showImage(void);
     bool showImage(std::string title);
@@ -62,15 +61,13 @@ private:
     
     // Minimum viewer refresh period
     Clock::time_point tick, tock;
-    const Milliseconds min_update_period;
+    const Milliseconds min_update_period {33};
     
     // Used to request a snapshot of the current image, saved to disk
-    std::string frame_fid;
-    std::string save_path;
+    std::string snapshot_path_;
     std::string file_name;
-    bool append_date;
     std::vector<int> compression_params;
-    const int compression_level;
+    const int compression_level {9};
 
     /**
      * Make the snapshot file path using the requested save folder

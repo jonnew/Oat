@@ -22,6 +22,7 @@
 #include <iostream>
 #include <csignal>
 #include <unordered_map>
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <opencv2/core.hpp>
 
@@ -33,6 +34,7 @@
 #include "HomographyGenerator.h"
 
 namespace po = boost::program_options;
+namespace bfs = boost::filesystem;
 
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
@@ -155,6 +157,10 @@ int main(int argc, char *argv[]) {
             std::cout << oat::Error("A SOURCE must be specified.\n");
             return -1;
         }
+        
+         if (!variable_map.count("calibration-path")) {
+            save_path = bfs::current_path().string();
+        }
 
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
@@ -201,6 +207,11 @@ int main(int argc, char *argv[]) {
         
         if (config_used)
             calibrator->configure(config_file, config_key);
+        
+        if (calibrator->generateSavePath(save_path))
+            std::cerr << oat::whoWarn(calibrator->name(),
+                    "An existing calibration file will be overwritten by the current calibration routine.\n"
+                    "Specify a different calibration-path value if this is undesirable.\n");
 
         // Tell user
         std::cout << oat::whoMessage(calibrator->name(),

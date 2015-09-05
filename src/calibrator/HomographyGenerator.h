@@ -27,7 +27,7 @@
 #include "Calibrator.h"
 
 /**
- * Interactive homography transform generator.
+ * Interactive homography generator.
  */
 class HomographyGenerator : public Calibrator {
 
@@ -51,7 +51,7 @@ public:
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    void configure(const std::string& config_file, const std::string& config_key);
+    void configure(const std::string& config_file, const std::string& config_key) override;
 
 protected:
 
@@ -59,7 +59,7 @@ protected:
      * Perform homography matrix generation routine.
      * @param frame current frame to use for running calibration
      */
-    void calibrate(cv::Mat& frame);
+    void calibrate(cv::Mat& frame) override;
 
 private:
 
@@ -68,32 +68,46 @@ private:
 
     // Is homography well-defined?
     bool homography_valid_;
-    cv::Matx33d homography_;
+    cv::Mat homography_;
    
-    // Data used to create homography
-    bool added_ {false};
-    std::vector<cv::Point2f> pixels_, world_points_;
+    // Data used to create homography    
+    std::vector<cv::Point2f> pixels_ 
+    {
+                cv::Point2f(678, 349), 
+                cv::Point2f(672, 25), 
+                cv::Point2f(687, 682),
+                cv::Point2f(352, 364),
+                cv::Point2f(1010, 353)
+    };
+
+
+    std::vector<cv::Point2f> world_points_
+    {
+                cv::Point2f(0, 0), 
+                cv::Point2f(0, 1), 
+                cv::Point2f(0, -1),
+                cv::Point2f(-1, 0),
+                cv::Point2f(1, 0)
+    };
     
     // Current mouse point
     bool clicked_ {false};
     cv::Point mouse_pt_;
 
-    // Show frame and start interactive session
-    //void showFrame(const cv::Mat& frame);
-    void printDataPoints();
-    cv::Mat addMousePoint(cv::Mat& frame);
+    // Interactive session to 
+    // (1) obtain pixel <-> world map
+    // (2) Manipulate the data
+    // (3) Display data and transform information
+    // (4) Generate homography
+    int addDataPoint(void);
+    int removeDataPoint(void); 
+    void printDataPoints(void);
+    int generateHomography(void);
+    int saveHomography(void);
+    cv::Mat drawMousePoint(cv::Mat& frame);
     void onMouseEvent(int event, int x, int y);
     static void onMouseEvent(int event, int x, int y, int, void* _this);
     
-    // Data list manipulation 
-    void addDataPoint(const std::pair<cv::Point2f, cv::Point2f>&& new_point);
-    void removeDataPoint(const point_size_t index_to_remove); 
-
-    // Propossed methods 
-    //void catchLeftClick();
-    //void getPositionFromStdIO();
-    void generateHomography(void);
-
 };
 
 #endif //HOMOGRAPHYGENERATOR_H

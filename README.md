@@ -1115,9 +1115,6 @@ camera with your computer.
     - There are a bunch of unsafe exit conditions in the shmem library,
       especially having to do with EXITs after boost interprocess exceptions
       during shmem segment setup.
-- [ ] Use smart pointers to ensure proper resource management.
-    - ~~Start with `recorder`, which has huge amounts of heap allocated objects
-      pointed to with raw pointers~~
 - [ ] Decorator is primitive
     - Size of position markers, sample numbers, etc do not change with image
       resolution

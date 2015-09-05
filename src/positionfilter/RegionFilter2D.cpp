@@ -60,8 +60,6 @@ void RegionFilter2D::configure(const std::string& config_file, const std::string
         auto it = this_config->begin();
         while (it != this_config->end()) {
 
-            //auto region_val = *it;
-            
             oat::config::Array region_array;
             oat::config::getArray(this_config, it->first, region_array);
             

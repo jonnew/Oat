@@ -34,15 +34,12 @@ namespace bfs = boost::filesystem;
 using namespace boost::interprocess;
 
 Viewer::Viewer(const std::string& frame_source_name,
-        std::string& save_path,
-        const std::string& file_name) :
+               const std::string& snapshot_path) :
   name("viewer[" + frame_source_name + "]")
 , frame_source(frame_source_name)
-, min_update_period(33)
-, save_path(save_path)
-, file_name(file_name)
-, append_date(append_date) 
-, compression_level(9) { 
+, snapshot_path_(snapshot_path)  { 
+    
+    // Initialize GUI update timers
     tick = Clock::now();
     tock = Clock::now();
 
@@ -63,13 +60,17 @@ Viewer::Viewer(const std::string& frame_source_name,
 #endif
 
     // Snapshot file saving
-    // First check that the save_path is valid
-    bfs::path path(save_path.c_str());
-    if (!bfs::exists(path) || !bfs::is_directory(path)) {
-        throw (std::runtime_error ("Requested snapshot save path, "
-            + save_path + ", does not exist, or is not a valid directory.\n"));
+    // Check that the snapshot save folder is valid
+    bfs::path path(snapshot_path_.c_str());
+    if (!bfs::exists(path.parent_path())) {
+        throw (std::runtime_error ("Requested snapshot save path, " +
+               snapshot_path_ + ", does not exist.\n"));
     }
-
+    
+    file_name = path.stem().string();
+    if (file_name.empty())
+        file_name = frame_source_name;
+    
     // Snapshot encoding
     compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
     compression_params.push_back(compression_level);
@@ -126,13 +127,9 @@ std::string Viewer::makeFileName() {
     std::strftime(buffer, 80, "%F-%H-%M-%S", time_info);
     std::string date_now = std::string(buffer);
 
-    // Generate file name for this video
-    if (!file_name.empty())
-        frame_fid = save_path + "/" + date_now + "_" + file_name;
-    else
-        frame_fid = save_path + "/" + date_now + "_" + frame_source.get_name();
-
-    frame_fid = frame_fid + ".png";
+    // Generate file name for this snapshop
+    std::string folder = bfs::path(snapshot_path_.c_str()).parent_path().string();
+    std::string frame_fid = folder + "/" + date_now + "_" + file_name + ".png";
 
     // Check for existence
     int i = 0;
@@ -142,7 +139,7 @@ std::string Viewer::makeFileName() {
 
         ++i;
         bfs::path path(frame_fid.c_str());
-        bfs::path root_path = path.root_path();
+        bfs::path folder = path.parent_path();
         bfs::path stem = path.stem();
         bfs::path extension = path.extension();
 
@@ -150,13 +147,9 @@ std::string Viewer::makeFileName() {
         stem += append.c_str();
 
         // Recreate file name
-        file = std::string(root_path.generic_string()) +
-                std::string(stem.generic_string()) +
-                std::string(extension.generic_string());
+        file = folder.string() + "/" + stem.string() + "." + extension.string();
 
     }
 
     return file;
 }
-
-

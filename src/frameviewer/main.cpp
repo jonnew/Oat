@@ -22,6 +22,7 @@
 #include <csignal>
 #include <iostream>
 #include <string>
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <opencv2/core.hpp>
 
@@ -30,6 +31,7 @@
 #include "Viewer.h"
 
 namespace po = boost::program_options;
+namespace bfs = boost::filesystem;
 
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
@@ -39,7 +41,7 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(Viewer* viewer) {
+void run(std::shared_ptr<Viewer>& viewer) {
 
     while (!quit && !source_eof) {
         source_eof = viewer->showImage();
@@ -62,7 +64,7 @@ int main(int argc, char *argv[]) {
 
     std::string source;
     std::string file_name; //TODO: figure out if path is file or folder.
-    std::string save_path;
+    std::string snapshot_path;
     po::options_description visible_options("OPTIONS");
 
     try {
@@ -75,12 +77,11 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
-                ("filename,n", po::value<std::string>(&file_name),
-                "The base snapshot file name.\n"
-                "The timestamp of the snapshot will be prepended to this name."
-                "If not provided, the SOURCE name will be used.\n")
-                ("folder,f", po::value<std::string>(&save_path),
-                "The folder in which snapshots will be saved.")
+                ("snapshot-path,f", po::value<std::string>(&snapshot_path),
+                "The path to which in which snapshots will be saved."
+                "If a folder is designated, the base file name will be SOURCE."
+                "The timestamp of the snapshot will be prepended to the file name."
+                "Defaults to the current directory.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -93,7 +94,7 @@ int main(int argc, char *argv[]) {
         positional_options.add("source", -1);
 
         po::options_description all_options("ALL OPTIONS");
-        all_options.add(options).add(hidden);
+        all_options.add(options).add(config).add(hidden);
 
         visible_options.add(options).add(config);
 
@@ -128,12 +129,8 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if (!variable_map.count("folder")) {
-            save_path = ".";
-        }
-
-        if (!variable_map.count("filename")) {
-            file_name = "";
+        if (!variable_map.count("snapshot-path")) {
+            snapshot_path = bfs::current_path().string();
         }
 
     } catch (std::exception& e) {
@@ -144,36 +141,55 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    // Create component
+    std::shared_ptr<Viewer> viewer;
+    
     // Make the viewer
-    Viewer viewer(source, save_path, file_name);
-
-    // Tell user
-    std::cout << oat::whoMessage(viewer.get_name(),
-              "Listening to source " + oat::sourceText(source) + ".\n")
-              << oat::whoMessage(viewer.get_name(),
-              "Press 's' on the viewer window to take a snapshot.\n")
-              << oat::whoMessage(viewer.get_name(),
-              "Press CTRL+C to exit.\n");
+    // TODO: use a method to create snapshot file name instead of the constructor
+    //       This will allow you to get rid of these extra try-catch blocks
+    try {
+        viewer = std::make_shared<Viewer>(source, snapshot_path);
+    } catch (const std::runtime_error& ex) {
+        std::cerr << oat::Error(ex.what())
+                  << "\n";
+        
+        // Exit failure
+        return -1;
+        
+    } catch (...) {
+        std::cerr << oat::Error("Unknown exception.\n");
+        
+        // Exit failure
+        return -1;
+    }
 
     try {
 
+        // Tell user
+        std::cout << oat::whoMessage(viewer->get_name(),
+                  "Listening to source " + oat::sourceText(source) + ".\n")
+                  << oat::whoMessage(viewer->get_name(),
+                  "Press 's' on the viewer window to take a snapshot.\n")
+                  << oat::whoMessage(viewer->get_name(),
+                  "Press CTRL+C to exit.\n");
+        
         // Infinite loop until ctrl-c or end of stream signal
-        run(&viewer);
+        run(viewer);
 
         // Tell user
-        std::cout << oat::whoMessage(viewer.get_name(), "Exiting.\n");
+        std::cout << oat::whoMessage(viewer->get_name(), "Exiting.\n");
 
         // Exit
         return 0;
 
     } catch (const std::runtime_error& ex) {
-        std::cerr << oat::whoError(viewer.get_name(), ex.what())
+        std::cerr << oat::whoError(viewer->get_name(), ex.what())
                   << "\n";
     } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(viewer.get_name(), ex.msg)
+        std::cerr << oat::whoError(viewer->get_name(), ex.msg)
                   << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(viewer.get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(viewer->get_name(), "Unknown exception.\n");
     }
 
     // Exit failure
