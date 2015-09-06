@@ -4,8 +4,8 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 # Create a SOURCE variable containing all required .cpp files:
 set (oat-calibrate_SOURCE
      Calibrator.cpp
-     HomographyGenerator.cpp)
-     #CameraParameterGenerator.cpp
+     HomographyGenerator.cpp
+     CameraCalibrator.cpp)
 
 # Targets
 add_executable (oat-calibrate ${oat-calibrate_SOURCE} main.cpp)

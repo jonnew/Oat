@@ -22,7 +22,6 @@
 
 #include <string>
 #include <opencv2/core/mat.hpp>
-#include <opencv2/core/matx.hpp>
 
 #include "Calibrator.h"
 

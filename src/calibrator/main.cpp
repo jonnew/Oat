@@ -30,7 +30,7 @@
 #include "../../lib/cpptoml/cpptoml.h"
 
 #include "Calibrator.h"
-//#include "CameraParameterGenerator.h"
+#include "CameraCalibrator.h"
 #include "HomographyGenerator.h"
 
 namespace po = boost::program_options;
