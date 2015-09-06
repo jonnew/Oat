@@ -52,7 +52,7 @@ bool Calibrator::generateSavePath(const std::string& save_path) {
 
     } else {
 
-        // Use default file name
+        // Use user-specified file name
         folder = path.parent_path().string();
         file_name = path.stem().string();
     }

@@ -9,4 +9,4 @@ add_executable (oat-clean ${oat-clean_SOURCE})
 target_link_libraries (oat-clean ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
 # Installation
-install(TARGETS oat-clean DESTINATION ../../oat/libexec COMPONENT oat-processors)
+install(TARGETS oat-clean DESTINATION ../../oat/libexec COMPONENT oat-utlities)

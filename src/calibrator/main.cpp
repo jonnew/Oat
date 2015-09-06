@@ -228,16 +228,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
     try{
+
         if (config_used)
             calibrator->configure(config_file, config_key);
 
-        if (calibrator->generateSavePath(save_path))
-            std::cerr << oat::whoWarn(calibrator->name(),
-                    "An existing calibration file will be overwritten by the current calibration routine.\n")
-                      << oat::whoWarn(calibrator->name(),
-                    "Specify a different calibration-path value if this is undesirable.\n");
+        // Generate the save path and check validity
+        calibrator->generateSavePath(save_path);
 
         // Tell user
         std::cout << oat::whoMessage(calibrator->name(),

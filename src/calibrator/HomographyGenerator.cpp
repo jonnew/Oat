@@ -21,10 +21,12 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iomanip>
 #include <string>
 #include <iostream>
 #include <fstream>
 
+#include <boost/io/ios_state.hpp>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -36,6 +38,7 @@
 
 #include "HomographyGenerator.h"
 
+// TODO: Generalize to accept points from a file without interactive session
 HomographyGenerator::HomographyGenerator(const std::string& frame_source_name, const EstimationMethod method) :
   Calibrator(frame_source_name)
 , homography_valid_(false)
@@ -60,12 +63,10 @@ HomographyGenerator::HomographyGenerator(const std::string& frame_source_name, c
 
 void HomographyGenerator::configure(const std::string& config_file, const std::string& config_key) {
 
-    // TODO:
-    // 1. List of pixel points and world coords directly from file.
-    // 2. Homography transform type (rigid, robust, etc)
+    // TODO: Provide list of pixel points and world coords directly from file.
 
     // Available options
-    std::vector<std::string> options {"rigid"};
+    std::vector<std::string> options {""};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -110,7 +111,7 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
         }
         case 'f': // Change the calibration save path
         {
-            // changeSavePath();
+            changeSavePath();
             break;
         }
         case 'g': // Generate homography
@@ -120,12 +121,17 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
         }
         case 'h': // Display help dialog
         {
-            // printUsage();
+            printUsage(std::cout);
+            break;
+        }
+        case 'm': // Select homography estimation method
+        {
+            //selectHomographyMethod();
             break;
         }
         case 'p': // Print current data set
         {
-            printDataPoints();
+            printDataPoints(std::cout);
             break;
         }
         case 's': // Save homography info
@@ -136,7 +142,6 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
     }
 }
 
-// Generalize to accept points from a file
 int HomographyGenerator::addDataPoint() {
 
     try {
@@ -144,7 +149,7 @@ int HomographyGenerator::addDataPoint() {
         // Make sure the user has actually selected a point on the image
         if (!clicked_) {
             std::cerr << oat::Error("Click a point on the image to add it to the data set.\n");
-            // TODO: pringUsage();
+            printUsage(std::cout);
             return -1;
         }
 
@@ -208,7 +213,7 @@ int HomographyGenerator::removeDataPoint() {
 
         if (idx < 0 || idx >= pixels_.size()) {
             std::cerr << oat::Error("Index out of bounds. Delete unsuccessful.\n");
-            printDataPoints();
+            printDataPoints(std::cout);
             return -1;
         }
 
@@ -228,33 +233,97 @@ int HomographyGenerator::removeDataPoint() {
     return 0;
 }
 
-void HomographyGenerator::printDataPoints() {
+void HomographyGenerator::printUsage(std::ostream& out) {
+    
+    // Save stream state. When ifs is destructed, the stream will
+    // return to default format.
+    boost::io::ios_flags_saver ifs(out);
 
-    // TODO: Pretty format and tabs. Somebody did this for sure already.
-    std::cout << "Current homography data set:\n"
-              << "     Pixels\t World\n";
+    out << "Homography generation commands.\n"
+        << "These commands are captured by the frame display window.\n"
+        << "Make sure the display window is in focus to use them.\n\n"
+        << "Cmd    Function\n"
+        << "  a    Add world-coordinates for the currently selected pixel and append to\n"
+        << "       the pixel-to-world coordinate data set. Make sure you have clicked a\n" 
+        << "       point on the display window to select a pixel prior to using this command.\n"
+        << "  d    Remove an entry from the pixel-to-world coordinate data set using its index.\n"
+        << "       The 'p' command shows the index of each data entry.\n"
+        << "  f    Specify the calibration file save path to which the homography will be saved.\n"
+        << "  g    Generate a homography using the current pixel-to-world data set.\n"
+        << "       If successful, the pixel and world coordinate will be shown for selected pixels\n"
+        << "       on the display window.\n"
+        << "  h    Display this information.\n"
+        << "  m    Specify the homography estimation procedure. Available method are: \n"
+        << "        - robust (default): RANSAC-based robust estimation method\n" 
+        << "          (automatic outlier rejection).\n"
+        << "        - regular: Best-fit using all data points.\n"
+        << "        - exact: Compute the homography that exactly fits four points.\n"
+        << "          Useful when frames contain know fiducial marks.\n"
+        << "  p    Display the current pixel-to-world coordinate data set.\n"
+        << "  s    Save the homography to the specified calibration file.\n"
+        << "       This will modify the existing 'homography' entry in the calibration file\n"
+        << "       or add one if it does not exist. Other fields will not be affected.\n\n";
+}
+
+void HomographyGenerator::printDataPoints(std::ostream& out) {
+
+    // Save stream state. When ifs is destructed, the stream will
+    // return to default format.
+    boost::io::ios_flags_saver ifs(out);
+
+    // Table format parameters
+    constexpr int entry_width {25};
+    constexpr int prec {5};
+
+    out << "Current homography data set:\n"
+        << std::left 
+        << "Index  " 
+        << std::setw(entry_width)
+        << "Pixels" 
+        << "World\n";
+
     for(point_size_t i = 0; i != pixels_.size(); i++) {
 
-        std::cout << "[" << i << "]: "
-                  << "(" << pixels_[i].x << ", " << pixels_[i].y << ")\t"
-                  << "(" << world_points_[i].x << ", " << world_points_[i].y << ")\n";
+        // Format table entries
+        std::ostringstream ix_out, px_out, wd_out;
 
+        ix_out << i
+               << ":  ";
+
+        px_out << "[" 
+               << std::setprecision(prec) << pixels_[i].x
+               << ", "
+               << std::setprecision(prec) << pixels_[i].y
+               << "]";
+
+        wd_out << "[" 
+               << std::setprecision(prec) << world_points_[i].x
+               << ", "
+               << std::setprecision(prec) << world_points_[i].y
+               << "]";
+
+        // Single table row
+        out << std::right 
+            << std::setw(7) << ix_out.str()
+            << std::left
+            << std::setw(entry_width) << px_out.str()
+            << std::setw(entry_width) << wd_out.str()
+            << '\n';
     }
 
-    std::cout << "\n";
+    out << "\n";
 }
 
 int HomographyGenerator::generateHomography() {
 
     // Check if there are enough points to try
-    if (pixels_.size() < 3) {
-        std::cerr << oat::Error("At least 3 data points are required to compute a homography matrix. \n");
-        printDataPoints();
+    if (pixels_.size() < 4) {
+        std::cerr << oat::Error("At least 4 data points are required to compute a homography. \n");
+        printDataPoints(std::cout);
 
         return -1;
     }
 
-    // TODO: User options to choose the homography generation method
     switch (method_) {
         case EstimationMethod::ROBUST :
         {
@@ -271,7 +340,7 @@ int HomographyGenerator::generateHomography() {
             if (pixels_.size() != 4) {
                 std::cerr << oat::Error("Exactly 4 points are used to calculate an exact homography.\n")
                           << oat::Error("Ensure there are exactly 4 points in your data set by adding or deleting.\n");
-                printDataPoints();
+                printDataPoints(std::cout);
                 return -1;
             } else {
                 homography_ = cv::getPerspectiveTransform(pixels_, world_points_);
@@ -294,6 +363,13 @@ int HomographyGenerator::generateHomography() {
 }
 
 int HomographyGenerator::saveHomography() {
+
+    // Check the the homography is valid
+    if (!homography_valid_) {
+        std::cerr << oat::Error("Homgraphy must be computed before it is saved.\n");
+        printUsage(std::cout);
+        return -1;
+    }
 
     // Base calibration table
     cpptoml::table calibration;
@@ -366,6 +442,29 @@ int HomographyGenerator::saveHomography() {
     return 0;
 }
 
+int HomographyGenerator::changeSavePath() {
+
+    std::cout << "Type the path to save homography information and press <enter>: ";
+
+    std::string new_path;
+    if (!std::getline(std::cin, new_path)) {
+
+        // Save abort
+        std::cerr << oat::Error("Invalid input.\n");
+
+        // Flush cin in case the uer just inserted crap
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        return -1;
+    }
+   
+    try {
+        generateSavePath(new_path); //TODO: Does not work the same way as in main for unknown reason
+    } catch (const std::runtime_error& ex) {
+        std::cerr << oat::Error(ex.what()) << "\n";
+    }
+}
+
 cv::Mat HomographyGenerator::drawMousePoint(cv::Mat& frame) {
 
     // Write the click point coords on the frame
@@ -404,9 +503,5 @@ void HomographyGenerator::onMouseEvent(int event, int x, int y) {
         mouse_pt_.y = y;
 
         clicked_ = true;
-
-        // TODO: Display overlay instructions?
-        //cv::displayOverlay(name(), "Enter world coordinates in terminal...", 5000);
-        //std::cout << "Current position (" << x << ", " << y << ")\n";
     }
 }

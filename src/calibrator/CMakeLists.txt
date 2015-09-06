@@ -10,4 +10,4 @@ set (oat-calibrate_SOURCE
 # Targets
 add_executable (oat-calibrate ${oat-calibrate_SOURCE} main.cpp)
 target_link_libraries (oat-calibrate shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})
-install (TARGETS oat-calibrate DESTINATION ../../oat/libexec COMPONENT oat-processors)
+install (TARGETS oat-calibrate DESTINATION ../../oat/libexec COMPONENT oat-utlities)

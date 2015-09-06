@@ -75,7 +75,7 @@ add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/calibrator)
 # Oat API documentation
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
 
-# All executables should be installed in Oat/libexec
+# All executables should be installed in Oat/oat/libexec
 set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "Default install path" FORCE)
 
 # Show options summary
