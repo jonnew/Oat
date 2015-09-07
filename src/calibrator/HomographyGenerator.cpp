@@ -25,6 +25,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <wordexp.h>
 
 #include <boost/io/ios_state.hpp>
 #include <opencv2/core/mat.hpp>
@@ -34,6 +35,7 @@
 
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/cpptoml/OatTOMLSanitize.h"
+#include "../../lib/utility/IOUtility.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "HomographyGenerator.h"
@@ -130,7 +132,7 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
         }
         case 'm': // Select homography estimation method
         {
-            //selectHomographyMethod();
+            selectHomographyMethod();
             break;
         }
         case 'p': // Print current data set
@@ -197,10 +199,8 @@ int HomographyGenerator::addDataPoint() {
 
     } catch (std::invalid_argument ex) {
 
-        // Flush cin and report error
-        std::cin.clear();
-        std::cin.ignore(1000, '\n');
-        std::cerr << oat::Error("Invalid argument:") << oat::Error(ex.what()) << "\n";
+        oat::ignoreLine(std::cin);
+        std::cerr << oat::Error("Invalid argument: ") << oat::Error(ex.what()) << "\n";
         return -1;
     }
 
@@ -212,12 +212,11 @@ int HomographyGenerator::removeDataPoint() {
     try {
 
         point_size_t idx;
-        std::cout << "Enter data index to delete. Enter 'q' to do nothing.\n";
+        std::cout << "Enter data index to delete. Enter 'q' to do nothing: ";
         if (!(std::cin >> idx)) {
 
-            // Flush cin
-            std::cin.clear();
-            std::cin.ignore(1000, '\n');
+            oat::ignoreLine(std::cin);
+            std::cout << "Delete mode terminated.\n";
             return -1;
         }
 
@@ -234,8 +233,7 @@ int HomographyGenerator::removeDataPoint() {
     } catch (std::invalid_argument ex) {
 
         // Flush cin and report error
-        std::cin.clear();
-        std::cin.ignore(1000, '\n');
+        oat::ignoreLine(std::cin);
         std::cerr << oat::Error("Invalid argument:") << oat::Error(ex.what()) << "\n";
         return -1;
     }
@@ -244,10 +242,6 @@ int HomographyGenerator::removeDataPoint() {
 }
 
 void HomographyGenerator::printUsage(std::ostream& out) {
-
-    // Save stream state. When ifs is destructed, the stream will
-    // return to default format.
-    boost::io::ios_flags_saver ifs(out);
 
     out << "COMMANDS\n"
         << "(To use, make sure the display window is in focus.)\n\n"
@@ -272,6 +266,49 @@ void HomographyGenerator::printUsage(std::ostream& out) {
         << "  s    Save the homography to the specified calibration file.\n"
         << "       This will modify the existing 'homography' entry in the calibration file\n"
         << "       or add one if it does not exist. Other fields will not be affected.\n\n";
+}
+
+int HomographyGenerator::selectHomographyMethod() {
+
+    std::cout << "Available homgraphy estimation methods:\n"
+              << "[0] Robust\n"
+              << "[1] Regular\n"
+              << "[2] Exact\n"
+              << "Enter a numerical selection: ";
+
+    int sel {-1};
+    if (!(std::cin >> sel)) {
+        oat::ignoreLine(std::cin);
+        return -1;
+    }
+
+    switch (sel) {
+        case 0:
+        {
+            method_ = EstimationMethod::ROBUST;
+            std::cout << "Estimation method set to robust.\n";
+            break;
+        }
+        case 1:
+        {
+            method_ = EstimationMethod::REGULAR;
+            std::cout << "Estimation method set to regular.\n";
+            break;
+        }
+        case 2:
+        {
+            method_ = EstimationMethod::EXACT;
+            std::cout << "Estimation method set to exact.\n";
+            break;
+        }
+        default:
+        {
+            std::cerr << oat::Error("Invalid selection.\n");
+            return -1;
+        }
+
+        return 0;
+    }
 }
 
 void HomographyGenerator::printDataPoints(std::ostream& out) {
@@ -403,8 +440,7 @@ int HomographyGenerator::saveHomography() {
             std::cout << "Save aborted. Press 'f' to set a different calibration save path.\n";
 
             // Flush cin in case the uer just inserted crap
-            std::cin.clear();
-            std::cin.ignore(1000, '\n');
+            oat::ignoreLine(std::cin);
             return -1;
         }
     }
@@ -462,18 +498,30 @@ int HomographyGenerator::changeSavePath() {
         std::cerr << oat::Error("Invalid input.\n");
 
         // Flush cin in case the uer just inserted crap
-        std::cin.clear();
-        std::cin.ignore(1000, '\n');
+        oat::ignoreLine(std::cin);
         return -1;
     }
 
     try {
-        generateSavePath(new_path); //TODO: Does not work the same way as in main for unknown reason
+
+        // Expand the user specified path
+        wordexp_t exp_result;
+        if (wordexp(new_path.c_str(), &exp_result, WRDE_NOCMD) == 0) {
+
+            new_path = std::string { exp_result.we_wordv[0] };
+            wordfree(&exp_result);
+            generateSavePath(new_path);
+
+        } else {
+            throw std::runtime_error("Could not parse path.");
+        }
     } catch (const std::runtime_error& ex) {
         std::cerr << oat::Error(ex.what()) << "\n";
+        return -1;
     }
 
     std::cout << "Homography save file set to " + calibration_save_path_ + "\n";
+    return 0;
 }
 
 cv::Mat HomographyGenerator::drawMousePoint(cv::Mat& frame) {

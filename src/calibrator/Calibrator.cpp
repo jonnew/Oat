@@ -59,8 +59,8 @@ bool Calibrator::generateSavePath(const std::string& save_path) {
 
     // Check that save directory is valid
     if (!bfs::exists(bfs::path(folder.c_str())))
-        throw (std::runtime_error("Requested calibration save path " +
-                folder + " does not exist.\n"));
+        throw (std::runtime_error(
+            "Requested calibration save path " + folder + " does not exist."));
 
     // Generate file name for this configuration
     calibration_save_path_ = folder + "/" + file_name + ".toml";

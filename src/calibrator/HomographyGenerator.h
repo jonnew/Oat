@@ -103,7 +103,7 @@ private:
     int removeDataPoint(void); 
     void printDataPoints(std::ostream&);
     void printUsage(std::ostream&);
-    //int selectHomographyMethod(void);
+    int selectHomographyMethod(void);
     int generateHomography(void);
     int changeSavePath(void);
     int saveHomography(void);

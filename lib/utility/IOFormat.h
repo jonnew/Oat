@@ -2,7 +2,7 @@
 //* File:   IOFormat.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 //******************************************************************************
 
 #ifndef IOFORMAT_H
-#define	IOFORMAT_H
+#define IOFORMAT_H
 
 #include <string>
 #include <iomanip>
@@ -50,7 +50,7 @@ namespace oat {
 
         return "\033[1m" + source + ": \033[0m\033[33m" + message + "\033[0m";
     }
-    
+
     inline std::string Warn(const std::string& message) {
 
         return "\033[0m\033[33m" + message + "\033[0m";
@@ -60,7 +60,7 @@ namespace oat {
 
         return "\033[1m" + source + ": \033[0m\033[31m" + message + "\033[0m";
     }
-    
+
     inline std::string configNoTableError(const std::string& table_name,
                                           const std::string& config_file) {
 
@@ -75,21 +75,21 @@ namespace oat {
 
         return "'" + entry_name + "' in '" + table_name + "' in '" + config_file + "' " + message;
     }
-    
+
     inline std::string Error(const std::string& message) {
 
         return "\033[31m" + message + "\033[0m";
     }
-    
+
     inline std::string dbgMessage(const std::string& message) {
 
         return "\033[35mdebug: " + message + "\033[0m";
     }
-    
+
     inline std::string dbgColor(const std::string& message) {
 
         return "\033[35m" + message + "\033[0m";
     }
 }
 
-#endif	/* IOFORMAT_H */
+#endif // IOFORMAT_H

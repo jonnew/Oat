@@ -2,7 +2,7 @@
 //* File:   FrameViewer.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -37,8 +37,8 @@ Viewer::Viewer(const std::string& frame_source_name,
                const std::string& snapshot_path) :
   name("viewer[" + frame_source_name + "]")
 , frame_source(frame_source_name)
-, snapshot_path_(snapshot_path)  { 
-    
+, snapshot_path_(snapshot_path)  {
+
     // Initialize GUI update timers
     tick = Clock::now();
     tock = Clock::now();
@@ -49,7 +49,7 @@ Viewer::Viewer(const std::string& frame_source_name,
 
 #ifdef OAT_USE_OPENGL
     try {
-        cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);   
+        cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
     } catch (cv::Exception& ex) {
         oat::whoWarn(name, "OpenCV not compiled with OpenGL support. "
                            "Falling back to OpenCV's display driver.\n");
@@ -66,11 +66,11 @@ Viewer::Viewer(const std::string& frame_source_name,
         throw (std::runtime_error ("Requested snapshot save path, " +
                snapshot_path_ + ", does not exist.\n"));
     }
-    
+
     file_name = path.stem().string();
     if (file_name.empty())
         file_name = frame_source_name;
-    
+
     // Snapshot encoding
     compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
     compression_params.push_back(compression_level);
@@ -83,13 +83,13 @@ bool Viewer::showImage() {
 
 bool Viewer::showImage(const std::string title) {
 
-    // If we are able to aquire the current frame, 
+    // If we are able to aquire the current frame,
     // and the minimum update period has passed, show it.
     if (frame_source.getSharedMat(current_frame)) {
 
         tick = Clock::now();
 
-        Milliseconds duration = 
+        Milliseconds duration =
             std::chrono::duration_cast<Milliseconds>(tick - tock);
 
         if (duration > min_update_period) {
@@ -110,10 +110,10 @@ bool Viewer::showImage(const std::string title) {
             }
         }
     }
-    
+
     // If server state is END, return true
     return (frame_source.getSourceRunState() == oat::ServerRunState::END);
-    
+
 }
 
 std::string Viewer::makeFileName() {
