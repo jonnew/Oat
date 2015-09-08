@@ -71,6 +71,7 @@ private:
     CameraModel model_ {CameraModel::PINHOLE};
 
     // NXM black squares in the chessboard
+    bool chessboard_detected_, snapped_ {false};
     cv::Size chessboard_size_;
 
     // Minimum time between chessboard corner detections
@@ -84,6 +85,7 @@ private:
     void printDataPoints(void);
     void printCalibrationResults(void);
     int generateCalibrationParameters(void);
+    int selectCalibrationMethod(void);
     int saveCalibrationParameters(void);
     cv::Mat drawCorners(cv::Mat& frame, bool invert_colors);
     

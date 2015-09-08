@@ -51,8 +51,8 @@ HomographyGenerator::HomographyGenerator(const std::string& frame_source_name, c
         try {
             cv::namedWindow(name(), cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
         } catch (cv::Exception& ex) {
-            oat::whoWarn(name(), "OpenCV not compiled with OpenGL support. "
-                               "Falling back to OpenCV's display driver.\n");
+            oat::whoWarn(name(), "OpenCV not compiled with OpenGL support."
+                    " Falling back to OpenCV's display driver.\n");
             cv::namedWindow(name(), cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
         }
 #else
@@ -246,17 +246,22 @@ void HomographyGenerator::printUsage(std::ostream& out) {
     out << "COMMANDS\n"
         << "(To use, make sure the display window is in focus.)\n\n"
         << "CMD    FUNCTION\n"
-        << "  a    Add world-coordinates for the currently selected pixel and append to\n"
-        << "       the pixel-to-world coordinate data set. Make sure you have clicked a\n"
-        << "       point on the display window to select a pixel prior to using this command.\n"
-        << "  d    Remove an entry from the pixel-to-world coordinate data set using its index.\n"
-        << "       The 'p' command shows the index of each data entry.\n"
-        << "  f    Specify the calibration file save path to which the homography will be saved.\n"
-        << "  g    Generate a homography using the current pixel-to-world data set.\n"
-        << "       If successful, both the pixel and world coordinate will be shown for selected pixels\n"
-        << "       on the display window and the homography matrix will be printed.\n"
+        << "  a    Add world-coordinates for the currently selected pixel and\n"
+        << "       append to the pixel-to-world coordinate data set. Make sure\n"
+        << "       you have clicked a point on the display window to select a\n"
+        << "       pixel prior to using this command.\n"
+        << "  d    Remove an entry from the pixel-to-world coordinate data set\n"
+        << "       using its index. The 'p' command shows the index of each data\n"
+        << "       entry.\n"
+        << "  f    Specify the calibration file save path to which the\n"
+        << "       homography will be saved.\n"
+        << "  g    Generate a homography using the current pixel-to-world data\n"
+        << "       set.\n"
+        << "       If successful, both the pixel and world coordinate will be\n"
+        << "       shown for selected pixels on the display window and the\n"
+        << "       homography matrix will be printed.\n"
         << "  h    Print this information.\n"
-        << "  m    Specify the homography estimation procedure. Available method are: \n"
+        << "  m    Specify the homography estimation procedure from this list:\n"
         << "        - robust (default): RANSAC-based robust estimation method\n"
         << "          (automatic outlier rejection).\n"
         << "        - regular: Best-fit using all data points.\n"
@@ -264,8 +269,10 @@ void HomographyGenerator::printUsage(std::ostream& out) {
         << "          Useful when frames contain precisely know fiducial marks.\n"
         << "  p    Print the current pixel-to-world coordinate data set.\n"
         << "  s    Save the homography to the specified calibration file.\n"
-        << "       This will modify the existing 'homography' entry in the calibration file\n"
-        << "       or add one if it does not exist. Other fields will not be affected.\n\n";
+        << "       If the file exists, this will modify the 'homography' entry\n"
+        << "       in the file or create the 'homographgy' entry if it does not\n"
+        << "       exist. Other fields within an existing file not be affected.\n"
+        << "       If the file does not exist, it will be created.\n\n";
 }
 
 int HomographyGenerator::selectHomographyMethod() {
