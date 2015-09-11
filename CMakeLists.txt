@@ -24,9 +24,14 @@ option (OAT_USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
 option (OAT_USE_OPENGL "Use OpenGL functionality in OpenCV" OFF)
 option (OAT_USE_CUDA "Use CUDA GPU functionality in OpenCV" OFF)
 
-# Boost
-#set (BOOST_ROOT /opt/boost_1_58_0 )
-#set (BOOST_INCLUDE_DIR /opt/boost_1_58_0)
+# Show options summary
+message (STATUS "Oat version: " ${Oat_VERSION_LIST})
+message (STATUS "Compilation options:" )
+message (STATUS "  Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
+message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
+message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")
+
+# Boost TODO: minimum required version instead of exact?
 find_package (Boost 1.53.0  REQUIRED system thread program_options filesystem)
 include_directories (${Boost_INCLUDE_DIRS})
 link_directories (${Boost_LIBRARY_DIR})
@@ -78,9 +83,6 @@ add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
 # All executables should be installed in Oat/oat/libexec
 set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "Default install path" FORCE)
 
-# Show options summary
-message (STATUS "Oat version: " ${Oat_VERSION_LIST})
-message (STATUS "Compilation options:" )
-message (STATUS "  Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
-message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
-message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")
+# CPack Deb package
+set (CPACK_GENERATOR "DEB")
+set (CPACK_DEBIAN_PACKAGE_MAINTAINER "jonnew") #required

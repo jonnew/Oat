@@ -1088,6 +1088,16 @@ camera with your computer.
      - In anycase, the `pure SOURCE` components, esspecially roat-frameserve`,
        are by far the most primative components in the project at this point
        and need refactoring to deal with these two issues in a reasonable way.
+- [ ] Ideas for shmem performance optimization
+  - cv::Mat's have a constructor option that takes a pointer to user data. The
+    resultant object does manage the lifetime of the mat data. If I can make
+    this pointer come from shmem, then I can avoid needless copying of mat
+    data.
+- [ ] In line with the comments above about central clock management, it might
+  also be better to have a central anonymous shared memory management. Instead
+  of creating a named shared block that can potentially be stranded in the case
+  of a program crash, a central program to manage all the shared blocks and the
+  clock could be smarter about shmem allocation/freeing.
 - [ ] shmem type checking by clients, exit gracefully in the case of incorrect
   type
    - e.g. a framefilter tries to use a position filter as a SOURCE. In this
