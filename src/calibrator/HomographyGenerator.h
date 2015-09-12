@@ -24,6 +24,7 @@
 #include <opencv2/core/mat.hpp>
 
 #include "Calibrator.h"
+#include "CalibratorVisitor.h"
 
 /**
  * Interactive homography generator.
@@ -54,6 +55,8 @@ public:
      * @param config_key configuration key
      */
     void configure(const std::string& config_file, const std::string& config_key) override;
+    
+    void accept(std::uniqe_ptr<CalibratorVisitor> visitor);
 
 protected:
 

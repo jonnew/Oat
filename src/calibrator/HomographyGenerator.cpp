@@ -148,6 +148,11 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
     }
 }
 
+void HomographyGenerator::accept(std::uniqe_ptr<CalibratorVisitor> visitor) {
+
+    visitor->visit(this);
+}
+    
 int HomographyGenerator::addDataPoint() {
 
     try {

@@ -36,22 +36,20 @@ public:
     /**
      * Abstract calibrator.
      * All concrete calibrator types implement this ABC.
+     * @param frame_source_name Frame SOURCE name
      */
     Calibrator(const std::string& frame_source_name) :
       name_("calibrate[" + frame_source_name + "]")
     , frame_source_(frame_source_name)
     {
-        //Nothing
+        // Nothing
     }
 
-    virtual ~Calibrator()
-    {
-        //Nothing
-    }
+    virtual ~Calibrator() { //Nothing }
 
     /**
      * Run the calibration routine on the frame SOURCE.
-     * return True if SOURCE signals EOF
+     * @return True if SOURCE signals EOF
      */
     bool process(void);
 
@@ -63,35 +61,33 @@ public:
     virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
 
     /**
-     * Create the calibration file path.
-     * return True if file already exists.
+     * Create the calibration file path using a specified path.
+     * @param save_path the path to save configuration data. If this path is a
+     * folder, the calibration file will default to calibraiton.toml. 
+     * @return True if the specified calibration file already exists.
      */
     virtual bool generateSavePath(const std::string& save_path);
+
+    // Accept method for visitors
+    virtual void accept(std::uniqe_ptr<CalibratorVisitor> visitor) = 0;
 
     // Accessors
     const std::string& name(void) const { return name_; }
 
 protected:
 
-    /**
-     * Perform calibration routine.
+    /** Perform calibration routine.
      * @param frame frame to use for generating calibration parameters
      */
     virtual void calibrate(cv::Mat& frame) = 0;
 
-    // Path to save calibration parameters
-    std::string calibration_save_path_;
+    std::string calibration_save_path_; //!< Calibration parameter save path
 
 private:
 
-    // Viewer name
-    std::string name_;
-
-    // Current frame provided by SOURCE
-    cv::Mat current_frame_;
-
-    // Frame SOURCE to get frames for calibration
-    oat::MatClient frame_source_;
+    std::string name_; //!< Calibrator name
+    cv::Mat current_frame_; //!< Current frame provided by SOURCE
+    oat::MatClient frame_source_; //!< The calibrator frame SOURCE 
 };
 
 #endif // CALIBRATOR_H

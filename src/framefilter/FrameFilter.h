@@ -42,8 +42,8 @@ public:
     /**
      * Abstract frame filter.
      * All concrete frame filter types implement this ABC.
-     * @param source_name Image SOURCE name
-     * @param sink_name Image SINK name
+     * @param source_name Frame SOURCE name
+     * @param sink_name Frame SINK name
      */
     FrameFilter(const std::string& source_name, const std::string& sink_name) :
       name("framefilt[" + source_name + "->" + sink_name + "]")
