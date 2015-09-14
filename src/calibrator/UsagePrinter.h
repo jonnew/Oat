@@ -1,8 +1,7 @@
 //******************************************************************************
-//* File:   CalibratorVisitor.h
-//* Author: Jon Newman <jpnewman snail mit dot edu>
-//*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* File:   UsagePrinter.h
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
+//
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,26 +16,37 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef CALIBRATORVISITOR_H
-#define	CALIBRATORVISITOR_H
+#ifndef USAGEPRINTER_H
+#define USAGEPRINTER_H
 
 #include <iosfwd>
 
-// Foward declarations
+#include "OutputVisitor.h"
+
+// Forward declarations
 class CameraCalibrator;
 class HomographyGenerator;
 
 /**
  *
  */
-class CalibratorVisitor {
+class UsagePrinter : public OutputVisitor {
 
 public:
 
-    // Standard
-    virtual void visit(CameraCalibrator* cc) = 0;
-    virtual void visit(HomographyGenerator* hg) = 0;
+    /**
+     * Print interactive usage information for the CameraCalibrator.
+     * @param out output stream to print usage information to.
+     */
+    void visit(CameraCalibrator* cc, std::ostream& out) override;
+
+    /**
+     * Print interactive usage information for the HomographyGenerator.
+     * @param out output stream to print usage information to.
+     */
+    void visit(HomographyGenerator* hg, std::ostream& out) override;
+
 };
 
-#endif	/* CALIBRATORVISITOR_H */
+#endif // USAGEPRINTER_H
 

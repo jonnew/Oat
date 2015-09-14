@@ -20,6 +20,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include <boost/filesystem.hpp>
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/cpptoml/cpptoml.h"
@@ -30,6 +31,16 @@
 #include "HomographyGenerator.h"
 #include "Saver.h"
 
+namespace bfs = boost::filesystem;
+
+Saver::Saver(const std::string& entry_key, const std::string& calibration_file) :
+  CalibratorVisitor()
+, entry_key_(entry_key) 
+, calibration_file_(calibration_file)
+{
+    // Nothing
+}
+
 void Saver::visit(CameraCalibrator* camera_calibrator) {
 
 }
@@ -39,21 +50,17 @@ void Saver::visit(HomographyGenerator* hg) {
     // Check the the homography is valid
     if (!hg->homography_valid()) {
         std::cerr << oat::Error("Homgraphy must be computed before it is saved.\n");
-        hg->printUsage(std::cout);
         return;
     }
 
     // Generate or get base calibration table
     cpptoml::table calibration;
     try {
-        calibration = generateCalibrationTable(hg->calibration_save_path(), "homography");
+        calibration = generateCalibrationTable(calibration_file_, entry_key_);
     } catch (const std::runtime_error& ex) {
         std::cerr << ex.what();
         return;
     }
-    
-    auto dt = std::make_shared<cpptoml::value<cpptoml::datetime>>(generateDateTime()); 
-    calibration.insert("last-modified", dt);
 
     // Construct TOML array from homography
     auto arr = std::make_shared<cpptoml::array>();
@@ -63,10 +70,10 @@ void Saver::visit(HomographyGenerator* hg) {
     }
 
     // Insert the array into the calibration table
-    calibration.insert("homography", arr);
+    calibration.insert(entry_key_, arr);
 
     // Save the file
-    saveCalibrationTable(calibration, hg->calibration_save_path());
+    saveCalibrationTable(calibration, calibration_file_);
 }
 
 cpptoml::table Saver::generateCalibrationTable(const std::string& file, const std::string& key) {
@@ -74,12 +81,9 @@ cpptoml::table Saver::generateCalibrationTable(const std::string& file, const st
     cpptoml::table table;
 
     // If the file already exists, open it as a TOML table
-    try {
+    // This will throw if the file cotains invalid TOML
+    if (bfs::exists(bfs::path(file.c_str()))) {
         table = cpptoml::parse_file(file);
-    } catch (const cpptoml::parse_exception& ex) {
-        // Do nothing because we will just overwrite.
-        // TODO: This is dangerous. What if a user made a table themselves that
-        // has a slight syntax error. This will just destroy their work
     }
 
     // See if there is already specified key. If so warn the user that it
@@ -98,6 +102,9 @@ cpptoml::table Saver::generateCalibrationTable(const std::string& file, const st
             throw(std::runtime_error("Save aborted.\n"));
         }
     }
+
+    auto dt = std::make_shared<cpptoml::value<cpptoml::datetime>>(generateDateTime()); 
+    table.insert("last-modified", dt);
 }
 
 cpptoml::datetime Saver::generateDateTime() {

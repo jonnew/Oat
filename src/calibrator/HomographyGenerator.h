@@ -1,4 +1,5 @@
 //******************************************************************************
+//
 //* File:   HomographyGenerator.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
@@ -20,6 +21,7 @@
 #ifndef HOMOGRAPHYGENERATOR_H
 #define HOMOGRAPHYGENERATOR_H
 
+#include <iosfwd>
 #include <string>
 #include <opencv2/core/mat.hpp>
 
@@ -56,8 +58,10 @@ public:
 
     // Overridden methods
     void configure(const std::string& config_file, const std::string& config_key) override;
-    void printUsage(std::ostream& stream) override;
+
+    // Accept visitors
     void accept(CalibratorVisitor* visitor) override;
+    void accept(OutputVisitor* visitor, std::ostream& out) override;
 
     // Accessors
     const bool homography_valid() const { return homography_valid_; }
@@ -112,8 +116,6 @@ private:
     void printDataPoints(std::ostream&);
     int selectHomographyMethod(void);
     int generateHomography(void);
-    int changeSavePath(void);
-    int saveHomography(void);
     cv::Mat drawMousePoint(cv::Mat& frame);
     void onMouseEvent(int event, int x, int y);
     static void onMouseEvent(int event, int x, int y, int, void* _this);

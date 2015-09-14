@@ -21,6 +21,7 @@
 #define IOUTILITY_H
 
 #include <iostream>
+#include <limits>
 
 namespace oat {
 

@@ -25,7 +25,6 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <wordexp.h>
 
 #include <boost/io/ios_state.hpp>
 #include <opencv2/core/mat.hpp>
@@ -39,6 +38,8 @@
 #include "../../lib/utility/IOFormat.h"
 
 #include "Saver.h"
+#include "UsagePrinter.h"
+#include "PathChanger.h"
 #include "HomographyGenerator.h"
 
 HomographyGenerator::HomographyGenerator(const std::string& frame_source_name, const EstimationMethod method) :
@@ -64,7 +65,8 @@ HomographyGenerator::HomographyGenerator(const std::string& frame_source_name, c
         cv::setMouseCallback(name(), onMouseEvent, this);
 
         std::cout << "Starting interactive session.\n";
-        printUsage(std::cout);
+        UsagePrinter usage;
+        accept(&usage, std::cout);
    // }
 }
 
@@ -118,7 +120,8 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
         }
         case 'f': // Change the calibration save path
         {
-            changeSavePath();
+            PathChanger changer;
+            accept(&changer);
             break;
         }
         case 'g': // Generate homography
@@ -128,7 +131,8 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
         }
         case 'h': // Display help dialog
         {
-            printUsage(std::cout);
+            UsagePrinter usage;
+            accept(&usage, std::cout);
             break;
         }
         case 'm': // Select homography estimation method
@@ -143,7 +147,7 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
         }
         case 's': // Persist homography to file
         {
-            Saver saver;
+            Saver saver("homography", calibration_save_path_);
             accept(&saver);
             break;
         }
@@ -154,6 +158,11 @@ void HomographyGenerator::accept(CalibratorVisitor* visitor) {
 
     visitor->visit(this);
 }
+
+void HomographyGenerator::accept(OutputVisitor* visitor, std::ostream& out) {
+
+    visitor->visit(this, out);
+}
     
 int HomographyGenerator::addDataPoint() {
 
@@ -162,7 +171,8 @@ int HomographyGenerator::addDataPoint() {
         // Make sure the user has actually selected a point on the image
         if (!clicked_) {
             std::cerr << oat::Error("Click a point on the image to add it to the data set.\n");
-            printUsage(std::cout);
+            UsagePrinter usage;
+            accept(&usage, std::cout);
             return -1;
         }
 
@@ -246,40 +256,6 @@ int HomographyGenerator::removeDataPoint() {
     }
 
     return 0;
-}
-
-void HomographyGenerator::printUsage(std::ostream& out) {
-
-    out << "COMMANDS\n"
-        << "(To use, make sure the display window is in focus.)\n\n"
-        << "CMD    FUNCTION\n"
-        << "  a    Add world-coordinates for the currently selected pixel and\n"
-        << "       append to the pixel-to-world coordinate data set. Make sure\n"
-        << "       you have clicked a point on the display window to select a\n"
-        << "       pixel prior to using this command.\n"
-        << "  d    Remove an entry from the pixel-to-world coordinate data set\n"
-        << "       using its index. The 'p' command shows the index of each data\n"
-        << "       entry.\n"
-        << "  f    Specify the calibration file save path to which the\n"
-        << "       homography will be saved.\n"
-        << "  g    Generate a homography using the current pixel-to-world data\n"
-        << "       set.\n"
-        << "       If successful, both the pixel and world coordinate will be\n"
-        << "       shown for selected pixels on the display window and the\n"
-        << "       homography matrix will be printed.\n"
-        << "  h    Print this information.\n"
-        << "  m    Specify the homography estimation procedure from this list:\n"
-        << "        - robust (default): RANSAC-based robust estimation method\n"
-        << "          (automatic outlier rejection).\n"
-        << "        - regular: Best-fit using all data points.\n"
-        << "        - exact: Compute the homography that exactly fits four points.\n"
-        << "          Useful when frames contain precisely know fiducial marks.\n"
-        << "  p    Print the current pixel-to-world coordinate data set.\n"
-        << "  s    Save the homography to the specified calibration file.\n"
-        << "       If the file exists, this will modify the 'homography' entry\n"
-        << "       in the file or create the 'homographgy' entry if it does not\n"
-        << "       exist. Other fields within an existing file not be affected.\n"
-        << "       If the file does not exist, it will be created.\n\n";
 }
 
 int HomographyGenerator::selectHomographyMethod() {
@@ -420,122 +396,6 @@ int HomographyGenerator::generateHomography() {
                   << oat::Error("Check the sanity of your data and/or try a different transform estimation method.\n");
         return -1;
     }
-}
-
-int HomographyGenerator::saveHomography() {
-
-    // Check the the homography is valid
-    if (!homography_valid_) {
-        std::cerr << oat::Error("Homgraphy must be computed before it is saved.\n");
-        printUsage(std::cout);
-        return -1;
-    }
-
-    // Base calibration table
-    cpptoml::table calibration;
-
-    // If the file already exists, open it as a TOML table
-    try {
-        calibration = cpptoml::parse_file(calibration_save_path());
-    } catch (const cpptoml::parse_exception& ex) {
-        // Do nothing
-    }
-
-    // See if there is already a homography entry. If so warn the user that it
-    // will be overwritten by proceeding
-    if (calibration.contains("homography")) {
-
-        std::cout << calibration_save_path() + " already contains a homography entry. Overwrite? (y/n): ";
-
-        char yes;
-        if (!(std::cin >> yes) || (yes != 'y' && yes != 'Y')) {
-
-            // Save abort
-            std::cout << "Save aborted. Press 'f' to set a different calibration save path.\n";
-
-            // Flush cin in case the uer just inserted crap
-            oat::ignoreLine(std::cin);
-            return -1;
-        }
-    }
-
-    // Add save date-time to the table
-    std::time_t raw_time;
-    struct tm * time_info;
-    char buffer[100];
-    std::time(&raw_time);
-    time_info = std::localtime(&raw_time);
-
-    cpptoml::datetime dt;
-    dt.year = time_info->tm_year + 1900;
-    dt.month = time_info->tm_mon + 1;
-    dt.day = time_info->tm_mday;
-    dt.hour = time_info->tm_hour;
-    dt.minute = time_info->tm_min;
-    dt.second = time_info->tm_sec;
-
-    calibration.insert("last-modified", std::make_shared<cpptoml::value<cpptoml::datetime>>(dt));
-
-    // Construct TOML array from homography_
-    auto arr = std::make_shared<cpptoml::array>();
-    cv::MatConstIterator_<double> it, end;
-    for (it = homography_.begin<double>(), end = homography_.end<double>(); it != end; ++it)  {
-        arr->get().push_back(std::make_shared<cpptoml::value<double>>(*it));
-    }
-
-    // Insert the array into the calibration table
-    calibration.insert("homography", arr);
-
-    // Save the table as TOML file
-    std::ofstream fs;
-    fs.exceptions (std::ofstream::failbit | std::ofstream::badbit);
-    try {
-        fs.open(calibration_save_path(), std::ios::out);
-        fs << calibration;
-        std::cout << "Homography matrix saved to " + calibration_save_path() + "\n";
-        fs.close();
-    } catch (std::ofstream::failure& ex) {
-        std::cerr << oat::whoError(name(), "Could not write to " + calibration_save_path() + ".\n");
-    }
-
-    return 0;
-}
-
-int HomographyGenerator::changeSavePath() {
-
-    std::cout << "Type the path to save homography information and press <enter>: ";
-
-    std::string new_path;
-    if (!std::getline(std::cin, new_path)) {
-
-        // Save abort
-        std::cerr << oat::Error("Invalid input.\n");
-
-        // Flush cin in case the uer just inserted crap
-        oat::ignoreLine(std::cin);
-        return -1;
-    }
-
-    try {
-
-        // Expand the user specified path
-        wordexp_t exp_result;
-        if (wordexp(new_path.c_str(), &exp_result, WRDE_NOCMD) == 0) {
-
-            new_path = std::string { exp_result.we_wordv[0] };
-            wordfree(&exp_result);
-            generateSavePath(new_path);
-
-        } else {
-            throw std::runtime_error("Could not parse path.");
-        }
-    } catch (const std::runtime_error& ex) {
-        std::cerr << oat::Error(ex.what()) << "\n";
-        return -1;
-    }
-
-    std::cout << "Homography save file set to " + calibration_save_path() + "\n";
-    return 0;
 }
 
 cv::Mat HomographyGenerator::drawMousePoint(cv::Mat& frame) {

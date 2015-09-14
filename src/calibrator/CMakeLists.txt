@@ -5,6 +5,8 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 set (oat-calibrate_SOURCE
      Calibrator.cpp
      Saver.cpp
+     UsagePrinter.cpp
+     PathChanger.cpp
      HomographyGenerator.cpp)
      
 # CameraCalibrator.cpp)

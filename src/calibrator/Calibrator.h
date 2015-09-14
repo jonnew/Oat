@@ -21,12 +21,14 @@
 #define CALIBRATOR_H
 
 #include <string>
+#include <iosfwd>
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/shmem/MatClient.h"
 
 // Forward declarations
 class CalibratorVisitor;
+class OutputVisitor;
 
 /**
  * Abstract calibrator.
@@ -74,20 +76,13 @@ public:
      */
     virtual bool generateSavePath(const std::string& save_path);
 
-
-    /**
-     * Print interactive usage information. This is completely different
-     * for each concrete calibrator type.
-     * @param stream stream to print usage information to.
-     */
-    virtual void printUsage(std::ostream& stream) = 0;
-
-    // Accept method for visitors
+    // Accept functions for visitors
     virtual void accept(CalibratorVisitor* visitor) = 0;
+    virtual void accept(OutputVisitor* visitor, std::ostream& out) = 0;
 
     // Accessors
     const std::string& name() const { return name_; }
-    const std::string& calibration_save_path() const {return calibration_save_path_; }
+    const std::string& calibration_save_path() const { return calibration_save_path_; }
 
 protected:
 
@@ -96,12 +91,13 @@ protected:
      */
     virtual void calibrate(cv::Mat& frame) = 0;
 
+    std::string calibration_save_path_; //!< Calibration parameter save path
+
 private:
 
     std::string name_;                  //!< Calibrator name
     cv::Mat current_frame_;             //!< Current frame provided by SOURCE
     oat::MatClient frame_source_;       //!< The calibrator frame SOURCE
-    std::string calibration_save_path_; //!< Calibration parameter save path
 };
 
 #endif // CALIBRATOR_H

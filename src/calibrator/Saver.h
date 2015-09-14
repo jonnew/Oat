@@ -32,12 +32,37 @@ class Saver : public CalibratorVisitor {
 
 public:
 
+    Saver(const std::string& entry_key, const std::string& calibration_file);
+
+    /**
+     * Save camera calibration parameters to file.
+     */
     void visit(CameraCalibrator* cc) override;
+
+    /**
+     * Save camera homography to file.
+     */
     void visit(HomographyGenerator* hg) override;
 
 private:
 
+    const std::string entry_key_;
+    const std::string calibration_file_;
+
+    /**
+     * Generate a cpptoml datetime to update the last-modified entry of the
+     * calibration file.
+     */
     cpptoml::datetime generateDateTime();
+
+    /**
+     * Either retrieve and existing calibration file or create a new one if it
+     * does not exist.
+     * @param file path to existing or desired calibration file.
+     * @param key key specifying field within calibration file to be modified
+     * (e.g. homography).
+     * @return TOML table contain
+     */
     cpptoml::table generateCalibrationTable(const std::string& file , const std::string& key);
     void saveCalibrationTable(const cpptoml::table& table, const std::string& file);
 
