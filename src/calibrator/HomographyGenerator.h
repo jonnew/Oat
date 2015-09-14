@@ -2,7 +2,7 @@
 //* File:   HomographyGenerator.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -34,9 +34,14 @@ class HomographyGenerator : public Calibrator {
     using point_size_t = std::vector<cv::Point2f>::size_type;
 
 public:
-    
+
     // Homography estimation procedure
-    enum class EstimationMethod { ROBUST = 0, REGULAR, EXACT };
+    enum class EstimationMethod
+    {
+        ROBUST = 0, //!< RANSAC-based outlier rejection
+        REGULAR,    //!< Best bit without outlier rejection
+        EXACT       //!< Solve an exact homography for 4 points
+    };
 
     /**
      * Interactive homography transform generator.  The user is presented with
@@ -44,19 +49,19 @@ public:
      * video feed and enter their equivalent world-unit equivalent. Upon each
      * selection, the a best-fit homography matrix relating pixels to work
      * coordinates is calulated and the MSE between the transformed and
-     * user-supplied positions is displayed. 
+     * user-supplied positions is displayed.
      * @param frame_source_name imaging setup frame source name
      */
     HomographyGenerator(const std::string& frame_source_name, EstimationMethod method);
 
-    /**
-     * Configure calibration parameters.
-     * @param config_file configuration file path
-     * @param config_key configuration key
-     */
+    // Overridden methods
     void configure(const std::string& config_file, const std::string& config_key) override;
-    
-    void accept(std::uniqe_ptr<CalibratorVisitor> visitor);
+    void printUsage(std::ostream& stream) override;
+    void accept(CalibratorVisitor* visitor) override;
+
+    // Accessors
+    const bool homography_valid() const { return homography_valid_; }
+    const cv::Mat& homography() const { return homography_; }
 
 protected:
 
@@ -75,11 +80,11 @@ private:
     // Default esimation method
     EstimationMethod method_ {EstimationMethod::ROBUST};
 
-    // Data used to create homography    
+    // Data used to create homography
     std::vector<cv::Point2f> pixels_;
 //    {
-//                cv::Point2f(678, 349), 
-//                cv::Point2f(672, 25), 
+//                cv::Point2f(678, 349),
+//                cv::Point2f(672, 25),
 //                cv::Point2f(687, 682),
 //                cv::Point2f(352, 364),
 //                cv::Point2f(1010, 353)
@@ -88,13 +93,13 @@ private:
 
     std::vector<cv::Point2f> world_points_;
 //    {
-//                cv::Point2f(0, 0), 
-//                cv::Point2f(0, 1), 
+//                cv::Point2f(0, 0),
+//                cv::Point2f(0, 1),
 //                cv::Point2f(0, -1),
 //                cv::Point2f(-1, 0),
 //                cv::Point2f(1, 0)
 //    };
-    
+
     // Current mouse point
     bool clicked_ {false};
     cv::Point mouse_pt_;
@@ -103,9 +108,8 @@ private:
     // coordinates and world coordinates, generate a homography, and display
     // the resuts
     int addDataPoint(void);
-    int removeDataPoint(void); 
+    int removeDataPoint(void);
     void printDataPoints(std::ostream&);
-    void printUsage(std::ostream&);
     int selectHomographyMethod(void);
     int generateHomography(void);
     int changeSavePath(void);
@@ -113,7 +117,7 @@ private:
     cv::Mat drawMousePoint(cv::Mat& frame);
     void onMouseEvent(int event, int x, int y);
     static void onMouseEvent(int event, int x, int y, int, void* _this);
-    
+
 };
 
 #endif //HOMOGRAPHYGENERATOR_H

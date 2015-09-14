@@ -17,6 +17,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
+#include <memory>
 #include <string>
 #include <boost/filesystem.hpp>
 #include <opencv2/core/mat.hpp>

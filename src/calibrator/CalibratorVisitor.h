@@ -20,14 +20,21 @@
 #ifndef CALIBRATORVISITOR_H
 #define	CALIBRATORVISITOR_H
 
+#include <memory>
+
+// Foward declarations
+class CameraCalibrator;
+class HomographyGenerator;
+
 /**
  *
  */
 class CalibratorVisitor {
+
 public:
 
-    virtual void visit (std::uniqe_ptr<CameraCalibrator> camera_calibrator) = 0;
-    virtual void visit (std::uniqe_ptr<HomographyGenerator> homography_generator) = 0;
+    virtual void visit(CameraCalibrator* cc) = 0;
+    virtual void visit(HomographyGenerator* hg) = 0;
 
 };
 

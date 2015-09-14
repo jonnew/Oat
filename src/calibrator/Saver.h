@@ -1,8 +1,7 @@
 //******************************************************************************
-//* File:   IOUtility.h
-//* Author: Jon Newman <jpnewman snail mit dot edu>
-//*
+//* File:   Saver.h
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
+//
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,32 +16,31 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef IOUTILITY_H
-#define IOUTILITY_H
+#ifndef SAVER_H
+#define SAVER_H
 
-#include <iostream>
+#include "CalibratorVisitor.h"
 
-namespace oat {
+// Forward declarations
+class CameraCalibrator;
+class HomographyGenerator;
 
-    /**
-     * Used to clear the input stream after bad input is detected.  Ignores
-     * stream content up to a newline.
-     */
-    inline void ignoreLine(std::istream& in) {
+/**
+ *
+ */
+class Saver : public CalibratorVisitor {
 
-        in.clear();
-        in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    }
+public:
 
-    /**
-     * Used to clear the input stream after bad input is detected.  Ignores
-     * all stream content.
-     */
-    inline void ignoreAll(std::istream& in) {
+    void visit(CameraCalibrator* cc) override;
+    void visit(HomographyGenerator* hg) override;
 
-        in.clear();
-        in.ignore(std::numeric_limits<std::streamsize>::max());
-    }
-}
+private:
 
-#endif // IOUTILITY_H
+    cpptoml::datetime generateDateTime();
+    cpptoml::table generateCalibrationTable(const std::string& file , const std::string& key);
+    void saveCalibrationTable(const cpptoml::table& table, const std::string& file);
+
+};
+
+#endif // SAVER_H

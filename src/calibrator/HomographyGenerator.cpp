@@ -38,6 +38,7 @@
 #include "../../lib/utility/IOUtility.h"
 #include "../../lib/utility/IOFormat.h"
 
+#include "Saver.h"
 #include "HomographyGenerator.h"
 
 HomographyGenerator::HomographyGenerator(const std::string& frame_source_name, const EstimationMethod method) :
@@ -140,15 +141,16 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
             printDataPoints(std::cout);
             break;
         }
-        case 's': // Save homography info
+        case 's': // Persist homography to file
         {
-            saveHomography();
+            Saver saver;
+            accept(&saver);
             break;
         }
     }
 }
 
-void HomographyGenerator::accept(std::uniqe_ptr<CalibratorVisitor> visitor) {
+void HomographyGenerator::accept(CalibratorVisitor* visitor) {
 
     visitor->visit(this);
 }
@@ -434,7 +436,7 @@ int HomographyGenerator::saveHomography() {
 
     // If the file already exists, open it as a TOML table
     try {
-        calibration = cpptoml::parse_file(calibration_save_path_);
+        calibration = cpptoml::parse_file(calibration_save_path());
     } catch (const cpptoml::parse_exception& ex) {
         // Do nothing
     }
@@ -443,7 +445,7 @@ int HomographyGenerator::saveHomography() {
     // will be overwritten by proceeding
     if (calibration.contains("homography")) {
 
-        std::cout << calibration_save_path_ + " already contains a homography entry. Overwrite? (y/n): ";
+        std::cout << calibration_save_path() + " already contains a homography entry. Overwrite? (y/n): ";
 
         char yes;
         if (!(std::cin >> yes) || (yes != 'y' && yes != 'Y')) {
@@ -488,12 +490,12 @@ int HomographyGenerator::saveHomography() {
     std::ofstream fs;
     fs.exceptions (std::ofstream::failbit | std::ofstream::badbit);
     try {
-        fs.open(calibration_save_path_, std::ios::out);
+        fs.open(calibration_save_path(), std::ios::out);
         fs << calibration;
-        std::cout << "Homography matrix saved to " + calibration_save_path_ + "\n";
+        std::cout << "Homography matrix saved to " + calibration_save_path() + "\n";
         fs.close();
     } catch (std::ofstream::failure& ex) {
-        std::cerr << oat::whoError(name(), "Could not write to " + calibration_save_path_ + ".\n");
+        std::cerr << oat::whoError(name(), "Could not write to " + calibration_save_path() + ".\n");
     }
 
     return 0;
@@ -532,7 +534,7 @@ int HomographyGenerator::changeSavePath() {
         return -1;
     }
 
-    std::cout << "Homography save file set to " + calibration_save_path_ + "\n";
+    std::cout << "Homography save file set to " + calibration_save_path() + "\n";
     return 0;
 }
 
