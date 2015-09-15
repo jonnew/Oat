@@ -17,7 +17,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-
 #define Oat_VERSION_MAJOR @Oat_VERSION_MAJOR@
 #define Oat_VERSION_MINOR @Oat_VERSION_MINOR@
 

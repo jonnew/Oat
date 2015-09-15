@@ -1,5 +1,4 @@
 //******************************************************************************
-//
 //* File:   HomographyGenerator.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
