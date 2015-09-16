@@ -82,8 +82,8 @@ private:
     CameraModel model_ {CameraModel::PINHOLE};
 
     // NXM black squares in the chessboard
-    bool chessboard_detected_;
-    bool snapped_ {false};
+    bool in_capture_mode_ {false};
+    bool chessboard_detected_ {false};
     cv::Size chessboard_size_; //!< Number of interior corners on chessboard
 
     // Minimum time between chessboard corner detections
@@ -94,7 +94,7 @@ private:
     std::vector<std::vector<cv::Point2f>> corners_;
 
     // Interactive session
-    bool detectChessboard(void);
+    void detectChessboard(cv::Mat&);
     void printDataPoints(void);
     void printCalibrationResults(void);
     int generateCalibrationParameters(void);

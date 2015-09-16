@@ -28,7 +28,7 @@
 #include "PathChanger.h"
 #include "CameraCalibrator.h"
 
-CameraCalibrator::CameraCalibrator(const std::string& frame_source_name, 
+CameraCalibrator::CameraCalibrator(const std::string& frame_source_name,
         const CameraModel& model, cv::Size& chessboard_size) :
   Calibrator(frame_source_name)
 , chessboard_size_(chessboard_size)
@@ -40,7 +40,7 @@ CameraCalibrator::CameraCalibrator(const std::string& frame_source_name,
 
     // Initialize corner detection update timers
     tick_ = Clock::now();
-    tock = Clock::now();
+    tock_ = Clock::now();
 
 #ifdef OAT_USE_OPENGL
         try {
@@ -89,9 +89,8 @@ void CameraCalibrator::calibrate(cv::Mat& frame) {
 
     tick_ = Clock::now();
 
-    chessboard_detected_ = detectChessboard(frame);
-    if (chessboard_detected_) {
-        frame = drawCorners(frame, snapped_);
+    if (in_capture_mode_) {
+        detectChessboard(frame);
     }
 
     cv::imshow(name(), frame);
@@ -99,6 +98,11 @@ void CameraCalibrator::calibrate(cv::Mat& frame) {
 
     switch (command) {
 
+        case 'c': // Enter/exit chessboard corner capture mode
+        {
+            in_capture_mode_ = !(in_capture_mode_);
+            break;
+        }
         case 'f': // Change the calibration save path
         {
             PathChanger changer;
@@ -135,18 +139,21 @@ void CameraCalibrator::calibrate(cv::Mat& frame) {
     }
 }
 
-bool CameraCalibrator::detectChessboard(const cv::Mat& frame) {
+void CameraCalibrator::detectChessboard(cv::Mat& frame) {
 
     // Extract the chessboard from the current image
     std::vector<cv::Point2f> point_buffer;
-    bool detected = 
+    bool detected =
         cv::findChessboardCorners(frame, chessboard_size_, point_buffer,
         CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_FAST_CHECK + CALIB_CB_NORMALIZE_IMAGE);
+
+    // Draw corners on the frame
+    cv::drawChessboardCorners(frame, chessboard_size_, cv::Mat(point_buffer), detected);
 
     // Caculate elapsed time since last detection
     if (detected) {
 
-        Milliseconds elapsed_time = 
+        Milliseconds elapsed_time =
             std::chrono::duration_cast<Milliseconds>(tick_ - tock_);
 
         // TODO: Do I want to do subpix detection even if min_detection_delay_
@@ -154,7 +161,7 @@ bool CameraCalibrator::detectChessboard(const cv::Mat& frame) {
         if (elapsed_time > min_detection_delay_) {
 
             // Reset timer
-            tock_ = Clock::now();            
+            tock_ = Clock::now();
 
             // Subpixel corner location estimation termination criteria
             // Max iterations = 30;
@@ -167,16 +174,14 @@ bool CameraCalibrator::detectChessboard(const cv::Mat& frame) {
             cv::cvtColor(frame, frame_grey, COLOR_BGR2GRAY);
 
             // Find exact corner locations
-            cv::cornerSubPix(frame_grey, point_buffer, cv::Size(11, 11), 
+            cv::cornerSubPix(frame_grey, point_buffer, cv::Size(11, 11),
                     cv::Size(-1, -1), term);
-            
+
             // Push the new corners into storage
             corners_.push_back(point_buffer);
 
             // Note that we have added new corners to our data set
-            snapped_ = true;
+            frame = cv::bitwise_not(frame, frame);
         }
     }
-
-    return detected;
 }
