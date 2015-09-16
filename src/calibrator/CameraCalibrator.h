@@ -54,8 +54,9 @@ public:
      * @param model Camera model used to generate camera matrix and distortion coefficients.
      */
     CameraCalibrator(const std::string& frame_source_name,
-            const CameraModel& model, cv::Size& chessboard_size);
-
+                     const CameraModel& model, 
+                     cv::Size& chessboard_size
+                     double square_size_meters);
 
     /**
      * Configure calibration parameters.
@@ -84,6 +85,7 @@ private:
     // NXM black squares in the chessboard
     bool in_capture_mode_ {false};
     bool chessboard_detected_ {false};
+    double square_size_meters_ {0.0254};
     cv::Size chessboard_size_; //!< Number of interior corners on chessboard
 
     // Minimum time between chessboard corner detections
@@ -91,7 +93,8 @@ private:
     const Milliseconds min_update_period_ {1000};
 
     // Data used to camera calibraiton parameters
-    std::vector<std::vector<cv::Point2f>> corners_;
+    std::vector<std::vector<cv::Point3f>> corners_;
+    std::vector<cv::Point3f> corners_meters_;
 
     // Interactive session
     void detectChessboard(cv::Mat&);

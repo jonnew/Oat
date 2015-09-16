@@ -28,11 +28,14 @@
 #include "PathChanger.h"
 #include "CameraCalibrator.h"
 
-CameraCalibrator::CameraCalibrator(const std::string& frame_source_name,
-        const CameraModel& model, cv::Size& chessboard_size) :
+CameraCalibrator::CameraCalibrator(
+        const std::string& frame_source_name,
+        const CameraModel& model, 
+        cv::Size& chessboard_size
+        double square_size_meter) :
   Calibrator(frame_source_name)
 , chessboard_size_(chessboard_size)
-, calibration_valid_(false)
+, square_size_meters_(square_size_meters)
 , model_(model)
 {
 
@@ -41,6 +44,16 @@ CameraCalibrator::CameraCalibrator(const std::string& frame_source_name,
     // Initialize corner detection update timers
     tick_ = Clock::now();
     tock_ = Clock::now();
+
+    // Generate true corner locations based upon the chessboard size and 
+    // square size
+    for (int i = 0; i < boardSize.height; i++) {
+        for (int j = 0; j < boardSize.width; j++) {
+            corners_meters_.push_back(
+                cv::Point2f(static_cast<double>j * square_size_meters_, 
+                            static_cast<double>i * square_size_meters_));
+        }
+    }
 
 #ifdef OAT_USE_OPENGL
         try {
@@ -184,4 +197,20 @@ void CameraCalibrator::detectChessboard(cv::Mat& frame) {
             frame = cv::bitwise_not(frame, frame);
         }
     }
+}
+
+void generateCalibrationParameters() {
+
+    camera_matrix_ = cv::Mat::eye(3, 3, CV_64F);
+    distortion_coefficients_ = ;
+
+    std::vector<std::vector<cv::Point3f>> object_points; // { corners_meters_ };
+    object_points.resize(corners_.size(), corners_meters_);
+
+
+    // TODO: fixed aspect ratio option?
+    //if (flags & CALIB_FIX_ASPECT_RATIO)
+    //    cameraMatrix.at<double>(0, 0) = aspectRatio;
+        
+
 }
