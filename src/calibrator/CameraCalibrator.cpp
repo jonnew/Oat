@@ -30,7 +30,7 @@
 
 CameraCalibrator::CameraCalibrator(
         const std::string& frame_source_name,
-        const CameraModel& model, 
+        const CameraModel& model,
         cv::Size& chessboard_size
         double square_size_meter) :
   Calibrator(frame_source_name)
@@ -45,12 +45,12 @@ CameraCalibrator::CameraCalibrator(
     tick_ = Clock::now();
     tock_ = Clock::now();
 
-    // Generate true corner locations based upon the chessboard size and 
+    // Generate true corner locations based upon the chessboard size and
     // square size
     for (int i = 0; i < boardSize.height; i++) {
         for (int j = 0; j < boardSize.width; j++) {
             corners_meters_.push_back(
-                cv::Point2f(static_cast<double>j * square_size_meters_, 
+                cv::Point2f(static_cast<double>j * square_size_meters_,
                             static_cast<double>i * square_size_meters_));
         }
     }
@@ -101,6 +101,11 @@ void CameraCalibrator::configure(const std::string& config_file, const std::stri
 void CameraCalibrator::calibrate(cv::Mat& frame) {
 
     tick_ = Clock::now();
+
+    // TODO: Is it possible to get frame metadata before any loops? Might
+    // be hard if client (this) strarts first since the frame source is not
+    // yet known and therefore things like frame size are not known.
+    frame_size_ = frame.size();
 
     if (in_capture_mode_) {
         detectChessboard(frame);
@@ -199,18 +204,43 @@ void CameraCalibrator::detectChessboard(cv::Mat& frame) {
     }
 }
 
-void generateCalibrationParameters() {
+double generateCalibrationParameters() {
+
+    // TODO: user options for the following
+    // Fix the aspect ratio of the lens (ratio of lens focal lengths for each
+    // dimension of its internal reference frame, fc(2)/fc(1) where fc =
+    // [KK[1,1]; KK[2,2])
+    // calibration_flags_ += CALIB_FIX_ASPECT_RATIO;
+
+    // Set tangential distortion coefficients (last three elements of KC) to
+    // zero. This is reasonable for modern cameras that have very good
+    // centering of lens over the sensory array.
+    // calibration_flags_ += CALIB_ZERO_TANGENT_DIST
+
+    // Make principle point cc = [KK[3,1]; KK[3,2]] equal to the center of the
+    // frame : cc = [(nx-1)/2;(ny-1)/2)]
+    // calibration_flags_ += CALIB_FIX_PRINCIPAL_POINT
 
     camera_matrix_ = cv::Mat::eye(3, 3, CV_64F);
-    distortion_coefficients_ = ;
+    distortion_coefficients_ = cv::Mat::Zeros(8, 1, CV_64F);
 
     std::vector<std::vector<cv::Point3f>> object_points; // { corners_meters_ };
     object_points.resize(corners_.size(), corners_meters_);
 
-
-    // TODO: fixed aspect ratio option?
     //if (flags & CALIB_FIX_ASPECT_RATIO)
     //    cameraMatrix.at<double>(0, 0) = aspectRatio;
-        
 
+    // Unused currently
+    std::vector<cv::Mat> rotation, translation;
+
+    double rms_error = cv::calibrateCamera(object_points,
+                                           corners_,
+                                           frame_size_,
+                                           camera_matrix_,
+                                           distortion_coefficients_,
+                                           rotation,
+                                           translation,
+                                           flags | CALIB_FIX_K4 | CALIB_FIX_K5);
+
+    return rms_error;
 }

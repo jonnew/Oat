@@ -88,6 +88,9 @@ private:
     double square_size_meters_ {0.0254};
     cv::Size chessboard_size_; //!< Number of interior corners on chessboard
 
+    // Frame dimensions
+    cv::Size frame_size_;
+
     // Minimum time between chessboard corner detections
     Clock::time_point tick_, tock_;
     const Milliseconds min_update_period_ {1000};
