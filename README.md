@@ -1033,24 +1033,20 @@ camera with your computer.
   positional information
     - ~~Strongly prefer to consume JSON over something ad hoc, opaque and
       untyped~~
-    - Multiple clients
-        - UDP with single endpoint
-            - ~~Client version (sends data without request)~~
-            - Server version (pipeline is heldup by client position requests)
-        - TCP/IP with single endpoint
-            - Client version (sends data without request)
-            - Server version (pipeline is heldup by client position requests)
-        - Broadcast over UDP?
+    - ~~UDP~~, TCP/IP, Broadcast with single endpoint
+        - Client version (sends data without request)
+        - Server version (pipeline is heldup by client position requests)
 - [ ] Cmake/build improvements
     - ~~Global build script to make all of the programs in the project~~
     - ~~CMake managed versioning~~
     - ~~Option for building with/without point-grey support~~
     - ~~Author/project information injection into source files using either
       cmake or doxygen~~
-    - Automatically detect if OpenCV was compiled with OpenGL or CUDA and automatically set
+    - Detect if OpenCV was compiled with OpenGL or CUDA and automatically set
       `-DOAT_USE_OPENGL` and `-DOAT_USE_CUDA` accordingly
-    - Put boost in a more standard location
-    - Clang build
+    - ~~Put boost in a more standard location~~
+        - EDIT: compiles with v1.54, which is provided in package manager.
+    - Clang build?
     - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
@@ -1090,8 +1086,8 @@ camera with your computer.
        and need refactoring to deal with these two issues in a reasonable way.
 - [ ] Ideas for shmem performance optimization
   - cv::Mat's have a constructor option that takes a pointer to user data. The
-    resultant object does manage the lifetime of the mat data. If I can make
-    this pointer come from shmem, then I can avoid needless copying of mat
+    resultant object does not manage the lifetime of the mat data. If I can
+    make this pointer point to shmem, then I can avoid needless copying of mat
     data.
 - [ ] In line with the comments above about central clock management, it might
   also be better to have a central anonymous shared memory management. Instead
@@ -1136,6 +1132,8 @@ camera with your computer.
   deadlocks instead of continuing to serve. Problem with SMServer?
     - EDIT: Could not replicate with positest --> posifilt. Need to get
       breakage scenario to reopen.
+- [ ] `oat-frameserve gige` lacks the ability to set FPS in free running
+  (non-triggered mode)
 - [ ] `oat-calibrate` is a complete hack. It would be best to move this
   component out of oat-frameserve source directory and make it its own utility
   component that can listen to a frame-stream from oat-frameserve

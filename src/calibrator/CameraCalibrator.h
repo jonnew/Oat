@@ -24,6 +24,8 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
+#include "../../lib/utility/IOFormat.h"
+
 #include "Calibrator.h"
 #include "CalibratorVisitor.h"
 
@@ -33,7 +35,6 @@
 class CameraCalibrator : public Calibrator {
 
 public:
-
 
     using Clock = std::chrono::high_resolution_clock;
     using Milliseconds = std::chrono::milliseconds;
@@ -55,7 +56,7 @@ public:
      * @param model Camera model used to generate camera matrix and distortion coefficients.
      */
     CameraCalibrator(const std::string& frame_source_name,
-                     const CameraModel& model, 
+                     const CameraModel& model,
                      cv::Size& chessboard_size,
                      double square_size_meters);
 
@@ -65,11 +66,11 @@ public:
      * @param config_key configuration key
      */
     void configure(const std::string& config_file, const std::string& config_key) override;
-    
+
     // Accept visitors
     void accept(CalibratorVisitor* visitor) override;
     void accept(OutputVisitor* visitor, std::ostream& out) override;
-    
+
     // Accessors
     const bool calibration_valid() const { return calibration_valid_; }
     const cv::Mat& camera_matrix() const { return camera_matrix_; }
@@ -85,6 +86,16 @@ protected:
 
 private:
 
+    // Interactive session mode
+    enum class Mode
+    {
+        NORMAL = 0, //!< Top level commands available. Can enter/exit other modes.
+        DETECT,     //!< Rig-detection mode. Used to populate chessboard corner data.
+        UNDISTORT   //!< Undistort image using camera_matrix_ and distortion_coefficients_
+    };
+
+    Mode mode_ {Mode::NORMAL};
+
     // Is camera calibration well-defined?
     bool calibration_valid_;
     int calibration_flags_;
@@ -95,7 +106,6 @@ private:
     CameraModel model_ {CameraModel::PINHOLE};
 
     // NXM black squares in the chessboard
-    bool in_capture_mode_ {false};
     bool chessboard_detected_ {false};
     double square_size_meters_ {0.0254};
     cv::Size chessboard_size_; //!< Number of interior corners on chessboard
@@ -108,18 +118,37 @@ private:
     const Milliseconds min_detection_delay_ {1000};
 
     // Data used to camera calibration parameters
-    std::vector<std::vector<cv::Point3f>> corners_;
+    std::vector<std::vector<cv::Point2f>> corners_;
     std::vector<cv::Point3f> corners_meters_;
 
     // Interactive session
-    void detectChessboard(cv::Mat&);
+    bool requireMode(const Mode&&, const Mode&&);
+    void toggleDetectMode(void);
+    void toggleUndistortMode(void);
+    void detectChessboard(cv::Mat& frame);
+    void decorateFrame(cv::Mat& frame);
     void printDataPoints(void);
     void printCalibrationResults(std::ostream& out);
-    double generateCalibrationParameters(void);
+    void generateCalibrationParameters(void);
     //int selectCalibrationMethod(void);
     cv::Mat drawCorners(cv::Mat& frame, bool invert_colors);
+    
+    template<typename M>
+    bool requireMode(M m) {
 
+        bool correct_mode = mode_ == m;
+
+        if (!correct_mode)
+            std::cerr << oat::Error("Command unavailable in current mode.\n");
+
+        return correct_mode;
+    }
+
+    template<typename M, typename... Args>
+    bool requireMode(M m, Args&&... args) {
+        return mode_ == m || requireMode(args...);
+    }
+    
 };
 
 #endif //CAMERACALIBRATOR_H
-
