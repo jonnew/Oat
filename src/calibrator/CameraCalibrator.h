@@ -25,6 +25,7 @@
 #include <opencv2/core/mat.hpp>
 
 #include "Calibrator.h"
+#include "CalibratorVisitor.h"
 
 /**
  * Interactive camera calibration and distortion parameter generator.
@@ -55,7 +56,7 @@ public:
      */
     CameraCalibrator(const std::string& frame_source_name,
                      const CameraModel& model, 
-                     cv::Size& chessboard_size
+                     cv::Size& chessboard_size,
                      double square_size_meters);
 
     /**
@@ -64,6 +65,15 @@ public:
      * @param config_key configuration key
      */
     void configure(const std::string& config_file, const std::string& config_key) override;
+    
+    // Accept visitors
+    void accept(CalibratorVisitor* visitor) override;
+    void accept(OutputVisitor* visitor, std::ostream& out) override;
+    
+    // Accessors
+    const bool calibration_valid() const { return calibration_valid_; }
+    const cv::Mat& camera_matrix() const { return camera_matrix_; }
+    const cv::Mat& distortion_coefficients() const { return distortion_coefficients_; }
 
 protected:
 
@@ -77,9 +87,11 @@ private:
 
     // Is camera calibration well-defined?
     bool calibration_valid_;
+    int calibration_flags_;
     cv::Mat camera_matrix_, distortion_coefficients_;
+    double rms_error_;
 
-    // Default esimation method
+    // Default estimation method
     CameraModel model_ {CameraModel::PINHOLE};
 
     // NXM black squares in the chessboard
@@ -93,17 +105,17 @@ private:
 
     // Minimum time between chessboard corner detections
     Clock::time_point tick_, tock_;
-    const Milliseconds min_update_period_ {1000};
+    const Milliseconds min_detection_delay_ {1000};
 
-    // Data used to camera calibraiton parameters
+    // Data used to camera calibration parameters
     std::vector<std::vector<cv::Point3f>> corners_;
     std::vector<cv::Point3f> corners_meters_;
 
     // Interactive session
     void detectChessboard(cv::Mat&);
     void printDataPoints(void);
-    void printCalibrationResults(void);
-    int generateCalibrationParameters(void);
+    void printCalibrationResults(std::ostream& out);
+    double generateCalibrationParameters(void);
     //int selectCalibrationMethod(void);
     cv::Mat drawCorners(cv::Mat& frame, bool invert_colors);
 

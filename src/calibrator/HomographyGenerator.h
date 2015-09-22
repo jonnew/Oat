@@ -109,7 +109,7 @@ private:
 
     // Methods for interactive session to obtain data points related pixel
     // coordinates and world coordinates, generate a homography, and display
-    // the resuts
+    // the results
     int addDataPoint(void);
     int removeDataPoint(void);
     void printDataPoints(std::ostream&);

@@ -75,6 +75,10 @@ int main(int argc, char *argv[]) {
     std::string source;
     std::string save_path;
     std::string homography_method {"robust"};
+    std::string camera_model {"pinhole"};
+    int chessboard_width {6};
+    int chessboard_height {9};
+    double square_length;
     std::string config_file;
     std::string config_key;
     bool config_used {false};
@@ -92,6 +96,11 @@ int main(int argc, char *argv[]) {
     homo_meth_hash["robust"] = HomographyGenerator::EstimationMethod::ROBUST;
     homo_meth_hash["regular"] = HomographyGenerator::EstimationMethod::REGULAR;
     homo_meth_hash["exact"] = HomographyGenerator::EstimationMethod::EXACT;
+    
+    // Camera calibration method
+    std::unordered_map<std::string,CameraCalibrator::CameraModel> camera_model_hash;
+    camera_model_hash["pinhole"] = CameraCalibrator::CameraModel::PINHOLE;
+    camera_model_hash["fisheye"] = CameraCalibrator::CameraModel::FISHEYE;
 
     try {
 
@@ -113,6 +122,17 @@ int main(int argc, char *argv[]) {
                 "  robust (default): RANSAC-based robust estimation method (automatic outlier rejection).\n"
                 "  regular: Best-fit using all data points.\n"
                 "  exact: Compute the homography that fits four points. Useful when frames contain know fiducial marks.\n")
+                ("camera-model", po::value<std::string>(&camera_model),
+                "Model used for camera calibration.\n\n"
+                "Values:\n"
+                "  pinhole (default): Pinhole camera model.\n"
+                "  fisheye: Fisheye camera model (ultra wide-angle lens with pronounced radial distortion.\n")
+                ("chessboard-height,h", po::value<int>(&chessboard_height),
+                "The number of vertical black squares in the chessboard used for calibration.\n")
+                ("chessboard-width,w", po::value<int>(&chessboard_width),
+                "The number of horizontal black squares in the chessboard used for calibration.\n")
+                ("square-width,W", po::value<double>(&square_length),
+                "The length/width of a single chessboard square in meters.\n")
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
                 ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
                 ;
@@ -186,6 +206,13 @@ int main(int argc, char *argv[]) {
             std::cerr << oat::Error("Unrecognized homography-method.\n");
             return -1;
         }
+        
+        // Check that chessboard height and width are valid
+        if (type_hash[type] == 'a' && (chessboard_height < 2 || chessboard_width < 2)) {
+            printUsage(visible_options);
+            std::cerr << oat::Error("Camera calibration requires chessboard to be at least 2x2.\n");
+            return -1;
+        }
 
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
@@ -209,11 +236,13 @@ int main(int argc, char *argv[]) {
 
     // Refine component type
     switch (type_hash[type]) {
-            //        case 'a':
-            //        {
-            //            calibrator = std::make_shared<CameraParameterGenerator>(source);
-            //            break;
-            //        }
+        case 'a':
+        {
+            auto chessboard_size = cv::Size(chessboard_height, chessboard_width);
+            auto model =camera_model_hash.at(camera_model);
+            calibrator = std::make_shared<CameraCalibrator>(source, model, chessboard_size, square_length);
+            break;
+        }
         case 'b':
         {
             auto meth = homo_meth_hash.at(homography_method);

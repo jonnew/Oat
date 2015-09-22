@@ -41,8 +41,42 @@ Saver::Saver(const std::string& entry_key, const std::string& calibration_file) 
     // Nothing
 }
 
-void Saver::visit(CameraCalibrator* camera_calibrator) {
-
+void Saver::visit(CameraCalibrator* cc) {
+    
+    // Check the the calibration is valid
+    if (!cc->calibration_valid()) {
+        std::cerr << oat::Error("Calibration parameters must be computed before they are saved.\n");
+        return;
+    }
+    
+    // Generate or get base calibration table
+    cpptoml::table calibration;
+    try {
+        calibration = generateCalibrationTable(calibration_file_, entry_key_);
+    } catch (const std::runtime_error& ex) {
+        std::cerr << ex.what();
+        return;
+    }
+    
+    // Construct TOML array from camera matrix and distortion coefficients
+    auto cam = std::make_shared<cpptoml::array>();
+    cv::MatConstIterator_<double> it, end;
+    for (it = cc->camera_matrix().begin<double>(), end = cc->camera_matrix().end<double>(); it != end; ++it)  {
+        cam->get().push_back(std::make_shared<cpptoml::value<double>>(*it));
+    }
+    
+    
+    auto dc = std::make_shared<cpptoml::array>();
+    for (it = cc->distortion_coefficients().begin<double>(), end = cc->distortion_coefficients().end<double>(); it != end; ++it)  {
+        dc->get().push_back(std::make_shared<cpptoml::value<double>>(*it));
+    }
+    
+    // Insert camera matrix and distortion coeffs into TOML table
+    calibration.insert(entry_key_ + "-camera-matrix", cam);
+    calibration.insert(entry_key_ + "-distortion-coeffs", dc);
+    
+     // Save the file
+    saveCalibrationTable(calibration, calibration_file_);
 }
 
 void Saver::visit(HomographyGenerator* hg) {

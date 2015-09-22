@@ -7,10 +7,9 @@ set (oat-calibrate_SOURCE
      Saver.cpp
      UsagePrinter.cpp
      PathChanger.cpp
+     CameraCalibrator.cpp
      HomographyGenerator.cpp)
      
-# CameraCalibrator.cpp)
-
 # Targets
 add_executable (oat-calibrate ${oat-calibrate_SOURCE} main.cpp)
 target_link_libraries (oat-calibrate shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})

@@ -28,8 +28,18 @@
 #include "HomographyGenerator.h"
 #include "PathChanger.h"
 
-void PathChanger::visit(CameraCalibrator* camera_calibrator) {
+void PathChanger::visit(CameraCalibrator* cc) {
+    
+    std::cout << "Type the path to save camera calibration information and press <enter>: ";
 
+    try {
+        setNewPath(cc);
+    } catch (const std::runtime_error& ex) {
+        std::cerr << oat::Error(ex.what()) << "\n";
+        return;
+    }
+
+    std::cout << "Camera calibration save file set to " + cc->calibration_save_path() + "\n";
 }
 
 void PathChanger::visit(HomographyGenerator* hg) {

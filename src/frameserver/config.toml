@@ -8,14 +8,15 @@
 
 [gige]
 index = 0				# Index of camera on the bus (there can be more than one)
+fps = 10.0                              # Frames per second
 exposure = 0.0				# Automatically adjust shutter and gain to achieve given exposure (EV)
 shutter = 3.0 				# Shutter time (ms; ignored if exposure on)
 gain = 0.0 				# Sensor gain(dB; ignored if exposure on)
 white_bal = {red = 500, blue = 800}	# White balance (0-1000; if note specified, defaults to "off")
-roi = {x_offset = 300, y_offset = 0, width = 728, height = 728} # Region of interest (pixels)
+roi = {x_offset = 280, y_offset = 0, width = 728, height = 728} # Region of interest (pixels)
 x_bin = 2                               # On-camera x-dimension pixel binning (pixels; if note specified, defaults to "off")
 y_bin = 2                               # On-camera y-dimension pixel binning (pixels; if note specified, defaults to "off")
-trigger_on = false			# If false, free run
+trigger_on = false			# If false, free run at fps or maximum rate if that is not specified
 trigger_rising = true			# Rising edge active if true. Falling edge active if false.
 trigger_mode = 14			#   14 = Overlapped Exposure/Readout Mode (see Camera manual)
 					#   7  = Software trigger
