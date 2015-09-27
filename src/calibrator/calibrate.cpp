@@ -526,7 +526,7 @@ int main(int argc, char** argv) {
             view = imread(imageList[i], 1);
 
         if (view.empty()) {
-            if (imagePoints.size() > 0)
+            if (imagePoints.size() > 0) 
                 runAndSave(outputFilename, imagePoints, imageSize,
                     boardSize, pattern, squareSize, aspectRatio,
                     flags, cameraMatrix, distCoeffs,

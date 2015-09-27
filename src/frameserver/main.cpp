@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
     std::string type;
     std::string video_file;
     double frames_per_second = 30;
+    size_t index;
     std::string config_file;
     std::string config_key;
     bool config_used = false;
@@ -97,6 +98,8 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
+                ("index,i", po::value<size_t>(&index),
+                "Index of camera to capture images from.")
                 ("video-file,f", po::value<std::string>(&video_file),
                 "Path to video file if \'file\' is selected as the server TYPE.")
                 ("fps,r", po::value<double>(&frames_per_second),
@@ -199,7 +202,7 @@ int main(int argc, char *argv[]) {
                     "flycapture support, so TYPE=gige is not available.\n");
             return -1;
 #else
-            server = std::make_shared<PGGigECam>(sink);
+            server = std::make_shared<PGGigECam>(sink, index);
 #endif      
             break;
         }

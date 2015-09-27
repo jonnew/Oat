@@ -22,6 +22,8 @@
 
 #include <chrono>
 #include <string>
+#include <map>
+
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/utility/IOFormat.h"
@@ -95,6 +97,9 @@ private:
     };
 
     Mode mode_ {Mode::NORMAL};
+    
+    // For writing mode on frames
+    std::map<Mode, std::string> mode_msg_hash_;
 
     // Is camera calibration well-defined?
     bool calibration_valid_;
@@ -123,13 +128,13 @@ private:
 
     // Interactive session
     bool requireMode(const Mode&&, const Mode&&);
-    void toggleDetectMode(void);
-    void toggleUndistortMode(void);
+    void toggleMode(Mode);
     void detectChessboard(cv::Mat& frame);
     void decorateFrame(cv::Mat& frame);
     void printDataPoints(void);
+    void clearDataPoints(void);
     void printCalibrationResults(std::ostream& out);
-    void generateCalibrationParameters(void);
+    void generateCalibrationParameters(void); //TODO: computationally intense, do on a separate thread
     //int selectCalibrationMethod(void);
     cv::Mat drawCorners(cv::Mat& frame, bool invert_colors);
     

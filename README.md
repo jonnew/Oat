@@ -1078,17 +1078,20 @@ camera with your computer.
           sychronization strategy and keeps time. Instead of each `pure SOURCE`
           keeping its own, asychronous clock (e.g. if two cameras are started
           at different times, they can have different absolute sample numbers
-          at the same real-world time), this centrial clock would be in charge.
+          at the same real-world time), this central clock would be in charge.
           This would obviate all issues I'm having with sample number
           propogation through multi-SOURCE components.
-     - In anycase, the `pure SOURCE` components, esspecially roat-frameserve`,
+     - In anycase, the `pure SOURCE` components, esspecially `oat-frameserve`,
        are by far the most primative components in the project at this point
        and need refactoring to deal with these two issues in a reasonable way.
 - [ ] Ideas for shmem performance optimization
-  - cv::Mat's have a constructor option that takes a pointer to user data. The
-    resultant object does not manage the lifetime of the mat data. If I can
-    make this pointer point to shmem, then I can avoid needless copying of mat
-    data.
+     - cv::Mat's have a constructor option that takes a pointer to user data.
+       The resultant object does not manage the lifetime of the mat data. If I
+       can make this pointer point to shmem, then I can avoid needless copying
+       of mat data.
+     - EDIT: the /src/experiments project now contains a couple simple programs
+       demonstrating how to do this. If used correctly, this method could have
+       huge performance benefits.
 - [ ] In line with the comments above about central clock management, it might
   also be better to have a central anonymous shared memory management. Instead
   of creating a named shared block that can potentially be stranded in the case

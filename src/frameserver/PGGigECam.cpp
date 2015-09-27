@@ -38,10 +38,10 @@
 
 using namespace FlyCapture2;
 
-PGGigECam::PGGigECam(std::string frame_sink_name) : FrameServer(frame_sink_name)
+PGGigECam::PGGigECam(std::string frame_sink_name, size_t index) : FrameServer(frame_sink_name)
 , num_cameras(0)
 , max_index (0)
-, index(0)
+, index_(index)
 , x_bin(1)
 , y_bin(1)
 , gain_dB(0)
@@ -65,7 +65,7 @@ PGGigECam::PGGigECam(std::string frame_sink_name) : FrameServer(frame_sink_name)
  */
 void PGGigECam::configure() {
 
-    setCameraIndex(0);
+    setCameraIndex(index_);
     connectToCamera();
     turnCameraOn();
     setupStreamChannels();
@@ -120,11 +120,11 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         {
             int64_t val;
             if (oat::config::getValue(this_config, "index", val, min_index, max_index)) {
-                index = val;
+                index_ = val;
             }
         }
         
-        setCameraIndex(index);
+        setCameraIndex(index_);
         connectToCamera();
         turnCameraOn();
         setupStreamChannels();
@@ -282,7 +282,7 @@ int PGGigECam::setCameraIndex(unsigned int requested_idx) {
     printBusInfo();
 
     if (num_cameras > requested_idx) {
-        index = requested_idx;
+        index_ = requested_idx;
     } else {
         throw (std::runtime_error("Requested camera index " + 
                 std::to_string(requested_idx) + " is out of range.\n"));
@@ -293,11 +293,11 @@ int PGGigECam::setCameraIndex(unsigned int requested_idx) {
 
 int PGGigECam::connectToCamera(void) {
 
-    std::cout << "Connecting to camera: " << index << "\n";
+    std::cout << "Connecting to camera: " << index_ << "\n";
 
     BusManager busMgr;
     PGRGuid guid;
-    Error error = busMgr.GetCameraFromIndex(index, &guid);
+    Error error = busMgr.GetCameraFromIndex(index_, &guid);
     if (error != PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }

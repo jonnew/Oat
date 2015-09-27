@@ -32,7 +32,7 @@
 
 namespace oat {
 
-    // TODO: Find a why to integrate this with the must much general purpose SMServer
+    // TODO: Find a way to integrate this with the must much general purpose SMServer
     class BufferedMatServer {
     public:
         BufferedMatServer(const std::string& sink_name);

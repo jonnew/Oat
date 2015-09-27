@@ -54,7 +54,10 @@ namespace oat {
          * @param value Value to be moved to shared memory. Value
          * is left in a valid but unspecified state after this operation.
          */
-        void writeSample(uint32_t sample, T value) { sample_number = sample; object = std::move(value); }
+        void writeSample(uint32_t sample, T value) { 
+            sample_number = sample; 
+            object = std::move(value); 
+        }
 
         // Accessors (Read-only to force copy-on-write)
         uint32_t get_sample_number(void) const {return sample_number; }

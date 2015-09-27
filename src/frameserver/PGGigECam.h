@@ -26,7 +26,7 @@
 
 class PGGigECam : public FrameServer {
 public:
-    PGGigECam(std::string frame_sink_name);
+    PGGigECam(std::string frame_sink_name, size_t index);
 
     // Use a configuration file to specify parameters
     void configure(void); // Default options
@@ -42,7 +42,7 @@ private:
     // GigE Camera configuration
     static constexpr int64_t min_index {0};
     int64_t max_index;
-    unsigned int index;
+    size_t index_;
     
     //cv::Size frame_size, frame_offset;
     int x_bin, y_bin;

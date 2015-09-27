@@ -40,6 +40,7 @@ namespace oat {
         
         void pushObject(T value, uint32_t sample_number);
 
+        
     private:
 
         // Name of this server

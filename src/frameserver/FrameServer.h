@@ -103,7 +103,6 @@ protected:
    
 private:
     
-    
     // cv::Mat server for sending frames to shared memory
     oat::BufferedMatServer frame_sink;
     
