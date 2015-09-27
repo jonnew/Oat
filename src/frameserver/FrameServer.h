@@ -52,7 +52,7 @@ public:
         if (!current_frame.empty()) {
             
             frame_sink.pushMat(current_frame, current_sample);
-            current_sample++;
+            current_sample++; // TODO: clock samole management should be handled automatically
             
             return false;
         } else {

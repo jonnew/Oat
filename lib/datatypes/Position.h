@@ -1,8 +1,8 @@
 //******************************************************************************
-//* File:   Position.h 
+//* File:   Position.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -22,50 +22,40 @@
 
 namespace oat {
 
-    enum length_unit {
-        PIXELS = 0, WORLD = 1
+    /**
+     * Unit of length used to specify position.
+     */
+    enum length_unit
+    {
+        PIXELS = 0,   //!< Position measured in pixels. Origin is upper left.
+        WORLD = 1     //!< Position measured in units specified via homography
     };
 
     class Position {
 
     public:
-        
-        // TODO: How can label be incorporated as an argument to the Position constructor
-        //       without screwing up all the class templates that use Position as type parameter?
-        Position() {
-            std::strncpy(label_, "NA", sizeof(label_));
-        } 
-        
-        virtual ~Position() = 0;
-      
-        // Positions use one of two coordinate systems 
-        // PIXELS - units are referenced to the sensory array of the digital camera. 
-        //          origin in the upper left hand corner.
-        // WORLD  - Defined by the homography matrix.
+
+        Position() { };
+
+        Position(const std::string& label) :
+            label_{*label.data()} {}
+
+        // Positions use one of two coordinate systems
         int coord_system {PIXELS};
-        
-        // Accessors
-        inline void set_label(const std::string& value) { 
-            std::strncpy(label_, value.c_str(), sizeof(label_));
-        }
-        
-        inline void set_label(const uint32_t value) { 
+
+        inline void set_sample(const uint32_t value) {
             sample = value;
         }
-        
+
     protected:
-        
-        //Position label (e.g. "anterior")
-        char label_[100];
-        
-        // TODO: sample number should travel with the Position
-        uint32_t sample;
+
+        char label_[100] {'N', 'A'}; //!< Position label (e.g. "anterior")
+
+        // TODO: sample number should be managed globally for a data processing
+        // chain
+        uint32_t sample {0};
     };
-    
-    // Required since this a base class w/ pure virtual destructor 
-    // (Meyers, Effective C++, 2nd Ed. pg. 63)
-    inline Position::~Position() {} 
-    
+
 } // namespace datatypes
 
 #endif	/* POSITION_H */

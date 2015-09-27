@@ -39,6 +39,9 @@ namespace oat {
         
         Position2D() : Position() { }
 
+        Position2D(const std::string& label) : 
+            Position(label) { }
+
         bool position_valid {false};
         Point2D position;
 

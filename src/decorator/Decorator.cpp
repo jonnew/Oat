@@ -46,7 +46,7 @@ Decorator::Decorator(const std::vector<std::string>& position_source_names,
         for (auto &source_name : position_source_names) {
 
             position_sources.push_back(new oat::SMClient<oat::Position2D>(source_name));
-            source_positions.push_back(new oat::Position2D);
+            source_positions.push_back(new oat::Position2D(source_name));
         }
     } else {
         decorate_position = false;

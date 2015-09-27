@@ -39,11 +39,13 @@ public:
      */
     PositionFilter(const std::string& position_source_name, const std::string& position_sink_name) :
       name("posifilt[" + position_source_name + "->" + position_sink_name + "]")
+    , position(position_source_name)
     , position_source(position_source_name)
-    , position_sink(position_sink_name) { 
-      
-          position.set_label(position_sink_name);
+    , position_sink(position_sink_name) 
+    { 
+        // Nothing   
     }
+
 
     virtual ~PositionFilter() { }
 

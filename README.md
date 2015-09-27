@@ -1141,3 +1141,8 @@ camera with your computer.
   option with two values (file, key) instead of a single option for each.
     - See [this SO post](http://stackoverflow.com/questions/8175723/vector-arguments-in-boost-program-options)
       for how.
+- [ ] Shared objects
+    - Instead of having classes like SMServer and SMClient to manage putting
+      and retreiving objects in shared memory, it might be more natural to have
+      shared objects whose copy/move constructor and assignement operator
+      automatically implement all synchronization steps. 
