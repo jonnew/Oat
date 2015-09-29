@@ -1149,3 +1149,9 @@ camera with your computer.
       and retreiving objects in shared memory, it might be more natural to have
       shared objects whose copy/move constructor and assignement operator
       automatically implement all synchronization steps. 
+- [ ] Something is wrong with sample synchronization
+    - When working with Jennie's data, we found that position samples were
+      being recorded multiple times - they had the same sample number and
+      position info. Seems to be very intermittent, but points to a serious
+      issue with sample synchronization. It seems likely this occurring in the
+      recorder component due to its mulitthreaded implementation.

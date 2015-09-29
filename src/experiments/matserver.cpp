@@ -27,11 +27,13 @@
 namespace bip = boost::interprocess;
 
 /*
- * 
+ * Demo program showing very efficient shared memory passing of cv::Mat. This
+ * server side program should be executed first to load data into shmem.
  */
 int main(int argc, char *argv[]) {
 
-    // image file to use to populate cv_mat
+    // Image to send through shmem
+    // Change to some sample image on your filesystem.
     std::string file_name = "/home/jon/Desktop/test.png";
     
     // Read file to get sample image (simulates a camera grab)
