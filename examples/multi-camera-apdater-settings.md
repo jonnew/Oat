@@ -2,50 +2,48 @@ Below is an example network adapter and camera configuration for a two-camera im
 
 ###Maze Camera
 
-- Adapter Model: 
 - Adapter physical connection (looking at back of computer)
 ```
 RJ45 ------------
-		  |      |
-	L [  [ ]    [x]  ] R
+          |      |
+    L [  [ ]    [x]  ] R
 ```
 
 - Adapter Settings
-	- Model: 	     Intel 82574L Gigabit Network Connection
-    - MAC:  	     00:B0:9D:DB:D9:63
-	- MTU: 		     9000 
-	- DHCP:		     Disabled
-    - IP:		     192.168.0.100
-	- Subnet mask:   255.255.255.0
+    - Model:         Intel 82574L Gigabit Network Connection
+    - MAC:           00:B0:9D:DB:D9:63
+    - MTU:           9000 
+    - DHCP:          Disabled
+    - IP:            192.168.0.100
+    - Subnet mask:   255.255.255.0
 - Camera Settings
-	- Model: 	     Blackfly BFLY-PGE-09S2C
-	- Serial No.:    14395177 
-    - IP:		     192.168.0.1 (Static)
-	- Subnet mask:   255.255.255.0
-	- Default GW:    0.0.0.0
-	- Persistent IP: Yes
-	
+    - Model:         Blackfly BFLY-PGE-09S2C
+    - Serial No.:    14395177 
+    - IP:            192.168.0.1 (Static)
+    - Subnet mask:   255.255.255.0
+    - Default GW:    0.0.0.0
+    - Persistent IP: Yes
+    
 ###Sleepbox Camera
 
-- Adapter Model: Intel 82574L Gigabit Network Connection
 - Adapter physical connection (looking at back of computer)
 ```
 RJ45 ------------
-		  |      |
-	L [  [x]    [ ]  ] R
+          |      |
+    L [  [x]    [ ]  ] R
 ```
 
 - Adapter Settings
-	- Model: 	     Intel 82574L Gigabit Network Connection
-    - MAC:  	     00:B0:9D:DB:A7:29
-	- MTU: 		     9000 
-	- DHCP:		     Disabled
-    - IP:		     192.168.1.100
-	- Subnet mask:   255.255.255.0
+    - Model:         Intel 82574L Gigabit Network Connection
+    - MAC:           00:B0:9D:DB:A7:29
+    - MTU:           9000 
+    - DHCP:          Disabled
+    - IP:            192.168.1.100
+    - Subnet mask:   255.255.255.0
 - Camera Settings
-	- Model: 	     Blackfly BFLY-PGE-09S2C
-	- Serial No.:    14395177 
-    - IP:		     192.168.1.1 (Static)
-	- Subnet mask:   255.255.255.0
-	- Default GW:    0.0.0.0
-	- Persistent IP: Yes
+    - Model:         Blackfly BFLY-PGE-09S2C
+    - Serial No.:    14395177 
+    - IP:            192.168.1.1 (Static)
+    - Subnet mask:   255.255.255.0
+    - Default GW:    0.0.0.0
+    - Persistent IP: Yes
