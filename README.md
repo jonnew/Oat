@@ -1097,6 +1097,8 @@ camera with your computer.
   of creating a named shared block that can potentially be stranded in the case
   of a program crash, a central program to manage all the shared blocks and the
   clock could be smarter about shmem allocation/freeing.
+     - There could be, for instance, a directed adjacentcy list to describe a
+       data processing graph stored in shmem.
 - [ ] shmem type checking by clients, exit gracefully in the case of incorrect
   type
    - e.g. a framefilter tries to use a position filter as a SOURCE. In this
@@ -1137,9 +1139,10 @@ camera with your computer.
       breakage scenario to reopen.
 - [ ] `oat-frameserve gige` lacks the ability to set FPS in free running
   (non-triggered mode)
-- [ ] `oat-calibrate` is a complete hack. It would be best to move this
+- [x] `oat-calibrate` is a complete hack. It would be best to move this
   component out of oat-frameserve source directory and make it its own utility
   component that can listen to a frame-stream from oat-frameserve
+    - EDIT: This has been made into its own component.
 - [ ] For config file specification, there should be a single command line
   option with two values (file, key) instead of a single option for each.
     - See [this SO post](http://stackoverflow.com/questions/8175723/vector-arguments-in-boost-program-options)

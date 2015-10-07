@@ -46,6 +46,8 @@ public :
     // side constness of cv::Mat ensures copy on write behavior to prevent data
     // corruption.
     bip::managed_shared_memory::handle_t data_handle;
+
+    // Required matrix parameters
     cv::Size size() const { return size_; }
     int type() const { return type_; }
     size_t step() const {return step_; }

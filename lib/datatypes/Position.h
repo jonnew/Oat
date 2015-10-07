@@ -40,6 +40,8 @@ namespace oat {
         Position(const std::string& label) :
             label_{*label.data()} {}
 
+        virtual ~Position();
+
         // Positions use one of two coordinate systems
         int coord_system {PIXELS};
 

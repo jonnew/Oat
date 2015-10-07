@@ -43,6 +43,7 @@ namespace oat {
         // IPC synchronization constructs
         // TODO: Should these be private with accessors?
         //       Or, just generally abstracted into a function for locking?
+        //       Or, friends of classes that matter?
         boost::interprocess::interprocess_semaphore mutex;
         boost::interprocess::interprocess_semaphore write_barrier;
         boost::interprocess::interprocess_semaphore read_barrier;
