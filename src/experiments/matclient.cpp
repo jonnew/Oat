@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
         SharedCVMat* shmat = shared_memory.find_or_construct<SharedCVMat>("SHMAT")();
 
         // Get data pointer from shared handle
-        void* mat_data = shared_memory.get_address_from_handle(shmat->data_handle);
+        void* mat_data = shared_memory.get_address_from_handle(shmat->data());
 
         // Construct read-only cv::Mat that uses shared memory handle to 
         // mat data

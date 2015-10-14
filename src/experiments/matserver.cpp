@@ -49,7 +49,6 @@ int main(int argc, char *argv[]) {
            shm_remove() { bip::shared_memory_object::remove("SHMEM_sh_mem"); }
         } remover;
         
-        
         // Create managed shmem segment
         bip::managed_shared_memory shared_memory =
                 bip::managed_shared_memory(bip::create_only, "SHMEM_sh_mem", 10e6);

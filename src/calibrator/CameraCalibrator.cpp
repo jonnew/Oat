@@ -31,6 +31,7 @@
 
 #include "../../lib/cpptoml/cpptoml.h"
 #include "../../lib/cpptoml/OatTOMLSanitize.h"
+#include "../../lib/utility/IOUtility.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "Saver.h"
@@ -126,6 +127,10 @@ void CameraCalibrator::calibrate(cv::Mat& frame) {
     if (mode_ == Mode::DETECT) {
         detectChessboard(frame);
     }
+    
+    if (mode_ == Mode::UNDISTORT && calibration_valid_) {
+        undistortFrame(frame);
+    }
 
     // Add mode and status info
     decorateFrame(frame);
@@ -163,13 +168,14 @@ void CameraCalibrator::calibrate(cv::Mat& frame) {
         }
         case 'h': // Display help dialog
         {
-            //UsagePrinter usage;
-            //accept(&usage, std::cout);
+            UsagePrinter usage;
+            accept(&usage, std::cout);
             break;
         }
         case 'm': // Select homography estimation method
         {
-            //selectCalibrationMethod();
+            if (requireMode(std::forward<Mode>(Mode::NORMAL)))
+                selectCameraModel();
             break;
         }
         case 'p': // Print calibration results
@@ -179,7 +185,8 @@ void CameraCalibrator::calibrate(cv::Mat& frame) {
         }
         case 'u': // Undistort mode
         {
-            if (requireMode(std::forward<Mode>(Mode::NORMAL), std::forward<Mode>(Mode::UNDISTORT)))
+            if (requireMode(std::forward<Mode>(Mode::NORMAL), std::forward<Mode>(Mode::UNDISTORT))
+                &&  calibration_model_ == model_)
                 toggleMode(Mode::UNDISTORT);
             break;
         }
@@ -206,6 +213,7 @@ void CameraCalibrator::clearDataPoints() {
     
     corners_.clear();
 }
+
 void CameraCalibrator::detectChessboard(cv::Mat& frame) {
 
     // Extract the chessboard from the current image
@@ -253,22 +261,27 @@ void CameraCalibrator::detectChessboard(cv::Mat& frame) {
     }
 }
 
+void CameraCalibrator::undistortFrame(cv::Mat& frame) {
+
+    // for cv::undistort, src must not be the same Mat as dest.
+    cv::Mat temp = frame.clone();
+
+    switch (model_) {
+
+        case CameraModel::PINHOLE:
+        {
+            cv::undistort(temp, frame, camera_matrix_, distortion_coefficients_);
+            break;
+        }
+        case CameraModel::FISHEYE:
+        {
+            cv::fisheye::undistortImage(temp, frame, camera_matrix_, distortion_coefficients_);
+            break;
+        }
+    }
+}
+
 void CameraCalibrator::generateCalibrationParameters() {
-
-    // TODO: user options for the following
-    // Fix the aspect ratio of the lens (ratio of lens focal lengths for each
-    // dimension of its internal reference frame, fc(2)/fc(1) where fc =
-    // [KK[1,1]; KK[2,2])
-    // calibration_flags_ += CALIB_FIX_ASPECT_RATIO;
-
-    // Set tangential distortion coefficients (last three elements of KC) to
-    // zero. This is reasonable for modern cameras that have very good
-    // centering of lens over the sensory array.
-    // calibration_flags_ += CALIB_ZERO_TANGENT_DIST
-
-    // Make principle point cc = [KK[3,1]; KK[3,2]] equal to the center of the
-    // frame : cc = [(nx-1)/2;(ny-1)/2)]
-    // calibration_flags_ += CALIB_FIX_PRINCIPAL_POINT
 
     camera_matrix_ = cv::Mat::eye(3, 3, CV_64F);
     distortion_coefficients_ = cv::Mat::zeros(8, 1, CV_64F);
@@ -282,47 +295,136 @@ void CameraCalibrator::generateCalibrationParameters() {
     // Unused currently
     std::vector<cv::Mat> rotation, translation;
 
-    rms_error_ = cv::calibrateCamera(object_points,
-                                     corners_,
-                                     frame_size_,
-                                     camera_matrix_,
-                                     distortion_coefficients_,
-                                     rotation,
-                                     translation,
-                                     calibration_flags_ | cv::CALIB_FIX_K4 | cv::CALIB_FIX_K5);
-    
+    // Reset the calibration settings and results
+    int calibration_flags = 0;
+    camera_matrix_.release();
+    distortion_coefficients_.release();
+
+    switch (model_) {
+        
+        case CameraModel::PINHOLE :
+        {
+
+            // TODO: user options for the following
+            // Fix the aspect ratio of the lens (ratio of lens focal lengths for each
+            // dimension of its internal reference frame, fc(2)/fc(1) where fc =
+            // [KK[1,1]; KK[2,2])
+            // calibration_flags |= CALIB_FIX_ASPECT_RATIO;
+
+            // Set tangential distortion coefficients (last three elements of KC) to
+            // zero. This is reasonable for modern cameras that have very good
+            // centering of lens over the sensory array.
+            // calibration_flags |= CALIB_ZERO_TANGENT_DIST
+
+            // Make principle point cc = [KK[3,1]; KK[3,2]] equal to the center of the
+            // frame : cc = [(nx-1)/2;(ny-1)/2)]
+            // calibration_flags |= CALIB_FIX_PRINCIPAL_POINT
+
+            rms_error_ = cv::calibrateCamera(
+                    object_points,
+                    corners_,
+                    frame_size_,
+                    camera_matrix_,
+                    distortion_coefficients_,
+                    rotation,
+                    translation,
+                    calibration_flags | cv::CALIB_FIX_K4 | cv::CALIB_FIX_K5);
+            
+            break;
+        }
+        case CameraModel::FISHEYE :
+        {
+
+            rms_error_ = cv::fisheye::calibrate(
+                    object_points,
+                    corners_,
+                    frame_size_,
+                    camera_matrix_,
+                    distortion_coefficients_,
+                    rotation,
+                    translation,
+                    calibration_flags);
+            
+             break;
+        }
+    }
+
     calibration_valid_ = 
             cv::checkRange(camera_matrix_) && cv::checkRange(distortion_coefficients_);
+    
+    if (calibration_valid_) {
+        printCalibrationResults(std::cout);
+        calibration_model_ = model_;
+    }
 
+}
+
+int CameraCalibrator::selectCameraModel() {
+
+    std::cout << "Available camera models:\n"
+              << "[0] Pinhole\n"
+              << "[1] Fisheye\n"
+              << "Enter a numerical selection: ";
+
+    int sel {-1};
+    if (!(std::cin >> sel)) {
+        oat::ignoreLine(std::cin);
+        return -1;
+    }
+
+    switch (sel) {
+        case 0:
+        {
+            model_ = CameraModel::PINHOLE;
+            std::cout << "Camera model set to pinhole.\n";
+            break;
+        }
+        case 1:
+        {
+            model_ = CameraModel::FISHEYE;
+            std::cout << "Camera model set to fisheye.\n";
+            break;
+        }
+        default:
+        {
+            std::cerr << oat::Error("Invalid selection.\n");
+            return -1;
+        }
+
+        return 0;
+    }
 }
 
 void CameraCalibrator::decorateFrame(cv::Mat& frame) {
 
-    // Text to put on frame
-
-    std::string mode_msg = "Mode: " + mode_msg_hash_[mode_];
-    //aux_msg = aux_msg_hash_[mode_]; ;
-
     // Write Mode
+    std::string mode_msg = "Mode: " + mode_msg_hash_[mode_];
     cv::Size txt_size = cv::getTextSize(mode_msg, 1, 1, 1, 0);
     cv::Point mode_origin(frame.cols - txt_size.width - 10, frame.rows - 10);
     cv::putText(frame, mode_msg, mode_origin, 1, 1, cv::Scalar(0, 0, 255));
 
     // Write Aux
-
+    //aux_msg = aux_msg_hash_[mode_];
 }
+
 void CameraCalibrator::printCalibrationResults(std::ostream& out) {
 
     // Save stream state. When ifs is destructed, the stream will
     // return to default format.
     boost::io::ios_flags_saver ifs(out);
-
-    out << "Camera Matrix:\n"
+    
+    // Data set information
+    out << "CAMERA CALIBRATION RESULTS\n"
+        << "Number of corner location lists in data set: " <<  corners_.size() << "\n\n";   
+            
+    // Calibration results information
+    out << "Calibration Valid: " << std::boolalpha << calibration_valid_ << "\n"
+        << "Camera Model: " << static_cast<int>(calibration_model_) << "\n\n"
+        << "Camera Matrix:\n"
         << camera_matrix_ << "\n\n"
         << "Distortion Coefficients:\n"
         << distortion_coefficients_ << "\n\n"
-        << "RMS Reconstruction Error:\n"
-        << rms_error_ << "\n\n";
+        << "RMS Reconstruction Error: " << rms_error_ << "\n\n";
 }
 
 void CameraCalibrator::toggleMode(Mode mode) {

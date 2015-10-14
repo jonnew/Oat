@@ -57,7 +57,6 @@ namespace oat {
         const std::string shmem_name, shobj_name, shmgr_name;
         boost::interprocess::managed_shared_memory shared_memory;
 
-
         /**
          * Auto post to this servers own semaphore.wait() to allow threads to unblock
          * in order to ensure proper object destruction.

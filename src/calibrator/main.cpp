@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     std::string camera_model {"pinhole"};
     int chessboard_width {6};
     int chessboard_height {9};
-    double square_length;
+    double square_length {1.0};
     std::string config_file;
     std::string config_key;
     bool config_used {false};

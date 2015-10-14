@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     std::string type;
     std::string video_file;
     double frames_per_second = 30;
-    size_t index;
+    size_t index = 0;
     std::string config_file;
     std::string config_key;
     bool config_used = false;

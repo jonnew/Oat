@@ -32,7 +32,7 @@ public :
     SharedCVMat(cv::Size size, int type, bip::managed_shared_memory::handle_t data, size_t step) :
       size_(size)
     , type_(type)
-    , data_handle(data)
+    , data_(data)
     , step_(step)
     {
         // Nothing
@@ -45,10 +45,11 @@ public :
     // same data block for cv::Mat's data field, which is very efficient. Client
     // side constness of cv::Mat ensures copy on write behavior to prevent data
     // corruption.
-    bip::managed_shared_memory::handle_t data_handle;
+    
     cv::Size size() const { return size_; }
     int type() const { return type_; }
     size_t step() const {return step_; }
+    bip::managed_shared_memory::handle_t data() const { return data_; }
     
 private :
     
@@ -56,6 +57,7 @@ private :
     cv::Size size_ {0, 0};
     int type_ {0};
     size_t step_ {0};
+    bip::managed_shared_memory::handle_t data_;
 
 };
 

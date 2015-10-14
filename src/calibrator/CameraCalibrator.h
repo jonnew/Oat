@@ -44,8 +44,9 @@ public:
     // Camera model to use for calibration
     enum class CameraModel
     {
-        PINHOLE = 0, //!< Pinhole camera model
-        FISHEYE      //!< Fisheye lens model
+        NA      = -1, //!< Not applicable
+        PINHOLE = 0,  //!< Pinhole camera model
+        FISHEYE       //!< Fisheye lens model
     };
 
     /**
@@ -74,6 +75,7 @@ public:
     void accept(OutputVisitor* visitor, std::ostream& out) override;
 
     // Accessors
+    const CameraModel model() const { return model_; }
     const bool calibration_valid() const { return calibration_valid_; }
     const cv::Mat& camera_matrix() const { return camera_matrix_; }
     const cv::Mat& distortion_coefficients() const { return distortion_coefficients_; }
@@ -103,7 +105,8 @@ private:
 
     // Is camera calibration well-defined?
     bool calibration_valid_;
-    int calibration_flags_;
+    CameraModel calibration_model_ {CameraModel::NA};
+    //int calibration_flags_;
     cv::Mat camera_matrix_, distortion_coefficients_;
     double rms_error_;
 
@@ -130,12 +133,13 @@ private:
     bool requireMode(const Mode&&, const Mode&&);
     void toggleMode(Mode);
     void detectChessboard(cv::Mat& frame);
+    void undistortFrame(cv::Mat& frame);
     void decorateFrame(cv::Mat& frame);
     void printDataPoints(void);
     void clearDataPoints(void);
     void printCalibrationResults(std::ostream& out);
     void generateCalibrationParameters(void); //TODO: computationally intense, do on a separate thread
-    //int selectCalibrationMethod(void);
+    int selectCameraModel(void);
     cv::Mat drawCorners(cv::Mat& frame, bool invert_colors);
     
     template<typename M>

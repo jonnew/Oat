@@ -24,7 +24,34 @@
 #include "UsagePrinter.h"
 
 void UsagePrinter::visit(CameraCalibrator* camera_calibrator, std::ostream& out) {
-
+    
+    out << "COMMANDS\n"
+        << "(To use, make sure the display window is in focus.)\n\n"
+        << "CMD    FUNCTION\n"
+        << "  d    Toggle to and from chessboard detection mode. When in\n"
+        << "       detection mode, incoming frames are searched for the presence\n"
+        << "       of a chessboard pattern of specified height and width. When\n"
+        << "       detected, a multicolor grid will appear at each corner of the\n"
+        << "       board and corner locations are saved to form a data set for\n"
+        << "       calculating the camera matrix and distortion coefficients.\n"
+        << "       corner locations are saved at a maximum rate of 1 Hz.\n"
+        << "  f    Specify the calibration file save path to which the\n"
+        << "       camera matrix and distortion coefficients will be saved.\n"
+        << "  g    Generate camera matrix and distortion coefficients using the\n"
+        << "       current set of chessboard corner locations. If successful,\n" 
+        << "       the camera matrix, distortion coefficients, and RMS\n"
+        << "       reconstruction error will be printed.\n"
+        << "  h    Print this information.\n"
+        << "  m    Specify the camera model used to generate the calibration\n"
+        << "       from this list:\n"
+        << "        - pinhole (default): camera modeled as a lensless aperture.\n"
+        << "        - fisheye: ultra wide-angle lens with strong visual\n"
+        << "          intended to create a wide panoramic or hemispherical image.\n"
+        << "  p    Print the current calibration results.\n"
+        << "  s    Save the camera calibration to the specified calibration file\n"
+        << "       If the file exists, this will create or modify the\n"
+        << "       'calibration-<subfield>' entries. If not, the file will be\n"
+        << "       created. Other fields within an existing file not be affected.\n\n";
 }
 
 void UsagePrinter::visit(HomographyGenerator* hg, std::ostream& out) {
@@ -42,9 +69,8 @@ void UsagePrinter::visit(HomographyGenerator* hg, std::ostream& out) {
         << "  f    Specify the calibration file save path to which the\n"
         << "       homography will be saved.\n"
         << "  g    Generate a homography using the current pixel-to-world data\n"
-        << "       set.\n"
-        << "       If successful, both the pixel and world coordinate will be\n"
-        << "       shown for selected pixels on the display window and the\n"
+        << "       set. If successful, both the pixel and world coordinate will\n"
+        << "       be shown for selected pixels on the display window and the\n"
         << "       homography matrix will be printed.\n"
         << "  h    Print this information.\n"
         << "  m    Specify the homography estimation procedure from this list:\n"
@@ -52,12 +78,11 @@ void UsagePrinter::visit(HomographyGenerator* hg, std::ostream& out) {
         << "          (automatic outlier rejection).\n"
         << "        - regular: Best-fit using all data points.\n"
         << "        - exact: Compute the homography that exactly fits four points.\n"
-        << "          Useful when frames contain precisely know fiducial marks.\n"
+        << "          Useful when frames contain precisely known fiducial marks.\n"
         << "  p    Print the current pixel-to-world coordinate data set.\n"
         << "  s    Save the homography to the specified calibration file.\n"
-        << "       If the file exists, this will modify the 'homography' entry\n"
-        << "       in the file or create the 'homographgy' entry if it does not\n"
-        << "       exist. Other fields within an existing file not be affected.\n"
-        << "       If the file does not exist, it will be created.\n\n";
+        << "       If the file exists, this will create or modify the 'homography'\n"
+        << "       entry. If not, the file will be created. Other fields within\n"
+        << "       an existing file not be affected.\n\n";
 }
 
