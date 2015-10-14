@@ -38,7 +38,11 @@ namespace oat {
         Position() { };
 
         Position(const std::string& label) :
-            label_{*label.data()} {}
+            label_{*label.data()} {
+        }
+
+        // Not needed unless we delete a dynamically allocated object via pointer its base class
+        //virtual ~Position() { };
 
         // Positions use one of two coordinate systems
         int coord_system {PIXELS};

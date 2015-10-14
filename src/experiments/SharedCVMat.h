@@ -45,7 +45,6 @@ public :
     // same data block for cv::Mat's data field, which is very efficient. Client
     // side constness of cv::Mat ensures copy on write behavior to prevent data
     // corruption.
-    
     cv::Size size() const { return size_; }
     int type() const { return type_; }
     size_t step() const {return step_; }

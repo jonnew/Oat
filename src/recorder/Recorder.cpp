@@ -116,6 +116,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         json_writer.StartObject();
         
         // Coordinate system
+        // TODO: replace with cmake-managed version
         json_writer.String("oat_version");
         json_writer.String("1.0");
         
@@ -221,7 +222,7 @@ bool Recorder::writeStreams() {
     
     boost::dynamic_bitset<>::size_type i = frame_read_required.find_first();
     
-    while( i < number_of_frame_sources) {
+    while (i < number_of_frame_sources) {
 
         // Check if we need to read frame_client_idx, or if the read has been
         // performed already
@@ -248,7 +249,7 @@ bool Recorder::writeStreams() {
     i = position_read_required.find_first();
 
     // Get current positions
-    while( i < number_of_position_sources) {
+    while (i < number_of_position_sources) {
         
         // Check if we need to read position_client_idx, or if the read has been
         // performed already
@@ -309,7 +310,7 @@ void Recorder::writePositionsToFile() {
             json_writer.String(sample_str);
 #else
             json_writer.String(sample_str.c_str(), 
-                    (rapidjson::SizeType)sample_str.length());
+                    static_cast<rapidjson::SizeType>(sample_str.length()));
 #endif
 
             pos->Serialize(json_writer);
