@@ -41,8 +41,7 @@ namespace oat {
             label_{*label.data()} {
         }
 
-        // Not needed unless we delete a dynamically allocated object via pointer its base class
-        //virtual ~Position() { };
+        virtual ~Position() { };
 
         // Positions use one of two coordinate systems
         int coord_system {PIXELS};

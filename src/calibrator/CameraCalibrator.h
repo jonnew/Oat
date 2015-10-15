@@ -44,9 +44,9 @@ public:
     // Camera model to use for calibration
     enum class CameraModel
     {
-        NA      = -1, //!< Not applicable
-        PINHOLE = 0,  //!< Pinhole camera model
-        FISHEYE       //!< Fisheye lens model
+        NA      = -1,  //!< Not applicable
+        PINHOLE =  0,  //!< Pinhole camera model
+        FISHEYE =  1   //!< Fisheye lens model
     };
 
     /**

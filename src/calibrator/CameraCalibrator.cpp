@@ -275,7 +275,8 @@ void CameraCalibrator::undistortFrame(cv::Mat& frame) {
         }
         case CameraModel::FISHEYE:
         {
-            cv::fisheye::undistortImage(temp, frame, camera_matrix_, distortion_coefficients_);
+            cv::fisheye::undistortImage(temp, frame, camera_matrix_, 
+                    distortion_coefficients_, cv::Matx33d::eye());
             break;
         }
     }
@@ -283,27 +284,23 @@ void CameraCalibrator::undistortFrame(cv::Mat& frame) {
 
 void CameraCalibrator::generateCalibrationParameters() {
 
-    camera_matrix_ = cv::Mat::eye(3, 3, CV_64F);
-    distortion_coefficients_ = cv::Mat::zeros(8, 1, CV_64F);
-
-    std::vector<std::vector<cv::Point3f>> object_points; // { corners_meters_ };
+    // Intermediates required by the calibration routines
+    // but not used elsewhere currently
+    std::vector<std::vector<cv::Point3f>> object_points; 
     object_points.resize(corners_.size(), corners_meters_);
 
-    //if (flags & CALIB_FIX_ASPECT_RATIO)
-    //    cameraMatrix.at<double>(0, 0) = aspectRatio;
-
-    // Unused currently
-    std::vector<cv::Mat> rotation, translation;
-
-    // Reset the calibration settings and results
+    // Reset the calibration settings
     int calibration_flags = 0;
-    camera_matrix_.release();
-    distortion_coefficients_.release();
 
     switch (model_) {
         
         case CameraModel::PINHOLE :
         {
+            // Reinitialized the camera matrix and distortion coefficients
+            // with sizes required for pinhole model
+            camera_matrix_ = cv::Mat::eye(3, 3, CV_64F);
+            distortion_coefficients_ = cv::Mat::zeros(8, 1, CV_64F);
+           
 
             // TODO: user options for the following
             // Fix the aspect ratio of the lens (ratio of lens focal lengths for each
@@ -326,8 +323,8 @@ void CameraCalibrator::generateCalibrationParameters() {
                     frame_size_,
                     camera_matrix_,
                     distortion_coefficients_,
-                    rotation,
-                    translation,
+                    cv::noArray(),
+                    cv::noArray(),
                     calibration_flags | cv::CALIB_FIX_K4 | cv::CALIB_FIX_K5);
             
             break;
@@ -335,14 +332,23 @@ void CameraCalibrator::generateCalibrationParameters() {
         case CameraModel::FISHEYE :
         {
 
+            calibration_flags |= cv::fisheye::CALIB_RECOMPUTE_EXTRINSIC;
+            calibration_flags |= cv::fisheye::CALIB_CHECK_COND;
+            calibration_flags |= cv::fisheye::CALIB_FIX_SKEW;
+            
+            // Reinitialized the camera matrix and distortion coefficients
+            // with sizes required for fisheye model
+            camera_matrix_ = cv::Mat::eye(3, 3, CV_64F);
+            distortion_coefficients_ = cv::Mat::zeros(4, 1, CV_64F);
+
             rms_error_ = cv::fisheye::calibrate(
                     object_points,
                     corners_,
                     frame_size_,
                     camera_matrix_,
                     distortion_coefficients_,
-                    rotation,
-                    translation,
+                    cv::noArray(),
+                    cv::noArray(),
                     calibration_flags);
             
              break;
@@ -353,8 +359,8 @@ void CameraCalibrator::generateCalibrationParameters() {
             cv::checkRange(camera_matrix_) && cv::checkRange(distortion_coefficients_);
     
     if (calibration_valid_) {
-        printCalibrationResults(std::cout);
         calibration_model_ = model_;
+        printCalibrationResults(std::cout);
     }
 
 }
