@@ -79,14 +79,13 @@ void HomographyGenerator::configure(const std::string& config_file, const std::s
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
-    cpptoml::table config;
-    config = cpptoml::parse_file(config_file);
+    auto config = cpptoml::parse_file(config_file);
 
     // See if a camera configuration was provided
-    if (config.contains(config_key)) {
+    if (config->contains(config_key)) {
 
         // Get this components configuration table
-        auto this_config = config.get_table(config_key);
+        auto this_config = config->get_table(config_key);
 
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);

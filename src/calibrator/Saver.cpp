@@ -52,7 +52,7 @@ void Saver::visit(CameraCalibrator* cc) {
     }
     
     // Generate or get base calibration table
-    cpptoml::table calibration;
+    auto calibration = cpptoml::make_table();
     try {
         calibration = generateCalibrationTable(calibration_file_, entry_key_);
     } catch (const std::runtime_error& ex) {
@@ -62,28 +62,27 @@ void Saver::visit(CameraCalibrator* cc) {
     
     // Get TOML value holding camera model type 
     auto temp = static_cast<int64_t>(cc->model());
-    auto model = std::make_shared<cpptoml::value<int64_t>>(temp);
+    auto model = cpptoml::make_value<int64_t>(std::move(temp));
     
     // Construct TOML array from camera matrix and distortion coefficients
-    auto cam = std::make_shared<cpptoml::array>();
+    auto cam = cpptoml::make_array();
     cv::MatConstIterator_<double> it, end;
     for (it = cc->camera_matrix().begin<double>(), end = cc->camera_matrix().end<double>(); it != end; ++it)  {
-        cam->get().push_back(std::make_shared<cpptoml::value<double>>(*it));
+        cam->get().push_back(cpptoml::make_value<double>(*it));
     }
     
-    
-    auto dc = std::make_shared<cpptoml::array>();
+    auto dc = cpptoml::make_array();
     for (it = cc->distortion_coefficients().begin<double>(), end = cc->distortion_coefficients().end<double>(); it != end; ++it)  {
-        dc->get().push_back(std::make_shared<cpptoml::value<double>>(*it));
+        dc->get().push_back(cpptoml::make_value<double>(*it));
     }
     
     // Insert camera matrix and distortion coeffs into TOML table
-    calibration.insert(entry_key_ + "-model", model);
-    calibration.insert(entry_key_ + "-camera-matrix", cam);
-    calibration.insert(entry_key_ + "-distortion-coeffs", dc);
+    calibration->insert(entry_key_ + "-model", model);
+    calibration->insert(entry_key_ + "-camera-matrix", cam);
+    calibration->insert(entry_key_ + "-distortion-coeffs", dc);
     
      // Save the file
-    saveCalibrationTable(calibration, calibration_file_);
+    saveCalibrationTable(*calibration, calibration_file_);
 }
 
 void Saver::visit(HomographyGenerator* hg) {
@@ -95,7 +94,7 @@ void Saver::visit(HomographyGenerator* hg) {
     }
 
     // Generate or get base calibration table
-    cpptoml::table calibration;
+    auto calibration = cpptoml::make_table();
     try {
         calibration = generateCalibrationTable(calibration_file_, entry_key_);
     } catch (const std::runtime_error& ex) {
@@ -104,22 +103,22 @@ void Saver::visit(HomographyGenerator* hg) {
     }
 
     // Construct TOML array from homography
-    auto arr = std::make_shared<cpptoml::array>();
+    auto arr = cpptoml::make_array();
     cv::MatConstIterator_<double> it, end;
     for (it = hg->homography().begin<double>(), end = hg->homography().end<double>(); it != end; ++it)  {
-        arr->get().push_back(std::make_shared<cpptoml::value<double>>(*it));
+        arr->get().push_back(cpptoml::make_value<double>(*it));
     }
 
     // Insert the array into the calibration table
-    calibration.insert(entry_key_, arr);
+    calibration->insert(entry_key_, arr);
 
     // Save the file
-    saveCalibrationTable(calibration, calibration_file_);
+    saveCalibrationTable(*calibration, calibration_file_);
 }
 
-cpptoml::table Saver::generateCalibrationTable(const std::string& file, const std::string& key) {
+std::shared_ptr<cpptoml::table> Saver::generateCalibrationTable(const std::string& file, const std::string& key) {
 
-    cpptoml::table table;
+    auto table = cpptoml::make_table();
 
     // If the file already exists, open it as a TOML table
     // This will throw if the file cotains invalid TOML
@@ -129,7 +128,7 @@ cpptoml::table Saver::generateCalibrationTable(const std::string& file, const st
 
     // See if there is already specified key. If so warn the user that it
     // will be overwritten by proceeding
-    if (table.contains(key)) {
+    if (table->contains(key)) {
 
         std::cout << file + " already contains a " + key + " entry. Overwrite? (y/n): ";
 
@@ -144,8 +143,8 @@ cpptoml::table Saver::generateCalibrationTable(const std::string& file, const st
         }
     }
 
-    auto dt = std::make_shared<cpptoml::value<cpptoml::datetime>>(generateDateTime()); 
-    table.insert("last-modified", dt);
+    auto dt = cpptoml::make_value<cpptoml::datetime>(generateDateTime()); 
+    table->insert("last-modified", dt);
 
     return table;
 }
