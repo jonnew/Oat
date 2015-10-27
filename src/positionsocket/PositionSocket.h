@@ -51,7 +51,7 @@ public:
             sendPosition(position_, position_source_.get_current_time_stamp()); 
  
         // If server state is END, return true
-        return (position_source_.getSourceRunState() == oat::ServerRunState::END);  
+        return (position_source_.getSourceRunState() == oat::SinkState::END);  
     }
     
     // Accessors

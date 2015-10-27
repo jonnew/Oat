@@ -95,7 +95,7 @@ public:
             frame_sink.pushMat(filter(current_frame), frame_source.get_current_sample_number());
         }
 
-        return (frame_source.getSourceRunState() == oat::ServerRunState::END);
+        return (frame_source.getSourceRunState() == oat::SinkState::END);
     }
 
     /**

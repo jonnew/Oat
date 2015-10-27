@@ -64,7 +64,7 @@ public:
         }
         
         // If server state is END, return true
-        return (position_source.getSourceRunState() == oat::ServerRunState::END);  
+        return (position_source.getSourceRunState() == oat::SinkState::END);  
     }
 
     /**

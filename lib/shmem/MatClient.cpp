@@ -66,7 +66,7 @@ namespace oat {
 
             shared_memory = bip::managed_shared_memory(bip::open_or_create, shmem_name.c_str(), total_bytes);
             shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
-            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shsig_name.c_str())();
+            shared_mem_manager = shared_memory.find_or_construct<oat::NodeManger>(shsig_name.c_str())();
             
 
         } catch (bip::interprocess_exception& ex) {
@@ -78,7 +78,7 @@ namespace oat {
         
         // Make sure everyone using this shared memory knows that another client
         // has joined
-        number_of_clients = shared_mem_manager->incrementClientRefCount();
+        number_of_clients = shared_mem_manager->incrementSourceRefCount();
         
         return number_of_clients;
     }
@@ -126,7 +126,7 @@ namespace oat {
                 shared_mat_header->client_read_count++;
 
                 // If all clients have read, signal the barrier
-                if (shared_mat_header->client_read_count >= shared_mem_manager->get_client_ref_count()) {
+                if (shared_mat_header->client_read_count >= shared_mem_manager->source_ref_count()) {
                     shared_mat_header->write_barrier.post();
                     shared_mat_header->client_read_count = 0;
                 }
@@ -151,12 +151,12 @@ namespace oat {
         }
     }
     
-    oat::ServerRunState MatClient::getSourceRunState() {
+    oat::SinkState MatClient::getSourceRunState() {
         
         if (shared_object_found)
             return shared_mem_manager->get_server_state();
         else
-            return oat::ServerRunState::UNDEFINED;
+            return oat::SinkState::UNDEFINED;
     }
 
     void MatClient::detachFromShmem() {
@@ -164,11 +164,11 @@ namespace oat {
         if (shared_object_found) {
 
             // Make sure nobody is going to wait on a disposed object
-            number_of_clients = shared_mem_manager->decrementClientRefCount();
+            number_of_clients = shared_mem_manager->decrementSourceRefCount();
 
             // If the client reference count is 0 and there is no server 
             // attached to the shared mat, deallocate the shmem
-            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::ServerRunState::ATTACHED) {
+            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::SinkState::BOUND) {
                 
                 bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG

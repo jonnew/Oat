@@ -20,19 +20,24 @@
 #ifndef SHAREDOBJECT_H
 #define	SHAREDOBJECT_H
 
-namespace bip = boost::interprocess;
+#include <atomic>
+#include <boost/interprocess/managed_shared_memory.hpp>
 
+namespace oat {
+namespace bip = boost::interprocess;
 /**
  * All datatypes that will be passed through shared memory
  * must implement this ABC.
  */
 class SharedObject {
 
+    using handle_t = bip::managed_shared_memory::handle_t;
+    
 public :
 
     SharedObject() { };
 
-    SharedObject(size_t bytes, bip::managed_shared_memory::handle_t data) :
+    SharedObject(size_t bytes, handle_t data) :
       bytes_(bytes)
     , data_(data)
     {
@@ -40,6 +45,9 @@ public :
     }
 
     virtual ~SharedObject() = 0;
+    
+    template<typename... Ts>
+    //virtual void setParameters(Ts...) = 0;
 
     // This data handle is a way to pass a pointer to a mat data structure
     // through shared memory. This is important, because clients can construct
@@ -49,16 +57,18 @@ public :
     // side constness of cv::Mat ensures copy on write behavior to prevent data
     // corruption.
     size_t bytes() const { return bytes_; }
-    bip::managed_shared_memory::handle_t data() const { return data_; }
+    handle_t data() const { return data_; }
 
-private :
+protected :
 
-    // Number of bytes to read and IP compatiable address to read them 
-    cv::Size bytes_ {0};
-    bip::managed_shared_memory::handle_t data_;
+    // Number of bytes to read and IP compatable address to read them 
+    std::atomic<size_t> bytes_ {0};
+    std::atomic<handle_t> data_;
 
 };
 
 SharedObject::~SharedObject() { };
+
+} // namepace oat
 
 #endif	/* SHAREDOBJECT_H */

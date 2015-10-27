@@ -23,7 +23,7 @@
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
 #include <opencv2/core/mat.hpp>
 
-#include "SharedMemoryManager.h"
+#include "NodeManager.h"
 #include "SharedCVMatHeader.h"
 
 namespace oat {
@@ -36,7 +36,7 @@ namespace oat {
 
         // get cv::Mat out of shared memory
         bool getSharedMat(cv::Mat& value);
-        oat::ServerRunState getSourceRunState(void);
+        oat::SinkState getSourceRunState(void);
 
         // Accessors
         std::string get_name(void) const { return name; }
@@ -49,7 +49,7 @@ namespace oat {
 
         std::string name;
         oat::SharedCVMatHeader* shared_mat_header;
-        oat::SharedMemoryManager* shared_mem_manager;
+        oat::NodeManger* shared_mem_manager;
         bool shared_object_found, mat_attached_to_header;
         bool read_barrier_passed;
         int data_size; // Size of raw mat data in bytes

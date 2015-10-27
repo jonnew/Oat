@@ -28,7 +28,7 @@
 #include <opencv2/core/mat.hpp>
 
 #include "SharedCVMatHeader.h"
-#include "SharedMemoryManager.h"
+#include "NodeManager.h"
 
 namespace oat {
 
@@ -40,7 +40,7 @@ namespace oat {
         virtual ~BufferedMatServer();
 
         void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
-        void setSharedServerState(oat::ServerRunState state);
+        void setSharedServerState(oat::SinkState state);
         
         // Accessors 
         std::string get_name(void) const { return name; }
@@ -62,7 +62,7 @@ namespace oat {
         std::atomic<bool> serve_thread_running;
         std::condition_variable serve_condition;
         oat::SharedCVMatHeader* shared_mat_header;
-        oat::SharedMemoryManager* shared_mem_manager;
+        oat::NodeManger* shared_mem_manager;
         bool shared_object_created;
         bool mat_header_constructed;
 

@@ -47,7 +47,7 @@ namespace oat {
          */
         bool getSharedObject(T& value);
         
-        oat::ServerRunState getSourceRunState(void);
+        oat::SinkState getSourceRunState(void);
 
         /**
          * Get the current sample number
@@ -58,7 +58,7 @@ namespace oat {
     private:
 
         SharedMemType<T>* shared_object; // Defaults to oat::SyncSharedMemoryObject<T>
-        oat::SharedMemoryManager* shared_mem_manager;
+        oat::NodeManger* shared_mem_manager;
         std::string name;
         std::string shmem_name, shobj_name, shmgr_name;
         bool shared_object_found;
@@ -109,11 +109,11 @@ namespace oat {
             shared_memory = bip::managed_shared_memory(
                     bip::open_or_create,
                     shmem_name.c_str(),
-                    sizeof(SharedMemType<T>) + sizeof(oat::SharedMemoryManager) + 1024);
+                    sizeof(SharedMemType<T>) + sizeof(oat::NodeManger) + 1024);
 
             // Find the object in shared memory
             shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
-            shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
+            shared_mem_manager = shared_memory.find_or_construct<oat::NodeManger>(shmgr_name.c_str())();
             shared_object_found = true;
 
         } catch (bip::interprocess_exception& ex) {
@@ -125,7 +125,7 @@ namespace oat {
         
         // Make sure everyone using this shared memory knows that another client
         // has joined
-        number_of_clients = shared_mem_manager->incrementClientRefCount();
+        number_of_clients = shared_mem_manager->incrementSourceRefCount();
 
         return number_of_clients;
     }
@@ -167,7 +167,7 @@ namespace oat {
                 shared_object->client_read_count++;
 
                 // If all clients have read, signal the write barrier
-                if (shared_object->client_read_count >= shared_mem_manager->get_client_ref_count()) {
+                if (shared_object->client_read_count >= shared_mem_manager->source_ref_count()) {
                     shared_object->write_barrier.post();
                     shared_object->client_read_count = 0;
                 }
@@ -194,12 +194,12 @@ namespace oat {
     }
     
     template<class T, template <typename> class SharedMemType>
-    oat::ServerRunState SMClient<T, SharedMemType>::getSourceRunState() {
+    oat::SinkState SMClient<T, SharedMemType>::getSourceRunState() {
         
         if (shared_object_found) 
             return shared_mem_manager->get_server_state();
         else
-            return oat::ServerRunState::UNDEFINED;
+            return oat::SinkState::UNDEFINED;
     }
 
     template<class T, template <typename> class SharedMemType>
@@ -208,11 +208,11 @@ namespace oat {
         if (shared_object_found) {
 
             // Make sure nobody is going to wait on a disposed object
-            number_of_clients = shared_mem_manager->decrementClientRefCount();
+            number_of_clients = shared_mem_manager->decrementSourceRefCount();
 
             // If the client reference count is 0 and there is no server 
             // attached to the shared mat, deallocate the shmem
-            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::ServerRunState::ATTACHED) {
+            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::SinkState::BOUND) {
 
                 // Ensure that no server is deadlocked
                 shared_object->write_barrier.post();

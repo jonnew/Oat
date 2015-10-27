@@ -20,20 +20,25 @@
 #ifndef SHAREDCVMAT_H
 #define	SHAREDCVMAT_H
 
+#include <atomic>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <opencv2/core.hpp>
+
+#include "SharedObject.h"
+
+namespace oat {
 namespace bip = boost::interprocess;
 
 // Class containing handle to server process's address of matrix data
-class SharedCVMat {
-
+class SharedCVMat : public SharedObject{
+    
+    using handle_t = bip::managed_shared_memory::handle_t;
+    
 public :
     
-    SharedCVMat() { }
+    SharedCVMat() : SharedObject() { }
     
-    SharedCVMat(cv::Size size, int type, bip::managed_shared_memory::handle_t data, size_t step) :
-      size_(size)
-    , type_(type)
-    , data_(data)
-    , step_(step)
+    SharedCVMat(size_t bytes, handle_t data) : SharedObject(bytes, data)
     {
         // Nothing
     }
@@ -48,17 +53,23 @@ public :
     cv::Size size() const { return size_; }
     int type() const { return type_; }
     size_t step() const {return step_; }
-    bip::managed_shared_memory::handle_t data() const { return data_; }
     
+    void setParameters(cv::Size size, int type, size_t step) {
+        size_ = size;
+        type_ = type;
+        step_ = step;
+    }
+
 private :
     
     // Matrix metadata and handle to data
-    cv::Size size_ {0, 0};
-    int type_ {0};
-    size_t step_ {0};
-    bip::managed_shared_memory::handle_t data_;
+    cv::Size size_ {0, 0}; // Should be atomic...
+    std::atomic<int> type_ {0};
+    std::atomic<size_t> step_ {0};
 
 };
+
+}
 
 #endif	/* SHAREDCVMAT_H */
 

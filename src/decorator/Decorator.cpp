@@ -71,12 +71,12 @@ bool Decorator::decorateFrame() {
 
     // Make sure all sources are still running
     sources_eof |= (frame_source.getSourceRunState() 
-        == oat::ServerRunState::END);
+        == oat::SinkState::END);
 
     for (int i = 0; i < number_of_position_sources; i++) {
 
         sources_eof |= (position_sources[i]->getSourceRunState()
-                == oat::ServerRunState::END);
+                == oat::SinkState::END);
     }
     
     // Get the image to be decorated

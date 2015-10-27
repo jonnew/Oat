@@ -79,7 +79,7 @@ public:
         for (int i = 0; i < number_of_position_sources; i++) {
             
             sources_eof |= (position_sources[i]->getSourceRunState()
-                    == oat::ServerRunState::END);
+                    == oat::SinkState::END);
         }
 
         boost::dynamic_bitset<>::size_type i = position_read_required.find_first();

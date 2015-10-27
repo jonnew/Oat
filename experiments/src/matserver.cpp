@@ -18,49 +18,50 @@
 //******************************************************************************
 
 #include <opencv2/opencv.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/program_options.hpp>
+
+#include <csignal>
+#include <exception>
 
 #include "SharedCVMat.h"
+#include "NodeManager.h"
+#include "Sink.h"
+#include "SharedCVMat.h"
 
-namespace bip = boost::interprocess;
+
+volatile sig_atomic_t quit = 0;
+
+// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
+void sigHandler(int s) {
+    quit = 1;
+}
 
 /*
  * Demo program showing very efficient shared memory passing of cv::Mat. This
  * server side program should be executed first to load data into shmem.
  */
 int main(int argc, char *argv[]) {
+    
+    std::signal(SIGINT, sigHandler);
 
     // Image to send through shmem
     // Change to some sample image on your filesystem.
     std::string file_name = "/home/jon/Desktop/test.png";
-    
-    // Read file to get sample image (simulates a camera grab)
-    cv::Mat ext_mat = cv::imread(file_name);
 
-    // Server side
     try {
-        
-        // Remove shared memory on construction
-        // Client will remove on destruction
-        struct shm_remove
-        {
-           shm_remove() { bip::shared_memory_object::remove("SHMEM_sh_mem"); }
-        } remover;
-        
-        // Create managed shmem segment
-        bip::managed_shared_memory shared_memory =
-                bip::managed_shared_memory(bip::create_only, "SHMEM_sh_mem", 10e6);
+
+        // Read file to get sample image (simulates a camera grab)
+        cv::Mat ext_mat = cv::imread(file_name);
 
         // How many bytes per matrix?
         cv::Size mat_dims(ext_mat.cols, ext_mat.rows);
         size_t step = ext_mat.step[0];
         size_t mat_size = step * ext_mat.rows;
         
-        // Allocate mat_size bytes in shmem segment to hold mat data
-        void* mat_data = shared_memory.allocate(mat_size);
-
+        // Create sink to send matrix into
+        oat::Sink<oat::SharedCVMat> sink;
+        sink.bind("exp_sh_mem", 10e6);
+        void* mat_data = sink.allocate(mat_size, mat_dims, ext_mat.type(), step);
+        
         // Create the shared cv::Mat that uses shem to store data 
         cv::Mat shared_mat(mat_dims, ext_mat.type(), mat_data, step);
         
@@ -68,16 +69,22 @@ int main(int argc, char *argv[]) {
         // should just be put directly into the space pointed to by mat_data.
         memcpy(mat_data, ext_mat.data, mat_size);
 
-        // Create a cross-process compatible handle to the shmem address
-        // holding mat data
-        bip::managed_shared_memory::handle_t handle =
-                shared_memory.get_handle_from_address(mat_data);
+        uint64_t angle = 0;
+        while(!quit) {
+            
+            cv::Point2f src_center(ext_mat.cols/2.0F, ext_mat.rows/2.0F);
+            cv::Mat rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
+            
+            // Start critical section
+            cv::warpAffine(ext_mat, shared_mat, rot_mat, ext_mat.size());
+            // End critical section
+            
+            std::cout << "Sample: " << angle << "\r";
+            std::cout.flush();
 
-        // Created shared memory-based cv::Mat
-        SharedCVMat* shmat = shared_memory.construct<SharedCVMat>
-                ("SHMAT")(mat_dims, shared_mat.type(), handle, step);
+        }
 
-    } catch (const bip::interprocess_exception& ex) {
+    } catch (const std::exception& ex) {
 
         std::cerr << ex.what();
         return -1;
