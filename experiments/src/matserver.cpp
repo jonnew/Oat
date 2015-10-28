@@ -19,13 +19,21 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <chrono>
 #include <csignal>
 #include <exception>
 
 #include "SharedCVMat.h"
-#include "NodeManager.h"
+#include "Node.h"
 #include "Sink.h"
 #include "SharedCVMat.h"
+
+
+using Clock = std::chrono::high_resolution_clock;
+using Milliseconds = std::chrono::milliseconds;
+
+Clock::time_point tick = Clock::now();
+Clock::time_point tock = Clock::now();
 
 
 volatile sig_atomic_t quit = 0;
@@ -45,7 +53,7 @@ int main(int argc, char *argv[]) {
 
     // Image to send through shmem
     // Change to some sample image on your filesystem.
-    std::string file_name = "/home/jon/Desktop/test.png";
+    std::string file_name = "/home/jon/Desktop/test1.png";
 
     try {
 
@@ -54,33 +62,40 @@ int main(int argc, char *argv[]) {
 
         // How many bytes per matrix?
         cv::Size mat_dims(ext_mat.cols, ext_mat.rows);
-        size_t step = ext_mat.step[0];
-        size_t mat_size = step * ext_mat.rows;
         
         // Create sink to send matrix into
         oat::Sink<oat::SharedCVMat> sink;
         sink.bind("exp_sh_mem", 10e6);
-        void* mat_data = sink.allocate(mat_size, mat_dims, ext_mat.type(), step);
-        
-        // Create the shared cv::Mat that uses shem to store data 
-        cv::Mat shared_mat(mat_dims, ext_mat.type(), mat_data, step);
-        
-        // This should not be needed normally -- images from a camera or video file
-        // should just be put directly into the space pointed to by mat_data.
-        memcpy(mat_data, ext_mat.data, mat_size);
+        cv::Mat shared_mat = sink.allocate(mat_dims, ext_mat.type());
 
         uint64_t angle = 0;
+        cv::Point2f src_center(ext_mat.cols/2.0F, ext_mat.rows/2.0F);
+        cv::Mat rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
         while(!quit) {
             
-            cv::Point2f src_center(ext_mat.cols/2.0F, ext_mat.rows/2.0F);
-            cv::Mat rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
+//            tick = Clock::now();
+//
+//            Milliseconds duration =
+//                std::chrono::duration_cast<Milliseconds>(tick - tock);
             
-            // Start critical section
+            // Do transform
             cv::warpAffine(ext_mat, shared_mat, rot_mat, ext_mat.size());
-            // End critical section
+            sink.post();
             
-            std::cout << "Sample: " << angle << "\r";
-            std::cout.flush();
+            
+            //tock = Clock::now();
+            
+            // Tell sources there is new data
+            
+
+            rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
+ 
+            
+//            std::cout << "Loop duration (ms): " << duration.count() << "\r";
+//            std::cout.flush();
+            
+            // Wait for sources to finish reading
+            sink.wait();
 
         }
 

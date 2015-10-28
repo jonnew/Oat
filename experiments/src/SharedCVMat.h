@@ -38,28 +38,24 @@ public :
     
     SharedCVMat() : SharedObject() { }
     
-    SharedCVMat(size_t bytes, handle_t data) : SharedObject(bytes, data)
-    {
-        // Nothing
-    }
+//    SharedCVMat(size_t bytes, handle_t data) : SharedObject(bytes, data)
+//    {
+//        // Nothing
+//    }
     
-    // This data handle is a way to pass a pointer to a mat data structure
-    // through shared memory. This is important, because clients can construct
-    // const cv::Mat's by getting a pointer from this handle. This means that
-    // both client and server, existing in _different processes_, will use the 
-    // same data block for cv::Mat's data field, which is very efficient. Client
-    // side constness of cv::Mat ensures copy on write behavior to prevent data
-    // corruption.
     cv::Size size() const { return size_; }
     int type() const { return type_; }
     size_t step() const {return step_; }
     
-    void setParameters(cv::Size size, int type, size_t step) {
+    void setParameters(const handle_t data, const cv::Size size, 
+                       const int type) { //size_t bytes, 
+        //bytes_ = bytes;
+        data_ = data;
         size_ = size;
         type_ = type;
-        step_ = step;
+        //step_ = step;
     }
-
+    
 private :
     
     // Matrix metadata and handle to data

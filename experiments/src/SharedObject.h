@@ -37,9 +37,9 @@ public :
 
     SharedObject() { };
 
-    SharedObject(size_t bytes, handle_t data) :
-      bytes_(bytes)
-    , data_(data)
+    SharedObject(handle_t data) : //size_t bytes, 
+      //bytes_(bytes)
+      data_(data)
     {
         // Nothing
     }
@@ -56,13 +56,13 @@ public :
     // same data block for cv::Mat's data field, which is very efficient. Client
     // side constness of cv::Mat ensures copy on write behavior to prevent data
     // corruption.
-    size_t bytes() const { return bytes_; }
+    //size_t bytes() const { return bytes_; }
     handle_t data() const { return data_; }
-
+    
 protected :
 
     // Number of bytes to read and IP compatable address to read them 
-    std::atomic<size_t> bytes_ {0};
+    //std::atomic<size_t> bytes_ {0};
     std::atomic<handle_t> data_;
 
 };

@@ -23,7 +23,7 @@
 #include <exception>
 
 #include "SharedCVMat.h"
-#include "NodeManager.h"
+#include "Node.h"
 #include "Source.h"
 #include "SharedCVMat.h"
 
@@ -40,31 +40,42 @@ void sigHandler(int s) {
  */
 int main(int argc, char *argv[]) {
 
+    char * name = argv[1];
+    
     std::signal(SIGINT, sigHandler);
-    cv::namedWindow("window", cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+    cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
 
     try {
 
         // Create sink to send matrix into
         oat::Source<oat::SharedCVMat> source;
+        
+        // Bind source to the exp_sh_mem node
         source.bind("exp_sh_mem", 10e6);
 
-        void* mat_data;
-        mat_data = source.read();
-        cv::Mat shared_mat(source.object().size(),
-                source.object().type(),
-                mat_data,
-                source.object().step());
+        // Before proceeding, the node must be bound by a sink, which will notify
+        // the source(s) when it has deposited new data
+        source.wait();
+        
+        // Use info in shmem to create mat header
+        source.getHeader();
+        
+        // Get the shared mat and make a new mat to copy the data to
+        //const cv::Mat shared_mat = source.frame();
+        cv::Mat local;
 
         while (!quit) {
 
-            if (mat_data != nullptr) {
-
-                cv::imshow("window", shared_mat);
-                cv::waitKey(1);
-
-            }
-
+            local = source.cloneFrame(); 
+            
+            // We are done cloning the frame out of shmem, tell sink it can
+            // proceed
+            source.post();
+            
+            //cv::bitwise_not(local, local);
+            cv::imshow(name, local);
+            cv::waitKey(1);
+            source.wait();
         }
 
     } catch (const std::exception& ex) {
