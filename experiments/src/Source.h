@@ -37,21 +37,21 @@ public:
     virtual ~SourceBase();
 
     void bind(const std::string &address, const size_t bytes);
-    void connect();
+    virtual void connect();
     void wait();
     void post();
 
 protected:
 
-    void * read();
+    shmem_t shmem_;
     T * object_;
     Node * node_;
 
 private:
 
     std::string address_;
-    //bip::managed_shared_memory shmem_;
     bool shmem_bound_ {false};
+    bool must_post_ {false};
     size_t this_index_;
 };
 
@@ -64,14 +64,15 @@ SourceBase<T>::SourceBase()
 template<typename T>
 SourceBase<T>::~SourceBase() {
 
-    // If the client reference count is 0 and there is no server
+    // Ensure that no server is deadlocked
+    if (must_post_)
+        post();
+    
+       // If the client reference count is 0 and there is no server
     // attached to the node, deallocate the shmem
     if (shmem_bound_ &&
         node_->decrementSourceRefCount() == 0 &&
         node_->sink_state() != oat::SinkState::BOUND) {
-
-        // Ensure that no server is deadlocked
-        post();
 
         bip::shared_memory_object::remove(address_.c_str());
     }
@@ -86,36 +87,29 @@ void SourceBase<T>::bind(const std::string& address, const size_t bytes) {
     std::string obj_address = address_ + "/shobj";
 
     // Define shared memory
-    shmem_t shmem = bip::managed_shared_memory(
+    shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
             address.c_str(),
             bytes + sizeof (oat::Node) + sizeof(T));
 
     // Facilitates synchronized access to shmem
-    node_ = shmem.find_or_construct<oat::Node>(node_address.c_str())();
+    node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
 
     // Find an existing shared object or construct one with default parameters
-    object_ = shmem.find_or_construct<T>(obj_address.c_str())();
+    object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
 
     // Let the node know this source is attached and get our index
     this_index_ = node_->incrementSourceRefCount();
     shmem_bound_ = true;
 }
 
-// TODO: This is specific to shared cv::Mats. Therefore, should be a specialization?
 template<typename T>
-void * SourceBase<T>::read() {
+void SourceBase<T>::connect() {
 
     if (node_->sink_state() != oat::SinkState::BOUND)
-        throw std::runtime_error("Source tried to read from node without bound sink");
-
-    // Reopen the previously allocated shared memory segment
-    shmem_t shmem = bip::managed_shared_memory(
-            bip::open_only,
-            address_.c_str());
-
-    return shmem.get_address_from_handle(object_->data());
+        wait();
 }
+
 
 template<typename T>
 void SourceBase<T>::wait() {
@@ -129,17 +123,13 @@ void SourceBase<T>::wait() {
         // Loops checking if wait has been released
         timeout = boost::get_system_time() + msec_t(10);
     }
+    
+    // Before *this is destroyed, we must post() to prevent deadlock
+    must_post_ = true;
 
     // Obtain ownership over mutex so that shared memory can be written to.
     // This must be released using signal()
     //manager_->mutex.wait();
-}
-
-template<typename T>
-void SourceBase<T>::connect() {
-
-    if (node_->sink_state() != oat::SinkState::BOUND)
-        wait();
 }
 
 template<typename T>
@@ -148,31 +138,26 @@ void SourceBase<T>::post() {
     // Release exclusive lock over shared memory
     //manager_->mutex.post();
 
-    if( node_->incrementSourceReadCount() == node_->source_ref_count()) {
+    if( node_->incrementSourceReadCount() >= node_->source_ref_count()) {
         node_->write_barrier.post();
     }
+    
+    // Post has been performed, so its not needed *this is destroyed
+    must_post_ = false;
 }
 
-// Specializations
+// Specializations...
 
 template<typename T>
 class Source : public SourceBase<T> { };
+
+// 1. SharedCVMat
 
 template<>
 class Source<SharedCVMat> : public SourceBase<SharedCVMat> {
 
 public:
-    void connect() {
-
-        // Wait for the SINK to bind the node and provide matrix
-        // header info.
-        if (node_->sink_state() != oat::SinkState::BOUND)
-            wait();
-
-        frame_ = cv::Mat(object_->size(),
-                       object_->type(),
-                       read());
-    }
+    void connect();
 
     inline cv::Mat frame() const { return frame_; }
     inline cv::Mat cloneFrame() { return frame_.clone(); }
@@ -181,6 +166,20 @@ private :
     cv::Mat frame_;
 
 };
+
+void Source<SharedCVMat>::connect() {
+    
+    // Wait for the SINK to bind the node and provide matrix
+    // header info.
+    if (node_->sink_state() != oat::SinkState::BOUND)
+        wait();
+
+    // Generate cv::Mat header using info in shmem segment
+    frame_ = cv::Mat(object_->size(),
+                     object_->type(),
+                     shmem_.get_address_from_handle(object_->data()));
+    
+}
 
 } // namespace oat
 

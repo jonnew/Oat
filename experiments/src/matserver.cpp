@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, sigHandler);
 
     // Image to send through shmem
-    std::string file_name = "/home/jon/Desktop/test.png";
+    std::string file_name = "/home/jon/Desktop/test2.png";
 
     try {
 

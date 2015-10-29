@@ -74,7 +74,6 @@ namespace oat {
         size_t source_ref_count(void) const { return source_ref_count_; }
 
         // Synchronization constructs
-        semaphore mutex {1};
         semaphore write_barrier {0};
         
         // Dead simple and static, the suckless way

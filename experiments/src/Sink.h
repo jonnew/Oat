@@ -40,19 +40,18 @@ public:
     SinkBase(const SinkBase& orig) = delete;
 
     void bind(const std::string &address, const size_t bytes);
-
     void wait();
     void post();
 
 protected:
 
+    shmem_t shmem_;
     Node * node_;
     T * object_;
-    //bip::managed_shared_memory shmem_;
 
 private:
 
-    std::string shmem_address_;
+    std::string address_;
 };
 
 template<typename T>
@@ -71,7 +70,7 @@ SinkBase<T>::~SinkBase() {
     if (node_->source_ref_count() == 0) {
 
         // Remove_shared_memory on object destruction
-        bip::shared_memory_object::remove(shmem_address_.c_str());
+        bip::shared_memory_object::remove(address_.c_str());
 //#ifndef NDEBUG
 //        std::cout << oat::dbgMessage("Shared memory \'" + shmem_address_ + "\' was deallocated.\n");
 //#endif
@@ -82,30 +81,30 @@ template<typename T>
 void SinkBase<T>::bind(const std::string& address, const size_t bytes) {
 
     // Addresses for this block of shared memory
-    shmem_address_ = address;
-    std::string node_address = shmem_address_ + "/shmgr";
-    std::string obj_address = shmem_address_ + "/shobj";
+    address_ = address;
+    std::string node_address = address_ + "/shmgr";
+    std::string obj_address = address_ + "/shobj";
 
     // Define shared memory
-    shmem_t shmem = bip::managed_shared_memory(
+    shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
             address.c_str(),
             bytes + sizeof (oat::Node) + sizeof(T));
 
     // Facilitates synchronized access to shmem
-    node_ = shmem.find_or_construct<oat::Node>(node_address.c_str())();
+    node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
 
     // Make sure there is not another SINK using this shmem
     if (node_->sink_state() != oat::SinkState::UNDEFINED) {
 
         // There is already a SINK using this shmem
         throw (std::runtime_error(
-                "Requested SINK address, '" + shmem_address_ + "', is not available."));
+                "Requested SINK address, '" + address_ + "', is not available."));
 
     } else {
 
         // Find an existing shared object or construct one with default parameters
-        object_ = shmem.find_or_construct<T>(obj_address.c_str())();
+        object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
 
         //shmem_bound_ = true;
         node_->set_sink_state(oat::SinkState::BOUND);
@@ -145,9 +144,12 @@ void SinkBase<T>::post() {
         node_->readBarrier(i).post();
 }
 
-// Specializations
+// Specializations...
+
 template<typename T>
 class Sink : public SinkBase<T> { };
+
+// 1. SharedCVMat
 
 template<>
 class Sink<SharedCVMat> : public SinkBase<SharedCVMat> {
@@ -168,7 +170,7 @@ cv::Mat Sink<SharedCVMat>::allocate(const cv::Size dims, const int type) {
     // Make sure that the SINK is bound to a shared memory segment
     if (node_->sink_state() != oat::SinkState::BOUND)
         throw (std::runtime_error("SINK must be bound before memory is allocated."));
-
+    
     // Allocate memory for the shared object's data
     cv::Mat temp(dims, type);
     void *data = shmem_.allocate(temp.total() * temp.elemSize());
@@ -184,4 +186,3 @@ cv::Mat Sink<SharedCVMat>::allocate(const cv::Size dims, const int type) {
 } // namespace oat
 
 #endif	/* SINK_H */
-

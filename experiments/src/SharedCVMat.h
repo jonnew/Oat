@@ -37,12 +37,7 @@ class SharedCVMat : public SharedObject{
 public :
     
     SharedCVMat() : SharedObject() { }
-    
-//    SharedCVMat(size_t bytes, handle_t data) : SharedObject(bytes, data)
-//    {
-//        // Nothing
-//    }
-    
+
     cv::Size size() const { return size_; }
     int type() const { return type_; }
     size_t step() const {return step_; }
