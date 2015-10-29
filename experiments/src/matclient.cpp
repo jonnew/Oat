@@ -35,12 +35,20 @@ void sigHandler(int s) {
 }
 
 /*
- * Demo program showing very efficient shared memory passing of cv::Mat. This
+ * Demo program showing efficient shared memory passing of cv::Mat. This
  * server side program should be executed first to load data into shmem.
  */
 int main(int argc, char *argv[]) {
 
-    char * name = argv[1];
+    char * name;
+    if (argc == 1)
+        name = "test";
+    else if (argc == 2)
+        name = argv[1];
+    else {
+        std::cerr << "Usage: oat-exp-client <name>\n";
+        return -1;
+    }
     
     std::signal(SIGINT, sigHandler);
     cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);

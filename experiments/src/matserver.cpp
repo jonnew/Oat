@@ -44,7 +44,7 @@ void sigHandler(int s) {
 }
 
 /*
- * Demo program showing very efficient shared memory passing of cv::Mat. This
+ * Demo program showing efficient shared memory passing of cv::Mat. This
  * server side program should be executed first to load data into shmem.
  */
 int main(int argc, char *argv[]) {
@@ -73,26 +73,23 @@ int main(int argc, char *argv[]) {
         cv::Mat rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
         while(!quit) {
             
-//            tick = Clock::now();
-//
-//            Milliseconds duration =
-//                std::chrono::duration_cast<Milliseconds>(tick - tock);
+            tick = Clock::now();
+
+            Milliseconds duration =
+                std::chrono::duration_cast<Milliseconds>(tick - tock);
             
             // Do transform
             cv::warpAffine(ext_mat, shared_mat, rot_mat, ext_mat.size());
-            sink.post();
-            
-            
-            //tock = Clock::now();
+            tock = Clock::now();
             
             // Tell sources there is new data
+            sink.post();
             
-
+            // Get new rotation matrix
             rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
  
-            
-//            std::cout << "Loop duration (ms): " << duration.count() << "\r";
-//            std::cout.flush();
+            std::cout << "Loop duration (ms): " << duration.count() << "\r";
+            std::cout.flush();
             
             // Wait for sources to finish reading
             sink.wait();
