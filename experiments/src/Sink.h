@@ -91,7 +91,6 @@ void SinkBase<T>::bind(const std::string& address, const size_t bytes) {
     shmem_address_ = address;
     std::string node_address = shmem_address_ + "/shmgr";
     std::string obj_address = shmem_address_ + "/shobj";
-    std::string shrb_address =  shmem_address_ + "/shrb";
 
     // Define shared memory
     shmem_ = bip::managed_shared_memory(
@@ -113,7 +112,7 @@ void SinkBase<T>::bind(const std::string& address, const size_t bytes) {
 
         // Find an existing shared object or construct one with default parameters
         object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
-        node_->getReadBarrier(shrb_address.c_str(), shmem_);
+
         //shmem_bound_ = true;
         node_->set_sink_state(oat::SinkState::BOUND);
     }
@@ -148,11 +147,11 @@ void SinkBase<T>::post() {
     node_->resetSourceReadCount();
     
     // Tell each source they can proceed
-    for (shared_ptr_vector_t::size_type i = 0; i < node_->source_ref_count(); i++) 
+    for (size_t i = 0; i < node_->source_ref_count(); i++) 
             
             //auto &s : node_->read_barrier) {
         //s->post(); 
-        node_->read_barrier->at(i)->post();
+        node_->readBarrier(i).post();
     //}
 }
 

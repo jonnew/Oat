@@ -21,43 +21,11 @@
 #define	NODE_H
 
 #include <atomic>
-#include <boost/shared_ptr.hpp>
-#include <boost/interprocess/allocators/allocator.hpp>
-#include <boost/interprocess/containers/vector.hpp>
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/smart_ptr/unique_ptr.hpp>
-#include <boost/interprocess/smart_ptr/shared_ptr.hpp>
-#include <boost/interprocess/smart_ptr/deleter.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 namespace oat {
 
-    namespace bip = boost::interprocess;
-    using semaphore = bip::interprocess_semaphore;
-    
-//    using unique_ptr_type = 
-//            bip::managed_unique_ptr<
-//              semaphore
-//            , bip::managed_shared_memory
-//            >::type;
-//    
-//    using unique_ptr_vector_t = 
-//            bip::vector< 
-//              unique_ptr_type
-//            , bip::allocator<unique_ptr_type, bip::managed_shared_memory::segment_manager> 
-//            >;
-    
-    using void_allocator_t = bip::allocator<void, bip::managed_shared_memory::segment_manager> ;
-    using segment_manager_t = bip::managed_shared_memory::segment_manager;
-    using deleter_t = bip::deleter<semaphore, segment_manager_t>;
-    using shared_ptr_t = bip::shared_ptr < semaphore
-                                         , void_allocator_t 
-                                         , deleter_t
-                                         >;
-    using shared_ptr_allocator_t = bip::allocator<shared_ptr_t, bip::managed_shared_memory::segment_manager> ;
-    using shared_ptr_vector_t = bip::vector < shared_ptr_t
-                                            , shared_ptr_allocator_t 
-                                            >;
+    using semaphore = boost::interprocess::interprocess_semaphore;
     
     enum class SinkState {
         END = -1,
@@ -79,11 +47,7 @@ namespace oat {
 
         Node()    
         {
-//            // Populate semaphore array
-//            for (size_t i = 0; i < read_barrier.size(); i ++) {
-//                ip_shared_ptr<semaphore> sem(new semaphore(0));
-//                read_barrier[i] = sem;
-//            }
+            // Nothing
         }
 
         // These operations are atomic
@@ -96,52 +60,72 @@ namespace oat {
         uint64_t write_number() const { return write_number_; }
         uint64_t incrementWriteNumber() { return ++write_number_; }
 
-        // SOURCE reference counting
-        //size_t decrementSourceRefCount() { return --source_ref_count_; }
-
-//        ipvector::size_type decrementSourceRefCount(ipvector::size_type index) {
-//
-//            read_barrier.erase(read_barrier.begin() + index);
-//            return read_barrier.size();
-//        }
-
-        //size_t incrementSourceRefCount() { return source_ref_count_++; }
-
-        void getReadBarrier(const char* name, bip::managed_shared_memory& shmem) {
-            read_barrier = shmem.find_or_construct<shared_ptr_vector_t>(name)(shmem.get_segment_manager());
-        }
-        
-        shared_ptr_vector_t::size_type incrementSourceRefCount(bip::managed_shared_memory& shmem) {
-
-            shared_ptr_t p(bip::make_managed_shared_ptr(shmem.construct<semaphore>(bip::anonymous_instance)(0), shmem));
-
-
-            read_barrier->push_back(boost::move(p));
-            source_ref_count_ ++;
-            return (read_barrier->size() - 1); // Return the index of the semaphore
-        }
-
-        size_t source_ref_count(void) const { return source_ref_count_; }
-
         // SOURCE read counting
-
+        size_t incrementSourceReadCount() { ++source_read_count_; }
         void resetSourceReadCount() { source_read_count_ = 0; }
 
-        size_t incrementSourceReadCount() { return ++source_read_count_; }
+        // SOURCE reference counting
+        size_t decrementSourceRefCount() { return --source_ref_count_; }
+        size_t incrementSourceRefCount() { 
+            if (source_ref_count_ >= 10)
+                throw std::runtime_error("Maximum of 10 SOURCEs can be bound to a node.");
+            return source_ref_count_++; 
+        }
+        size_t source_ref_count(void) const { return source_ref_count_; }
 
         // Synchronization constructs
         semaphore mutex {1};
         semaphore write_barrier {0};
-        shared_ptr_vector_t * read_barrier;
-        //semaphore new_data_barrier;
-
+        
+        // Dead simple and static, the suckless way
+        semaphore& readBarrier(size_t index) {
+            switch (index) {
+                case 0:
+                    return rb0_;
+                    break;
+                case 1:
+                    return rb1_;
+                    break;
+                case 2:
+                    return rb2_;
+                    break;    
+                case 3:
+                    return rb3_;
+                    break;    
+                case 4:
+                    return rb4_;
+                    break;
+                case 5:
+                    return rb5_;
+                    break;
+                case 6:
+                    return rb6_;
+                    break;
+                case 7:
+                    return rb7_;
+                    break;    
+                case 8:
+                    return rb8_;
+                    break;    
+                case 9:
+                    return rb9_;
+                    break;
+                default:
+                    throw std::runtime_error("Source index out of range.");
+                    break;
+            } 
+        }
+        
     private:
 
         std::atomic<SinkState> sink_state_ {oat::SinkState::UNDEFINED}; //!< SINK state 
         std::atomic<size_t> source_read_count_ {0}; //!< Number SOURCE reads that have occured since last sink reset 
         std::atomic<size_t> source_ref_count_ {0}; //!< Number of SOURCES sharing this
         std::atomic<uint64_t> write_number_ {0}; //!< Number of writes to shmem that have been facilited by this node
-
+        
+        // 10 sources max
+        semaphore rb0_ {0}, rb1_ {0}, rb2_ {0}, rb3_ {0}, rb4_ {0}, 
+                  rb5_ {0}, rb6_ {0}, rb7_ {0}, rb8_ {0}, rb9_ {0};
     };
 
 } // namespace oat

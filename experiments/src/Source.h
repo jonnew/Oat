@@ -56,7 +56,7 @@ private:
     
     bip::managed_shared_memory shmem_;
     bool shmem_bound_ {false};
-    shared_ptr_vector_t::size_type this_index_;
+    size_t this_index_;
     //bool shared_object_found_ {false};
     
 };
@@ -72,7 +72,7 @@ SourceBase<T>::~SourceBase() {
     // If the client reference count is 0 and there is no server 
     // attached to the shared mat, deallocate the shmem
     if (shmem_bound_ &&
-        //node_->decrementSourceRefCount(this_index_) == 0 &&
+        node_->decrementSourceRefCount() == 0 &&
         node_->sink_state() != oat::SinkState::BOUND) {
 
         // Ensure that no server is deadlocked
@@ -89,7 +89,6 @@ void SourceBase<T>::bind(const std::string& node_addr, const size_t bytes) {
     shmem_address_ = node_addr;
     std::string node_address = shmem_address_ + "/shmgr";
     std::string obj_address = shmem_address_ + "/shobj";
-    std::string shrb_address =  shmem_address_ + "/shrb";
 
     // Define shared memory
     shmem_ = bip::managed_shared_memory(
@@ -102,8 +101,9 @@ void SourceBase<T>::bind(const std::string& node_addr, const size_t bytes) {
     
     // Find an existing shared object or construct one with default parameters
     object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
-    node_->getReadBarrier(shrb_address.c_str(), shmem_);
-    this_index_ = node_->incrementSourceRefCount(shmem_);
+
+    // Let the node know this source is attached and get our index
+    this_index_ = node_->incrementSourceRefCount();
     shmem_bound_ = true;
 }
 
@@ -123,7 +123,7 @@ void SourceBase<T>::wait() {
     
     // Only wait if there is a SOURCE attached to the node
     // Wait with timed wait with period check to prevent deadlocks
-    while (!node_->read_barrier->at(this_index_)->timed_wait(timeout)) {
+    while (!node_->readBarrier(this_index_).timed_wait(timeout)) {
         
         // Loops checking if wait has been released
         timeout = boost::get_system_time() + msec(10);
@@ -140,8 +140,7 @@ void SourceBase<T>::post() {
     // Release exclusive lock over shared memory
     //manager_->mutex.post();
     
-    if( node_->incrementSourceReadCount() >= node_->source_ref_count()) {
-        node_->resetSourceReadCount();
+    if( node_->incrementSourceReadCount() == node_->source_ref_count()) {
         node_->write_barrier.post();
     }
 }
