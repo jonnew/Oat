@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   SyncSharedMemoryManager.h
+//* File:   Node.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 

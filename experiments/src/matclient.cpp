@@ -40,7 +40,7 @@ void sigHandler(int s) {
  */
 int main(int argc, char *argv[]) {
 
-    char * name;
+    char const * name;
     if (argc == 1)
         name = "test";
     else if (argc == 2)
@@ -61,12 +61,8 @@ int main(int argc, char *argv[]) {
         // Bind source to the exp_sh_mem node
         source.bind("exp_sh_mem", 10e6);
 
-        // Before proceeding, the node must be bound by a sink, which will notify
-        // the source(s) when it has deposited new data
-        source.wait();
-        
-        // Use info in shmem to create mat header
-        source.getHeader();
+        // Before proceeding, the node must be bound by a sink
+        source.connect();
         
         // Get the shared mat and make a new mat to copy the data to
         //const cv::Mat shared_mat = source.frame();

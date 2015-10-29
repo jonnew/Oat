@@ -52,8 +52,7 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, sigHandler);
 
     // Image to send through shmem
-    // Change to some sample image on your filesystem.
-    std::string file_name = "/home/jon/Desktop/test1.png";
+    std::string file_name = "/home/jon/Desktop/test.png";
 
     try {
 
@@ -93,7 +92,6 @@ int main(int argc, char *argv[]) {
             
             // Wait for sources to finish reading
             sink.wait();
-
         }
 
     } catch (const std::exception& ex) {
