@@ -69,7 +69,7 @@ namespace oat {
         size_t incrementSourceRefCount() { 
             if (source_ref_count_ >= 10)
                 throw std::runtime_error("Maximum of 10 SOURCEs can be bound to a node.");
-            return source_ref_count_++; 
+            return ++source_ref_count_; 
         }
         size_t source_ref_count(void) const { return source_ref_count_; }
 

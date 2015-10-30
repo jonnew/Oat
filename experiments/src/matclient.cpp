@@ -40,6 +40,8 @@ void sigHandler(int s) {
  */
 int main(int argc, char *argv[]) {
 
+    std::signal(SIGINT, sigHandler);
+
     char const * name;
     if (argc == 1)
         name = "test";
@@ -50,7 +52,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-    std::signal(SIGINT, sigHandler);
     cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
 
     try {

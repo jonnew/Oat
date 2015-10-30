@@ -67,14 +67,18 @@ SourceBase<T>::~SourceBase() {
     // Ensure that no server is deadlocked
     if (must_post_)
         post();
-    
-       // If the client reference count is 0 and there is no server
+
+    // If the client reference count is 0 and there is no server
     // attached to the node, deallocate the shmem
     if (shmem_bound_ &&
         node_->decrementSourceRefCount() == 0 &&
         node_->sink_state() != oat::SinkState::BOUND) {
 
         bip::shared_memory_object::remove(address_.c_str());
+
+#ifndef NDEBUG
+        std::cout << "Shared memory \'" + address_ + "\' was deallocated.\n";
+#endif
     }
 }
 
@@ -99,7 +103,7 @@ void SourceBase<T>::bind(const std::string& address, const size_t bytes) {
     object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
 
     // Let the node know this source is attached and get our index
-    this_index_ = node_->incrementSourceRefCount();
+    this_index_ = node_->incrementSourceRefCount() - 1;
     shmem_bound_ = true;
 }
 

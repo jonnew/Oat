@@ -35,7 +35,6 @@ using Milliseconds = std::chrono::milliseconds;
 Clock::time_point tick = Clock::now();
 Clock::time_point tock = Clock::now();
 
-
 volatile sig_atomic_t quit = 0;
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
@@ -51,13 +50,27 @@ int main(int argc, char *argv[]) {
     
     std::signal(SIGINT, sigHandler);
 
+    char const * file;
+    if (argc == 1)
+        file = "/home/jon/Desktop/test.png";
+    else if (argc == 2)
+        file = argv[1];
+    else {
+        std::cerr << "Usage: oat-exp-server <path to image>\n";
+        return -1;
+    }
+    
     // Image to send through shmem
-    std::string file_name = "/home/jon/Desktop/test2.png";
+    std::string file_name {file};
 
     try {
 
         // Read file to get sample image (simulates a camera grab)
         cv::Mat ext_mat = cv::imread(file_name);
+        if (ext_mat.empty()) {
+            std::cerr << "Image path invalid.\n";
+            return -1;
+        }
 
         // How many bytes per matrix?
         cv::Size mat_dims(ext_mat.cols, ext_mat.rows);

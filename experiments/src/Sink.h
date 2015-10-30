@@ -71,9 +71,9 @@ SinkBase<T>::~SinkBase() {
 
         // Remove_shared_memory on object destruction
         bip::shared_memory_object::remove(address_.c_str());
-//#ifndef NDEBUG
-//        std::cout << oat::dbgMessage("Shared memory \'" + shmem_address_ + "\' was deallocated.\n");
-//#endif
+#ifndef NDEBUG
+        std::cout << "Shared memory \'" + address_ + "\' was deallocated.\n";
+#endif
     }
 }
 
