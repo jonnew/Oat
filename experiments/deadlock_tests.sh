@@ -13,8 +13,12 @@ do
     ./build/oat-exp-client bar &
     c2=$!
 
-    sleep 3
+    # Run for a few frames
+    sleep 1
+
+    # Kill and give time to clean up
     kill -INT $s $c1 $c2
+    sleep 1
 
     ((i++))
 done

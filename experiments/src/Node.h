@@ -53,19 +53,19 @@ namespace oat {
         // These operations are atomic
 
         // SINK state
-        void set_sink_state(SinkState value) { sink_state_ = value; }
-        SinkState sink_state(void) const { return sink_state_; }
+        inline void set_sink_state(SinkState value) { sink_state_ = value; }
+        inline SinkState sink_state(void) const { return sink_state_; }
 
         // SINK writes (~ sample number)
-        uint64_t write_number() const { return write_number_; }
-        uint64_t incrementWriteNumber() { return ++write_number_; }
+        inline uint64_t write_number() const { return write_number_; }
+        inline uint64_t incrementWriteNumber() { return ++write_number_; }
 
         // SOURCE read counting
-        size_t incrementSourceReadCount() { ++source_read_count_; }
-        void resetSourceReadCount() { source_read_count_ = 0; }
+        inline size_t incrementSourceReadCount() { return ++source_read_count_; }
+        inline void resetSourceReadCount() { source_read_count_ = 0; }
 
         // SOURCE reference counting
-        size_t decrementSourceRefCount() { return --source_ref_count_; }
+        inline size_t decrementSourceRefCount() { return --source_ref_count_; }
         size_t incrementSourceRefCount() { 
             if (source_ref_count_ >= 10)
                 throw std::runtime_error("Maximum of 10 SOURCEs can be bound to a node.");
