@@ -36,7 +36,7 @@ bool Calibrator::process(void) {
     }
 
     // Check for end of frame stream
-    return (frame_source_.getSourceRunState() == oat::ServerRunState::END);
+    return (frame_source_.getSourceRunState() == oat::SinkState::END);
 }
 
 bool Calibrator::generateSavePath(const std::string& save_path) {

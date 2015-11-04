@@ -62,7 +62,7 @@ namespace oat {
         server_thread.join();
         
         // Set stream EOF state in shmem
-        shared_mem_manager->set_server_state(oat::ServerRunState::END);
+        shared_mem_manager->set_server_state(oat::SinkState::END);
 
         // TODO: If the client ref count is 0, memory can be deallocated
         if (shared_mem_manager->get_client_ref_count() == 0) {
@@ -94,7 +94,7 @@ namespace oat {
         shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
 
         // Make sure there is not another server using this shmem
-        if (shared_mem_manager->get_server_state() != oat::ServerRunState::UNDEFINED) {
+        if (shared_mem_manager->get_server_state() != oat::SinkState::UNDEFINED) {
 
             // There is already a server using this shmem
             throw (std::runtime_error(
@@ -103,7 +103,7 @@ namespace oat {
         } else {
 
             shared_object_created = true;
-            shared_mem_manager->set_server_state(oat::ServerRunState::ATTACHED);
+            shared_mem_manager->set_server_state(oat::SinkState::ATTACHED);
         }
     }
 

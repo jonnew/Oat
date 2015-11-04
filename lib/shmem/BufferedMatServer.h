@@ -40,7 +40,7 @@ namespace oat {
         virtual ~BufferedMatServer();
 
         void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
-        void setSharedServerState(oat::ServerRunState state);
+        void setSharedServerState(oat::SinkState state);
         
         // Accessors 
         std::string get_name(void) const { return name; }

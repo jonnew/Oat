@@ -24,7 +24,7 @@
 
 namespace oat {
 
-    enum class ServerRunState {
+    enum class SinkState {
         END = -1,
         UNDEFINED = 0,
         ATTACHED = 1,
@@ -35,19 +35,19 @@ namespace oat {
     public:
 
         SharedMemoryManager() :
-          server_state(ServerRunState::UNDEFINED)
+          server_state(SinkState::UNDEFINED)
         , client_reference_count(0) { }
 
         // These operations are atomic
-        void set_server_state(ServerRunState value) { server_state = value; }
-        ServerRunState get_server_state(void) const { return server_state; }
+        void set_server_state(SinkState value) { server_state = value; }
+        SinkState get_server_state(void) const { return server_state; }
         size_t decrementClientRefCount() { return --client_reference_count; }
         size_t incrementClientRefCount() { return ++client_reference_count; }
         size_t get_client_ref_count(void) const { return client_reference_count; }
         
     private:
 
-        std::atomic<ServerRunState> server_state;
+        std::atomic<SinkState> server_state;
 
         // Number of clients sharing this shared memory
         std::atomic<size_t> client_reference_count;

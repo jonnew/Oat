@@ -151,12 +151,12 @@ namespace oat {
         }
     }
     
-    oat::ServerRunState MatClient::getSourceRunState() {
+    oat::SinkState MatClient::getSourceRunState() {
         
         if (shared_object_found)
             return shared_mem_manager->get_server_state();
         else
-            return oat::ServerRunState::UNDEFINED;
+            return oat::SinkState::UNDEFINED;
     }
 
     void MatClient::detachFromShmem() {
@@ -168,7 +168,7 @@ namespace oat {
 
             // If the client reference count is 0 and there is no server 
             // attached to the shared mat, deallocate the shmem
-            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::ServerRunState::ATTACHED) {
+            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::SinkState::ATTACHED) {
                 
                 bip::shared_memory_object::remove(shmem_name.c_str());
 #ifndef NDEBUG

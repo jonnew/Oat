@@ -36,7 +36,7 @@ namespace oat {
 
         // get cv::Mat out of shared memory
         bool getSharedMat(cv::Mat& value);
-        oat::ServerRunState getSourceRunState(void);
+        oat::SinkState getSourceRunState(void);
 
         // Accessors
         std::string get_name(void) const { return name; }

@@ -112,7 +112,7 @@ bool Viewer::showImage(const std::string title) {
     }
 
     // If server state is END, return true
-    return (frame_source.getSourceRunState() == oat::ServerRunState::END);
+    return (frame_source.getSourceRunState() == oat::SinkState::END);
 
 }
 

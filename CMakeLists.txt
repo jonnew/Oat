@@ -10,10 +10,6 @@ set (Oat_VERSION_LIST "${Oat_VERSION_MAJOR}" ".${Oat_VERSION_MINOR}")
 configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
 include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 
-# Include dirs 
-set (COMMON_INCLUDES ${PROJECT_SOURCE_DIR}) 
-set (EXT_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/ext)
-
 # C++11
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
@@ -56,6 +52,21 @@ if (${OAT_USE_FLYCAP})
             Did you install in /usr/include/flycapture?")
      endif (FLYCAPTURE2)
 endif (${OAT_USE_FLYCAP})
+
+
+# Include dirs 
+#set (COMMON_INCLUDES ${PROJECT_SOURCE_DIR}) 
+set (EXT_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/ext)
+
+# Include cpptoml
+add_subdirectory (${EXT_PROJECTS_DIR}/cpptoml)
+include_directories (${CPPTOML_INCLUDE_DIR})
+
+#Include paths common to all components
+#set (COMMON_INCLUDES
+#     "${CPPTOML_INCLUDE_DIR}/cpptoml.h")
+
+#message (STATUS "common include path: ${COMMON_INCLUDES}")
 
 # Oat libshmem 
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem "${CMAKE_CURRENT_BINARY_DIR}/shmem")

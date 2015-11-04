@@ -23,8 +23,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
-#include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/cpptoml/OatTOMLSanitize.h"
+#include <cpptoml.h>
+#include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 FrameMasker::FrameMasker(const std::string& source_name, const std::string& sink_name, bool invert_mask) :

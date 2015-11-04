@@ -47,7 +47,7 @@ namespace oat {
          */
         bool getSharedObject(T& value);
         
-        oat::ServerRunState getSourceRunState(void);
+        oat::SinkState getSourceRunState(void);
 
         /**
          * Get the current sample number
@@ -194,12 +194,12 @@ namespace oat {
     }
     
     template<class T, template <typename> class SharedMemType>
-    oat::ServerRunState SMClient<T, SharedMemType>::getSourceRunState() {
+    oat::SinkState SMClient<T, SharedMemType>::getSourceRunState() {
         
         if (shared_object_found) 
             return shared_mem_manager->get_server_state();
         else
-            return oat::ServerRunState::UNDEFINED;
+            return oat::SinkState::UNDEFINED;
     }
 
     template<class T, template <typename> class SharedMemType>
@@ -212,7 +212,7 @@ namespace oat {
 
             // If the client reference count is 0 and there is no server 
             // attached to the shared mat, deallocate the shmem
-            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::ServerRunState::ATTACHED) {
+            if (number_of_clients == 0 && shared_mem_manager->get_server_state() != oat::SinkState::ATTACHED) {
 
                 // Ensure that no server is deadlocked
                 shared_object->write_barrier.post();
