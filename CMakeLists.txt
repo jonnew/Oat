@@ -1,21 +1,19 @@
 cmake_minimum_required (VERSION 2.8)
 
 project (Oat)
-set (Oat_VERSION_MAJOR 0)
-set (Oat_VERSION_MINOR 1)
-set (Oat_VERSION_LIST "${Oat_VERSION_MAJOR}"
-                      ".${Oat_VERSION_MINOR}")
+set (Oat_VERSION_MAJOR 1)
+set (Oat_VERSION_MINOR 0)
+# TODO: Add commit SHA and reference it in header of recordings
+set (Oat_VERSION_LIST "${Oat_VERSION_MAJOR}" ".${Oat_VERSION_MINOR}")
 
 # Configure a header file to pass CMake settings to source code
-configure_file (
-  lib/utility/OatConfig.h.in
-  "${PROJECT_BINARY_DIR}/OatConfig.h"
-  )
+configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
+include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 
-# Add the binary tree to the search path for include files
-# so that we will find OatConfig.h
-include_directories("${PROJECT_BINARY_DIR}")
- 
+# Include dirs 
+set (COMMON_INCLUDES ${PROJECT_SOURCE_DIR}) 
+set (EXT_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/ext)
+
 # C++11
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
@@ -32,7 +30,7 @@ message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
 message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")
 
 # Boost
-find_package (Boost 1.53.0  REQUIRED system thread program_options filesystem)
+find_package (Boost 1.53.0 REQUIRED system thread program_options filesystem)
 include_directories (${Boost_INCLUDE_DIRS})
 link_directories (${Boost_LIBRARY_DIR})
 
@@ -59,9 +57,8 @@ if (${OAT_USE_FLYCAP})
      endif (FLYCAPTURE2)
 endif (${OAT_USE_FLYCAP})
 
-# Oat shared memory lib
-add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem 
-				 "${CMAKE_CURRENT_BINARY_DIR}/shmem")
+# Oat libshmem 
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem "${CMAKE_CURRENT_BINARY_DIR}/shmem")
 
 # Oat components
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/cleaner)
@@ -77,11 +74,28 @@ add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/recorder)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positionsocket)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/calibrator)
 
-# Oat API documentation
-add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
-
 # All executables should be installed in Oat/oat/libexec
 set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "Default install path" FORCE)
+
+# Catch (and enables unit testing)
+add_subdirectory(${EXT_PROJECTS_DIR}/catch)
+include_directories(${CATCH_INCLUDE_DIR} ${COMMON_INCLUDES})
+enable_testing(true)
+
+set(TESTING_INCLUDES ${CATCH_INCLUDE_DIR} )
+function(add_oat_test name)
+  include_directories(${TESTING_INCLUDES} ${COMMON_INCLUDES})
+  add_executable(${name}_test ${name}_test.cpp)
+  add_test(${name}_test ${name}_test)
+endfunction(add_oat_test)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test) 
+
+# TODO: remove on merge into master
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/experiments/) 
+
+# API documentation
+add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
 
 # CPack Deb package
 set (CPACK_GENERATOR "DEB")

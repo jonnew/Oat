@@ -1,29 +1,15 @@
-#set (DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-
-# Add build target to use Doxygen to generate API documentation
-find_package(Doxygen)
-if (DOXYGEN_FOUND)
-
-	add_custom_target (apidocs command ${DOXYGEN} ${DOXYFILE} VERBATIM)
-
-	configure_file (
-		${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in 
-		${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY
-		)
-
-	add_custom_target (
-		doc
-		${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-		COMMENT "Generating API documentation with Doxygen" VERBATIM
-	)
-elseif (not DOXYGEN_FOUND)
-
-	message(
-		AUTHOR_WARNING 
-		"Doxygen is needed to build the documentation. 
-		`make doc` will not work."
-		)
-
-endif (DOXYGEN_FOUND)
-
+# Add build target to use Doxygen to generate API documentation (optional)
+# Enables "make docs"
+option(BUILD_DOCS "Use Doxygen to create the HTML documentation" OFF)
+if(BUILD_DOCS)
+  find_package(Doxygen)
+  if (NOT DOXYGEN_FOUND)
+    message(FATAL_ERROR "Doxygen can't be found.")
+  endif()
+  configure_file(Doxyfile.in ${PROJECT_BINARY_DIR}/doc/Doxyfile @ONLY IMMEDIATE)
+  add_custom_target (docs
+    ${DOXYGEN_EXECUTABLE}
+    ${PROJECT_BINARY_DIR}/doc/Doxyfile
+    SOURCES
+    ${PROJECT_BINARY_DIR}/doc/Doxyfile)
+endif()
