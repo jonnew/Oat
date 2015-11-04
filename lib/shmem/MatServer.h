@@ -17,6 +17,7 @@
 #ifndef MATSERVER_H
 #define	MATSERVER_H
 
+
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <opencv2/core/mat.hpp>
@@ -35,7 +36,7 @@ namespace oat {
 
         void createSharedMat(void);
         void pushMat(const cv::Mat& mat, const uint32_t& sample_number);
-        void setSharedServerState(oat::SinkState state);
+        void setSharedServerState(oat::ServerRunState state);
       
         // Accessors 
         std::string get_name(void) const { return name; }
@@ -47,7 +48,7 @@ namespace oat {
 
         // Shared object control
         oat::SharedCVMatHeader* shared_mat_header;
-        oat::NodeManger* shared_mem_manager;
+        oat::SharedMemoryManager* shared_mem_manager;
         bool* eof_signal;
         bool shared_object_created;
         bool mat_header_constructed;

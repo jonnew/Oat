@@ -106,7 +106,7 @@ namespace oat {
         server_thread_running = false;
         
         // Detach this server from shared mat header
-        shared_mem_manager->set_server_state(oat::SinkState::END);
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
 
         // Make sure we unblock the server thread
         for (int i = 0; i <= SMSERVER_BUFFER_SIZE; ++i) {
@@ -139,7 +139,7 @@ namespace oat {
         shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
 
         // Make sure there is not another server using this shmem
-        if (shared_mem_manager->get_server_state() != oat::SinkState::UNDEFINED) {
+        if (shared_mem_manager->get_server_state() != oat::ServerRunState::UNDEFINED) {
 
             // There is already a server using this shmem
             throw (std::runtime_error(
@@ -148,7 +148,7 @@ namespace oat {
         } else {
 
             shared_object_created = true;
-            shared_mem_manager->set_server_state(oat::SinkState::BOUND);
+            shared_mem_manager->set_server_state(oat::ServerRunState::ATTACHED);
         }
     }
 
@@ -232,7 +232,7 @@ namespace oat {
         }
         
         // Set stream EOF state in shmem
-        shared_mem_manager->set_server_state(oat::SinkState::END);
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
     }
 
     template<class T, template <typename> class SharedMemType>

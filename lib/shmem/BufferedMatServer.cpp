@@ -62,10 +62,10 @@ namespace oat {
         server_thread.join();
         
         // Set stream EOF state in shmem
-        shared_mem_manager->set_server_state(oat::SinkState::END);
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
 
         // TODO: If the client ref count is 0, memory can be deallocated
-        if (shared_mem_manager->source_ref_count() == 0) {
+        if (shared_mem_manager->get_client_ref_count() == 0) {
             
             // Remove_shared_memory on object destruction
             bip::shared_memory_object::remove(shmem_name.c_str());
@@ -91,10 +91,10 @@ namespace oat {
                 total_bytes);
 
         shared_mat_header = shared_memory.find_or_construct<oat::SharedCVMatHeader>(shobj_name.c_str())();
-        shared_mem_manager = shared_memory.find_or_construct<oat::NodeManger>(shmgr_name.c_str())();
+        shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
 
         // Make sure there is not another server using this shmem
-        if (shared_mem_manager->get_server_state() != oat::SinkState::UNDEFINED) {
+        if (shared_mem_manager->get_server_state() != oat::ServerRunState::UNDEFINED) {
 
             // There is already a server using this shmem
             throw (std::runtime_error(
@@ -103,7 +103,7 @@ namespace oat {
         } else {
 
             shared_object_created = true;
-            shared_mem_manager->set_server_state(oat::SinkState::BOUND);
+            shared_mem_manager->set_server_state(oat::ServerRunState::ATTACHED);
         }
     }
 
@@ -173,7 +173,7 @@ namespace oat {
                     shared_mat_header->writeSample(sample.first, sample.second);
 
                     // Tell each client they can proceed
-                    for (int i = 0; i < shared_mem_manager->source_ref_count(); ++i) {
+                    for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
                         shared_mat_header->read_barrier.post();
                     }
 
@@ -182,14 +182,14 @@ namespace oat {
 
                     // Only wait if there is a client
                     // Timed wait with period check to prevent deadlocks
-                    while (shared_mem_manager->source_ref_count() > 0 &&
+                    while (shared_mem_manager->get_client_ref_count() > 0 &&
                             !shared_mat_header->write_barrier.timed_wait(timeout)) {
                     }
 
 
                     // Tell each client they can proceed now that the write_barrier
                     // has been passed
-                    for (int i = 0; i < shared_mem_manager->source_ref_count(); ++i) {
+                    for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
                         shared_mat_header->new_data_barrier.post();
                     }
                 } catch (bip::interprocess_exception ex) {

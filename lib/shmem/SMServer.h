@@ -48,7 +48,7 @@ namespace oat {
 
         // Shared memory and managed object names
         SharedMemType<T>* shared_object; // Defaults to oat::SyncSharedMemoryObject<T>
-        oat::NodeManger* shared_mem_manager;
+        oat::SharedMemoryManager* shared_mem_manager;
         std::string shmem_name, shobj_name, shmgr_name;
         bip::managed_shared_memory shared_memory;
         bool shared_object_created;
@@ -79,10 +79,10 @@ namespace oat {
         notifySelf();
         
         // Detach this server from shared mat header
-        shared_mem_manager->set_server_state(oat::SinkState::END);
+        shared_mem_manager->set_server_state(oat::ServerRunState::END);
 
         // TODO: If the client ref count is 0, memory can be deallocated
-        if (shared_mem_manager->source_ref_count() == 0) {
+        if (shared_mem_manager->get_client_ref_count() == 0) {
             
             // Remove_shared_memory on object destruction
             bip::shared_memory_object::remove(shmem_name.c_str());
@@ -100,14 +100,14 @@ namespace oat {
         shared_memory = bip::managed_shared_memory(
                 bip::open_or_create,
                 shmem_name.c_str(),
-                sizeof (SharedMemType<T>) + sizeof (oat::NodeManger) + 1024);
+                sizeof (SharedMemType<T>) + sizeof (oat::SharedMemoryManager) + 1024);
 
         // Make the shared object
         shared_object = shared_memory.find_or_construct<SharedMemType < T >> (shobj_name.c_str())();
-        shared_mem_manager = shared_memory.find_or_construct<oat::NodeManger>(shmgr_name.c_str())();
+        shared_mem_manager = shared_memory.find_or_construct<oat::SharedMemoryManager>(shmgr_name.c_str())();
 
         // Make sure there is not another server using this shmem
-        if (shared_mem_manager->get_server_state() != oat::SinkState::UNDEFINED) {
+        if (shared_mem_manager->get_server_state() != oat::ServerRunState::UNDEFINED) {
             
             // There is already a server using this shmem
             throw (std::runtime_error(
@@ -116,7 +116,7 @@ namespace oat {
         } else {
 
             shared_object_created = true;
-            shared_mem_manager->set_server_state(oat::SinkState::BOUND);
+            shared_mem_manager->set_server_state(oat::ServerRunState::ATTACHED);
         }
     }
 
@@ -149,19 +149,19 @@ namespace oat {
             /* END CRITICAL SECTION */
 
             // Tell each client they can proceed
-            for (int i = 0; i < shared_mem_manager->source_ref_count(); ++i) {
+            for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
                 shared_object->read_barrier.post();
             }
 
             // Only wait if there is a client
             // Timed wait with period check to prevent deadlocks
-            while (shared_mem_manager->source_ref_count() > 0 &&
+            while (shared_mem_manager->get_client_ref_count() > 0 &&
                     !shared_object->write_barrier.timed_wait(timeout)) {
             }
 
             // Tell each client they can proceed now that the write_barrier
             // has been passed
-            for (int i = 0; i < shared_mem_manager->source_ref_count(); ++i) {
+            for (int i = 0; i < shared_mem_manager->get_client_ref_count(); ++i) {
                 shared_object->new_data_barrier.post();
             }
             
