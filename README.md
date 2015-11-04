@@ -904,8 +904,19 @@ support to enable GPU accelerated video processing.  To do this, will first
 need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit).
 Be sure to read the [installation
 instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/index.html)
-since it is a multistep process. To compile OpenCV with CUDA support, add the
-`-DWITH_CUDA=ON` flag in the cmake command below.
+since it is a multistep process. Here are some additional hints that worked for
+me:
+
+- Do __not__ install the nvidia drivers along with the CUDA toolkit
+  installation. I found that (using ubuntu 14.04) this causes all sorts of
+  issues with X, cinnamon, etc, to the point where I could not even boot my
+  computer into anything but text mode. Instead, install the NVIDIA drivers
+  using either the package manager (`nvidia-current`) or even more preferably,
+  using the [`device-drivers`'(http://askubuntu.com/a/476659) program or
+  equivalent.
+
+To compile OpenCV with CUDA support, add the `-DWITH_CUDA=ON` flag in the cmake
+command below.
 
 [__WIP__]
 __Note__: GUI functionality is enhanced in OpenCV is compiled with Qt support.
