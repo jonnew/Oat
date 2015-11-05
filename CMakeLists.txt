@@ -1,16 +1,34 @@
 cmake_minimum_required (VERSION 2.8)
-
 project (Oat)
-set (Oat_VERSION_MAJOR 1)
-set (Oat_VERSION_MINOR 0)
-# TODO: Add commit SHA and reference it in header of recordings
-set (Oat_VERSION_LIST "${Oat_VERSION_MAJOR}" ".${Oat_VERSION_MINOR}")
+
+# Generate Oat version number: Major.Branch.Commit
+find_package(Git REQUIRED)
+
+# Get the current working branch
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Get the latest abbreviated commit hash of working branch
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Internal version list
+set (VERSION_LIST "${GIT_BRANCH}" ".${GIT_COMMIT_HASH}")
 
 # Configure a header file to pass CMake settings to source code
 configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
 include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 
 # C++11
+# TODO: compiler optimizations?
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
 
 # Add preprocessor definition to compile with OpenGL support
@@ -19,7 +37,7 @@ option (OAT_USE_OPENGL "Use OpenGL functionality in OpenCV" OFF)
 option (OAT_USE_CUDA "Use CUDA GPU functionality in OpenCV" OFF)
 
 # Show options summary
-message (STATUS "Oat version: " ${Oat_VERSION_LIST})
+message (STATUS "Oat version: " ${VERSION_LIST})
 message (STATUS "Compilation options:" )
 message (STATUS "  Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
 message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")

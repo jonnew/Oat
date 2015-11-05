@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#define Oat_VERSION_MAJOR @Oat_VERSION_MAJOR@
-#define Oat_VERSION_MINOR @Oat_VERSION_MINOR@
+#define Oat_VERSION_MAJOR "@GIT_BRANCH@"
+#define Oat_VERSION_MINOR "@GIT_COMMIT_HASH@"
 
 #cmakedefine OAT_USE_FLYCAP
 #cmakedefine OAT_USE_OPENGL

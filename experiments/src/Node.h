@@ -41,7 +41,8 @@ namespace oat {
 //        FRAME = 1,
 //        POSITION = 2,
 //    };
-
+    
+    template<typename T>
     class Node {
     public:
 
@@ -71,7 +72,7 @@ namespace oat {
                 throw std::runtime_error("Maximum of 10 SOURCEs can be bound to a node.");
             return ++source_ref_count_; 
         }
-        size_t source_ref_count(void) const { return source_ref_count_; }
+        inline size_t source_ref_count(void) const { return source_ref_count_; }
 
         // Synchronization constructs
         semaphore write_barrier {0};

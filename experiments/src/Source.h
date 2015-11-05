@@ -45,7 +45,7 @@ protected:
 
     shmem_t shmem_;
     T * object_;
-    Node * node_;
+    Node<T> * node_;
 
 private:
 

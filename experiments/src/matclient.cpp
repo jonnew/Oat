@@ -57,8 +57,9 @@ int main(int argc, char *argv[]) {
     try {
 
         // Create sink to send matrix into
-        oat::Source<oat::SharedCVMat> source;
-        
+        //oat::Source<oat::SharedCVMat> source;
+        oat::Source<int> source 
+
         // Bind source to the exp_sh_mem node
         source.bind("exp_sh_mem", 10e6);
 
@@ -77,7 +78,6 @@ int main(int argc, char *argv[]) {
             // proceed
             source.post();
             
-            //cv::bitwise_not(local, local);
             cv::imshow(name, local);
             cv::waitKey(1);
             source.wait();
