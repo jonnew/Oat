@@ -27,7 +27,7 @@
 #include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "../../lib/cpptoml/cpptoml.h"
+#include <cpptoml.h>
 
 #include "Calibrator.h"
 #include "CameraCalibrator.h"

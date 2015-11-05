@@ -100,7 +100,8 @@ function(add_oat_test name)
   add_test(${name}_test ${name}_test)
 endfunction(add_oat_test)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test) 
+# TODO: add this 
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test) 
 
 # TODO: remove on merge into master
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/experiments/) 

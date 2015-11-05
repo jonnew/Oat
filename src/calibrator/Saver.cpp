@@ -25,7 +25,7 @@
 #include <boost/filesystem.hpp>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/cpptoml/cpptoml.h"
+#include <cpptoml.h>
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/IOUtility.h"
 

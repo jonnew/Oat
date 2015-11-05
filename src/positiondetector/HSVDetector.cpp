@@ -32,8 +32,8 @@
 #include <cmath>
 
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/cpptoml/OatTOMLSanitize.h"
+#include <cpptoml.h>
+#include "../../lib/utility/OatTOMLSanitize.h"
 
 #include "HSVDetector.h"
 

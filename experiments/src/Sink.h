@@ -159,6 +159,8 @@ class Sink<SharedCVMat> : public SinkBase<SharedCVMat> {
 
 };
 
+
+
 cv::Mat Sink<SharedCVMat>::allocate(const cv::Size dims, const int type) {
 
     // TODO: Would be best to grow the segment to the right size here, but in

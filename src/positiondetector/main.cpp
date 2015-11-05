@@ -25,7 +25,7 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "../../lib/cpptoml/cpptoml.h"
+#include <cpptoml.h>
 
 #include "PositionDetector.h"
 #include "HSVDetector.h"

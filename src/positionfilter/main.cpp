@@ -24,7 +24,7 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "../../lib/cpptoml/cpptoml.h"
+#include <cpptoml.h>
 
 #include "KalmanFilter2D.h"
 #include "HomographyTransform2D.h"

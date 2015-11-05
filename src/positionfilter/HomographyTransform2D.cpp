@@ -19,8 +19,8 @@
 
 #include "HomographyTransform2D.h"
 
-#include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/cpptoml/OatTOMLSanitize.h"
+#include <cpptoml.h>
+#include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 HomographyTransform2D::HomographyTransform2D(const std::string& position_source_name, const std::string& position_sink_name) :

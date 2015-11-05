@@ -23,7 +23,7 @@
 #include <unordered_map>
 #include <boost/program_options.hpp>
 
-#include "../../lib/cpptoml/cpptoml.h"
+#include <cpptoml.h>
 #include "../../lib/utility/IOFormat.h"
 
 #include "FrameServer.h"

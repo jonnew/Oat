@@ -25,8 +25,8 @@
 #include <boost/program_options.hpp>
 #include <opencv2/core.hpp>
 
+#include <cpptoml.h>
 #include "../../lib/utility/IOFormat.h"
-#include "../../lib/cpptoml/cpptoml.h"
 
 #include "FrameFilter.h"
 #include "BackgroundSubtractor.h"

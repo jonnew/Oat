@@ -20,8 +20,8 @@
 #include <vector>
 #include <cmath>
 
-#include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/cpptoml/OatTOMLSanitize.h"
+#include <cpptoml.h>
+#include "../../lib/utility/OatTOMLSanitize.h"
 
 #include "MeanPosition.h"
 

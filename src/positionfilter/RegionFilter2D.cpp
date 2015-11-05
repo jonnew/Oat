@@ -24,8 +24,8 @@
 
 #include "RegionFilter2D.h"
 
-#include "../../lib/cpptoml/cpptoml.h"
-#include "../../lib/cpptoml/OatTOMLSanitize.h"
+#include <cpptoml.h>
+#include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 RegionFilter2D::RegionFilter2D(const std::string& position_source_name, const std::string& position_sink_name) :

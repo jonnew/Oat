@@ -27,7 +27,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "../../lib/cpptoml/cpptoml.h"
+#include <cpptoml.h>
 
 #include "TestPosition.h"
 #include "RandomAccel2D.h"
