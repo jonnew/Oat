@@ -21,8 +21,9 @@
 #include <boost/asio/ip/udp.hpp>
 #include <boost/asio/deadline_timer.hpp>
 
+#include <rapidjson/rapidjson.h>
+
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/rapidjson/rapidjson.h"
 
 #include "SocketWriteStream.h"
 #include "UDPServer.h"

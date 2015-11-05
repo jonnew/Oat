@@ -53,20 +53,16 @@ if (${OAT_USE_FLYCAP})
      endif (FLYCAPTURE2)
 endif (${OAT_USE_FLYCAP})
 
-
 # Include dirs 
-#set (COMMON_INCLUDES ${PROJECT_SOURCE_DIR}) 
 set (EXT_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/ext)
 
 # Include cpptoml
 add_subdirectory (${EXT_PROJECTS_DIR}/cpptoml)
 include_directories (${CPPTOML_INCLUDE_DIR})
 
-#Include paths common to all components
-#set (COMMON_INCLUDES
-#     "${CPPTOML_INCLUDE_DIR}/cpptoml.h")
-
-#message (STATUS "common include path: ${COMMON_INCLUDES}")
+# Include rapidjson
+add_subdirectory (${EXT_PROJECTS_DIR}/rapidjson)
+include_directories (${RAPIDJSON_INCLUDE_DIR})
 
 # Oat libshmem 
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem "${CMAKE_CURRENT_BINARY_DIR}/shmem")

@@ -23,9 +23,8 @@
 #include <cstdio>
 #include <boost/asio/ip/udp.hpp>
 
-#include "../../lib/rapidjson/rapidjson.h"
+#include <rapidjson/rapidjson.h>
 
-// TODO: Move to rapidjson lib?
 RAPIDJSON_NAMESPACE_BEGIN
 
 /** Wrapper of C network ouput stream using sendto().

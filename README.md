@@ -953,7 +953,9 @@ make
 sudo make install
 ```
 
-### RapidJSON and cpptoml
+### RapidJSON, cpptoml, and Catch
+These libraries are installed automatically by cmake during the build process.
+
 [RapidJSON](https://github.com/miloyip/rapidjson) is required by the following
 Oat components:
 
@@ -970,11 +972,8 @@ Oat components:
 - `oat-posicom`
 - `oat-positest`
 
-To install both of these libraries, starting in the project root directory, run:
-```bash
-cd lib
-./update_libs.sh
-```
+[Catch](https://github.com/skystrife/cpptoml) is required to make and run tests
+using `make tests'
 
 ###  Setting up a Point-grey PGE camera in Linux 
 `oat-frameserve` supports using Point Grey GIGE cameras to collect frames. I

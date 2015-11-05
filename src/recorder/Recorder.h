@@ -28,9 +28,9 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include <rapidjson/filewritestream.h>
+#include <rapidjson/prettywriter.h>
 
-#include "../../lib/rapidjson/filewritestream.h"
-#include "../../lib/rapidjson/prettywriter.h"
 #include "../../lib/shmem/MatClient.h"
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position2D.h"

@@ -20,8 +20,9 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
 
+#include <rapidjson/rapidjson.h>
+
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/rapidjson/rapidjson.h"
 
 #include "SocketWriteStream.h"
 #include "UDPClient.h"

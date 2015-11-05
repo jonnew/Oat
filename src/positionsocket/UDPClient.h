@@ -23,7 +23,7 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
 
-#include "../../lib/rapidjson/rapidjson.h"
+#include <rapidjson/rapidjson.h>
 
 #include "SocketWriteStream.h"
 #include "PositionSocket.h"

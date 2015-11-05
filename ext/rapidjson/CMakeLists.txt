@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.8.8)
-project(cpptoml_builder CXX)
+project(rapidjson_builder CXX)
 include(ExternalProject)
 find_package(Git REQUIRED)
 
 ExternalProject_Add(
-  cpptoml
-  PREFIX ${CMAKE_BINARY_DIR}/cpptoml
-  GIT_REPOSITORY https://github.com/skystrife/cpptoml.git
+  rapidjson
+  PREFIX ${CMAKE_BINARY_DIR}/rapidjson
+  GIT_REPOSITORY https://github.com/miloyip/rapidjson.git
   TIMEOUT 10
   UPDATE_COMMAND ${GIT_EXECUTABLE} pull
   CONFIGURE_COMMAND ""
@@ -17,5 +17,5 @@ ExternalProject_Add(
 )
 
 # Specify include dir
-ExternalProject_Get_Property(cpptoml SOURCE_DIR)
-set(CPPTOML_INCLUDE_DIR ${SOURCE_DIR}/include CACHE INTERNAL "Path to include folder for cpptoml")
+ExternalProject_Get_Property(rapidjson SOURCE_DIR)
+set(RAPIDJSON_INCLUDE_DIR ${SOURCE_DIR}/include CACHE INTERNAL "Path to include folder for rapidjson")
