@@ -104,13 +104,14 @@ set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PAT
 
 # Catch (and enables unit testing)
 add_subdirectory(${EXT_PROJECTS_DIR}/catch)
-include_directories(${CATCH_INCLUDE_DIR} ${COMMON_INCLUDES})
+#include_directories(${CATCH_INCLUDE_DIR} ${COMMON_INCLUDES})
 enable_testing(true)
 
 set(TESTING_INCLUDES ${CATCH_INCLUDE_DIR} )
-function(add_oat_test name)
-  include_directories(${TESTING_INCLUDES} ${COMMON_INCLUDES})
+function(add_oat_test name libs)
+  include_directories(${TESTING_INCLUDES})
   add_executable(${name}_test ${name}_test.cpp)
+  target_link_libraries (${name}_test ${libs}) 
   add_test(${name}_test ${name}_test)
 endfunction(add_oat_test)
 

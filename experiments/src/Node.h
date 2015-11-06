@@ -34,15 +34,6 @@ namespace oat {
         ERROR = 2
     };
 
-    // TODO : or, make Node a class template with template parameter determining
-    // the data type.
-//    enum class NodeType {
-//        UNDEFINED = 0,
-//        FRAME = 1,
-//        POSITION = 2,
-//    };
-    
-    template<typename T>
     class Node {
     public:
 
@@ -50,9 +41,7 @@ namespace oat {
         {
             // Nothing
         }
-
-        // These operations are atomic
-
+        
         // SINK state
         inline void set_sink_state(SinkState value) { sink_state_ = value; }
         inline SinkState sink_state(void) const { return sink_state_; }
@@ -66,7 +55,10 @@ namespace oat {
         inline void resetSourceReadCount() { source_read_count_ = 0; }
 
         // SOURCE reference counting
-        inline size_t decrementSourceRefCount() { return --source_ref_count_; }
+        inline size_t decrementSourceRefCount() { 
+            return source_ref_count_ == 0 ? 0 : --source_ref_count_; 
+        }
+        
         size_t incrementSourceRefCount() { 
             if (source_ref_count_ >= 10)
                 throw std::runtime_error("Maximum of 10 SOURCEs can be bound to a node.");
@@ -77,8 +69,12 @@ namespace oat {
         // Synchronization constructs
         semaphore write_barrier {0};
         
-        // Dead simple and static, the suckless way
+        // Simple and static
         semaphore& readBarrier(size_t index) {
+            
+            if (index > (source_ref_count_ - 1))
+                throw std::runtime_error("Requested index refers to a SOURCE that is not bound to this node.");
+                        
             switch (index) {
                 case 0:
                     return rb0_;
@@ -122,7 +118,7 @@ namespace oat {
         std::atomic<size_t> source_read_count_ {0}; //!< Number SOURCE reads that have occured since last sink reset 
         std::atomic<size_t> source_ref_count_ {0}; //!< Number of SOURCES sharing this
         std::atomic<uint64_t> write_number_ {0}; //!< Number of writes to shmem that have been facilited by this node
-        
+
         // 10 sources max
         semaphore rb0_ {0}, rb1_ {0}, rb2_ {0}, rb3_ {0}, rb4_ {0}, 
                   rb5_ {0}, rb6_ {0}, rb7_ {0}, rb8_ {0}, rb9_ {0};

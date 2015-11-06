@@ -42,13 +42,10 @@ public :
     int type() const { return type_; }
     size_t step() const {return step_; }
     
-    void setParameters(const handle_t data, const cv::Size size, 
-                       const int type) { //size_t bytes, 
-        //bytes_ = bytes;
+    void setParameters(const handle_t data, const cv::Size size, const int type) { 
         data_ = data;
         size_ = size;
         type_ = type;
-        //step_ = step;
     }
     
 private :

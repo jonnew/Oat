@@ -972,8 +972,8 @@ Oat components:
 - `oat-posicom`
 - `oat-positest`
 
-[Catch](https://github.com/skystrife/cpptoml) is required to make and run tests
-using `make tests'
+[Catch](https://github.com/philsquared/Catch) is required to make and run tests
+using `make test`
 
 ###  Setting up a Point-grey PGE camera in Linux 
 `oat-frameserve` supports using Point Grey GIGE cameras to collect frames. I

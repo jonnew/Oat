@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::string> names;
     bool quiet = false;
+    bool legacy = false;
 
     try {
 
@@ -51,6 +52,7 @@ int main(int argc, char *argv[]) {
         po::options_description config("CONFIGURATION");
         options.add_options()
                 ("quiet,q", "Quiet mode. Prevent output text.")
+                ("legacy,l", "Legacy mode. Append  \"_sh_mem\" to input NAMES before removing.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -102,8 +104,10 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("quiet")) 
             quiet = true;
         
+        if (variable_map.count("legacy")) 
+            legacy = true;
+        
         names = variable_map["names"].as< std::vector<std::string> >();
-
 
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
@@ -116,17 +120,18 @@ int main(int argc, char *argv[]) {
         
         // All servers (MatServer and SMServer) append "_sh_mem" to user-provided
         // stream names when created a named shmem block
-        name = name + "_sh_mem";
+        if (legacy)
+            name = name + "_sh_mem";
 
         if (!quiet)
-            std::cout << "Removing " << name << " from shared memory...";
+            std::cout << "Trying to removing \'" << name << "\' from shared memory...";
 
         if (bip::shared_memory_object::remove(name.c_str())) {
             if (!quiet)
                 std::cout << "success.\n";
         } else {
             if (!quiet) {
-                std::cout << "failure. Are you sure this block exists?\n";
+                std::cout << "not found. are you sure this block exists?.\n";
             }
         }
     }

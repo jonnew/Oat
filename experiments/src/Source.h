@@ -36,23 +36,25 @@ public:
     SourceBase();
     virtual ~SourceBase();
 
-    void bind(const std::string &address, const size_t bytes);
+    virtual void bind(const std::string &address);
     virtual void connect();
     void wait();
     void post();
+    T clone() const;
 
 protected:
 
     shmem_t shmem_;
     T * object_;
-    Node<T> * node_;
+    Node * node_;
+    std::string address_;
+    bool shmem_bound_ {false};
+    size_t this_index_;
 
 private:
 
-    std::string address_;
-    bool shmem_bound_ {false};
     bool must_post_ {false};
-    size_t this_index_;
+    
 };
 
 template<typename T>
@@ -83,7 +85,7 @@ SourceBase<T>::~SourceBase() {
 }
 
 template<typename T>
-void SourceBase<T>::bind(const std::string& address, const size_t bytes) {
+void SourceBase<T>::bind(const std::string& address) {
 
     // Addresses for this block of shared memory
     address_ = address;
@@ -94,7 +96,7 @@ void SourceBase<T>::bind(const std::string& address, const size_t bytes) {
     shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
             address.c_str(),
-            bytes + sizeof (oat::Node) + sizeof(T));
+            sizeof(oat::Node) + sizeof(T));
 
     // Facilitates synchronized access to shmem
     node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
@@ -150,6 +152,13 @@ void SourceBase<T>::post() {
     must_post_ = false;
 }
 
+template<typename T>
+T SourceBase<T>::clone() const {
+    
+    // Copy of object
+    return *object_;
+}
+
 // Specializations...
 
 template<typename T>
@@ -161,6 +170,8 @@ template<>
 class Source<SharedCVMat> : public SourceBase<SharedCVMat> {
 
 public:
+    
+    void bind(const std::string &address, const size_t bytes);
     void connect();
 
     inline cv::Mat frame() const { return frame_; }
@@ -170,6 +181,30 @@ private :
     cv::Mat frame_;
 
 };
+
+void Source<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
+    
+    // Addresses for this block of shared memory
+    address_ = address;
+    std::string node_address = address_ + "/shmgr";
+    std::string obj_address = address_ + "/shobj";
+
+    // Define shared memory
+    shmem_ = bip::managed_shared_memory(
+            bip::open_or_create,
+            address.c_str(),
+            bytes + sizeof(oat::Node) + sizeof(SharedCVMat));
+
+    // Facilitates synchronized access to shmem
+    node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
+
+    // Find an existing shared object or construct one with default parameters
+    object_ = shmem_.find_or_construct<SharedCVMat>(obj_address.c_str())();
+
+    // Let the node know this source is attached and get our index
+    this_index_ = node_->incrementSourceRefCount() - 1;
+    shmem_bound_ = true;
+}
 
 void Source<SharedCVMat>::connect() {
     

@@ -76,8 +76,11 @@ int main(int argc, char *argv[]) {
         
         // Create sink to send matrix into
         oat::Sink<oat::SharedCVMat> sink;
-        sink.bind("exp_sh_mem", 10e6);
+        sink.bind("exp", 10e6);
         cv::Mat shared_mat = sink.allocate(mat_dims, ext_mat.type());
+        
+        oat::Sink<int> sink1; 
+        sink1.bind("test");
 
         uint64_t angle = 0;
         cv::Point2f src_center(ext_mat.cols/2.0F, ext_mat.rows/2.0F);
