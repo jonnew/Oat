@@ -48,9 +48,10 @@ public:
 protected:
 
     shmem_t shmem_;
-    Node * node_;
-    T * object_;
+    Node * node_ {nullptr};
+    T * object_ {nullptr};
     std::string address_;
+    bool is_bound_ {false};
 };
 
 template<typename T>
@@ -83,6 +84,8 @@ void SinkBase<T>::bind(const std::string& address) {
     std::string obj_address = address_ + "/shobj";
 
     // Define shared memory
+    // TODO: find_or_construct() will segfault if I don't provide a bit of
+    //       extra space here (1024) and I don't know why
     shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
             address.c_str(),
@@ -102,15 +105,17 @@ void SinkBase<T>::bind(const std::string& address) {
         // Find an existing shared object or construct one with default parameters
         object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
 
-        //shmem_bound_ = true;
         node_->set_sink_state(oat::SinkState::BOUND);
+        is_bound_ = true;
     }
 }
 
 template<typename T>
 void SinkBase<T>::wait() {
-    
-    //assert(node_->sink_state() == oat::SinkState::BOUND);
+   
+    // TODO: Inefficient?
+    if (!is_bound_) 
+        throw("Sink must be bound before call wait() is called.");
 
     boost::system_time timeout = boost::get_system_time() + msec_t(10);
 
@@ -126,7 +131,9 @@ void SinkBase<T>::wait() {
 template<typename T>
 void SinkBase<T>::post() {
     
-    //assert(node_->sink_state() == oat::SinkState::BOUND);
+    // TODO: Inefficient?
+    if (!is_bound_) 
+        throw("Sink must be bound before call post() is called.");
 
     // Increment the number times this node has facilitated a shmem write
     node_->incrementWriteNumber();
@@ -182,8 +189,8 @@ void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
         // Find an existing shared object or construct one with default parameters
         object_ = shmem_.find_or_construct<SharedCVMat>(obj_address.c_str())();
 
-        //shmem_bound_ = true;
         node_->set_sink_state(oat::SinkState::BOUND);
+        is_bound_ = true;
     }
 }
 
