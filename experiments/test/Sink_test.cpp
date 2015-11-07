@@ -18,15 +18,17 @@
 //******************************************************************************
 
 #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
-//#include "catch.hpp"
-#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
+#include "catch.hpp"
+//#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
+
+#include <string>
 
 #include "../src/Sink.h"
 #include "../src/SharedCVMat.h"
 
 SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 
-    GIVEN ("Two fresh Sinks") {
+    GIVEN ("Two sinks") {
 
         std::string addr {"test"};
         oat::Sink<int> sink1;
@@ -51,7 +53,7 @@ SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 
 SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
     
-    GIVEN ("A single fresh Sink") {
+    GIVEN ("A single sink") {
 
         oat::Sink<int> sink;
         std::string addr {"test"};
@@ -100,7 +102,7 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
 
 SCENARIO ("Bound sinks can retrieve and clone shared objects.", "[Sink]") {
     
-    GIVEN ("A single fresh Sink and a shared integer") {
+    GIVEN ("A single sink and an integer to be shared") {
 
         int shared_value;
         oat::Sink<int> sink;
@@ -117,7 +119,7 @@ SCENARIO ("Bound sinks can retrieve and clone shared objects.", "[Sink]") {
 
             sink.bind(addr); 
             
-            THEN ("The the sink returns a mutable reference to the shared object") {
+            THEN ("The the sink returns a mutable reference to the shared integer") {
                 
                 INFO ("Start with shared_value uninitialized")
                 CAPTURE(shared_value);
@@ -137,7 +139,7 @@ SCENARIO ("Bound sinks can retrieve and clone shared objects.", "[Sink]") {
 
 SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.", "[Sink, SharedCVMat]") {
     
-    GIVEN ("A single fresh Sink<SharedCVMat>") {
+    GIVEN ("A single Sink<SharedCVMat>") {
 
         oat::Sink<oat::SharedCVMat> sink;
         std::string addr {"test"};

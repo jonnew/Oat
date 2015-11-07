@@ -52,39 +52,34 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-    //cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
+    cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
 
     try {
 
         // Create sink to send matrix into
-        //oat::Source<oat::SharedCVMat> source;
-        oat::Source<int> source;
+        oat::Source<oat::SharedCVMat> source;
 
         // Bind source to the exp_sh_mem node
-        //source.bind("exp", 10e6);
-        source.bind("exp");
+        source.bind("exp", 10e6);
 
         // Before proceeding, the node must be bound by a sink
         source.connect();
         
-        // Get the shared mat and make a new mat to copy the data to
-        //const cv::Mat shared_mat = source.frame();
-        //cv::Mat local;
-        int some_int = 0;
+        // Create a cv::Mat container to copy the data to
+        cv::Mat local_mat;
 
         while (!quit) {
 
-            //local = source.cloneFrame(); 
-            some_int = source.clone();
+            //local_mat = source.cloneFrame(); 
+            local_mat = source.clone();
 
             // We are done cloning the frame out of shmem, tell sink it can
             // proceed
             source.post();
             
-            std::cout << "some_int is " << some_int << "\n";
-            //cv::imshow(name, local);
-            //cv::waitKey(1);
-            //source.wait();
+            cv::imshow(name, local_mat);
+            cv::waitKey(1);
+            source.wait();
         }
 
     } catch (const std::exception& ex) {

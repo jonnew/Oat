@@ -67,7 +67,7 @@ SinkBase<T>::~SinkBase() {
 
         // If the client ref count is 0, memory can be deallocated
         if (node_->source_ref_count() == 0 &&
-                bip::shared_memory_object::remove(address_.c_str())) {
+            bip::shared_memory_object::remove(address_.c_str())) {
 
             // Report that shared_memory was removed on object destruction
             std::cout << "Shared memory \'" + address_ + "\' was deallocated.\n";
@@ -119,7 +119,7 @@ class Sink : public SinkBase<T> {
 public:
     
     void bind(const std::string &address);
-    inline T& retrieve() { return *SinkBase<T>::sh_object_; };
+    T& retrieve();
     
 private:
     shmem_t shmem_;
@@ -163,6 +163,16 @@ void Sink<T>::bind(const std::string &address) {
     }
 }
 
+template<typename T>
+T& Sink<T>::retrieve() { 
+   
+    //assert(SinkBase<T>::bound_);
+    if (!SinkBase<T>::bound_)
+        throw (std::runtime_error("SINK must be bound before shared object is retrieved."));
+
+    return *SinkBase<T>::sh_object_; 
+}
+
 // 1. SharedCVMat
 
 template<>
@@ -204,6 +214,7 @@ void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
         sh_object_ = shmem_.find_or_construct<SharedCVMat>(obj_address.c_str())();
 
         node_->set_sink_state(oat::SinkState::BOUND);
+        bound_ = true;
     }
 }
 
@@ -216,6 +227,7 @@ cv::Mat Sink<SharedCVMat>::retrieve(const cv::Size dims, const int type) {
     //bip::managed_shared_memory::grow(shmem_address_.c_str(), data_size);
 
     // Make sure that the SINK is bound to a shared memory segment
+    //assert(bound_); 
     if (!bound_)
         throw (std::runtime_error("SINK must be bound before shared cvMat is retrieved."));
     
