@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef SINK_H
-#define	SINK_H
+#ifndef OAT_SINK_H
+#define	OAT_SINK_H
 
 #include <cassert>
 #include <string>
@@ -41,17 +41,15 @@ public:
     SinkBase &operator=(const SinkBase &) = delete;
     SinkBase(const SinkBase& orig) = delete;
 
-    virtual void bind(const std::string &address);
     void wait();
     void post();
 
 protected:
 
-    shmem_t shmem_;
     Node * node_ {nullptr};
-    T * object_ {nullptr};
+    T * sh_object_ {nullptr};
     std::string address_;
-    bool is_bound_ {false};
+    bool bound_ {false};
 };
 
 template<typename T>
@@ -64,49 +62,16 @@ template<typename T>
 SinkBase<T>::~SinkBase() {
 
     // Detach this server from shared mat header
-    node_->set_sink_state(oat::SinkState::END);
+    if (bound_) {
+        node_->set_sink_state(oat::SinkState::END);
 
-    // If the client ref count is 0, memory can be deallocated
-    if (node_->source_ref_count() == 0) {
+        // If the client ref count is 0, memory can be deallocated
+        if (node_->source_ref_count() == 0 &&
+                bip::shared_memory_object::remove(address_.c_str())) {
 
-        // Remove_shared_memory on object destruction
-        if (bip::shared_memory_object::remove(address_.c_str()))
+            // Report that shared_memory was removed on object destruction
             std::cout << "Shared memory \'" + address_ + "\' was deallocated.\n";
-    }
-}
-
-template<typename T>
-void SinkBase<T>::bind(const std::string& address) {
-
-    // Addresses for this block of shared memory
-    address_ = address;
-    std::string node_address = address_ + "/shmgr";
-    std::string obj_address = address_ + "/shobj";
-
-    // Define shared memory
-    // TODO: find_or_construct() will segfault if I don't provide a bit of
-    //       extra space here (1024) and I don't know why
-    shmem_ = bip::managed_shared_memory(
-            bip::open_or_create,
-            address.c_str(),
-            1024 + sizeof(oat::Node) + sizeof(T));
-
-    // Facilitates synchronized access to shmem
-    node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
-
-    // Make sure there is not another SINK using this shmem
-    if (node_->sink_state() != oat::SinkState::UNDEFINED) {
-
-        // There is already a SINK using this shmem
-        throw (std::runtime_error(
-                "Requested SINK address, '" + address_ + "', is not available."));
-    } else {
-
-        // Find an existing shared object or construct one with default parameters
-        object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
-
-        node_->set_sink_state(oat::SinkState::BOUND);
-        is_bound_ = true;
+        }
     }
 }
 
@@ -114,7 +79,7 @@ template<typename T>
 void SinkBase<T>::wait() {
    
     // TODO: Inefficient?
-    if (!is_bound_) 
+    if (!bound_)
         throw("Sink must be bound before call wait() is called.");
 
     boost::system_time timeout = boost::get_system_time() + msec_t(10);
@@ -122,7 +87,7 @@ void SinkBase<T>::wait() {
     // Only wait if there is a SOURCE attached to the node
     // Wait with timed wait with period check to prevent deadlocks
     while (node_->source_ref_count() > 0 &&
-           !node_->write_barrier.timed_wait(timeout)) {
+          !node_->write_barrier.timed_wait(timeout)) {
         // Loops checking if wait has been released
         timeout = boost::get_system_time() + msec_t(10);
     }
@@ -132,7 +97,7 @@ template<typename T>
 void SinkBase<T>::post() {
     
     // TODO: Inefficient?
-    if (!is_bound_) 
+    if (!bound_)
         throw("Sink must be bound before call post() is called.");
 
     // Increment the number times this node has facilitated a shmem write
@@ -149,16 +114,65 @@ void SinkBase<T>::post() {
 // Specializations...
 
 template<typename T>
-class Sink : public SinkBase<T> { };
+class Sink : public SinkBase<T> { 
+
+public:
+    
+    void bind(const std::string &address);
+    inline T& retrieve() { return *SinkBase<T>::sh_object_; };
+    
+private:
+    shmem_t shmem_;
+};
+
+template<typename T>
+void Sink<T>::bind(const std::string &address) {
+
+    // Addresses for this block of shared memory
+    SinkBase<T>::address_ = address;
+    std::string node_address = SinkBase<T>::address_ + "/shmgr";
+    std::string obj_address = SinkBase<T>::address_ + "/shobj";
+
+    // Define shared memory
+    // TODO: find_or_construct() will segfault if I don't provide a bit of
+    //       extra space here (1024) and I don't know why
+    shmem_ = bip::managed_shared_memory(
+            bip::open_or_create,
+            address.c_str(),
+            1024 + sizeof (oat::Node) + sizeof (T));
+
+    // Facilitates synchronized access to shmem
+    SinkBase<T>::node_ = 
+            shmem_.find_or_construct<oat::Node>(node_address.c_str())();
+
+    // Make sure there is not another SINK using this shmem
+    if (SinkBase<T>::node_->sink_state() != oat::SinkState::UNDEFINED) {
+
+        // There is already a SINK using this shmem
+        throw (std::runtime_error(
+                "Requested SINK address, '" + 
+                SinkBase<T>::address_ + "', is not available."));
+    } else {
+
+        // Find an existing shared object or construct one with default parameters
+        SinkBase<T>::sh_object_ = 
+                shmem_.find_or_construct<T>(obj_address.c_str())();
+
+        SinkBase<T>::node_->set_sink_state(oat::SinkState::BOUND);
+        SinkBase<T>::bound_ = true; 
+    }
+}
 
 // 1. SharedCVMat
 
 template<>
 class Sink<SharedCVMat> : public SinkBase<SharedCVMat> {
 
-    public:
-        void bind(const std::string &address, const size_t bytes);
-        cv::Mat allocate(const cv::Size dims, const int type);
+public:
+    void bind(const std::string &address, const size_t bytes);
+    cv::Mat retrieve(const cv::Size dims, const int type);
+private:
+    shmem_t shmem_;
 
 };
 
@@ -173,7 +187,7 @@ void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
     shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
             address.c_str(),
-            bytes + sizeof(oat::Node) + sizeof(SharedCVMat));
+            1024 + bytes + sizeof(oat::Node) + sizeof(SharedCVMat));
 
     // Facilitates synchronized access to shmem
     node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
@@ -187,14 +201,13 @@ void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
     } else {
 
         // Find an existing shared object or construct one with default parameters
-        object_ = shmem_.find_or_construct<SharedCVMat>(obj_address.c_str())();
+        sh_object_ = shmem_.find_or_construct<SharedCVMat>(obj_address.c_str())();
 
         node_->set_sink_state(oat::SinkState::BOUND);
-        is_bound_ = true;
     }
 }
 
-cv::Mat Sink<SharedCVMat>::allocate(const cv::Size dims, const int type) {
+cv::Mat Sink<SharedCVMat>::retrieve(const cv::Size dims, const int type) {
 
     // TODO: Would be best to grow the segment to the right size here, but in
     // order to do this, no process can be mapped to the segment. This
@@ -203,8 +216,8 @@ cv::Mat Sink<SharedCVMat>::allocate(const cv::Size dims, const int type) {
     //bip::managed_shared_memory::grow(shmem_address_.c_str(), data_size);
 
     // Make sure that the SINK is bound to a shared memory segment
-    if (node_->sink_state() != oat::SinkState::BOUND)
-        throw (std::runtime_error("SINK must be bound before memory is allocated."));
+    if (!bound_)
+        throw (std::runtime_error("SINK must be bound before shared cvMat is retrieved."));
     
     // Allocate memory for the shared object's data
     cv::Mat temp(dims, type);
@@ -212,7 +225,7 @@ cv::Mat Sink<SharedCVMat>::allocate(const cv::Size dims, const int type) {
     handle_t handle = shmem_.get_handle_from_address(data);
 
     // Reset the SharedCVMat's parameters now that we know what they should be
-    object_->setParameters(handle, dims, type);
+    sh_object_->setParameters(handle, dims, type);
 
     // Return pointer to memory allocated for shared object
     return cv::Mat(dims, type, data);
@@ -220,4 +233,4 @@ cv::Mat Sink<SharedCVMat>::allocate(const cv::Size dims, const int type) {
 
 } // namespace oat
 
-#endif	/* SINK_H */
+#endif	/* OAT_SINK_H */

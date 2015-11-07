@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef NODE_H
-#define	NODE_H
+#ifndef OAT_NODE_H
+#define	OAT_NODE_H
 
 #include <atomic>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
@@ -126,5 +126,5 @@ namespace oat {
 
 } // namespace oat
 
-#endif	/* NODE_H */
+#endif	/* OAT_NODE_H */
 

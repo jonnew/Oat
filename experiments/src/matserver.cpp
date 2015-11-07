@@ -77,7 +77,8 @@ int main(int argc, char *argv[]) {
         // Create sink to send matrix into
         oat::Sink<oat::SharedCVMat> sink;
         sink.bind("exp", 10e6);
-        cv::Mat shared_mat = sink.allocate(mat_dims, ext_mat.type());
+        
+        cv::Mat shared_mat = sink.retrieve(mat_dims, ext_mat.type());
         
         oat::Sink<int> sink1; 
         sink1.bind("test");

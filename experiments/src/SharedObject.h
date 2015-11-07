@@ -46,7 +46,7 @@ public :
 
     virtual ~SharedObject() = 0;
     
-    template<typename... Ts>
+    //template<typename... Ts>
     //virtual void setParameters(Ts...) = 0;
 
     // This data handle is a way to pass a pointer to a mat data structure

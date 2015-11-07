@@ -22,46 +22,153 @@
 #include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
 #include "../src/Sink.h"
+#include "../src/SharedCVMat.h"
 
-SCENARIO ("Sinks are un-copyable and can bind a single Node.", "[Sink]") {
+SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 
     GIVEN ("Two fresh Sinks") {
 
-        std::string addr = "test";
+        std::string addr {"test"};
         oat::Sink<int> sink1;
         oat::Sink<int> sink2;
+        
+        //TODO: Define stream operators for Nodes, Sources, and Sinks
+        //CAPTURE(sink1);
+        //CAPTURE(sink2);
 
-//        WHEN ("A copy of the sink is made") {
-//
-//            THEN ( "Compilation shall fail.") {
-//                oat::Sink<int> sink2 = sink1;
-//            }
-//        }
-
-        WHEN ("One sink binds a shmem segment") {
+        WHEN ("sink1 binds a shmem segment") {
 
             sink1.bind(addr);
 
-            THEN ("Attempting to bind that segment by the second sink shall throw") {
+            THEN ("An attempt to bind that segment by sink2 shall throw") {
                 REQUIRE_THROWS(
                     sink2.bind(addr);
                 );
             }
         }
+    }
+}
 
-        WHEN ("A sink calls wait() or post() before binding a segment") {
+SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
+    
+    GIVEN ("A single fresh Sink") {
 
-            sink1.bind(addr);
+        oat::Sink<int> sink;
+        std::string addr {"test"};
+
+        WHEN ("When the sink calls wait() before binding a segment") {
 
             THEN ("The the sink shall throw") {
                 REQUIRE_THROWS(
-                    sink1.wait();
+                    sink.wait();
                 );
+            }
+        }
+        
+        WHEN ("When the sink calls post() before binding a segment") {
 
+            THEN ("The the sink shall throw") {
                 REQUIRE_THROWS(
-                    sink1.post();
+                    sink.post();
                 );
+            }
+        }
+        
+        WHEN ("When the sink calls wait() after binding a segment") {
+            
+            sink.bind(addr);
 
+            THEN ("The the sink shall not throw") {
+                REQUIRE_NOTHROW(
+                    sink.wait();
+                );
+            }
+        }
+        
+        WHEN ("When the sink calls post() after binding a segment") {
+
+            sink.bind(addr);
+            
+            THEN ("The the sink shall not throw") {
+                REQUIRE_NOTHROW(
+                    sink.post();
+                );
+            }
+        }
+    }
+}
+
+SCENARIO ("Bound sinks can retrieve and clone shared objects.", "[Sink]") {
+    
+    GIVEN ("A single fresh Sink and a shared integer") {
+
+        int shared_value;
+        oat::Sink<int> sink;
+        std::string addr {"test"};
+        
+        WHEN ("When the sink calls retrieve() before binding a segment") {
+
+            THEN ("The the sink shall throw") {
+                REQUIRE_THROWS( shared_value = sink.retrieve(); );
+            }
+        }
+
+        WHEN ("When the sink calls retrieve() after binding a segment") {
+
+            sink.bind(addr); 
+            
+            THEN ("The the sink returns a mutable reference to the shared object") {
+                
+                INFO ("Start with shared_value uninitialized")
+                CAPTURE(shared_value);
+
+                REQUIRE_NOTHROW( shared_value = sink.retrieve(); );
+
+                INFO ("Set shared_value to 1") 
+                shared_value = 1;
+                CAPTURE(shared_value);
+                
+                REQUIRE( shared_value == sink.retrieve() );
+            }
+        }
+    }
+}
+
+
+SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.", "[Sink, SharedCVMat]") {
+    
+    GIVEN ("A single fresh Sink<SharedCVMat>") {
+
+        oat::Sink<oat::SharedCVMat> sink;
+        std::string addr {"test"};
+        cv::Mat mat; 
+        cv::Size dims {100, 100};
+        int type {1};
+
+        WHEN ("When the sink calls wait() before binding a segment") {
+
+            THEN ("The the sink shall throw") {
+                REQUIRE_THROWS(
+                    sink.wait();
+                );
+            }
+        }
+        
+        WHEN ("When the sink calls post() before binding a segment") {
+
+            THEN ("The the sink shall throw") {
+                REQUIRE_THROWS(
+                    sink.post();
+                );
+            }
+        }
+        
+        WHEN ("When the sink calls retrieve() before binding a segment") {
+
+            THEN ("The the sink shall throw") {
+                REQUIRE_THROWS(
+                    mat = sink.retrieve(dims, type);
+                );
             }
         }
     }

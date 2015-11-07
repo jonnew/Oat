@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef SOURCE_H
-#define	SOURCE_H
+#ifndef OAT_SOURCE_H
+#define	OAT_SOURCE_H
 
 #include <string>
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -40,21 +40,19 @@ public:
     virtual void connect();
     void wait();
     void post();
-    T clone() const;
 
 protected:
 
     shmem_t shmem_;
-    T * object_;
-    Node * node_;
+    T * sh_object_ {nullptr};
+    Node * node_ {nullptr};
     std::string address_;
-    bool shmem_bound_ {false};
     size_t this_index_;
+    bool bound_;
 
 private:
 
-    bool must_post_ {false};
-    
+    bool must_post_ {false};   
 };
 
 template<typename T>
@@ -72,7 +70,7 @@ SourceBase<T>::~SourceBase() {
 
     // If the client reference count is 0 and there is no server
     // attached to the node, deallocate the shmem
-    if (shmem_bound_ &&
+    if (bound_ &&
         node_->decrementSourceRefCount() == 0 &&
         node_->sink_state() != oat::SinkState::BOUND) {
 
@@ -97,28 +95,37 @@ void SourceBase<T>::bind(const std::string& address) {
             bip::open_or_create,
             address.c_str(),
             sizeof(oat::Node) + sizeof(T));
+    //1024 + 
 
     // Facilitates synchronized access to shmem
     node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
 
     // Find an existing shared object or construct one with default parameters
-    object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
+    sh_object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
 
-    // Let the node know this source is attached and get our index
+    // Let the node know this source is attached and retrieve *this's index
     this_index_ = node_->incrementSourceRefCount() - 1;
-    shmem_bound_ = true;
+    
+    bound_ = true;
 }
 
 template<typename T>
 void SourceBase<T>::connect() {
+    
+   // TODO: Inefficient?
+    if (!bound_)
+        throw("Source must be bound before call connect() is called.");
 
     if (node_->sink_state() != oat::SinkState::BOUND)
         wait();
 }
 
-
 template<typename T>
 void SourceBase<T>::wait() {
+    
+    // TODO: Inefficient?
+    if (!bound_) 
+        throw("Source must be bound before call wait() is called.");
 
     boost::system_time timeout = boost::get_system_time() + msec_t(10);
 
@@ -132,18 +139,15 @@ void SourceBase<T>::wait() {
     
     // Before *this is destroyed, we must post() to prevent deadlock
     must_post_ = true;
-
-    // Obtain ownership over mutex so that shared memory can be written to.
-    // This must be released using signal()
-    //manager_->mutex.wait();
 }
 
 template<typename T>
 void SourceBase<T>::post() {
 
-    // Release exclusive lock over shared memory
-    //manager_->mutex.post();
-
+    // TODO: Inefficient?
+    if (!bound_)
+        throw("Source must be bound before call post() is called.");
+    
     if( node_->incrementSourceReadCount() >= node_->source_ref_count()) {
         node_->write_barrier.post();
     }
@@ -152,17 +156,15 @@ void SourceBase<T>::post() {
     must_post_ = false;
 }
 
-template<typename T>
-T SourceBase<T>::clone() const {
-    
-    // Copy of object
-    return *object_;
-}
-
 // Specializations...
 
 template<typename T>
-class Source : public SourceBase<T> { };
+class Source : public SourceBase<T> { 
+
+public:
+    T& retrieve() { return *SourceBase<T>::sh_object_; };
+    T clone() const  { return *SourceBase<T>::sh_object_; }
+};
 
 // 1. SharedCVMat
 
@@ -172,10 +174,11 @@ class Source<SharedCVMat> : public SourceBase<SharedCVMat> {
 public:
     
     void bind(const std::string &address, const size_t bytes);
-    void connect();
+    void connect() override;
 
-    inline cv::Mat frame() const { return frame_; }
-    inline cv::Mat cloneFrame() { return frame_.clone(); }
+    //virtual SharedCVMat& retrieve() override = delete;
+    inline cv::Mat retrieve() const { return frame_; }
+    inline cv::Mat clone() { return frame_.clone(); }
 
 private :
     cv::Mat frame_;
@@ -193,20 +196,24 @@ void Source<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
     shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
             address.c_str(),
-            bytes + sizeof(oat::Node) + sizeof(SharedCVMat));
+            1024 + bytes + sizeof(oat::Node) + sizeof(SharedCVMat));
 
     // Facilitates synchronized access to shmem
     node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
 
     // Find an existing shared object or construct one with default parameters
-    object_ = shmem_.find_or_construct<SharedCVMat>(obj_address.c_str())();
+    sh_object_ = shmem_.find_or_construct<SharedCVMat>(obj_address.c_str())();
 
     // Let the node know this source is attached and get our index
     this_index_ = node_->incrementSourceRefCount() - 1;
-    shmem_bound_ = true;
+    bound_ = true;
 }
 
 void Source<SharedCVMat>::connect() {
+    
+    // TODO: Inefficient?
+    if (!bound_)
+        throw("Source must be bound before call connect() is called.");
     
     // Wait for the SINK to bind the node and provide matrix
     // header info.
@@ -214,13 +221,13 @@ void Source<SharedCVMat>::connect() {
         wait();
 
     // Generate cv::Mat header using info in shmem segment
-    frame_ = cv::Mat(object_->size(),
-                     object_->type(),
-                     shmem_.get_address_from_handle(object_->data()));
+    frame_ = cv::Mat(sh_object_->size(),
+                     sh_object_->type(),
+                     shmem_.get_address_from_handle(sh_object_->data()));
     
 }
 
 } // namespace oat
 
-#endif	/* SOURCE_H */
+#endif	/* OAT_SOURCE_H */
 
