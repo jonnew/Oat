@@ -37,7 +37,7 @@ public:
     virtual ~SourceBase();
 
     virtual void connect(const std::string &address);
-    void wait();
+    SinkState wait();
     void post();
 
 protected:
@@ -107,8 +107,13 @@ void SourceBase<T>::connect(const std::string &address) {
     bound_ = true;
 
     // Wait for the SINK to bind and construct the shared object
-    if (node_->sink_state() != SinkState::BOUND)
+    if (node_->sink_state() != SinkState::BOUND) {
         wait();
+
+        // Self post since all loops start with wait() and we just
+        // finished our wait()
+        node_->read_barrier(slot_index_).post();
+    }
 
     // Find an existing shared object constructed by the SINK
     obj_shmem_ = bip::managed_shared_memory(bip::open_only, obj_address_.c_str());
@@ -124,7 +129,7 @@ void SourceBase<T>::connect(const std::string &address) {
 
 
 template<typename T>
-void SourceBase<T>::wait() {
+SinkState SourceBase<T>::wait() {
 
     // TODO: Inefficient?
     if (!bound_)
@@ -142,6 +147,8 @@ void SourceBase<T>::wait() {
 
     // Before *this is destructed, must post() to prevent deadlock
     must_post_ = true;
+
+    return node_->sink_state();
 }
 
 template<typename T>

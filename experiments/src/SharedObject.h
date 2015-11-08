@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef SHAREDOBJECT_H
-#define	SHAREDOBJECT_H
+#ifndef OAT_SHAREDOBJECT_H
+#define	OAT_SHAREDOBJECT_H
 
 #include <atomic>
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -42,13 +42,11 @@ public :
 
     virtual ~SharedObject() = 0;
 
-    // This data handle is a way to pass a pointer to a mat data structure
-    // through shared memory. This is important, because clients can construct
-    // const cv::Mat's by getting a pointer from this handle. This means that
-    // both client and server, existing in _different processes_, will use the
-    // same data block for cv::Mat's data field, which is very efficient. Client
-    // side constness of cv::Mat ensures copy on write behavior to prevent data
-    // corruption.
+    // This data handle is a way to pass a pointer to a data structure
+    // through shared memory. Clients can construct cotainers that use data
+    // pointed by a pointer from this handle. This means that
+    // both client and server, existing in _different processes_, will have direct
+    // access to this data structure
     handle_t data() const { return data_; }
 
 protected :
@@ -60,4 +58,4 @@ SharedObject::~SharedObject() { };
 
 } // namepace oat
 
-#endif	/* SHAREDOBJECT_H */
+#endif	/* OAT_SHAREDOBJECT_H */

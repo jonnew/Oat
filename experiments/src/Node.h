@@ -65,9 +65,11 @@ public:
 
         mutex_.wait();
 
-        if (source_slots_.all())
+        if (source_slots_.all()) {
+            mutex_.post();
             throw std::runtime_error("Maximum of " + std::to_string(NUM_SLOTS)
                     + " SOURCEs can be bound to a node.");
+        }
 
         size_t index = 0;
         while (source_slots_[index])
@@ -97,7 +99,10 @@ public:
     inline size_t source_ref_count(void) const { return source_ref_count_; }
 
     // Synchronization constructs
-    semaphore write_barrier {0};
+    // write _always_ occurs before read. By starting at 1, the writer is not
+    // blocked by an initial wait. Readers to do not post to the write_barrier
+    // until a write occurs.
+    semaphore write_barrier {1};
 
     // This method is required because an std::array of semaphores requires
     // each semaphore to be copy-constructed to intialized the array.
@@ -105,7 +110,7 @@ public:
     // this approach does not work.
     semaphore& read_barrier(size_t index) {
 
-        if (index > (source_ref_count_ - 1))
+        if (!source_slots_[index])
             throw std::runtime_error("Requested index refers to a SOURCE that is not bound to this node.");
 
         switch (index) {
@@ -150,7 +155,7 @@ public:
     void notifySources() {
 
         // Naive but probably not worth optimizing
-        for (int i = 0; i < source_slots_.size(); i++)
+        for (size_t i = 0; i < source_slots_.size(); i++)
             if (source_slots_[i])
                 read_barrier(i).post();
     }

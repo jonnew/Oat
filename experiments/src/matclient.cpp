@@ -59,13 +59,16 @@ int main(int argc, char *argv[]) {
         // Create sink to send matrix into
         oat::Source<oat::SharedCVMat> source;
 
-        // Before proceeding, the node must be bound by a sink
+        // Before proceeding, the source must handshake with a sink at the node
         source.connect("exp");
 
         // Create a cv::Mat container to copy the data to
         cv::Mat local_mat;
 
         while (!quit) {
+
+            // Wait for sink to write to node
+            source.wait();
 
             //local_mat = source.cloneFrame();
             local_mat = source.clone();
@@ -76,7 +79,6 @@ int main(int argc, char *argv[]) {
 
             cv::imshow(name, local_mat);
             cv::waitKey(1);
-            source.wait();
         }
 
     } catch (const std::exception& ex) {

@@ -19,7 +19,7 @@
 
 #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
 #include "catch.hpp"
-//#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
+#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
 #include <string>
 
@@ -102,9 +102,9 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
 
 SCENARIO ("Bound sinks can retrieve shared objects to mutate them.", "[Sink]") {
 
-    GIVEN ("A single Sink<int> and a shared *int") {
+    GIVEN ("A single Sink<int> and a shared *int=0") {
 
-        int * shared;
+        int * shared = static_cast<int *>(0);
         oat::Sink<int> sink;
         std::string addr {"test"};
 

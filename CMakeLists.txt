@@ -27,9 +27,24 @@ set (VERSION_LIST "${GIT_BRANCH}" ".${GIT_COMMIT_HASH}")
 configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
 include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 
-# C++11
-# TODO: compiler optimizations?
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
+# Make sure a build type has been specified
+if( NOT CMAKE_BUILD_TYPE )
+   set( CMAKE_BUILD_TYPE Release ... FORCE )
+endif()
+
+# Set compiler options
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
+# Get a list of compiler options
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    set (FULL_CXX_FLAG_LIST "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+elseif (CMAKE_BUILD_TYPE MATCHES Release)
+    set (FULL_CXX_FLAG_LIST "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+else()
+    message (FATAL_ERROR "Set and acceptable build type using -DCMAKE_BUILD_TYPE=<Debug or Release>")
+endif()
 
 # Add preprocessor definition to compile with OpenGL support
 option (OAT_USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
@@ -37,8 +52,9 @@ option (OAT_USE_OPENGL "Use OpenGL functionality in OpenCV" OFF)
 option (OAT_USE_CUDA "Use CUDA GPU functionality in OpenCV" OFF)
 
 # Show options summary
-message (STATUS "Oat version: " ${VERSION_LIST})
+message (STATUS "Oat version: ${VERSION_LIST}")
 message (STATUS "Compilation options:" )
+message (STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
 message (STATUS "  Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
 message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
 message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")
@@ -53,8 +69,8 @@ find_package (OpenCV REQUIRED)
 if (OpenCV_FOUND)
     message (STATUS "Found OpenCV")
 else (OpenCV_FOUND)
-    message (CRITICAL_ERROR "OpenCV not found")
-endif (OpenCV_FOUND)
+    message (FATAL_ERROR "OpenCV not found")
+endif ()
 
 # Flycapture
 if (${OAT_USE_FLYCAP})
@@ -62,16 +78,15 @@ if (${OAT_USE_FLYCAP})
     # TODO: super fragile. Need to provide a user flag to specify flycapture dir
     include_directories ("/usr/include/flycapture")
     find_library(FLYCAPTURE2 flycapture)
-    
-    if (FLYCAPTURE2)
-         message (STATUS "Found Flycapture.")
-     else (FLYCAPTURE2)
-         message (CRITICAL_ERROR "Flycapture not found. 
-            Did you install in /usr/include/flycapture?")
-     endif (FLYCAPTURE2)
-endif (${OAT_USE_FLYCAP})
 
-# Include dirs 
+    if (FLYCAPTURE2)
+        message (STATUS "Found Flycapture.")
+    else (FLYCAPTURE2)
+        message (FATAL_ERROR "Flycapture not found. Did you install in /usr/include/flycapture?")
+    endif ()
+endif ()
+
+# Include dirs
 set (EXT_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/ext)
 
 # Include cpptoml
@@ -82,7 +97,7 @@ include_directories (${CPPTOML_INCLUDE_DIR})
 add_subdirectory (${EXT_PROJECTS_DIR}/rapidjson)
 include_directories (${RAPIDJSON_INCLUDE_DIR})
 
-# Oat libshmem 
+# Oat libshmem
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem "${CMAKE_CURRENT_BINARY_DIR}/shmem")
 
 # Oat components
@@ -111,15 +126,15 @@ set(TESTING_INCLUDES ${CATCH_INCLUDE_DIR} )
 function(add_oat_test name libs)
   include_directories(${TESTING_INCLUDES})
   add_executable(${name}_test ${name}_test.cpp)
-  target_link_libraries (${name}_test ${libs}) 
+  target_link_libraries (${name}_test ${libs})
   add_test(${name}_test ${name}_test)
-endfunction(add_oat_test)
+endfunction()
 
-# TODO: add this 
-#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test) 
+# TODO: add this
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
 
 # TODO: remove on merge into master
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/experiments/) 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/experiments/)
 
 # API documentation
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")

@@ -38,7 +38,7 @@ SCENARIO ("Up to 10 sources can connect a single Node.", "[Source]") {
         sink.bind(addr);
         oat::Source<int> s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10;
 
-        WHEN ("sources 0-10 connect a node") {
+        WHEN ("sources 0 to Oat::Node:NUM_SLOTS connect a node") {
 
             THEN ("The first 10 connections will succeed") {
                 REQUIRE_NOTHROW(
@@ -55,7 +55,7 @@ SCENARIO ("Up to 10 sources can connect a single Node.", "[Source]") {
                 );
             }
 
-            AND_THEN ("The 11th shall throw") {
+            AND_THEN ("The oat::Node:NUM_SLOTS+1 connection shall throw") {
                 REQUIRE_THROWS(
                     s0.connect(addr);
                     s1.connect(addr);
@@ -115,12 +115,13 @@ SCENARIO ("A Source<T> can only connect to a node bound by a Sink<T>.", "[Source
 
 SCENARIO ("Connected sources can retrieve shared objects to mutate them.", "[Source]") {
 
-    GIVEN ("A bound Sink<int> and a connected Source<int> with common node address") {
+    GIVEN ("A bound Sink<int> and a connected Source<int> with common node addres") {
 
         std::string addr {"test"};
         oat::Sink<int> sink;
         oat::Source<int> source;
-        int * src_ptr, * snk_ptr;
+        int * src_ptr = static_cast<int *>(0);
+        int * snk_ptr = static_cast<int *>(0);
 
         INFO ("The sink binds a node");
         sink.bind(addr);
@@ -165,3 +166,6 @@ SCENARIO ("Connected sources can retrieve shared objects to mutate them.", "[Sou
         }
     }
 }
+
+
+// TODO: specialization tests

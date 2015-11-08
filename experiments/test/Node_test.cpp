@@ -17,8 +17,9 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() 
+#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
 #include "catch.hpp"
+#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
 #include "../src/Node.h"
 
@@ -34,7 +35,7 @@ SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
 
             THEN ("The Node shall not throw until the 11th") {
                 REQUIRE_NOTHROW(
-                for (int i = 0; i < oat::Node::NUM_SLOTS; i++) {
+                for (size_t i = 0; i < oat::Node::NUM_SLOTS; i++) {
                     node.acquireSlot();
                 }
                 );
@@ -45,7 +46,7 @@ SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
 
             THEN ("The Node shall throw") {
                 REQUIRE_THROWS(
-                for (int i = 0; i <= oat::Node::NUM_SLOTS; i++) {
+                for (size_t i = 0; i <= oat::Node::NUM_SLOTS; i++) {
                     node.acquireSlot();
                 }
                 );
@@ -60,20 +61,20 @@ SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
                 REQUIRE(node.source_ref_count() == 0);
             }
         }
-        
+
         WHEN ("a negatively indexed read-barrier is read") {
-            
+
             THEN ("The Node shall throw") {
                 REQUIRE_THROWS(
                 boost::interprocess::interprocess_semaphore &s = node.read_barrier(-1);
                 );
             }
         }
-        
+
         WHEN ("a single source is added") {
-            
+
             size_t idx = node.acquireSlot();
-            
+
             THEN ("reading a greater indexed read-barrier shall throw") {
                 REQUIRE_THROWS(
                 boost::interprocess::interprocess_semaphore &s = node.read_barrier(idx+1);

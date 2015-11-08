@@ -85,6 +85,7 @@ int main(int argc, char *argv[]) {
         uint64_t angle = 0;
         cv::Point2f src_center(ext_mat.cols/2.0F, ext_mat.rows/2.0F);
         cv::Mat rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
+
         while(!quit) {
 
             tick = Clock::now();
@@ -92,21 +93,22 @@ int main(int argc, char *argv[]) {
             Milliseconds duration =
                 std::chrono::duration_cast<Milliseconds>(tick - tock);
 
-            // Do transform
-            cv::warpAffine(ext_mat, shared_mat, rot_mat, ext_mat.size());
             tock = Clock::now();
 
-            // Tell sources there is new data
+            // --- Wait for sources to read ---
+            sink.wait();
+
+            // Mutate shared_mat
+            cv::warpAffine(ext_mat, shared_mat, rot_mat, ext_mat.size());
+
+            // --- Tell sources there is new data ---
             sink.post();
 
             // Get new rotation matrix
             rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
 
-            std::cout << "Loop duration (ms): " << duration.count() << "\r";
-            std::cout.flush();
-
-            // Wait for sources to finish reading
-            sink.wait();
+            std::cout << "Loop duration (ms): " << duration.count() << "\n";
+            //std::cout.flush();
         }
 
     } catch (const std::exception& ex) {

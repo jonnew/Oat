@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef FORWARDSDECL_H
-#define	FORWARDSDECL_H
+#ifndef OAT_FORWARDSDECL_H
+#define	OAT_FORWARDSDECL_H
 
 #include <boost/interprocess/interprocess_fwd.hpp>
 
@@ -35,5 +35,5 @@ using msec_t = boost::posix_time::milliseconds;
 
 } // namespace oat
 
-#endif	/* FORWARDSDECL_H */
+#endif	/* OAT_FORWARDSDECL_H */
 
