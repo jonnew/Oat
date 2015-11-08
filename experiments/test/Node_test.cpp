@@ -22,7 +22,7 @@
 
 #include "../src/Node.h"
 
-SCENARIO ("Nodes can accept up to 10 sources.", "[Node]") {
+SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
 
     GIVEN ("A fresh Node") {
 
@@ -30,23 +30,23 @@ SCENARIO ("Nodes can accept up to 10 sources.", "[Node]") {
         REQUIRE(node.source_ref_count() == 0);
         REQUIRE(node.sink_state() == oat::SinkState::UNDEFINED);
 
-        WHEN( "10 sources are added") {
+        WHEN ("Node::NUM_SLOTS sources are added") {
 
             THEN ("The Node shall not throw until the 11th") {
                 REQUIRE_NOTHROW(
-                for (int i = 0; i < 10; i++) {
-                    node.incrementSourceRefCount();
+                for (int i = 0; i < oat::Node::NUM_SLOTS; i++) {
+                    node.acquireSlot();
                 }
                 );
             }
         }
 
-        WHEN ("11 sources are added") {
+        WHEN ("Node::NUM_SLOTS+1 sources are added") {
 
             THEN ("The Node shall throw") {
                 REQUIRE_THROWS(
-                for (int i = 0; i < 11; i++) {
-                    node.incrementSourceRefCount();
+                for (int i = 0; i <= oat::Node::NUM_SLOTS; i++) {
+                    node.acquireSlot();
                 }
                 );
             }
@@ -54,7 +54,7 @@ SCENARIO ("Nodes can accept up to 10 sources.", "[Node]") {
 
         WHEN ("a source is removed") {
 
-            node.decrementSourceRefCount();
+            node.releaseSlot(0);
 
             THEN ("the source ref count remains 0") {
                 REQUIRE(node.source_ref_count() == 0);
@@ -65,18 +65,18 @@ SCENARIO ("Nodes can accept up to 10 sources.", "[Node]") {
             
             THEN ("The Node shall throw") {
                 REQUIRE_THROWS(
-                boost::interprocess::interprocess_semaphore &s = node.readBarrier(-1);
+                boost::interprocess::interprocess_semaphore &s = node.read_barrier(-1);
                 );
             }
         }
         
         WHEN ("a single source is added") {
             
-            size_t idx = node.incrementSourceRefCount();
+            size_t idx = node.acquireSlot();
             
             THEN ("reading a greater indexed read-barrier shall throw") {
                 REQUIRE_THROWS(
-                boost::interprocess::interprocess_semaphore &s = node.readBarrier(idx+1);
+                boost::interprocess::interprocess_semaphore &s = node.read_barrier(idx+1);
                 );
             }
         }

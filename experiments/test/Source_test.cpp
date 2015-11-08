@@ -78,16 +78,15 @@ SCENARIO ("Sources must connect() before waiting or posting.", "[Source]") {
 
     GIVEN ("A single, unconnected source ") {
 
-        std::string addr {"test"};
         oat::Source<int> source;
 
-        WHEN ("The source calls wait() before binding a segment") {
+        WHEN ("The source calls wait()") {
             THEN ("The source shall throw.") {
                 REQUIRE_THROWS( source.wait(); );
             }
         }
 
-        WHEN ("The source calls post() before binding a segment") {
+        WHEN ("The source calls post()") {
             THEN ("The source shall throw.") {
             REQUIRE_THROWS( source.post(); );
             }

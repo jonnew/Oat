@@ -22,13 +22,16 @@
 
 #include <boost/interprocess/interprocess_fwd.hpp>
 
+//TODO: Required for clang, not sure why
+#include <boost/interprocess/managed_shared_memory.hpp>
+
 namespace oat {
 
-    namespace bip = boost::interprocess;
+namespace bip = boost::interprocess;
 
-    using shmem_t = bip::managed_shared_memory;
-    using handle_t = bip::managed_shared_memory::handle_t;
-    using msec_t = boost::posix_time::milliseconds;
+using shmem_t = bip::managed_shared_memory;
+using handle_t = bip::managed_shared_memory::handle_t;
+using msec_t = boost::posix_time::milliseconds;
 
 } // namespace oat
 

@@ -46,7 +46,7 @@ protected:
     T * sh_object_ {nullptr};
     Node * node_ {nullptr};
     std::string node_address_, obj_address_;
-    size_t this_index_;
+    size_t slot_index_;
     bool bound_ {false};
     bool connected_ {false};
 
@@ -71,7 +71,7 @@ SourceBase<T>::~SourceBase() {
     // If the client reference count is 0 and there is no server
     // attached to the node, deallocate the shmem
     if (bound_ &&
-        node_->decrementSourceRefCount() == 0 &&
+        node_->releaseSlot(slot_index_) == 0 &&
         node_->sink_state() != SinkState::BOUND &&
         bip::shared_memory_object::remove(node_address_.c_str()) &&
         bip::shared_memory_object::remove(obj_address_.c_str())) {
@@ -91,8 +91,9 @@ void SourceBase<T>::connect(const std::string &address) {
     obj_address_ = address + "_obj";
 
     // Define shared memory
-    // TODO: find_or_construct() will segfault if I don't provide a bit of
-    //       extra space here (1024) and I don't know why
+    // Extra 1024 bytes are used to hold managed shared mem helper objects
+    // (name-object index, internal synchronization objects, internal
+    // variables...)
     node_shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
             node_address_.c_str(),
@@ -102,7 +103,7 @@ void SourceBase<T>::connect(const std::string &address) {
     node_ = node_shmem_.find_or_construct<Node>(typeid(Node).name())();
 
     // Let the node know this source is attached and retrieve *this's index
-    this_index_ = node_->incrementSourceRefCount() - 1;
+    slot_index_ = node_->acquireSlot();
     bound_ = true;
 
     // Wait for the SINK to bind and construct the shared object
@@ -133,13 +134,13 @@ void SourceBase<T>::wait() {
 
     // Only wait if there is a SOURCE attached to the node
     // Wait with timed wait with period check to prevent deadlocks
-    while (!node_->readBarrier(this_index_).timed_wait(timeout)) {
+    while (!node_->read_barrier(slot_index_).timed_wait(timeout)) {
 
         // Loops checking if wait has been released
         timeout = boost::get_system_time() + msec_t(10);
     }
 
-    // Before *this is destroyed, we must post() to prevent deadlock
+    // Before *this is destructed, must post() to prevent deadlock
     must_post_ = true;
 }
 
@@ -150,11 +151,11 @@ void SourceBase<T>::post() {
     if (!bound_)
         throw("Source must be connected before call post() is called.");
 
-    if( node_->incrementSourceReadCount() >= node_->source_ref_count()) {
+    if ( node_->incrementSourceReadCount() >= node_->source_ref_count()) {
         node_->write_barrier.post();
     }
 
-    // Post has been performed, so its not needed *this is destroyed
+    // post() performed, so not needed when *this is destructed
     must_post_ = false;
 }
 
@@ -224,8 +225,8 @@ void Source<SharedCVMat>::connect(const std::string &address) {
     // Facilitates synchronized access to shmem
     node_ = node_shmem_.find_or_construct<Node>(typeid(Node).name())();
 
-    // Let the node know this source is attached and get our index
-    this_index_ = node_->incrementSourceRefCount() - 1;
+    // Let the acquire a source slot and get our index
+    slot_index_ = node_->acquireSlot();
     bound_ = true;
 
     // Wait for the SINK to bind the node and provide matrix

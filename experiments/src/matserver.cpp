@@ -76,8 +76,10 @@ int main(int argc, char *argv[]) {
 
         // Create sink to send matrix into
         oat::Sink<oat::SharedCVMat> sink;
-        sink.bind("exp", 10e6);
 
+        // Bind a shared memory segment, and use it to construct
+        // a reference to a shared cv::Mat
+        sink.bind("exp", ext_mat.total() * ext_mat.elemSize());
         cv::Mat shared_mat = sink.retrieve(mat_dims, ext_mat.type());
 
         uint64_t angle = 0;

@@ -108,13 +108,14 @@ void SinkBase<T>::post() {
     node_->incrementWriteNumber();
 
     // Reset the source read count
+    // TODO: replace with index based structure
     node_->resetSourceReadCount();
 
-    // Tell each source they can read
-    // TODO: This is wrong. What if source 0 connects, then source 1, then source 0
-    // disconnects. Then we are posting to the wrong source...
-    for (size_t i = 0; i < node_->source_ref_count(); i++)
-        node_->readBarrier(i).post();
+    // Tell each source connected to the node it can read
+    node_->notifySources();
+
+    //for (size_t i = 0; i < node_->source_ref_count(); i++)
+    //    node_->readBarrier(i).post();
 }
 
 // Specializations...
@@ -144,8 +145,9 @@ void Sink<T>::bind(const std::string &address) {
     obj_address_ = address + "_obj";
 
     // Define shared memory
-    // TODO: find_or_construct() will segfault if I don't provide a bit of
-    //       extra space here (1024) and I don't know why
+    // Extra 1024 bytes are used to hold managed shared mem helper objects
+    // (name-object index, internal synchronization objects, internal
+    // variables...)
     node_shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
             node_address_.c_str(),
@@ -217,6 +219,7 @@ void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
                 "Requested SINK address, '" + address + "', is not available."));
     } else {
 
+        // Object shared memory
         obj_shmem_ = bip::managed_shared_memory(
             bip::create_only,
             obj_address_.c_str(),

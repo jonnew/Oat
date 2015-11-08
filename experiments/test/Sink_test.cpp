@@ -122,7 +122,7 @@ SCENARIO ("Bound sinks can retrieve shared objects to mutate them.", "[Sink]") {
             THEN ("The the sink returns a pointer to mutate the shared integer") {
 
                 INFO ("Start with shared int uninitialized")
-                CAPTURE(*shared);
+                CAPTURE(shared);
 
                 REQUIRE_NOTHROW( shared = sink.retrieve(); );
 
