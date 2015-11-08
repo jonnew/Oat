@@ -2,7 +2,7 @@
 //* File:   main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Usage: oat-exp-client <name>\n";
         return -1;
     }
-    
+
     cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
 
     try {
@@ -59,24 +59,21 @@ int main(int argc, char *argv[]) {
         // Create sink to send matrix into
         oat::Source<oat::SharedCVMat> source;
 
-        // Bind source to the exp_sh_mem node
-        source.bind("exp", 10e6);
-
         // Before proceeding, the node must be bound by a sink
-        source.connect();
-        
+        source.connect("exp");
+
         // Create a cv::Mat container to copy the data to
         cv::Mat local_mat;
 
         while (!quit) {
 
-            //local_mat = source.cloneFrame(); 
+            //local_mat = source.cloneFrame();
             local_mat = source.clone();
 
             // We are done cloning the frame out of shmem, tell sink it can
             // proceed
             source.post();
-            
+
             cv::imshow(name, local_mat);
             cv::waitKey(1);
             source.wait();

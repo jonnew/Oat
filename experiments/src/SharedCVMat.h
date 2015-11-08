@@ -2,7 +2,7 @@
 //* File:   SharedCVMat.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -31,27 +31,32 @@ namespace bip = boost::interprocess;
 
 // Class containing handle to server process's address of matrix data
 class SharedCVMat : public SharedObject{
-    
-    using handle_t = bip::managed_shared_memory::handle_t;
-    
-public :
-    
-    SharedCVMat() : SharedObject() { }
 
-    cv::Size size() const { return size_; }
+    using handle_t = bip::managed_shared_memory::handle_t;
+
+public :
+
+    SharedCVMat() : SharedObject()
+    {
+        // Nothing
+    }
+
+    cv::Size size() const { return cv::Size(rows_, cols_); }
     int type() const { return type_; }
     size_t step() const {return step_; }
-    
-    void setParameters(const handle_t data, const cv::Size size, const int type) { 
+
+    void setParameters(const handle_t data, const cv::Size &size, const int type) {
         data_ = data;
-        size_ = size;
+        rows_ = size.width;
+        cols_ = size.height;
         type_ = type;
     }
-    
+
 private :
-    
+
     // Matrix metadata and handle to data
-    cv::Size size_ {0, 0}; // Should be atomic...
+    std::atomic<int> rows_ {0};
+    std::atomic<int> cols_ {0};
     std::atomic<int> type_ {0};
     std::atomic<size_t> step_ {0};
 

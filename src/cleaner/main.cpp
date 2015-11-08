@@ -2,7 +2,7 @@
 //* File:   oat clean main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
-        
+
         po::options_description config("CONFIGURATION");
         options.add_options()
                 ("quiet,q", "Quiet mode. Prevent output text.")
@@ -60,16 +60,16 @@ int main(int argc, char *argv[]) {
                 ("names", po::value< std::vector<std::string> >(),
                 "The names of the shared memory segments to remove.")
                 ;
-        
+
         po::positional_options_description positional_options;
         positional_options.add("names", -1);
-         
+
         po::options_description all_options("ALL");
         all_options.add(options).add(config).add(hidden);
 
         po::options_description visible_options("OPTIONS");
         visible_options.add(options).add(config);
-        
+
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
                 .options(all_options)
@@ -87,8 +87,8 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("version")) {
             std::cout << "Oat Cleaner version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
@@ -100,13 +100,13 @@ int main(int argc, char *argv[]) {
             std::cout << "Error: at least a single NAME must be specified. Exiting.\n";
             return -1;
         }
-        
-        if (variable_map.count("quiet")) 
+
+        if (variable_map.count("quiet"))
             quiet = true;
-        
-        if (variable_map.count("legacy")) 
+
+        if (variable_map.count("legacy"))
             legacy = true;
-        
+
         names = variable_map["names"].as< std::vector<std::string> >();
 
     } catch (std::exception& e) {
@@ -117,22 +117,29 @@ int main(int argc, char *argv[]) {
     }
 
     for (auto &name : names) {
-        
+
         // All servers (MatServer and SMServer) append "_sh_mem" to user-provided
         // stream names when created a named shmem block
-        if (legacy)
-            name = name + "_sh_mem";
 
         if (!quiet)
-            std::cout << "Trying to removing \'" << name << "\' from shared memory...";
+           std::cout << "Trying to removing \'" << name << "\' from shared memory...";
 
-        if (bip::shared_memory_object::remove(name.c_str())) {
-            if (!quiet)
+        if (legacy) {
+
+            if (bip::shared_memory_object::remove((name + "_sh_mem").c_str())
+                && !quiet)
                 std::cout << "success.\n";
-        } else {
-            if (!quiet) {
+            else if (!quiet)
                 std::cout << "not found. are you sure this block exists?.\n";
-            }
+
+        } else {
+
+            if (bip::shared_memory_object::remove((name + "_node").c_str()) &&
+                bip::shared_memory_object::remove((name + "_obj").c_str()) &&
+                !quiet)
+                    std::cout << "success.\n";
+            else if (!quiet)
+                    std::cout << "not found. are you sure this block exists?.\n";
         }
     }
 

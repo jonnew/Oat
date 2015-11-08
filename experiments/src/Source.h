@@ -36,23 +36,23 @@ public:
     SourceBase();
     virtual ~SourceBase();
 
-    virtual void bind(const std::string &address);
-    virtual void connect();
+    virtual void connect(const std::string &address);
     void wait();
     void post();
 
 protected:
 
-    shmem_t shmem_;
+    shmem_t node_shmem_, obj_shmem_;
     T * sh_object_ {nullptr};
     Node * node_ {nullptr};
-    std::string address_;
+    std::string node_address_, obj_address_;
     size_t this_index_;
-    bool bound_;
+    bool bound_ {false};
+    bool connected_ {false};
 
 private:
 
-    bool must_post_ {false};   
+    bool must_post_ {false};
 };
 
 template<typename T>
@@ -72,59 +72,61 @@ SourceBase<T>::~SourceBase() {
     // attached to the node, deallocate the shmem
     if (bound_ &&
         node_->decrementSourceRefCount() == 0 &&
-        node_->sink_state() != oat::SinkState::BOUND) {
-
-        bip::shared_memory_object::remove(address_.c_str());
+        node_->sink_state() != SinkState::BOUND &&
+        bip::shared_memory_object::remove(node_address_.c_str()) &&
+        bip::shared_memory_object::remove(obj_address_.c_str())) {
 
 #ifndef NDEBUG
-        std::cout << "Shared memory \'" + address_ + "\' was deallocated.\n";
+        std::cout << "Shared memory at \'" + node_address_ +
+                "\' and \'" + obj_address_ + "\' was deallocated.\n";
 #endif
     }
 }
 
 template<typename T>
-void SourceBase<T>::bind(const std::string& address) {
+void SourceBase<T>::connect(const std::string &address) {
 
     // Addresses for this block of shared memory
-    address_ = address;
-    std::string node_address = address_ + "/shmgr";
-    std::string obj_address = address_ + "/shobj";
+    node_address_ = address + "_node";
+    obj_address_ = address + "_obj";
 
     // Define shared memory
-    shmem_ = bip::managed_shared_memory(
+    // TODO: find_or_construct() will segfault if I don't provide a bit of
+    //       extra space here (1024) and I don't know why
+    node_shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
-            address.c_str(),
-            sizeof(oat::Node) + sizeof(T));
-    //1024 + 
+            node_address_.c_str(),
+            1024 + sizeof(Node));
 
     // Facilitates synchronized access to shmem
-    node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
-
-    // Find an existing shared object or construct one with default parameters
-    sh_object_ = shmem_.find_or_construct<T>(obj_address.c_str())();
+    node_ = node_shmem_.find_or_construct<Node>(typeid(Node).name())();
 
     // Let the node know this source is attached and retrieve *this's index
     this_index_ = node_->incrementSourceRefCount() - 1;
-    
     bound_ = true;
-}
 
-template<typename T>
-void SourceBase<T>::connect() {
-    
-   // TODO: Inefficient?
-    if (!bound_)
-        throw("Source must be bound before call connect() is called.");
-
-    if (node_->sink_state() != oat::SinkState::BOUND)
+    // Wait for the SINK to bind and construct the shared object
+    if (node_->sink_state() != SinkState::BOUND)
         wait();
+
+    // Find an existing shared object constructed by the SINK
+    obj_shmem_ = bip::managed_shared_memory(bip::open_only, obj_address_.c_str());
+    std::pair<T *,std::size_t> temp = obj_shmem_.find<T>(typeid(T).name());
+    sh_object_ = temp.first;
+
+    // Only occurs when the name of the shared object does not match typeid(T).name()
+    if (sh_object_ == nullptr)
+        throw("A Source<T> can only connect to a node bound by a Sink<T>.");
+
+    connected_ = true;
 }
+
 
 template<typename T>
 void SourceBase<T>::wait() {
-    
+
     // TODO: Inefficient?
-    if (!bound_) 
+    if (!bound_)
         throw("Source must be bound before call wait() is called.");
 
     boost::system_time timeout = boost::get_system_time() + msec_t(10);
@@ -136,7 +138,7 @@ void SourceBase<T>::wait() {
         // Loops checking if wait has been released
         timeout = boost::get_system_time() + msec_t(10);
     }
-    
+
     // Before *this is destroyed, we must post() to prevent deadlock
     must_post_ = true;
 }
@@ -146,12 +148,12 @@ void SourceBase<T>::post() {
 
     // TODO: Inefficient?
     if (!bound_)
-        throw("Source must be bound before call post() is called.");
-    
+        throw("Source must be connected before call post() is called.");
+
     if( node_->incrementSourceReadCount() >= node_->source_ref_count()) {
         node_->write_barrier.post();
     }
-    
+
     // Post has been performed, so its not needed *this is destroyed
     must_post_ = false;
 }
@@ -159,12 +161,35 @@ void SourceBase<T>::post() {
 // Specializations...
 
 template<typename T>
-class Source : public SourceBase<T> { 
+class Source : public SourceBase<T> {
+
+    using SourceBase<T>::sh_object_;
+    using SourceBase<T>::connected_;
 
 public:
-    T& retrieve() { return *SourceBase<T>::sh_object_; };
-    T clone() const  { return *SourceBase<T>::sh_object_; }
+    T * retrieve();
+    T clone() const;
 };
+
+template<typename T>
+T * Source<T>::retrieve() {
+
+    //assert(SinkBase<T>::bound_);
+    if (!connected_)
+        throw (std::runtime_error("Source must be connected before shared object is retrieved."));
+
+    return sh_object_;
+}
+
+template<typename T>
+T Source<T>::clone() const {
+
+    //assert(SinkBase<T>::bound_);
+    if (!connected_)
+        throw (std::runtime_error("Source must be connected before shared object is cloned."));
+
+    return *sh_object_;
+}
 
 // 1. SharedCVMat
 
@@ -172,9 +197,8 @@ template<>
 class Source<SharedCVMat> : public SourceBase<SharedCVMat> {
 
 public:
-    
-    void bind(const std::string &address, const size_t bytes);
-    void connect() override;
+
+    void connect(const std::string &address) override;
 
     //virtual SharedCVMat& retrieve() override = delete;
     inline cv::Mat retrieve() const { return frame_; }
@@ -185,46 +209,39 @@ private :
 
 };
 
-void Source<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
-    
+void Source<SharedCVMat>::connect(const std::string &address) {
+
     // Addresses for this block of shared memory
-    address_ = address;
-    std::string node_address = address_ + "/shmgr";
-    std::string obj_address = address_ + "/shobj";
+    node_address_ = address + "_node";
+    obj_address_ = address + "_obj";
 
     // Define shared memory
-    shmem_ = bip::managed_shared_memory(
+    node_shmem_ = bip::managed_shared_memory(
             bip::open_or_create,
-            address.c_str(),
-            1024 + bytes + sizeof(oat::Node) + sizeof(SharedCVMat));
+            node_address_.c_str(),
+            1024 + sizeof(Node));
 
     // Facilitates synchronized access to shmem
-    node_ = shmem_.find_or_construct<oat::Node>(node_address.c_str())();
-
-    // Find an existing shared object or construct one with default parameters
-    sh_object_ = shmem_.find_or_construct<SharedCVMat>(obj_address.c_str())();
+    node_ = node_shmem_.find_or_construct<Node>(typeid(Node).name())();
 
     // Let the node know this source is attached and get our index
     this_index_ = node_->incrementSourceRefCount() - 1;
     bound_ = true;
-}
 
-void Source<SharedCVMat>::connect() {
-    
-    // TODO: Inefficient?
-    if (!bound_)
-        throw("Source must be bound before call connect() is called.");
-    
     // Wait for the SINK to bind the node and provide matrix
     // header info.
-    if (node_->sink_state() != oat::SinkState::BOUND)
+    if (node_->sink_state() != SinkState::BOUND)
         wait();
+
+        // Find an existing shared object constructed by the SINK
+    obj_shmem_ = bip::managed_shared_memory(bip::open_only, obj_address_.c_str());
+    std::pair<SharedCVMat *,std::size_t> temp = obj_shmem_.find<SharedCVMat>(typeid(SharedCVMat).name());
+    sh_object_ = temp.first;
 
     // Generate cv::Mat header using info in shmem segment
     frame_ = cv::Mat(sh_object_->size(),
                      sh_object_->type(),
-                     shmem_.get_address_from_handle(sh_object_->data()));
-    
+                     obj_shmem_.get_address_from_handle(sh_object_->data()));
 }
 
 } // namespace oat

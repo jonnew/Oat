@@ -2,7 +2,7 @@
 //* File:   main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ void sigHandler(int s) {
  * server side program should be executed first to load data into shmem.
  */
 int main(int argc, char *argv[]) {
-    
+
     std::signal(SIGINT, sigHandler);
 
     char const * file;
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Usage: oat-exp-server <path to image>\n";
         return -1;
     }
-    
+
     // Image to send through shmem
     std::string file_name {file};
 
@@ -73,39 +73,36 @@ int main(int argc, char *argv[]) {
 
         // How many bytes per matrix?
         cv::Size mat_dims(ext_mat.cols, ext_mat.rows);
-        
+
         // Create sink to send matrix into
         oat::Sink<oat::SharedCVMat> sink;
         sink.bind("exp", 10e6);
-        
+
         cv::Mat shared_mat = sink.retrieve(mat_dims, ext_mat.type());
-        
-        oat::Sink<int> sink1; 
-        sink1.bind("test");
 
         uint64_t angle = 0;
         cv::Point2f src_center(ext_mat.cols/2.0F, ext_mat.rows/2.0F);
         cv::Mat rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
         while(!quit) {
-            
+
             tick = Clock::now();
 
             Milliseconds duration =
                 std::chrono::duration_cast<Milliseconds>(tick - tock);
-            
+
             // Do transform
             cv::warpAffine(ext_mat, shared_mat, rot_mat, ext_mat.size());
             tock = Clock::now();
-            
+
             // Tell sources there is new data
             sink.post();
-            
+
             // Get new rotation matrix
             rot_mat = cv::getRotationMatrix2D(src_center, ++angle, 1.0);
- 
+
             std::cout << "Loop duration (ms): " << duration.count() << "\r";
             std::cout.flush();
-            
+
             // Wait for sources to finish reading
             sink.wait();
         }
@@ -115,7 +112,7 @@ int main(int argc, char *argv[]) {
         std::cerr << ex.what();
         return -1;
     }
-    
+
     return 0;
 }
 

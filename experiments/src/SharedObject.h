@@ -23,21 +23,17 @@
 #include <atomic>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
+#include "ForwardsDecl.h"
+
 namespace oat {
-namespace bip = boost::interprocess;
-/**
- * All datatypes that will be passed through shared memory
- * must implement this ABC.
- */
+
 class SharedObject {
 
-    using handle_t = bip::managed_shared_memory::handle_t;
-    
 public :
 
     SharedObject() { };
 
-    SharedObject(handle_t data) : //size_t bytes, 
+    SharedObject(handle_t data) : //size_t bytes,
       //bytes_(bytes)
       data_(data)
     {
@@ -45,9 +41,6 @@ public :
     }
 
     virtual ~SharedObject() = 0;
-    
-    //template<typename... Ts>
-    //virtual void setParameters(Ts...) = 0;
 
     // This data handle is a way to pass a pointer to a mat data structure
     // through shared memory. This is important, because clients can construct
@@ -56,15 +49,11 @@ public :
     // same data block for cv::Mat's data field, which is very efficient. Client
     // side constness of cv::Mat ensures copy on write behavior to prevent data
     // corruption.
-    //size_t bytes() const { return bytes_; }
     handle_t data() const { return data_; }
-    
+
 protected :
 
-    // Number of bytes to read and IP compatable address to read them 
-    //std::atomic<size_t> bytes_ {0};
     std::atomic<handle_t> data_;
-
 };
 
 SharedObject::~SharedObject() { };

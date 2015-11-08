@@ -186,7 +186,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-
     // Create component
     std::shared_ptr<PositionFilter> filter;
     

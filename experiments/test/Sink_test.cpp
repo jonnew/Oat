@@ -28,12 +28,12 @@
 
 SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 
-    GIVEN ("Two sinks") {
+    GIVEN ("Two Sink<int>'s") {
 
         std::string addr {"test"};
         oat::Sink<int> sink1;
         oat::Sink<int> sink2;
-        
+
         //TODO: Define stream operators for Nodes, Sources, and Sinks
         //CAPTURE(sink1);
         //CAPTURE(sink2);
@@ -52,8 +52,8 @@ SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 }
 
 SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
-    
-    GIVEN ("A single sink") {
+
+    GIVEN ("A single Sink<int>") {
 
         oat::Sink<int> sink;
         std::string addr {"test"};
@@ -66,7 +66,7 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
                 );
             }
         }
-        
+
         WHEN ("When the sink calls post() before binding a segment") {
 
             THEN ("The the sink shall throw") {
@@ -75,9 +75,9 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
                 );
             }
         }
-        
+
         WHEN ("When the sink calls wait() after binding a segment") {
-            
+
             sink.bind(addr);
 
             THEN ("The the sink shall not throw") {
@@ -86,11 +86,11 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
                 );
             }
         }
-        
+
         WHEN ("When the sink calls post() after binding a segment") {
 
             sink.bind(addr);
-            
+
             THEN ("The the sink shall not throw") {
                 REQUIRE_NOTHROW(
                     sink.post();
@@ -100,37 +100,37 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
     }
 }
 
-SCENARIO ("Bound sinks can retrieve and clone shared objects.", "[Sink]") {
-    
-    GIVEN ("A single sink and an integer to be shared") {
+SCENARIO ("Bound sinks can retrieve shared objects to mutate them.", "[Sink]") {
 
-        int shared_value;
+    GIVEN ("A single Sink<int> and a shared *int") {
+
+        int * shared;
         oat::Sink<int> sink;
         std::string addr {"test"};
-        
+
         WHEN ("When the sink calls retrieve() before binding a segment") {
 
             THEN ("The the sink shall throw") {
-                REQUIRE_THROWS( shared_value = sink.retrieve(); );
+                REQUIRE_THROWS( shared = sink.retrieve(); );
             }
         }
 
         WHEN ("When the sink calls retrieve() after binding a segment") {
 
-            sink.bind(addr); 
-            
-            THEN ("The the sink returns a mutable reference to the shared integer") {
-                
-                INFO ("Start with shared_value uninitialized")
-                CAPTURE(shared_value);
+            sink.bind(addr);
 
-                REQUIRE_NOTHROW( shared_value = sink.retrieve(); );
+            THEN ("The the sink returns a pointer to mutate the shared integer") {
 
-                INFO ("Set shared_value to 1") 
-                shared_value = 1;
-                CAPTURE(shared_value);
-                
-                REQUIRE( shared_value == sink.retrieve() );
+                INFO ("Start with shared int uninitialized")
+                CAPTURE(*shared);
+
+                REQUIRE_NOTHROW( shared = sink.retrieve(); );
+
+                INFO ("Set shared int to 1")
+                *shared = 1;
+                CAPTURE(*shared);
+
+                REQUIRE( *shared == *sink.retrieve() );
             }
         }
     }
@@ -138,12 +138,12 @@ SCENARIO ("Bound sinks can retrieve and clone shared objects.", "[Sink]") {
 
 
 SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.", "[Sink, SharedCVMat]") {
-    
+
     GIVEN ("A single Sink<SharedCVMat>") {
 
         oat::Sink<oat::SharedCVMat> sink;
         std::string addr {"test"};
-        cv::Mat mat; 
+        cv::Mat mat;
         cv::Size dims {100, 100};
         int type {1};
 
@@ -155,7 +155,7 @@ SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.
                 );
             }
         }
-        
+
         WHEN ("When the sink calls post() before binding a segment") {
 
             THEN ("The the sink shall throw") {
@@ -164,7 +164,7 @@ SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.
                 );
             }
         }
-        
+
         WHEN ("When the sink calls retrieve() before binding a segment") {
 
             THEN ("The the sink shall throw") {
