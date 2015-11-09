@@ -56,13 +56,13 @@ private:
 };
 
 template<typename T>
-SourceBase<T>::SourceBase()
+inline SourceBase<T>::SourceBase()
 {
     // Nothing
 }
 
 template<typename T>
-SourceBase<T>::~SourceBase() {
+inline SourceBase<T>::~SourceBase() {
 
     // Ensure that no server is deadlocked
     if (must_post_)
@@ -84,7 +84,7 @@ SourceBase<T>::~SourceBase() {
 }
 
 template<typename T>
-void SourceBase<T>::connect(const std::string &address) {
+inline void SourceBase<T>::connect(const std::string &address) {
 
     // Addresses for this block of shared memory
     node_address_ = address + "_node";
@@ -129,7 +129,7 @@ void SourceBase<T>::connect(const std::string &address) {
 
 
 template<typename T>
-SinkState SourceBase<T>::wait() {
+inline SinkState SourceBase<T>::wait() {
 
     // TODO: Inefficient?
     if (!bound_)
@@ -152,7 +152,7 @@ SinkState SourceBase<T>::wait() {
 }
 
 template<typename T>
-void SourceBase<T>::post() {
+inline void SourceBase<T>::post() {
 
     // TODO: Inefficient?
     if (!bound_)
@@ -180,7 +180,7 @@ public:
 };
 
 template<typename T>
-T * Source<T>::retrieve() {
+inline T * Source<T>::retrieve() {
 
     //assert(SinkBase<T>::bound_);
     if (!connected_)
@@ -190,7 +190,7 @@ T * Source<T>::retrieve() {
 }
 
 template<typename T>
-T Source<T>::clone() const {
+inline T Source<T>::clone() const {
 
     //assert(SinkBase<T>::bound_);
     if (!connected_)
@@ -217,7 +217,7 @@ private :
 
 };
 
-void Source<SharedCVMat>::connect(const std::string &address) {
+inline void Source<SharedCVMat>::connect(const std::string &address) {
 
     // Addresses for this block of shared memory
     node_address_ = address + "_node";

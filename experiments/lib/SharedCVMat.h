@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef SHAREDCVMAT_H
-#define	SHAREDCVMAT_H
+#ifndef OAT_SHAREDCVMAT_H
+#define	OAT_SHAREDCVMAT_H
 
 #include <atomic>
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -64,5 +64,5 @@ private :
 
 }
 
-#endif	/* SHAREDCVMAT_H */
+#endif	/* OAT_SHAREDCVMAT_H */
 

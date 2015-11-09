@@ -54,13 +54,13 @@ protected:
 };
 
 template<typename T>
-SinkBase<T>::SinkBase()
+inline SinkBase<T>::SinkBase()
 {
     // Nothing
 }
 
 template<typename T>
-SinkBase<T>::~SinkBase() {
+inline SinkBase<T>::~SinkBase() {
 
     // Detach this server from shared mat header
     if (bound_) {
@@ -80,7 +80,7 @@ SinkBase<T>::~SinkBase() {
 }
 
 template<typename T>
-void SinkBase<T>::wait() {
+inline void SinkBase<T>::wait() {
 
     // TODO: Inefficient?
     if (!bound_)
@@ -98,7 +98,7 @@ void SinkBase<T>::wait() {
 }
 
 template<typename T>
-void SinkBase<T>::post() {
+inline void SinkBase<T>::post() {
 
     // TODO: Inefficient?
     if (!bound_)
@@ -138,7 +138,7 @@ public:
 };
 
 template<typename T>
-void Sink<T>::bind(const std::string &address) {
+inline void Sink<T>::bind(const std::string &address) {
 
     // Addresses for this block of shared memory
     node_address_ = address + "_node";
@@ -177,7 +177,7 @@ void Sink<T>::bind(const std::string &address) {
 }
 
 template<typename T>
-T * Sink<T>::retrieve() {
+inline T * Sink<T>::retrieve() {
 
     //assert(SinkBase<T>::bound_);
     if (!bound_)
@@ -196,7 +196,7 @@ public:
     cv::Mat retrieve(const cv::Size dims, const int type);
 };
 
-void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
+inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
 
     // Addresses for this block of shared memory
     node_address_ = address + "_node";
@@ -233,7 +233,7 @@ void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
     }
 }
 
-cv::Mat Sink<SharedCVMat>::retrieve(const cv::Size dims, const int type) {
+inline cv::Mat Sink<SharedCVMat>::retrieve(const cv::Size dims, const int type) {
 
     // Make sure that the SINK is bound to a shared memory segment
     //assert(bound_);

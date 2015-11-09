@@ -17,16 +17,16 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <opencv2/opencv.hpp>
-
 #include <chrono>
 #include <csignal>
 #include <exception>
 
-#include "SharedCVMat.h"
-#include "Node.h"
-#include "Sink.h"
-#include "SharedCVMat.h"
+#include <opencv2/opencv.hpp>
+
+#include "../lib/SharedCVMat.h"
+#include "../lib/Node.h"
+#include "../lib/Sink.h"
+#include "../lib/SharedCVMat.h"
 
 using Clock = std::chrono::high_resolution_clock;
 using Milliseconds = std::chrono::milliseconds;

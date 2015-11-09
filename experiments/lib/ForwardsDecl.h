@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   SharedObject.h
+//* File:   ForwardsDecl.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,45 +17,23 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OAT_SHAREDOBJECT_H
-#define	OAT_SHAREDOBJECT_H
+#ifndef OAT_FORWARDSDECL_H
+#define	OAT_FORWARDSDECL_H
 
-#include <atomic>
+#include <boost/interprocess/interprocess_fwd.hpp>
+
+//TODO: Required not sure why
 #include <boost/interprocess/managed_shared_memory.hpp>
-
-#include "ForwardsDecl.h"
 
 namespace oat {
 
-class SharedObject {
+namespace bip = boost::interprocess;
 
-public :
+using shmem_t = bip::managed_shared_memory;
+using handle_t = bip::managed_shared_memory::handle_t;
+using msec_t = boost::posix_time::milliseconds;
 
-    SharedObject() { };
+} // namespace oat
 
-    SharedObject(handle_t data) : //size_t bytes,
-      //bytes_(bytes)
-      data_(data)
-    {
-        // Nothing
-    }
+#endif	/* OAT_FORWARDSDECL_H */
 
-    virtual ~SharedObject() = 0;
-
-    // This data handle is a way to pass a pointer to a data structure
-    // through shared memory. Clients can construct cotainers that use data
-    // pointed by a pointer from this handle. This means that
-    // both client and server, existing in _different processes_, will have direct
-    // access to this data structure
-    handle_t data() const { return data_; }
-
-protected :
-
-    std::atomic<handle_t> data_;
-};
-
-SharedObject::~SharedObject() { };
-
-} // namepace oat
-
-#endif	/* OAT_SHAREDOBJECT_H */

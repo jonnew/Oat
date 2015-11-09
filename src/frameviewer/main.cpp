@@ -2,7 +2,7 @@
 //* File:   oat view main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -42,6 +42,8 @@ void sigHandler(int s) {
 }
 
 void run(std::shared_ptr<Viewer>& viewer) {
+
+    viewer->connectToNode();
 
     while (!quit && !source_eof) {
         source_eof = viewer->showImage();
@@ -143,7 +145,7 @@ int main(int argc, char *argv[]) {
 
     // Create component
     std::shared_ptr<Viewer> viewer;
-    
+
     // Make the viewer
     // TODO: use a method to create snapshot file name instead of the constructor
     //       This will allow you to get rid of these extra try-catch blocks
@@ -152,13 +154,13 @@ int main(int argc, char *argv[]) {
     } catch (const std::runtime_error& ex) {
         std::cerr << oat::Error(ex.what())
                   << "\n";
-        
+
         // Exit failure
         return -1;
-        
+
     } catch (...) {
         std::cerr << oat::Error("Unknown exception.\n");
-        
+
         // Exit failure
         return -1;
     }
@@ -166,30 +168,30 @@ int main(int argc, char *argv[]) {
     try {
 
         // Tell user
-        std::cout << oat::whoMessage(viewer->get_name(),
+        std::cout << oat::whoMessage(viewer->name(),
                   "Listening to source " + oat::sourceText(source) + ".\n")
-                  << oat::whoMessage(viewer->get_name(),
+                  << oat::whoMessage(viewer->name(),
                   "Press 's' on the viewer window to take a snapshot.\n")
-                  << oat::whoMessage(viewer->get_name(),
+                  << oat::whoMessage(viewer->name(),
                   "Press CTRL+C to exit.\n");
-        
+
         // Infinite loop until ctrl-c or end of stream signal
         run(viewer);
 
         // Tell user
-        std::cout << oat::whoMessage(viewer->get_name(), "Exiting.\n");
+        std::cout << oat::whoMessage(viewer->name(), "Exiting.\n");
 
         // Exit
         return 0;
 
     } catch (const std::runtime_error& ex) {
-        std::cerr << oat::whoError(viewer->get_name(), ex.what())
+        std::cerr << oat::whoError(viewer->name(), ex.what())
                   << "\n";
     } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(viewer->get_name(), ex.msg)
+        std::cerr << oat::whoError(viewer->name(), ex.msg)
                   << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(viewer->get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(viewer->name(), "Unknown exception.\n");
     }
 
     // Exit failure

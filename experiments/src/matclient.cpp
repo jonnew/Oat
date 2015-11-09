@@ -17,15 +17,15 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <opencv2/opencv.hpp>
-
 #include <csignal>
 #include <exception>
 
-#include "SharedCVMat.h"
-#include "Node.h"
-#include "Source.h"
-#include "SharedCVMat.h"
+#include <opencv2/opencv.hpp>
+
+#include "../lib/SharedCVMat.h"
+#include "../lib/Node.h"
+#include "../lib/Source.h"
+#include "../lib/SharedCVMat.h"
 
 volatile sig_atomic_t quit = 0;
 

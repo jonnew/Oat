@@ -18,10 +18,10 @@
 //******************************************************************************
 
 #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
-#include "catch.hpp"
-#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
+#include <catch.hpp>
+//#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
-#include "../src/Node.h"
+#include "../lib/Node.h"
 
 SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
 

@@ -134,12 +134,20 @@ int main(int argc, char *argv[]) {
 
         } else {
 
-            if (bip::shared_memory_object::remove((name + "_node").c_str()) &&
-                bip::shared_memory_object::remove((name + "_obj").c_str()) &&
-                !quiet)
-                    std::cout << "success.\n";
-            else if (!quiet)
-                    std::cout << "not found. are you sure this block exists?.\n";
+            bool success {false};
+
+            if (bip::shared_memory_object::remove((name + "_node").c_str())) {
+                std::cout << "\nRemoved " + name + " _node\n";
+                success = true;
+            }
+
+            if (bip::shared_memory_object::remove((name + "_obj").c_str())) {
+                std::cout << "\nRemoved " + name + " _obj\n";
+                success = true;
+            }
+
+            if (!success)
+                std::cout << "not found. are you sure this block exists?.\n";
         }
     }
 

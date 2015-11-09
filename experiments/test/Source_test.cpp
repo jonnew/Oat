@@ -18,14 +18,14 @@
 //******************************************************************************
 
 #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
-#include "catch.hpp"
-#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
+#include <catch.hpp>
+//#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
 #include <string>
 
-#include "../src/Source.h"
-#include "../src/Sink.h"
-#include "../src/SharedCVMat.h"
+#include "../lib/Source.h"
+#include "../lib/Sink.h"
+#include "../lib/SharedCVMat.h"
 
 SCENARIO ("Up to 10 sources can connect a single Node.", "[Source]") {
 

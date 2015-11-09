@@ -2,7 +2,7 @@
 //* File:   FrameViewer.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -24,50 +24,54 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/MatClient.h"
+//#include "../../lib/shmem/MatClient.h"
+#include "../../experiments/lib/Source.h"
+#include "../../experiments/lib/SharedCVMat.h"
 
 /**
  * View a frame stream on the monitor.
  */
 class Viewer {
-    
+
     using Clock = std::chrono::high_resolution_clock;
     using Milliseconds = std::chrono::milliseconds;
-    
+
 public:
-    
+
     /**
      * View a frame stream on the monitor.
      */
-    Viewer(const std::string& frame_source_name, 
+    Viewer(const std::string& frame_source_name,
            const std::string& save_path);
 
+    void connectToNode(void);
     bool showImage(void);
-    bool showImage(std::string title);
 
     // Accessors
-    std::string get_name(void) const { return name; }
-    
+    inline std::string name() const { return name_; }
+
 private:
 
     // Viewer name
-    std::string name;
+    std::string name_;
 
     // Image data
-    cv::Mat current_frame;
+    cv::Mat current_frame_;
 
     // Frame SOURCE to get frames to display
-    oat::MatClient frame_source;
-    
+    std::string frame_source_name_;
+    oat::SinkState sink_state_;
+    oat::Source<oat::SharedCVMat> frame_source_;
+
     // Minimum viewer refresh period
-    Clock::time_point tick, tock;
-    const Milliseconds min_update_period {33};
-    
+    Clock::time_point tick_, tock_;
+    const Milliseconds min_update_period_ {33};
+
     // Used to request a snapshot of the current image, saved to disk
     std::string snapshot_path_;
-    std::string file_name;
-    std::vector<int> compression_params;
-    const int compression_level {9};
+    std::string file_name_;
+    std::vector<int> compression_params_;
+    const int compression_level_ {9};
 
     /**
      * Make the snapshot file path using the requested save folder

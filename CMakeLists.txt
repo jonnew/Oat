@@ -97,7 +97,10 @@ include_directories (${CPPTOML_INCLUDE_DIR})
 add_subdirectory (${EXT_PROJECTS_DIR}/rapidjson)
 include_directories (${RAPIDJSON_INCLUDE_DIR})
 
-# Oat libshmem
+# Include libshmem (TODO: maybe make into external project like above...)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/experiments/lib/)
+
+# TODO: Deprecated, remove on completion of refactor
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem "${CMAKE_CURRENT_BINARY_DIR}/shmem")
 
 # Oat components

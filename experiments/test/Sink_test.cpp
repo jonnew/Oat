@@ -18,13 +18,13 @@
 //******************************************************************************
 
 #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
-#include "catch.hpp"
-#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
+#include <catch.hpp>
+//#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
 #include <string>
 
-#include "../src/Sink.h"
-#include "../src/SharedCVMat.h"
+#include "../lib/Sink.h"
+#include "../lib/SharedCVMat.h"
 
 SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 

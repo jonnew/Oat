@@ -25,8 +25,8 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "../../lib/shmem/MatClient.h"
 #include "../../lib/utility/IOFormat.h"
+#include "../../experiments/lib/Source.h"
 
 #include "Viewer.h"
 
@@ -35,28 +35,28 @@ using namespace boost::interprocess;
 
 Viewer::Viewer(const std::string& frame_source_name,
                const std::string& snapshot_path) :
-  name("viewer[" + frame_source_name + "]")
-, frame_source(frame_source_name)
+  name_("viewer[" + frame_source_name + "]")
+, frame_source_name_(frame_source_name)
 , snapshot_path_(snapshot_path)  {
 
     // Initialize GUI update timers
-    tick = Clock::now();
-    tock = Clock::now();
+    tick_ = Clock::now();
+    tock_ = Clock::now();
 
     // Name *this according the the source name and the client number
     // to keep it unique
-    name = name + std::to_string(frame_source.get_number_of_clients());
+    //name_ = name_ + std::to_string(frame_source_..get_number_of_clients());
 
 #ifdef OAT_USE_OPENGL
     try {
-        cv::namedWindow(name, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
+        cv::namedWindow(name_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
     } catch (cv::Exception& ex) {
-        oat::whoWarn(name, "OpenCV not compiled with OpenGL support. "
+        oat::whoWarn(name_, "OpenCV not compiled with OpenGL support. "
                            "Falling back to OpenCV's display driver.\n");
-        cv::namedWindow(name, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+        cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
     }
 #else
-    cv::namedWindow(name, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+    cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
 #endif
 
     // Snapshot file saving
@@ -67,53 +67,52 @@ Viewer::Viewer(const std::string& frame_source_name,
                snapshot_path_ + ", does not exist.\n"));
     }
 
-    file_name = path.stem().string();
-    if (file_name.empty())
-        file_name = frame_source_name;
+    file_name_ = path.stem().string();
+    if (file_name_.empty())
+        file_name_ = frame_source_name;
 
     // Snapshot encoding
-    compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
-    compression_params.push_back(compression_level);
+    compression_params_.push_back(CV_IMWRITE_PNG_COMPRESSION);
+    compression_params_.push_back(compression_level_);
+}
+
+void Viewer::connectToNode() {
+
+    frame_source_.connect(name_);
 }
 
 bool Viewer::showImage() {
 
-    return showImage(name);
-}
+    // Wait for sink to write to node
+    sink_state_ = frame_source_.wait();
 
-bool Viewer::showImage(const std::string title) {
+    // Clone the shared frame
+    current_frame_ = frame_source_.clone();
 
-    // If we are able to aquire the current frame,
-    // and the minimum update period has passed, show it.
-    if (frame_source.getSharedMat(current_frame)) {
+    // Tell sink it can continue
+    frame_source_.post();
 
-        tick = Clock::now();
+    // Get current time
+    tick_ = Clock::now();
 
-        Milliseconds duration =
-            std::chrono::duration_cast<Milliseconds>(tick - tock);
+    // Figure out the time since we last updated the viewer
+    Milliseconds duration = std::chrono::duration_cast<Milliseconds>(tick_ - tock_);
 
-        if (duration > min_update_period) {
+    // If the minimum update period has passed, show frame.
+    if (duration > min_update_period_) {
 
-            try {
+        cv::imshow(name_, current_frame_);
+        tock_ = Clock::now();
 
-                cv::imshow(title, current_frame);
-                tock = Clock::now();
+        char command = cv::waitKey(1);
 
-                char command = cv::waitKey(1);
-
-                if (command == 's') {
-                    cv::imwrite(makeFileName(), current_frame, compression_params);
-                }
-
-            } catch (cv::Exception& ex) {
-                std::cerr << oat::whoError(name, ex.what()) << "\n";
-            }
+        if (command == 's') {
+            cv::imwrite(makeFileName(), current_frame_, compression_params_);
         }
     }
 
     // If server state is END, return true
-    return (frame_source.getSourceRunState() == oat::SinkState::END);
-
+    return (sink_state_ == oat::SinkState::END);
 }
 
 std::string Viewer::makeFileName() {
@@ -129,7 +128,7 @@ std::string Viewer::makeFileName() {
 
     // Generate file name for this snapshop
     std::string folder = bfs::path(snapshot_path_.c_str()).parent_path().string();
-    std::string frame_fid = folder + "/" + date_now + "_" + file_name + ".png";
+    std::string frame_fid = folder + "/" + date_now + "_" + file_name_ + ".png";
 
     // Check for existence
     int i = 0;

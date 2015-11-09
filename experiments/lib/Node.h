@@ -47,17 +47,19 @@ public:
         source_slots_.reset();
     }
 
+    // Note: functions defined within the class definition are implicitly inline
+    
     // SINK state
-    inline void set_sink_state(SinkState value) { sink_state_ = value; }
-    inline SinkState sink_state(void) const { return sink_state_; }
+    void set_sink_state(SinkState value) { sink_state_ = value; }
+    SinkState sink_state(void) const { return sink_state_; }
 
     // SINK writes (~ sample number)
-    inline uint64_t write_number() const { return write_number_; }
-    inline uint64_t incrementWriteNumber() { return ++write_number_; }
+    uint64_t write_number() const { return write_number_; }
+    uint64_t incrementWriteNumber() { return ++write_number_; }
 
     // SOURCE read counting
-    inline size_t incrementSourceReadCount() { return ++source_read_count_; }
-    inline void resetSourceReadCount() { source_read_count_ = 0; }
+    size_t incrementSourceReadCount() { return ++source_read_count_; }
+    void resetSourceReadCount() { source_read_count_ = 0; }
 
     // SOURCE slots
     static constexpr size_t NUM_SLOTS {10};
@@ -96,7 +98,7 @@ public:
         return source_ref_count_;
     }
 
-    inline size_t source_ref_count(void) const { return source_ref_count_; }
+    size_t source_ref_count(void) const { return source_ref_count_; }
 
     // Synchronization constructs
     // write _always_ occurs before read. By starting at 1, the writer is not
