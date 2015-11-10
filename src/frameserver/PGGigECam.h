@@ -45,21 +45,26 @@ private:
 
     // GigE Camera configuration
     static constexpr int64_t min_index {0};
-    int64_t max_index;
+    int64_t max_index {0};
     size_t index_;
 
     //cv::Size frame_size, frame_offset;
-    int x_bin, y_bin;
-    float gain_dB, shutter_ms, exposure_EV;
-    bool aquisition_started;
-    bool use_trigger;
-    bool use_software_trigger;
-    bool trigger_polarity;
-    int64_t trigger_mode, trigger_source_pin;
-    int64_t white_bal_red, white_bal_blue;
-    double frames_per_second;
-    bool use_camera_frame_buffer;
-    unsigned int number_transmit_retries;
+    int x_bin {1};
+    int y_bin {1};
+    float gain_dB {0};
+    float shutter_ms {0};
+    float exposure_EV {0};
+    bool aquisition_started {false};
+    bool use_trigger {false};
+    bool use_software_trigger {false};
+    bool trigger_polarity {true};
+    int64_t trigger_mode {14};
+    int64_t trigger_source_pin {0};
+    int64_t white_bal_red {0};
+    int64_t white_bal_blue {0};
+    double frames_per_second {30.0};
+    bool use_camera_frame_buffer {false};
+    unsigned int number_transmit_retries {0};
 
     // GigE Camera interface
     FlyCapture2::GigECamera camera;

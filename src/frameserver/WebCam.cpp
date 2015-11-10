@@ -44,7 +44,7 @@ void WebCam::connectToNode() {
             example_frame.total() * example_frame.elemSize());
 
     cv::Size mat_dims(example_frame.cols, example_frame.rows);
-    current_frame_ = frame_sink_.retrieve(mat_dims, example_frame.type());
+    shared_frame_ = frame_sink_.retrieve(mat_dims, example_frame.type());
 }
 
 bool WebCam::serveFrame() {
@@ -52,16 +52,22 @@ bool WebCam::serveFrame() {
     // START CRITICAL SECTION //
     ////////////////////////////
 
-    *cv_camera_ >> current_frame_;
+    // Wait for sources to read
+    frame_sink_.wait();
+
+    *cv_camera_ >> shared_frame_;
 
     // Crop if necessary
     if (use_roi_)
-        current_frame_ = current_frame_(region_of_interest_);
+        shared_frame_ = shared_frame_(region_of_interest_);
+
+    // Tell sources there is new data
+    frame_sink_.post();
 
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    return current_frame_.empty();
+    return shared_frame_.empty();
 }
 
 void WebCam::configure() { }

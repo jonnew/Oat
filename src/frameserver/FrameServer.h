@@ -76,7 +76,7 @@ protected:
 
     // Cameras have a region of interest to crop images
     bool use_roi_ {false};
-    cv::Rect region_of_interest_;
+    cv::Rect_<size_t> region_of_interest_;
 
     // Frame sink
     const std::string frame_sink_address_;
@@ -84,7 +84,7 @@ protected:
 
     // Currently acquired, shared frame
     bool frame_empty_;
-    cv::Mat current_frame_;
+    cv::Mat shared_frame_;
 };
 
 #endif	/* FRAMESERVER_H */

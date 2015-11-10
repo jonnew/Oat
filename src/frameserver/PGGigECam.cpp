@@ -342,6 +342,7 @@ int PGGigECam::setupFrameRate(double fps, bool is_auto) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
+    return 0;
 }
 
 int PGGigECam::setupShutter(bool is_auto) {
@@ -377,6 +378,8 @@ int PGGigECam::setupShutter(float shutter_ms_in) {
 
     shutter_ms = shutter_ms_in;
     setupShutter(false);
+
+    return 0;
 }
 
 int PGGigECam::setupGain(bool is_auto) {
@@ -413,6 +416,7 @@ int PGGigECam::setupGain(float gain_dB_in) {
     gain_dB = gain_dB_in;
     setupGain(false);
 
+    return 0;
 }
 
 int PGGigECam::setupExposure(bool is_auto) {
@@ -451,6 +455,8 @@ int PGGigECam::setupExposure(float exposure_EV_in) {
 
     exposure_EV = exposure_EV_in;
     setupExposure(false);
+
+    return 0;
 }
 
 int PGGigECam::setupWhiteBalance(bool is_on) {
@@ -492,6 +498,7 @@ int PGGigECam::setupWhiteBalance(int white_bal_red_in, int white_bal_blue_in) {
     white_bal_blue = white_bal_blue_in;
     setupWhiteBalance(true);
 
+    return 0;
 }
 
 /**
@@ -614,6 +621,8 @@ int PGGigECam::setupCameraFrameBuffer() {
             use_camera_frame_buffer = false;
         }
     }
+
+    return 0;
 }
 
 /**
@@ -748,8 +757,6 @@ int PGGigECam::setupTrigger() {
 //}
 
 
-
-
 void PGGigECam::grabImage() {
 
     // Get the image
@@ -776,21 +783,27 @@ void PGGigECam::connectToNode() {
     // Acquisition settings?? I'm worried that I will be off by a sample this way
     grabImage();
 
-    raw_image.Convert(FlyCapture2::PIXEL_FORMAT_BGR, rgb_image.get());
+    FlyCapture2::Image temp;
 
-    size_t bytes = rgb_image->GetDataSize();
-    size_t rows = rgb_image->GetRows();
-    size_t cols = rgb_image->GetCols();
-    size_t stride = rgb_image->GetStride();
+    raw_image.Convert(FlyCapture2::PIXEL_FORMAT_BGR, &temp);
+
+    size_t bytes = temp.GetDataSize();
+    size_t rows = temp.GetRows();
+    size_t cols = temp.GetCols();
+    size_t stride = temp.GetStride();
 
     frame_sink_.bind(frame_sink_address_, bytes);
 
-    cv::Size mat_dims(rows, cols);
-    current_frame_ = frame_sink_.retrieve(mat_dims, CV_8UC3);
+    cv::Size mat_dims(cols, rows);
+    shared_frame_ = frame_sink_.retrieve(mat_dims, CV_8UC3);
 
-    // Reassign the shared block as rbg_image's data buffer
+    // Use the current_frame_.data, which points to a block of shared memory
+    // as rbg_image's data buffer. When changes are made to rgb_image, this is
+    // automatically propagated into shmem and 'convered' into a cv::Mat (although
+    // this 'coversion' is simply filling in appropriate header info, which was accomplished
+    // in the called to frame_sink_.retrieve())
     rgb_image = std::make_unique<FlyCapture2::Image>
-            (rows, cols, stride, current_frame_.data, bytes, FlyCapture2::PIXEL_FORMAT_BGR);
+            (rows, cols, stride, shared_frame_.data, bytes, FlyCapture2::PIXEL_FORMAT_BGR);
 }
 
 bool PGGigECam::serveFrame() {
@@ -808,7 +821,7 @@ bool PGGigECam::serveFrame() {
     // Tell sources there is new data
     frame_sink_.post();
 
-    return true;
+    return false;
 
     ////////////////////////////
     //  END CRITICAL SECTION  //
