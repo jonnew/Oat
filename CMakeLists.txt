@@ -21,7 +21,7 @@ execute_process(
 )
 
 # Internal version list
-set (VERSION_LIST "${GIT_BRANCH}" ".${GIT_COMMIT_HASH}")
+set (VERSION_LIST "${GIT_BRANCH}.${GIT_COMMIT_HASH}")
 
 # Configure a header file to pass CMake settings to source code
 configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")

@@ -2,7 +2,7 @@
 //* File:   FileReader.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -28,33 +28,61 @@
 
 #include "FileReader.h"
 
-FileReader::FileReader(std::string file_name_in, 
-        std::string image_sink_name, 
+FileReader::FileReader(const std::string &image_sink_address,
+        const std::string &file_name_in,
         const double frames_per_second) :
-  FrameServer(image_sink_name)
-, file_name(file_name_in)
-, file_reader(file_name_in)
-, use_roi(false)
-, frame_rate_in_hz(frames_per_second) {
+  FrameServer(image_sink_address)
+, file_name_(file_name_in)
+, file_reader_(file_name_in)
+, frame_rate_in_hz_(frames_per_second)
+{
 
     // Default config
     configure();
-    tick = clock.now();
+    tick_ = clock_.now();
 }
 
-void FileReader::grabFrame(cv::Mat& frame) {
-    
-    file_reader >> frame;
-    
+void FileReader::connectToNode() {
+
+    cv::Mat example_frame;
+    file_reader_ >> example_frame;
+
+    frame_sink_.bind(frame_sink_address_,
+            example_frame.total() * example_frame.elemSize());
+
+    cv::Size mat_dims(example_frame.cols, example_frame.rows);
+    current_frame_ = frame_sink_.retrieve(mat_dims, example_frame.type());
+
+    // Reset the video to the start
+    file_reader_.set(CV_CAP_PROP_POS_AVI_RATIO, 0);
+}
+
+bool FileReader::serveFrame() {
+
+    // START CRITICAL SECTION //
+    ////////////////////////////
+
+    // Wait for sources to read
+    frame_sink_.wait();
+
+    // Acquire frame and
+    file_reader_ >> current_frame_;
+
     // Crop if necessary
-    if (use_roi) {
-        frame = frame(region_of_interest);
-    }
-    
-    auto tock = clock.now();
-    std::this_thread::sleep_for(frame_period_in_sec - (tock - tick));
-    
-    tick = clock.now();
+    if (use_roi_)
+        current_frame_ = current_frame_(region_of_interest_);
+
+    // Tell sources there is new data
+    frame_sink_.post();
+
+    ////////////////////////////
+    //  END CRITICAL SECTION  //
+
+    // Enforce the correct frame rate
+    std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
+    tick_ = clock_.now();
+
+    return current_frame_.empty();
 }
 
 void FileReader::configure() {
@@ -66,21 +94,21 @@ void FileReader::configure(const std::string& config_file, const std::string& co
     // Available options
     std::vector<std::string> options {"frame_rate", "roi"};
 
-    // This will throw cpptoml::parse_exception if a file 
+    // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
     auto config = cpptoml::parse_file(config_file);
 
     // See if a camera configuration was provided
     if (config->contains(config_key)) {
-        
+
         // Get this components configuration table
         auto this_config = config->get_table(config_key);
-        
+
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
-        
+
         // Set the frame rate
-        oat::config::getValue(this_config, "frame_rate", frame_rate_in_hz, 0.0);
+        oat::config::getValue(this_config, "frame_rate", frame_rate_in_hz_, 0.0);
         calculateFramePeriod();
 
         // Set the ROI
@@ -89,48 +117,25 @@ void FileReader::configure(const std::string& config_file, const std::string& co
 
             int64_t val;
             oat::config::getValue(roi, "x_offset", val, (int64_t)0, true);
-            region_of_interest.x = val;
+            region_of_interest_.x = val;
             oat::config::getValue(roi, "y_offset", val, (int64_t)0, true);
-            region_of_interest.y = val;
+            region_of_interest_.y = val;
             oat::config::getValue(roi, "width", val, (int64_t)0, true);
-            region_of_interest.width = val;
+            region_of_interest_.width = val;
             oat::config::getValue(roi, "height", val, (int64_t)0, true);
-            region_of_interest.height = val;
-            use_roi = true;
-
-        } else {
-            use_roi = false;
+            region_of_interest_.height = val;
+            use_roi_ = true;
         }
 
-        // TODO: Exception handling for missing entries
-        // Get calibration info
-        // TODO: use standard TOML format for these matracies instead 
-        // of the secondary YML config file
-        std::string calibration_file;
-        if (oat::config::getValue(this_config, "calibration_file", calibration_file)) {
-
-            cv::FileStorage fs;
-            fs.open(calibration_file, cv::FileStorage::READ);
-
-            if (!fs.isOpened()) {
-                throw (std::runtime_error("Failed to open calibration file " + calibration_file));
-            }
-
-            fs["calibration_valid"] >> undistort_image;
-            fs["camera_matrix"] >> camera_matrix;
-            fs["distortion_coefficients"] >> distortion_coefficients;
-
-            fs.release();
-        }
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
 
 void FileReader::calculateFramePeriod() {
-    
-    std::chrono::duration<double> frame_period {1.0 / frame_rate_in_hz};
+
+    std::chrono::duration<double> frame_period {1.0 / frame_rate_in_hz_};
 
     // Automatic conversion
-    frame_period_in_sec = frame_period;
+    frame_period_in_sec_ = frame_period;
 }

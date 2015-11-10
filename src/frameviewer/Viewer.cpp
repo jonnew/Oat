@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   FrameViewer.cpp
+//* File:   Viewer.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -33,19 +33,20 @@
 namespace bfs = boost::filesystem;
 using namespace boost::interprocess;
 
-Viewer::Viewer(const std::string& frame_source_name,
+// Constant definitions
+constexpr Viewer::Milliseconds Viewer::MIN_UPDATE_PERIOD_MS;
+constexpr int Viewer::COMPRESSION_LEVEL;
+
+Viewer::Viewer(const std::string& frame_source_address,
                const std::string& snapshot_path) :
-  name_("viewer[" + frame_source_name + "]")
-, frame_source_name_(frame_source_name)
-, snapshot_path_(snapshot_path)  {
+  name_("viewer[" + frame_source_address + "]")
+, frame_source_address_(frame_source_address)
+, snapshot_path_(snapshot_path)
+{
 
     // Initialize GUI update timers
     tick_ = Clock::now();
     tock_ = Clock::now();
-
-    // Name *this according the the source name and the client number
-    // to keep it unique
-    //name_ = name_ + std::to_string(frame_source_..get_number_of_clients());
 
 #ifdef OAT_USE_OPENGL
     try {
@@ -58,30 +59,17 @@ Viewer::Viewer(const std::string& frame_source_name,
 #else
     cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
 #endif
-
-    // Snapshot file saving
-    // Check that the snapshot save folder is valid
-    bfs::path path(snapshot_path_.c_str());
-    if (!bfs::exists(path.parent_path())) {
-        throw (std::runtime_error ("Requested snapshot save path, " +
-               snapshot_path_ + ", does not exist.\n"));
-    }
-
-    file_name_ = path.stem().string();
-    if (file_name_.empty())
-        file_name_ = frame_source_name;
-
-    // Snapshot encoding
-    compression_params_.push_back(CV_IMWRITE_PNG_COMPRESSION);
-    compression_params_.push_back(compression_level_);
 }
 
 void Viewer::connectToNode() {
 
-    frame_source_.connect(name_);
+    frame_source_.connect(frame_source_address_);
 }
 
 bool Viewer::showImage() {
+
+    // START CRITICAL SECTION //
+    ////////////////////////////
 
     // Wait for sink to write to node
     sink_state_ = frame_source_.wait();
@@ -92,6 +80,9 @@ bool Viewer::showImage() {
     // Tell sink it can continue
     frame_source_.post();
 
+    ////////////////////////////
+    //  END CRITICAL SECTION  //
+
     // Get current time
     tick_ = Clock::now();
 
@@ -99,7 +90,7 @@ bool Viewer::showImage() {
     Milliseconds duration = std::chrono::duration_cast<Milliseconds>(tick_ - tock_);
 
     // If the minimum update period has passed, show frame.
-    if (duration > min_update_period_) {
+    if (duration > MIN_UPDATE_PERIOD_MS) {
 
         cv::imshow(name_, current_frame_);
         tock_ = Clock::now();
@@ -113,6 +104,25 @@ bool Viewer::showImage() {
 
     // If server state is END, return true
     return (sink_state_ == oat::SinkState::END);
+}
+
+void Viewer::generateSnapshotPath() {
+
+    // Snapshot file saving
+    // Check that the snapshot save folder is valid
+    bfs::path path(snapshot_path_.c_str());
+    if (!bfs::exists(path.parent_path())) {
+        throw (std::runtime_error ("Requested snapshot save path, " +
+               snapshot_path_ + ", does not exist.\n"));
+    }
+
+    file_name_ = path.stem().string();
+    if (file_name_.empty())
+        file_name_ = frame_source_address_;
+
+    // Snapshot encoding
+    compression_params_.push_back(CV_IMWRITE_PNG_COMPRESSION);
+    compression_params_.push_back(COMPRESSION_LEVEL);
 }
 
 std::string Viewer::makeFileName() {

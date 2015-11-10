@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   FrameViewer.h
+//* File:   Viewer.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,14 +17,13 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef VIEWER_H
-#define VIEWER_H
+#ifndef OAT_VIEWER_H
+#define OAT_VIEWER_H
 
 #include <chrono>
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-//#include "../../lib/shmem/MatClient.h"
 #include "../../experiments/lib/Source.h"
 #include "../../experiments/lib/SharedCVMat.h"
 
@@ -41,14 +40,19 @@ public:
     /**
      * View a frame stream on the monitor.
      */
-    Viewer(const std::string& frame_source_name,
-           const std::string& save_path);
+    Viewer(const std::string &frame_source_name,
+           const std::string &save_path);
 
     void connectToNode(void);
     bool showImage(void);
+    void generateSnapshotPath(void);
 
     // Accessors
     inline std::string name() const { return name_; }
+
+    // Constants
+    static constexpr Milliseconds MIN_UPDATE_PERIOD_MS {33};
+    static constexpr int COMPRESSION_LEVEL {9};
 
 private:
 
@@ -59,19 +63,18 @@ private:
     cv::Mat current_frame_;
 
     // Frame SOURCE to get frames to display
-    std::string frame_source_name_;
+    const std::string frame_source_address_;
     oat::SinkState sink_state_;
     oat::Source<oat::SharedCVMat> frame_source_;
 
     // Minimum viewer refresh period
     Clock::time_point tick_, tock_;
-    const Milliseconds min_update_period_ {33};
 
     // Used to request a snapshot of the current image, saved to disk
     std::string snapshot_path_;
     std::string file_name_;
     std::vector<int> compression_params_;
-    const int compression_level_ {9};
+
 
     /**
      * Make the snapshot file path using the requested save folder
@@ -81,4 +84,4 @@ private:
     std::string makeFileName(void);
 };
 
-#endif //VIEWER_H
+#endif /* OAT_VIEWER_H */

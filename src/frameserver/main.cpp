@@ -2,7 +2,7 @@
 //* File:   oat frameserve main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -22,11 +22,12 @@
 #include <csignal>
 #include <unordered_map>
 #include <boost/program_options.hpp>
+#include <boost/interprocess/exceptions.hpp>
 
 #include <cpptoml.h>
 #include "../../lib/utility/IOFormat.h"
 
-#include "FrameServer.h"
+//#include "FrameServer.h"
 #include "FileReader.h"
 #include "WebCam.h"
 #ifdef OAT_USE_FLYCAP
@@ -45,13 +46,20 @@ void sigHandler(int s) {
 
 void run(const std::shared_ptr<FrameServer>& server) {
 
-    while (!quit && !source_eof) {
-        
-        if (quit) {
-            server->stop();
+    try {
+
+        server->connectToNode();
+
+        while (!quit && !source_eof) {
+            source_eof = server->serveFrame();
         }
-        
-        source_eof = server->serveFrame();
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
     }
 }
 
@@ -70,7 +78,7 @@ void printUsage(po::options_description options) {
 }
 
 int main(int argc, char *argv[]) {
-    
+
     std::signal(SIGINT, sigHandler);
 
     std::string sink;
@@ -141,8 +149,8 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("version")) {
             std::cout << "Oat Frame Server version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
@@ -151,20 +159,20 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("type")) {
             printUsage(visible_options);
-            std::cout << "Error: a TYPE must be specified. Exiting.\n";
+            std::cout << oat::Error("A TYPE must be specified. Exiting.\n");
             return -1;
         }
 
         if (!variable_map.count("sink")) {
             printUsage(visible_options);
-            std::cout << "Error: a SINK must be specified. Exiting.\n";
+            std::cout << oat::Error("A SINK must be specified. Exiting.\n");
             return -1;
         }
 
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
-            std::cout << "Error: config file must be supplied with a corresponding config-key. Exiting.\n";
+            std::cout << oat::Error("A config file must be supplied with a corresponding config-key. Exiting.\n");
             return -1;
         } else if (variable_map.count("config-file")) {
             config_used = true;
@@ -172,18 +180,18 @@ int main(int argc, char *argv[]) {
 
         if (type.compare("file") == 0 && !variable_map.count("video-file")) {
             printUsage(visible_options);
-            std::cout << "Error: when TYPE=file, a video-file path must be specified. Exiting.\n";
+            std::cout << oat::Error("When TYPE=file, a video-file path must be specified. Exiting.\n");
             return -1;
         }
 
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << oat::Error(e.what()) << "\n";
         return 1;
     } catch (...) {
-        std::cerr << "Exception of unknown type!" << std::endl;
+        std::cerr << oat::Error("Exception of unknown type.") << "\n";
     }
 
-    
+
     // Create the specified TYPE of detector
     std::shared_ptr<FrameServer> server;
 
@@ -203,18 +211,18 @@ int main(int argc, char *argv[]) {
             return -1;
 #else
             server = std::make_shared<PGGigECam>(sink, index);
-#endif      
+#endif
             break;
         }
         case 'c':
         {
-            server = std::make_shared<FileReader>(video_file, sink, frames_per_second);
+            server = std::make_shared<FileReader>(sink, video_file, frames_per_second);
             break;
         }
         default:
         {
             printUsage(visible_options);
-            std::cout << "Error: invalid TYPE specified. Exiting.\n";
+            std::cout << oat::Error("Invalid TYPE specified. Exiting.\n");
             return -1;
         }
     }
@@ -228,32 +236,32 @@ int main(int argc, char *argv[]) {
 
 
         // Tell user
-        std::cout << oat::whoMessage(server->get_name(),
+        std::cout << oat::whoMessage(server->name(),
                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(server->get_name(),
+                << oat::whoMessage(server->name(),
                 "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
         run(server);
 
         // Tell user
-        std::cout << oat::whoMessage(server->get_name(), "Exiting.\n");
+        std::cout << oat::whoMessage(server->name(), "Exiting.\n");
 
         // Exit
         return 0;
 
-    } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(server->get_name(), "Failed to parse configuration file " + config_file + "\n")
-                  << oat::whoError(server->get_name(), ex.what())
-                  << "\n";
-    } catch (const std::runtime_error& ex) {
-        std::cerr << oat::whoError(server->get_name(), ex.what())
-                  << "\n";
-    } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(server->get_name(), ex.what())
-                  << "\n";
+    } catch (const cpptoml::parse_exception &ex) {
+        std::cerr << oat::whoError(server->name(),
+                     "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(server->name(), ex.what()) << "\n";
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::whoError(server->name(), ex.what()) << "\n";
+    } catch (const cv::Exception &ex) {
+        std::cerr << oat::whoError(server->name(), ex.what()) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(server->name(), ex.what()) << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(server->get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(server->name(), "Unknown exception.\n");
     }
 
     // Exit failure

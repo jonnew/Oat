@@ -116,7 +116,8 @@ inline void SourceBase<T>::connect(const std::string &address) {
     }
 
     // Find an existing shared object constructed by the SINK
-    obj_shmem_ = bip::managed_shared_memory(bip::open_only, obj_address_.c_str());
+    obj_shmem_ =
+            bip::managed_shared_memory(bip::open_only, obj_address_.c_str());
     std::pair<T *,std::size_t> temp = obj_shmem_.find<T>(typeid(T).name());
     sh_object_ = temp.first;
 
@@ -131,7 +132,7 @@ inline void SourceBase<T>::connect(const std::string &address) {
 template<typename T>
 inline SinkState SourceBase<T>::wait() {
 
-    // TODO: Inefficient?
+    // TODO: Inefficient? Use assert and remove from release code?
     if (!bound_)
         throw("Source must be bound before call wait() is called.");
 
@@ -143,6 +144,10 @@ inline SinkState SourceBase<T>::wait() {
 
         // Loops checking if wait has been released
         timeout = boost::get_system_time() + msec_t(10);
+
+        // If the sink has left the room, we should too
+        if (node_->sink_state() == SinkState::END)
+            return SinkState::END;
     }
 
     // Before *this is destructed, must post() to prevent deadlock
@@ -154,7 +159,7 @@ inline SinkState SourceBase<T>::wait() {
 template<typename T>
 inline void SourceBase<T>::post() {
 
-    // TODO: Inefficient?
+    // TODO: Inefficient? Use assert and remove from release code?
     if (!bound_)
         throw("Source must be connected before call post() is called.");
 
@@ -238,12 +243,20 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
 
     // Wait for the SINK to bind the node and provide matrix
     // header info.
-    if (node_->sink_state() != SinkState::BOUND)
+    if (node_->sink_state() != SinkState::BOUND) {
+
         wait();
 
-        // Find an existing shared object constructed by the SINK
-    obj_shmem_ = bip::managed_shared_memory(bip::open_only, obj_address_.c_str());
-    std::pair<SharedCVMat *,std::size_t> temp = obj_shmem_.find<SharedCVMat>(typeid(SharedCVMat).name());
+        // Self post since all loops start with wait() and we just
+        // finished our wait()
+        node_->read_barrier(slot_index_).post();
+    }
+
+    // Find an existing shared object constructed by the SINK
+    obj_shmem_ =
+            bip::managed_shared_memory(bip::open_only, obj_address_.c_str());
+    std::pair<SharedCVMat *,std::size_t> temp =
+            obj_shmem_.find<SharedCVMat>(typeid(SharedCVMat).name());
     sh_object_ = temp.first;
 
     // Generate cv::Mat header using info in shmem segment
@@ -255,4 +268,3 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
 } // namespace oat
 
 #endif	/* OAT_SOURCE_H */
-

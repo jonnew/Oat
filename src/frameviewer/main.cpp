@@ -24,6 +24,7 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <boost/interprocess/exceptions.hpp>
 #include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
@@ -43,10 +44,20 @@ void sigHandler(int s) {
 
 void run(std::shared_ptr<Viewer>& viewer) {
 
-    viewer->connectToNode();
+    try {
 
-    while (!quit && !source_eof) {
-        source_eof = viewer->showImage();
+        viewer->connectToNode();
+
+        while (!quit && !source_eof) {
+            source_eof = viewer->showImage();
+        }
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
     }
 }
 
@@ -65,7 +76,6 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, sigHandler);
 
     std::string source;
-    std::string file_name; //TODO: figure out if path is file or folder.
     std::string snapshot_path;
     po::options_description visible_options("OPTIONS");
 
@@ -144,28 +154,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    std::shared_ptr<Viewer> viewer;
-
-    // Make the viewer
-    // TODO: use a method to create snapshot file name instead of the constructor
-    //       This will allow you to get rid of these extra try-catch blocks
-    try {
-        viewer = std::make_shared<Viewer>(source, snapshot_path);
-    } catch (const std::runtime_error& ex) {
-        std::cerr << oat::Error(ex.what())
-                  << "\n";
-
-        // Exit failure
-        return -1;
-
-    } catch (...) {
-        std::cerr << oat::Error("Unknown exception.\n");
-
-        // Exit failure
-        return -1;
-    }
+    std::shared_ptr<Viewer> viewer =
+            std::make_shared<Viewer>(source, snapshot_path);
 
     try {
+
+        // Create a path to save snapshots
+        viewer->generateSnapshotPath();
 
         // Tell user
         std::cout << oat::whoMessage(viewer->name(),
@@ -184,12 +179,12 @@ int main(int argc, char *argv[]) {
         // Exit
         return 0;
 
-    } catch (const std::runtime_error& ex) {
-        std::cerr << oat::whoError(viewer->name(), ex.what())
-                  << "\n";
-    } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(viewer->name(), ex.msg)
-                  << "\n";
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::whoError(viewer->name(), ex.what()) << "\n";
+    } catch (const cv::Exception &ex) {
+        std::cerr << oat::whoError(viewer->name(), ex.msg) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(viewer->name(), ex.what()) << "\n";
     } catch (...) {
         std::cerr << oat::whoError(viewer->name(), "Unknown exception.\n");
     }

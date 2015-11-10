@@ -1,8 +1,8 @@
 //******************************************************************************
-//* File:   WebCam.cpp 
+//* File:   WebCam.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -20,19 +20,48 @@
 #include "WebCam.h"
 
 #include <string>
+#include <opencv2/videoio.hpp>
 
 #include <cpptoml.h>
 #include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/make_unique.h"
 
-WebCam::WebCam(std::string frame_sink_name) :
+WebCam::WebCam(const std::string &frame_sink_name) :
   FrameServer(frame_sink_name)
-, index(0)
-, cv_camera(std::make_unique<cv::VideoCapture>(index)){ }
+, index_(0)
+, cv_camera_(std::make_unique<cv::VideoCapture>(index_))
+{
+    // Nothing
+}
 
-void WebCam::grabFrame(cv::Mat& frame) {
-    *cv_camera >> frame;
+void WebCam::connectToNode() {
+
+    cv::Mat example_frame;
+    *cv_camera_ >> example_frame;
+
+    frame_sink_.bind(frame_sink_address_,
+            example_frame.total() * example_frame.elemSize());
+
+    cv::Size mat_dims(example_frame.cols, example_frame.rows);
+    current_frame_ = frame_sink_.retrieve(mat_dims, example_frame.type());
+}
+
+bool WebCam::serveFrame() {
+
+    // START CRITICAL SECTION //
+    ////////////////////////////
+
+    *cv_camera_ >> current_frame_;
+
+    // Crop if necessary
+    if (use_roi_)
+        current_frame_ = current_frame_(region_of_interest_);
+
+    ////////////////////////////
+    //  END CRITICAL SECTION  //
+
+    return current_frame_.empty();
 }
 
 void WebCam::configure() { }
@@ -40,24 +69,41 @@ void WebCam::configure(const std::string& config_file, const std::string& config
 
     // Available options
     std::vector<std::string> options {"index"};
-    
-    // This will throw cpptoml::parse_exception if a file 
+
+    // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
     auto config = cpptoml::parse_file(config_file);
 
     // See if a camera configuration was provided
     if (config->contains(config_key)) {
-        
+
         // Get this components configuration table
         auto this_config = config->get_table(config_key);
-        
+
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
-        
+
         // Set the camera index
-        oat::config::getValue(this_config, "index", index, min_index);
-        cv_camera = std::make_unique<cv::VideoCapture>(index);
-        
+        oat::config::getValue(this_config, "index", index_, MIN_INDEX);
+        cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
+
+        // Set the ROI
+        oat::config::Table roi;
+        if (oat::config::getTable(this_config, "roi", roi)) {
+
+            int64_t val;
+            oat::config::getValue(roi, "x_offset", val, (int64_t)0, true);
+            region_of_interest_.x = val;
+            oat::config::getValue(roi, "y_offset", val, (int64_t)0, true);
+            region_of_interest_.y = val;
+            oat::config::getValue(roi, "width", val, (int64_t)0, true);
+            region_of_interest_.width = val;
+            oat::config::getValue(roi, "height", val, (int64_t)0, true);
+            region_of_interest_.height = val;
+            use_roi_ = true;
+
+        }
+
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }

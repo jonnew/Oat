@@ -1,5 +1,8 @@
 //******************************************************************************
-//* Copyright (c) Jon Newman (jpnewman at mit snail edu) 
+//* File:   PGGigECam.h
+//* Author: Jon Newman <jpnewman snail mit dot edu>
+//*
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -14,9 +17,10 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef CAMERACONTROL_H
-#define CAMERACONTROL_H
+#ifndef OAT_PGGIGECAM_H
+#define OAT_PGGIGECAM_H
 
+#include <memory>
 #include <string>
 #include <opencv2/core/mat.hpp>
 
@@ -26,24 +30,24 @@
 
 class PGGigECam : public FrameServer {
 public:
-    PGGigECam(std::string frame_sink_name, size_t index);
+    PGGigECam(const std::string &frame_sink_address, const size_t index);
 
     // Use a configuration file to specify parameters
-    void configure(void); // Default options
-    void configure(const std::string& config_file, const std::string& config_key);
-
-    void grabFrame(cv::Mat& frame);
+    void configure(void) override; // Default options
+    void configure(const std::string &config_file, const std::string &config_key) override;
+    void connectToNode(void) override;
+    bool serveFrame(void) override;
     void fireSoftwareTrigger(void);
 
 private:
-    
+
     unsigned int num_cameras;
-    
+
     // GigE Camera configuration
     static constexpr int64_t min_index {0};
     int64_t max_index;
     size_t index_;
-    
+
     //cv::Size frame_size, frame_offset;
     int x_bin, y_bin;
     float gain_dB, shutter_ms, exposure_EV;
@@ -56,7 +60,7 @@ private:
     double frames_per_second;
     bool use_camera_frame_buffer;
     unsigned int number_transmit_retries;
-    
+
     // GigE Camera interface
     FlyCapture2::GigECamera camera;
 
@@ -67,13 +71,13 @@ private:
 
     // The current, unbuffered frame in PG's format
     FlyCapture2::Image raw_image;
-    FlyCapture2::Image rgb_image;
+    std::unique_ptr<FlyCapture2::Image> rgb_image;
 
     // For establishing connection
     int setCameraIndex(unsigned int requested_idx);
     int connectToCamera(void);
 
-    // Acquisition options 
+    // Acquisition options
     int setupStreamChannels(void);
     int setupFrameRate(double fps, bool is_auto);
     int setupShutter(float shutter_ms);
@@ -100,17 +104,16 @@ private:
     // Convert flycap image to cv::Mat
     cv::Mat imageToMat(void);
 
+    // Diagnostics and meta
     int findNumCameras(void);
     void printError(FlyCapture2::Error error);
     bool pollForTriggerReady(void);
     int printCameraInfo(void);
     int printBusInfo(void);
     void printStreamChannelInfo(FlyCapture2::GigEStreamChannel *stream_channel);
-    
+
     // TODO: Grabbed frame callback
     // void onGrabbedImage(FlyCapture2::Image* pImage, const void* pCallbackData);
-
-
 };
 
-#endif // CAMERACONFIG_H
+#endif /* OAT_PGGIGECAM_H */

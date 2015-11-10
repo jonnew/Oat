@@ -137,16 +137,17 @@ int main(int argc, char *argv[]) {
             bool success {false};
 
             if (bip::shared_memory_object::remove((name + "_node").c_str())) {
-                std::cout << "\nRemoved " + name + " _node\n";
                 success = true;
             }
 
             if (bip::shared_memory_object::remove((name + "_obj").c_str())) {
-                std::cout << "\nRemoved " + name + " _obj\n";
                 success = true;
             }
 
-            if (!success)
+
+            if (success && !quiet)
+                std::cout << "success.\n";
+            if (!success && !quiet)
                 std::cout << "not found. are you sure this block exists?.\n";
         }
     }

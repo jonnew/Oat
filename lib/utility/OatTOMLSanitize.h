@@ -1,8 +1,8 @@
 //******************************************************************************
-//* File:   OatTOMLSanitize.h 
+//* File:   OatTOMLSanitize.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OATTOMLSANATIZE_H
-#define OATTOMLSANATIZE_H
+#ifndef OAT_CONFIG_TOMLSANATIZE_H
+#define OAT_CONFIG_TOMLSANATIZE_H
 
 #include <string>
 #include <typeinfo>
@@ -38,7 +38,7 @@ inline void checkKeys(const std::vector<std::string>& options, const Table user_
 
     auto it = user_config->begin();
 
-    // Look through user-provided config options and make sure each matches an 
+    // Look through user-provided config options and make sure each matches an
     // actual configuration key ID
     while (it != user_config->end()) {
 
@@ -78,9 +78,9 @@ inline bool getTable(const Table table,
 
 // Single value type sanitization
 template <typename T>
-bool getValue(const Table table, 
-        const std::string& key, 
-        T& value, bool 
+bool getValue(const Table table,
+        const std::string& key,
+        T& value, bool
         required = false) {
 
     // If the key is in the table,
@@ -108,9 +108,9 @@ bool getValue(const Table table,
 
 // Single bounded value type sanitization
 template <typename T>
-bool getValue(const Table table, 
-        const std::string& key, 
-        T& value, const T lower, 
+bool getValue(const Table table,
+        const std::string& key,
+        T& value, const T lower,
         bool required = false) {
 
     // If the key is in the table,
@@ -122,7 +122,7 @@ bool getValue(const Table table,
             // Get value, check type
             auto val = *table->get_as<T>(key);
             if (val < lower) {
-                 throw (std::runtime_error("Configuration key '" + key + 
+                 throw (std::runtime_error("Configuration key '" + key +
                          "' specifies a value that is out of bounds.\n"));
             }
 
@@ -130,7 +130,7 @@ bool getValue(const Table table,
             return true;
 
         } else {
-            throw (std::runtime_error("'" + key + "' must be a TOML value of type " 
+            throw (std::runtime_error("'" + key + "' must be a TOML value of type "
                     + boost::core::demangle(typeid(T).name()) + ".\n"));
         }
     } else if (required) {
@@ -142,10 +142,10 @@ bool getValue(const Table table,
 
 // Single bounded value type sanitization
 template <typename T>
-bool getValue(const Table table, 
-        const std::string& key, 
-        T& value, const T lower, 
-        const T upper, 
+bool getValue(const Table table,
+        const std::string& key,
+        T& value, const T lower,
+        const T upper,
         bool required = false) {
 
     // If the key is in the table,
@@ -183,7 +183,7 @@ inline bool getArray(const Table table, const std::string& key, Array& array_out
 
         // Make sure the key points to a value (and not a table, array, or table-array)
         if (table->get(key)->is_array()) {
-            
+
             array_out = table->get_array(key);
             return true;
 
@@ -198,7 +198,7 @@ inline bool getArray(const Table table, const std::string& key, Array& array_out
 }
 
 // TOML array from table, required size
-inline bool getArray(const Table table, const std::string& key, Array& array_out, int size, bool required = false) {
+inline bool getArray(const Table table, const std::string& key, Array& array_out, size_t size, bool required = false) {
 
     // If the key is in the table,
     if (table->contains(key)) {
@@ -229,4 +229,4 @@ inline bool getArray(const Table table, const std::string& key, Array& array_out
 } // namespace config
 } // namespace oat
 
-#endif // OATTOMLSANATIZE_H
+#endif /* OAT_CONFIG_TOMLSANATIZE_H */
