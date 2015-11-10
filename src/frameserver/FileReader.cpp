@@ -51,7 +51,7 @@ void FileReader::connectToNode() {
             example_frame.total() * example_frame.elemSize());
 
     cv::Size mat_dims(example_frame.cols, example_frame.rows);
-    current_frame_ = frame_sink_.retrieve(mat_dims, example_frame.type());
+    shared_frame_ = frame_sink_.retrieve(mat_dims, example_frame.type());
 
     // Reset the video to the start
     file_reader_.set(CV_CAP_PROP_POS_AVI_RATIO, 0);
@@ -66,11 +66,13 @@ bool FileReader::serveFrame() {
     frame_sink_.wait();
 
     // Acquire frame and
-    file_reader_ >> current_frame_;
+    file_reader_ >> shared_frame_;
 
     // Crop if necessary
     if (use_roi_)
-        current_frame_ = current_frame_(region_of_interest_);
+        shared_frame_ = shared_frame_(region_of_interest_);
+
+    frame_empty_ = shared_frame_.empty();
 
     // Tell sources there is new data
     frame_sink_.post();
@@ -82,7 +84,7 @@ bool FileReader::serveFrame() {
     std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
     tick_ = clock_.now();
 
-    return current_frame_.empty();
+    return frame_empty_;
 }
 
 void FileReader::configure() {

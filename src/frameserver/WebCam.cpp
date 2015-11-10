@@ -61,13 +61,15 @@ bool WebCam::serveFrame() {
     if (use_roi_)
         shared_frame_ = shared_frame_(region_of_interest_);
 
+    frame_empty_ = shared_frame_.empty();
+
     // Tell sources there is new data
     frame_sink_.post();
 
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    return shared_frame_.empty();
+    return frame_empty_;
 }
 
 void WebCam::configure() { }

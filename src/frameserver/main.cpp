@@ -191,7 +191,6 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::Error("Exception of unknown type.") << "\n";
     }
 
-
     // Create the specified TYPE of detector
     std::shared_ptr<FrameServer> server;
 

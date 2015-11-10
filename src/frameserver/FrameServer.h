@@ -23,16 +23,12 @@
 #include <atomic>
 #include <opencv2/opencv.hpp>
 
-//#include "../../lib/shmem/SharedMemoryManager.h"
-//#include "../../lib/shmem/BufferedMatServer.h"
-
 #include "../../experiments/lib/Sink.h"
 #include "../../experiments/lib/SharedCVMat.h"
 
 /**
- * Abstract base class to be implemented by any Camera Server within the Simple
- * Tracker project.
- * @param image_sink_name Image SINK name.
+ * Abstract base class to be implemented by any FrameServer
+ * @param frame_sink_address Address of node to publish shared frames to.
  */
 class FrameServer {
 public:
@@ -41,13 +37,11 @@ public:
       name_("frameserve[" + frame_sink_address + "]")
     , frame_sink_address_(frame_sink_address)
     {
-          // Nothing
+        // Nothing
     }
 
     // Oat components are not copyable
     FrameServer(const FrameServer& server) = delete;
-    //FrameServer& operator=(FrameServer rhs) = delete;
-
 
     virtual ~FrameServer() {};
 
