@@ -269,13 +269,14 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
     sh_object_ = temp.first;
 
     // Generate cv::Mat header using info in shmem segment
-    frame_ = cv::Mat(sh_object_->size(),
+    frame_ = cv::Mat(sh_object_->rows(),
+                     sh_object_->cols(),
                      sh_object_->type(),
                      obj_shmem_.get_address_from_handle(sh_object_->data()));
 
     // Save parameters so that to construct cv::Mats with
-    parameters_.cols = sh_object_->size().width;
-    parameters_.rows = sh_object_->size().height;
+    parameters_.cols = sh_object_->rows();
+    parameters_.rows = sh_object_->cols();
     parameters_.type = sh_object_->type();
     parameters_.bytes = frame_.total() * frame_.elemSize();
 

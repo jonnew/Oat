@@ -193,7 +193,7 @@ class Sink<SharedCVMat> : public SinkBase<SharedCVMat> {
 
 public:
     void bind(const std::string &address, const size_t bytes);
-    cv::Mat retrieve(const size_t cols, size_t rows, const int type);
+    cv::Mat retrieve(const size_t rows, size_t cols, const int type);
 };
 
 inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
@@ -233,7 +233,7 @@ inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t byt
     }
 }
 
-inline cv::Mat Sink<SharedCVMat>::retrieve(const size_t cols, const size_t rows, const int type) {
+inline cv::Mat Sink<SharedCVMat>::retrieve(const size_t rows, const size_t cols, const int type) {
 
     // Make sure that the SINK is bound to a shared memory segment
     //assert(bound_);
@@ -241,15 +241,15 @@ inline cv::Mat Sink<SharedCVMat>::retrieve(const size_t cols, const size_t rows,
         throw (std::runtime_error("SINK must be bound before shared cvMat is retrieved."));
 
     // Allocate memory for the shared object's data
-    cv::Mat temp(cols, rows, type);
+    cv::Mat temp(rows, cols, type);
     void *data = obj_shmem_.allocate(temp.total() * temp.elemSize());
     handle_t handle = obj_shmem_.get_handle_from_address(data);
 
     // Reset the SharedCVMat's parameters now that we know what they should be
-    sh_object_->setParameters(handle, cols, rows, type);
+    sh_object_->setParameters(handle, rows, cols, type);
 
     // Return pointer to memory allocated for shared object
-    return cv::Mat(cols, rows, type, data);
+    return cv::Mat(rows, cols, type, data);
 }
 
 } // namespace oat

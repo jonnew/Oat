@@ -930,9 +930,17 @@ command below.
 __Note__: GUI functionality is enhanced in OpenCV is compiled with Qt support.
 You can build OpenCV with Qt by first installing the [Qt
 SDK](http://download.qt.io/official_releases/online_installers/qt-unified-linux-x64-online.run)
-and the adding the `-DWITH_QT=ON` flag to the cmake command below.
+and these dependencies:
 
-To install OpenCV:
+``` 
+# Additional dependencies for integraged QT with OpenGL
+sudo apt-get install libqt5opengl5 libqt5opengl5-dev
+```
+
+The you can compile OpenCV using QT support by adding `-DWITH_QT=ON` flag to
+the cmake command below.
+
+Finally, to compile and install OpenCV:
 
 ```bash
 # Install OpenCV's dependencies

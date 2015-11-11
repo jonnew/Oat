@@ -794,7 +794,7 @@ void PGGigECam::connectToNode() {
 
     frame_sink_.bind(frame_sink_address_, bytes);
 
-    shared_frame_ = frame_sink_.retrieve(cols, rows, CV_8UC3);
+    shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
 
     // Use the current_frame_.data, which points to a block of shared memory
     // as rbg_image's data buffer. When changes are made to rgb_image, this is

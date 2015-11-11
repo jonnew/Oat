@@ -97,9 +97,8 @@ bool Viewer::showImage() {
 
         char command = cv::waitKey(1);
 
-        if (command == 's') {
+        if (command == 's')
             cv::imwrite(makeFileName(), shared_frame, compression_params_);
-        }
     }
 
     // If server state is END, return true

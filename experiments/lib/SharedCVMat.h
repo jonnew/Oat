@@ -41,12 +41,13 @@ public :
         // Nothing
     }
 
-    cv::Size size() const { return cv::Size(rows_, cols_); }
+    size_t rows() const { return rows_; }
+    size_t cols() const { return cols_; }
     int type() const { return type_; }
     size_t step() const {return step_; }
 
-    void setParameters(const handle_t data, const size_t cols,
-                       const size_t rows, const int type) {
+    void setParameters(const handle_t data, const size_t rows,
+                       const size_t cols, const int type) {
         data_ = data;
         rows_ = rows;
         cols_ = cols;

@@ -72,7 +72,7 @@ public:
 
         // Bind to sink sink node and create a shared cv::Mat
         frame_sink_.bind(frame_sink_address_, param.bytes);
-        shared_frame_ = frame_sink_.retrieve(param.cols, param.rows, param.type);
+        shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
     }
 
     /**
@@ -106,6 +106,9 @@ public:
         // Wait for sources to read
         frame_sink_.wait();
 
+        // TODO: For some filters, it may be best for the filter operation to go
+        //       here instead of in a non-critical section followed by a copy
+        //       operation.
         memcpy(shared_frame_.data, internal_frame_.data,
                 internal_frame_.total() * internal_frame_.elemSize());
 
