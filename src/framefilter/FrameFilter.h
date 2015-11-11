@@ -2,7 +2,7 @@
 //* File:   FrameFilter.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,9 +17,10 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef FRAMEFILT_H
-#define	FRAMEFILT_H
+#ifndef OAT_FRAMEFILT_H
+#define	OAT_FRAMEFILT_H
 
+#include <cstring>
 #include <string>
 #include <opencv2/core/mat.hpp>
 
@@ -28,9 +29,13 @@
 #include <opencv2/cudaarithm.hpp>
 #endif
 
-#include "../../lib/shmem/SharedMemoryManager.h"
-#include "../../lib/shmem/MatClient.h"
-#include "../../lib/shmem/MatServer.h"
+//#include "../../lib/shmem/SharedMemoryManager.h"
+//#include "../../lib/shmem/MatClient.h"
+//#include "../../lib/shmem/MatServer.h"
+
+#include "../../experiments/lib/Source.h"
+#include "../../experiments/lib/Sink.h"
+#include "../../experiments/lib/SharedCVMat.h"
 
 /**
  * Abstract frame filter.
@@ -45,57 +50,72 @@ public:
      * @param source_name Frame SOURCE name
      * @param sink_name Frame SINK name
      */
-    FrameFilter(const std::string& source_name, const std::string& sink_name) :
-      name("framefilt[" + source_name + "->" + sink_name + "]")
-    , frame_source(source_name)
-    , frame_sink(sink_name) { 
+    FrameFilter(const std::string &frame_source_address,
+                const std::string &frame_sink_address) :
+      name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
+    , frame_source_address_(frame_source_address)
+    , frame_sink_address_(frame_sink_address) {
 
-#ifdef OAT_USE_CUDA
-
-        // Determine if a compatible device is available
-        int num_devices = cv::cuda::getCudaEnabledDeviceCount();
-        if (num_devices == 0) {
-            throw (std::runtime_error("No GPU found or OpenCV was compiled without CUDA support."));
-        }
-
-        // Set device 
-        int selected_gpu = 0; // TODO: should be user defined
-
-        if (selected_gpu < 0 || selected_gpu > num_devices) {
-            throw (std::runtime_error("Selected GPU index is invalid."));
-        }
-
-        cv::cuda::DeviceInfo gpu_info(selected_gpu);
-        if (!gpu_info.isCompatible()) {
-            throw (std::runtime_error("Selected GPU is not compatible with OpenCV."));
-        }
-
-        cv::cuda::setDevice(selected_gpu);
-
-#ifndef NDEBUG
-        cv::cuda::printShortCudaDeviceInfo(selected_gpu);
-#endif
-
-#endif // OAT_USE_CUDA
     }
 
     virtual ~FrameFilter() { }
+
+    /**
+     * FrameServers must be able to connect to a Node that exists in shared memory
+     */
+    virtual void connectToNode() {
+
+        // Connect to source node and retrieve cv::Mat parameters
+        frame_source_.connect(frame_source_address_);
+        oat::Source<oat::SharedCVMat>::MatParameters param =
+                frame_source_.parameters();
+
+        // Bind to sink sink node and create a shared cv::Mat
+        frame_sink_.bind(frame_sink_address_, param.bytes);
+        shared_frame_ = frame_sink_.retrieve(param.cols, param.rows, param.type);
+    }
 
     /**
      * Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
      * filtered frame to SINK.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
-    bool processSample(void) {
+    virtual bool processFrame(void) {
 
-        // Only proceed with processing if we are getting a valid frame
-        if (frame_source.getSharedMat(current_frame)) {
+        // START CRITICAL SECTION //
+        ////////////////////////////
 
-            // Push filtered frame forward, along with frame_source sample number
-            frame_sink.pushMat(filter(current_frame), frame_source.get_current_sample_number());
-        }
+        // Wait for sink to write to node
+        node_state_ = frame_source_.wait();
 
-        return (frame_source.getSourceRunState() == oat::SinkState::END);
+        // Clone the shared frame
+        internal_frame_ = frame_source_.clone();
+
+        // Tell sink it can continue
+        frame_source_.post();
+
+        ////////////////////////////
+        //  END CRITICAL SECTION  //
+
+        // Mess with internal frame
+        filter(internal_frame_);
+
+        // START CRITICAL SECTION //
+        ////////////////////////////
+
+        // Wait for sources to read
+        frame_sink_.wait();
+
+        memcpy(shared_frame_.data, internal_frame_.data,
+                internal_frame_.total() * internal_frame_.elemSize());
+
+        // Tell sources there is new data
+        frame_sink_.post();
+
+        ////////////////////////////
+        //  END CRITICAL SECTION  //
+
+        return (node_state_ == oat::NodeState::END);
     }
 
     /**
@@ -109,31 +129,37 @@ public:
      * Get frame filter name
      * @return name
      */
-    std::string get_name(void) const { return name; }
+    std::string name(void) const { return name_; }
 
 protected:
 
     /**
      * Perform frame filtering.
-     * @param frame unfiltered frame
-     * @return filtered frame
+     * @param frame to be filtered
      */
-    virtual cv::Mat filter(cv::Mat& frame) = 0;
+    virtual void filter(cv::Mat& frame) = 0;
 
 private:
 
     // Filter name.
-    const std::string name;
+    const std::string name_;
 
-    //Currently processed frame
-    cv::Mat current_frame;
+    // Currently processed frame
+    cv::Mat internal_frame_;
 
-    // Frame SOURCE object for receiving raw frames
-    oat::MatClient frame_source;
+    // Frame source
+    const std::string frame_source_address_;
+    oat::NodeState node_state_;
+    oat::Source<oat::SharedCVMat> frame_source_;
 
-    // Frame SINK object for publishing filtered frames
-    oat::MatServer frame_sink;
+    // Frame sink
+    const std::string frame_sink_address_;
+    oat::Sink<oat::SharedCVMat> frame_sink_;
+
+    // Currently acquired, shared frame
+    bool frame_empty_;
+    cv::Mat shared_frame_;
 };
 
-#endif	/* FRAMEFILT_H */
+#endif	/* OAT_FRAMEFILT_H */
 

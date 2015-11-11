@@ -64,7 +64,7 @@ inline SinkBase<T>::~SinkBase() {
 
     // Detach this server from shared mat header
     if (bound_) {
-        node_->set_sink_state(SinkState::END);
+        node_->set_sink_state(NodeState::END);
 
         // If the client ref count is 0, memory can be deallocated
         if (node_->source_ref_count() == 0 &&
@@ -157,7 +157,7 @@ inline void Sink<T>::bind(const std::string &address) {
     node_ = node_shmem_.template find_or_construct<Node>(typeid(Node).name())();
 
     // Make sure there is not another SINK using this shmem
-    if (node_->sink_state() != SinkState::UNDEFINED) {
+    if (node_->sink_state() != NodeState::UNDEFINED) {
 
         // There is already a SINK using this shmem
         throw (std::runtime_error(
@@ -171,7 +171,7 @@ inline void Sink<T>::bind(const std::string &address) {
 
         // Find an existing shared object or construct one
         sh_object_ = obj_shmem_.template find_or_construct<T>(typeid(T).name())();
-        node_->set_sink_state(SinkState::BOUND);
+        node_->set_sink_state(NodeState::SINK_BOUND);
         bound_ = true;
     }
 }
@@ -193,7 +193,7 @@ class Sink<SharedCVMat> : public SinkBase<SharedCVMat> {
 
 public:
     void bind(const std::string &address, const size_t bytes);
-    cv::Mat retrieve(const cv::Size dims, const int type);
+    cv::Mat retrieve(const size_t cols, size_t rows, const int type);
 };
 
 inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
@@ -212,7 +212,7 @@ inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t byt
     node_ = node_shmem_.find_or_construct<Node>(typeid(Node).name())();
 
     // Make sure there is not another SINK using this shmem
-    if (node_->sink_state() != SinkState::UNDEFINED) {
+    if (node_->sink_state() != NodeState::UNDEFINED) {
 
         // There is already a SINK using this shmem
         throw (std::runtime_error(
@@ -228,12 +228,12 @@ inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t byt
         // Find an existing shared object or construct one
         sh_object_ = obj_shmem_.find_or_construct<SharedCVMat>(typeid(SharedCVMat).name())();
 
-        node_->set_sink_state(SinkState::BOUND);
+        node_->set_sink_state(NodeState::SINK_BOUND);
         bound_ = true;
     }
 }
 
-inline cv::Mat Sink<SharedCVMat>::retrieve(const cv::Size dims, const int type) {
+inline cv::Mat Sink<SharedCVMat>::retrieve(const size_t cols, const size_t rows, const int type) {
 
     // Make sure that the SINK is bound to a shared memory segment
     //assert(bound_);
@@ -241,15 +241,15 @@ inline cv::Mat Sink<SharedCVMat>::retrieve(const cv::Size dims, const int type) 
         throw (std::runtime_error("SINK must be bound before shared cvMat is retrieved."));
 
     // Allocate memory for the shared object's data
-    cv::Mat temp(dims, type);
+    cv::Mat temp(cols, rows, type);
     void *data = obj_shmem_.allocate(temp.total() * temp.elemSize());
     handle_t handle = obj_shmem_.get_handle_from_address(data);
 
     // Reset the SharedCVMat's parameters now that we know what they should be
-    sh_object_->setParameters(handle, dims, type);
+    sh_object_->setParameters(handle, cols, rows, type);
 
     // Return pointer to memory allocated for shared object
-    return cv::Mat(dims, type, data);
+    return cv::Mat(cols, rows, type, data);
 }
 
 } // namespace oat

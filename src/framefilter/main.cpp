@@ -2,7 +2,7 @@
 //* File:   oat framefilt main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -62,10 +62,22 @@ void sigHandler(int s) {
 }
 
 // Processing loop
-void run(const std::shared_ptr<FrameFilter>& frameFilter) {
+void run(const std::shared_ptr<FrameFilter>& filter) {
 
-    while (!quit && !source_eof) {
-        source_eof = frameFilter->processSample();
+    try {
+
+        filter->connectToNode();
+
+        while (!quit && !source_eof) {
+            source_eof = filter->processFrame();
+        }
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
     }
 }
 
@@ -86,7 +98,7 @@ int main(int argc, char *argv[]) {
     type_hash["bsub"] = 'a';
     type_hash["mask"] = 'b';
     type_hash["mog"] = 'c';
-    
+
     try {
 
         po::options_description options("INFO");
@@ -94,7 +106,7 @@ int main(int argc, char *argv[]) {
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
-        
+
         po::options_description config("CONFIGURATION");
         config.add_options()
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
@@ -104,7 +116,7 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("type", po::value<std::string>(&type), 
+                ("type", po::value<std::string>(&type),
                 "Type of frame filter to use.\n\n"
                 "Values:\n"
                 "  bsub: Background subtractor.\n"
@@ -117,10 +129,10 @@ int main(int argc, char *argv[]) {
                 ;
 
         po::positional_options_description positional_options;
-         positional_options.add("type", 1);
+        positional_options.add("type", 1);
         positional_options.add("source", 1);
         positional_options.add("sink", 1);
-        
+
         visible_options.add(options).add(config);
 
         po::options_description all_options("All options");
@@ -143,14 +155,14 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("version")) {
             std::cout << "Oat Frame Filter version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
-        
+
         if (!variable_map.count("type")) {
             printUsage(visible_options);
             std::cout << oat::Error("A TYPE must be specified.\n");
@@ -168,7 +180,7 @@ int main(int argc, char *argv[]) {
             std::cerr << oat::Error("A SINK name must be specified.\n");
             return -1;
         }
-              
+
         if (variable_map.count("invert-mask")) {
 
             if (type_hash[type] != 'b') {
@@ -179,7 +191,7 @@ int main(int argc, char *argv[]) {
                 invert_mask = true;
             }
         }
-            
+
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
@@ -199,7 +211,7 @@ int main(int argc, char *argv[]) {
 
     // Create component
     std::shared_ptr<FrameFilter> filter;
-    
+
     // Refine component type
     switch (type_hash[type]) {
         case 'a':
@@ -211,8 +223,8 @@ int main(int argc, char *argv[]) {
         {
             filter = std::make_shared<FrameMasker>(source, sink, invert_mask);
             if (!config_used)
-                 std::cerr << oat::whoWarn(filter->get_name(), 
-                         "No mask configuration was provided." 
+                 std::cerr << oat::whoWarn(filter->name(),
+                         "No mask configuration was provided."
                          " This filter does nothing but waste CPU cycles.\n");
             break;
         }
@@ -228,46 +240,46 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
-    
+
     // The business
-    try { 
-        
+    try {
+
         if (config_used)
             filter->configure(config_file, config_key);
 
         // Tell user
-        std::cout << oat::whoMessage(filter->get_name(),
+        std::cout << oat::whoMessage(filter->name(),
                 "Listening to source " + oat::sourceText(source) + ".\n")
-                << oat::whoMessage(filter->get_name(),
+                << oat::whoMessage(filter->name(),
                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(filter->get_name(),
+                << oat::whoMessage(filter->name(),
                 "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
         run(filter);
 
         // Tell user
-        std::cout << oat::whoMessage(filter->get_name(), "Exiting.\n");
-        
+        std::cout << oat::whoMessage(filter->name(), "Exiting.\n");
+
         // Exit success
         return 0;
 
     } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(filter->get_name(), 
-                     "Failed to parse configuration file " 
+        std::cerr << oat::whoError(filter->name(),
+                     "Failed to parse configuration file "
                      + config_file + "\n")
-                  << oat::whoError(filter->get_name(), ex.what())
+                  << oat::whoError(filter->name(), ex.what())
                   << "\n";
     } catch (const std::runtime_error ex) {
-        std::cerr << oat::whoError(filter->get_name(),ex.what())
+        std::cerr << oat::whoError(filter->name(),ex.what())
                   << "\n";
     } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(filter->get_name(), ex.what())
+        std::cerr << oat::whoError(filter->name(), ex.what())
                   << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(filter->get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(filter->name(), "Unknown exception.\n");
     }
-    
+
     // Exit failure
     return -1;
 

@@ -29,7 +29,7 @@ SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
 
         oat::Node node;
         REQUIRE(node.source_ref_count() == 0);
-        REQUIRE(node.sink_state() == oat::SinkState::UNDEFINED);
+        REQUIRE(node.sink_state() == oat::NodeState::UNDEFINED);
 
         WHEN ("Node::NUM_SLOTS sources are added") {
 

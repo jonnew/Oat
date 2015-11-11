@@ -144,7 +144,8 @@ SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.
         oat::Sink<oat::SharedCVMat> sink;
         std::string addr {"test"};
         cv::Mat mat;
-        cv::Size dims {100, 100};
+        size_t cols {100};
+        size_t rows {100};
         int type {1};
 
         WHEN ("When the sink calls wait() before binding a segment") {
@@ -169,7 +170,7 @@ SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.
 
             THEN ("The the sink shall throw") {
                 REQUIRE_THROWS(
-                    mat = sink.retrieve(dims, type);
+                    mat = sink.retrieve(cols, rows, type);
                 );
             }
         }

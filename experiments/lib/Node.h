@@ -30,10 +30,10 @@
 
 namespace oat {
 
-enum class SinkState {
+enum class NodeState {
     END = -1,
     UNDEFINED = 0,
-    BOUND = 1,
+    SINK_BOUND = 1,
     ERROR = 2
 };
 
@@ -50,8 +50,8 @@ public:
     // Note: functions defined within the class definition are implicitly inline
     
     // SINK state
-    void set_sink_state(SinkState value) { sink_state_ = value; }
-    SinkState sink_state(void) const { return sink_state_; }
+    void set_sink_state(NodeState value) { sink_state_ = value; }
+    NodeState sink_state(void) const { return sink_state_; }
 
     // SINK writes (~ sample number)
     uint64_t write_number() const { return write_number_; }
@@ -164,7 +164,7 @@ public:
 
 private:
 
-    std::atomic<SinkState> sink_state_ {oat::SinkState::UNDEFINED}; //!< SINK state
+    std::atomic<NodeState> sink_state_ {oat::NodeState::UNDEFINED}; //!< SINK state
     std::atomic<size_t> source_read_count_ {0}; //!< Number SOURCE reads that have occured since last sink reset
     std::bitset<NUM_SLOTS> source_slots_;
 

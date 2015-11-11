@@ -2,7 +2,7 @@
 //* File:   FrameMasker.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -35,8 +35,8 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
 
     // Available options
     std::vector<std::string> options {"mask"};
-    
-    // This will throw cpptoml::parse_exception if a file 
+
+    // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
     auto config = cpptoml::parse_file(config_file);
 
@@ -64,18 +64,10 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
     }
 }
 
-cv::Mat FrameMasker::filter(cv::Mat& frame) {
+void FrameMasker::filter(cv::Mat& frame) {
 
     // Throws cv::Exception if there is a size mismatch between mask and frames
     // received from SOURCE or in any case where setTo() assertions fail.
-    if (mask_set) {
-        
+    if (mask_set)
         frame.setTo(0, roi_mask == 0);
-    }
-
-    return frame;
 }
-
-
-
-

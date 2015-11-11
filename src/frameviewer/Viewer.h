@@ -60,11 +60,11 @@ private:
     std::string name_;
 
     // Image data
-    cv::Mat current_frame_;
+    cv::Mat shared_frame;
 
     // Frame SOURCE to get frames to display
     const std::string frame_source_address_;
-    oat::SinkState sink_state_;
+    oat::NodeState node_state_;
     oat::Source<oat::SharedCVMat> frame_source_;
 
     // Minimum viewer refresh period

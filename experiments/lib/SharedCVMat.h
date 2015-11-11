@@ -45,10 +45,11 @@ public :
     int type() const { return type_; }
     size_t step() const {return step_; }
 
-    void setParameters(const handle_t data, const cv::Size &size, const int type) {
+    void setParameters(const handle_t data, const size_t cols,
+                       const size_t rows, const int type) {
         data_ = data;
-        rows_ = size.width;
-        cols_ = size.height;
+        rows_ = rows;
+        cols_ = cols;
         type_ = type;
     }
 

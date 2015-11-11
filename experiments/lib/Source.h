@@ -37,7 +37,7 @@ public:
     virtual ~SourceBase();
 
     virtual void connect(const std::string &address);
-    SinkState wait();
+    NodeState wait();
     void post();
 
 protected:
@@ -72,7 +72,7 @@ inline SourceBase<T>::~SourceBase() {
     // attached to the node, deallocate the shmem
     if (bound_ &&
         node_->releaseSlot(slot_index_) == 0 &&
-        node_->sink_state() != SinkState::BOUND &&
+        node_->sink_state() != NodeState::SINK_BOUND &&
         bip::shared_memory_object::remove(node_address_.c_str()) &&
         bip::shared_memory_object::remove(obj_address_.c_str())) {
 
@@ -107,7 +107,7 @@ inline void SourceBase<T>::connect(const std::string &address) {
     bound_ = true;
 
     // Wait for the SINK to bind and construct the shared object
-    if (node_->sink_state() != SinkState::BOUND) {
+    if (node_->sink_state() != NodeState::SINK_BOUND) {
         wait();
 
         // Self post since all loops start with wait() and we just
@@ -130,7 +130,7 @@ inline void SourceBase<T>::connect(const std::string &address) {
 
 
 template<typename T>
-inline SinkState SourceBase<T>::wait() {
+inline NodeState SourceBase<T>::wait() {
 
     // TODO: Inefficient? Use assert and remove from release code?
     if (!bound_)
@@ -146,8 +146,8 @@ inline SinkState SourceBase<T>::wait() {
         timeout = boost::get_system_time() + msec_t(10);
 
         // If the sink has left the room, we should too
-        if (node_->sink_state() == SinkState::END)
-            return SinkState::END;
+        if (node_->sink_state() == NodeState::END)
+            return NodeState::END;
     }
 
     // Before *this is destructed, must post() to prevent deadlock
@@ -211,14 +211,23 @@ class Source<SharedCVMat> : public SourceBase<SharedCVMat> {
 
 public:
 
+    struct MatParameters {
+        size_t cols  {0};
+        size_t rows  {0};
+        size_t type  {0};
+        size_t bytes {0};
+    };
+
     void connect(const std::string &address) override;
 
     //virtual SharedCVMat& retrieve() override = delete;
     inline cv::Mat retrieve() const { return frame_; }
-    inline cv::Mat clone() { return frame_.clone(); }
+    inline cv::Mat clone() const { return frame_.clone(); }
+    inline MatParameters parameters() const { return parameters_; }
 
 private :
     cv::Mat frame_;
+    MatParameters parameters_;
 
 };
 
@@ -243,7 +252,7 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
 
     // Wait for the SINK to bind the node and provide matrix
     // header info.
-    if (node_->sink_state() != SinkState::BOUND) {
+    if (node_->sink_state() != NodeState::SINK_BOUND) {
 
         wait();
 
@@ -263,6 +272,13 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
     frame_ = cv::Mat(sh_object_->size(),
                      sh_object_->type(),
                      obj_shmem_.get_address_from_handle(sh_object_->data()));
+
+    // Save parameters so that to construct cv::Mats with
+    parameters_.cols = sh_object_->size().width;
+    parameters_.rows = sh_object_->size().height;
+    parameters_.type = sh_object_->type();
+    parameters_.bytes = frame_.total() * frame_.elemSize();
+
 }
 
 } // namespace oat

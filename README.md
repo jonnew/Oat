@@ -907,6 +907,14 @@ instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/i
 since it is a multistep process. Here are some additional hints that worked for
 me:
 
+- I have found that its quite difficult to get NVIDIA drivers new enough to
+  support CUDA Toolkit 7.5 to work on my system. If you have this problem, use
+  version 7.0.
+- I have found that installing the toolkit via 'runfile' to be the most
+  painless. To do this you will need to switch your system to text mode using
+  <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F1</kbd>, and killing the X-server
+  via `sudo service lightdm stop` (or equivalent), and running the runfile with
+  root privileges.
 - Do __not__ install the nvidia drivers along with the CUDA toolkit
   installation. I found that (using ubuntu 14.04) this causes all sorts of
   issues with X, cinnamon, etc, to the point where I could not even boot my

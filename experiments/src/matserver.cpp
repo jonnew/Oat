@@ -71,16 +71,13 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        // How many bytes per matrix?
-        cv::Size mat_dims(ext_mat.cols, ext_mat.rows);
-
         // Create sink to send matrix into
         oat::Sink<oat::SharedCVMat> sink;
 
         // Bind a shared memory segment, and use it to construct
         // a reference to a shared cv::Mat
         sink.bind("exp", ext_mat.total() * ext_mat.elemSize());
-        cv::Mat shared_mat = sink.retrieve(mat_dims, ext_mat.type());
+        cv::Mat shared_mat = sink.retrieve(ext_mat.cols, ext_mat.rows, ext_mat.type());
 
         uint64_t angle = 0;
         cv::Point2f src_center(ext_mat.cols/2.0F, ext_mat.rows/2.0F);

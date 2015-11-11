@@ -2,7 +2,7 @@
 //* File:   BackgroundSubtractor.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -23,10 +23,6 @@
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
-#ifdef NOIMP_OAT_USE_CUDA
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/cudaarithm.hpp>
-#endif
 
 #include <cpptoml.h>
 #include "../../lib/utility/OatTOMLSanitize.h"
@@ -34,15 +30,20 @@
 
 #include "BackgroundSubtractor.h"
 
-BackgroundSubtractor::BackgroundSubtractor(const std::string& source_name, const std::string& sink_name) :
-  FrameFilter(source_name, sink_name) { }
+BackgroundSubtractor::BackgroundSubtractor(
+            const std::string &frame_source_address,
+            const std::string &frame_sink_address) :
+  FrameFilter(frame_source_address, frame_sink_address)
+{
+    // Nothing
+}
 
 void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
     std::vector<std::string> options {"background"};
-    
-    // This will throw cpptoml::parse_exception if a file 
+
+    // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
     auto config = cpptoml::parse_file(config_file);
 
@@ -51,7 +52,7 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
 
         // Get this components configuration table
         auto this_config = config->get_table(config_key);
-        
+
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
 
@@ -73,36 +74,19 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
 
 void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
 
-//#ifdef NOIMP_OAT_USE_CUDA
-//    background_frame.upload(frame);
-//    result_frame.upload(frame);
-//#else
     background_frame = frame.clone();
-//#endif
-
     background_set = true;
 }
 
-cv::Mat BackgroundSubtractor::filter(cv::Mat& frame) {
+void BackgroundSubtractor::filter(cv::Mat& frame) {
     // Throws cv::Exception if there is a size mismatch between frames,
     // or in any case where cv assertions fail.
-    
+
     // Only proceed with processing if we are getting a valid frame
-    if (background_set) {
-
-//#ifdef NOIMP_OAT_USE_CUDA
-//        current_frame.upload(frame);
-//        cv::cuda::subtract(current_frame, background_frame, result_frame);
-//        result_frame.download(frame);
-//#else
+    if (background_set)
         frame = frame - background_frame;
-//#endif
-    } else {
-
+    else
         // First image is always used as the default background image if one is
         // not provided in a configuration file
         setBackgroundImage(frame);
-    }
-
-    return frame;
 }

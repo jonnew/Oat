@@ -50,8 +50,8 @@ void FileReader::connectToNode() {
     frame_sink_.bind(frame_sink_address_,
             example_frame.total() * example_frame.elemSize());
 
-    cv::Size mat_dims(example_frame.cols, example_frame.rows);
-    shared_frame_ = frame_sink_.retrieve(mat_dims, example_frame.type());
+    shared_frame_ = frame_sink_.retrieve(
+            example_frame.cols, example_frame.rows, example_frame.type());
 
     // Reset the video to the start
     file_reader_.set(CV_CAP_PROP_POS_AVI_RATIO, 0);
