@@ -29,10 +29,6 @@
 #include <opencv2/cudaarithm.hpp>
 #endif
 
-//#include "../../lib/shmem/SharedMemoryManager.h"
-//#include "../../lib/shmem/MatClient.h"
-//#include "../../lib/shmem/MatServer.h"
-
 #include "../../experiments/lib/Source.h"
 #include "../../experiments/lib/Sink.h"
 #include "../../experiments/lib/SharedCVMat.h"
@@ -47,21 +43,23 @@ public:
     /**
      * Abstract frame filter.
      * All concrete frame filter types implement this ABC.
-     * @param source_name Frame SOURCE name
-     * @param sink_name Frame SINK name
+     * @param frame_source_address Frame SOURCE node address
+     * @param frame_sink_address Frame SINK node address
      */
     FrameFilter(const std::string &frame_source_address,
                 const std::string &frame_sink_address) :
       name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
     , frame_source_address_(frame_source_address)
-    , frame_sink_address_(frame_sink_address) {
-
+    , frame_sink_address_(frame_sink_address)
+    {
+        // Nothing
     }
 
     virtual ~FrameFilter() { }
 
     /**
-     * FrameServers must be able to connect to a Node that exists in shared memory
+     * FrameServers must be able to connect to a Source and Sink
+     * Nodes in shared memory
      */
     virtual void connectToNode() {
 

@@ -48,7 +48,7 @@ public:
     }
 
     // Note: functions defined within the class definition are implicitly inline
-    
+
     // SINK state
     void set_sink_state(NodeState value) { sink_state_ = value; }
     NodeState sink_state(void) const { return sink_state_; }
@@ -177,7 +177,6 @@ private:
               rb5_ {0}, rb6_ {0}, rb7_ {0}, rb8_ {0}, rb9_ {0};
 };
 
-} // namespace oat
-
+}       /* namespace oat */
 #endif	/* OAT_NODE_H */
 

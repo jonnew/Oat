@@ -21,14 +21,14 @@
 #define OAT_WEBCAM_H
 
 #include <string>
-#include <opencv2/core/mat.hpp>
-
 #include "FrameServer.h"
 
 // Forward declaration
 namespace cv {
     class VideoCapture;
 }
+
+namespace oat {
 
 class WebCam : public FrameServer {
 
@@ -54,4 +54,6 @@ private:
     std::unique_ptr<cv::VideoCapture> cv_camera_;
 
 };
+
+}      /* namespace oat */
 #endif /* OAT_WEBCAM_H */

@@ -17,14 +17,16 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
-#ifndef FRAMESERVER_H
-#define	FRAMESERVER_H
+#ifndef OAT_FRAMESERVER_H
+#define	OAT_FRAMESERVER_H
 
 #include <atomic>
 #include <opencv2/opencv.hpp>
 
 #include "../../experiments/lib/Sink.h"
 #include "../../experiments/lib/SharedCVMat.h"
+
+namespace oat {
 
 /**
  * Abstract base class to be implemented by any FrameServer
@@ -81,5 +83,6 @@ protected:
     cv::Mat shared_frame_;
 };
 
-#endif	/* FRAMESERVER_H */
+}       /* namespace oat */
+#endif	/* OAT_FRAMESERVER_H */
 

@@ -2,7 +2,7 @@
 //* File:   DifferenceDetector.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,70 +17,73 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef DIFFERENCEDETECTOR_H
-#define	DIFFERENCEDETECTOR_H
+#ifndef OAT_DIFFERENCEDETECTOR_H
+#define	OAT_DIFFERENCEDETECTOR_H
 
 #include "PositionDetector.h"
 
+namespace oat {
+
+// Forward decl.
+class Position2D;
+
 /**
  * Motion-based object position detector.
- * @param image_source_name
- * @param position_sink_name
  */
 class DifferenceDetector2D : public PositionDetector {
 public:
-    
+
     /**
      * Motion-based object position detector.
-     * @param source_name Image SOURCE name
-     * @param pos_sink_name Position SINK name
+     * @param frame_source_address Frame SOURCE node address
+     * @param position_sink_address Position SINK node address
      */
-    DifferenceDetector2D(const std::string& image_source_name, const std::string& pos_sink_name);
+    DifferenceDetector2D(const std::string &frame_source_address,
+                         const std::string &position_sink_address);
 
     /**
      * Perform motion-based object position detection.
      * @param frame frame to look for object in.
      * @return  detected object position.
      */
-    oat::Position2D detectPosition(cv::Mat& frame);
-    
-    void configure(const std::string& config_file, const std::string& key);
+    Position2D detectPosition(cv::Mat &frame) override;
+
+    void configure(const std::string &config_file, const std::string &key);
 private:
-    
+
     // Intermediate variables
-    cv::Mat this_image, last_image;
-    cv::Mat threshold_image;
-    bool last_image_set;
-    
+    cv::Mat this_image_, last_image_;
+    cv::Mat threshold_image_;
+    bool last_image_set_;
+
     // Object detection
-    double object_area;
-    
+    double object_area_;
+
     // The detected object position
-    oat::Position2D object_position;
-    
+    Position2D object_position_;
+
     // Detector parameters
-    int difference_intensity_threshold;
-    cv::Size blur_size;
-    bool blur_on;
-    
+    int difference_intensity_threshold_;
+    cv::Size blur_size_;
+    bool blur_on_;
+
     // Tuning stuff
-    bool tuning_on;
-    bool tuning_windows_created;
-    const std::string tuning_image_title;
-    cv::Mat tune_image;
+    bool tuning_windows_created_;
+    const std::string tuning_image_title_;
+    cv::Mat tune_image_;
     void tune(void);
     void createTuningWindows(void);
-    static void blurSliderChangedCallback(int value, void*);
+    static void blurSliderChangedCallback(int value, void *);
 
-    // Processing segregation 
+    // Processing segregation
     // TODO: These are terrible - no IO signature other than void -> void,
     // no exceptions, etc
     void applyThreshold(void);
     void set_blur_size(int value);
     void siftBlobs(void);
     void servePosition(void);
-
 };
 
-#endif	/* DIFFERENCEDETECTOR_H */
+}       /* namespace oat */
+#endif	/* OAT_DIFFERENCEDETECTOR_H */
 

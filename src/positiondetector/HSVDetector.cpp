@@ -2,7 +2,7 @@
 //* File:   HSVDetector.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -30,162 +30,110 @@
 #include <opencv2/cudaimgproc.hpp>
 #endif
 #include <cmath>
+#include <cpptoml.h>
 
 #include "../../lib/datatypes/Position2D.h"
-#include <cpptoml.h>
+
+#include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/OatTOMLSanitize.h"
 
 #include "HSVDetector.h"
 
-HSVDetector::HSVDetector(const std::string& image_source_name, const std::string& position_sink_name) :
-  PositionDetector(image_source_name, position_sink_name)
-, h_min(0)
-, h_max(256)
-, s_min(0)
-, s_max(256)
-, v_min(0)
-, v_max(256)
-, min_object_area(0)
-, max_object_area(std::numeric_limits<double>::max())
-, tuning_on(false) {
+namespace oat {
 
+HSVDetector::HSVDetector(const std::string &frame_source_address,
+                         const std::string &position_sink_address) :
+  PositionDetector(frame_source_address, position_sink_address)
+{
     // Set defaults for the erode and dilate blocks
-    // Cannot use initializer because if these are set to 0, erode_on or 
+    // Cannot use initializer because if these are set to 0, erode_on or
     // dilate_on must be set to false
     set_erode_size(0);
     set_dilate_size(10);
-    
+
 #ifdef NOIMP_OAT_USE_CUDA
     createHSVLUT();
 #endif
 }
 
-oat::Position2D HSVDetector::detectPosition(cv::Mat& frame_in) {
+oat::Position2D HSVDetector::detectPosition(cv::Mat &frame) {
 
-#ifdef NOIMP_OAT_USE_CUDA
-    hsv_image.upload(frame_in);
-    cv::cuda::cvtColor(hsv_image, hsv_image, cv::COLOR_BGR2HSV);
-#else
-    cv::cvtColor(frame_in, hsv_image, cv::COLOR_BGR2HSV);
-#endif
-    
-    applyThreshold();
-    erodeDilate();
-    siftBlobs();
-    tune();
+    // Transform frame to HSV
+    cv::cvtColor(frame, frame, cv::COLOR_BGR2HSV);
 
-    return object_position;
+    // Threshold HSV channels
+    cv::inRange(frame,
+                cv::Scalar(h_min_, s_min_, v_min_),
+                cv::Scalar(h_max_, s_max_, v_max_),
+                threshold_frame_);
+
+    // Filter the resulting threshold image
+    if (erode_on_)
+        cv::erode(threshold_frame_, threshold_frame_, erode_element_);
+
+    if (dilate_on_)
+        cv::dilate(threshold_frame_, threshold_frame_, dilate_element_);
+
+    // Threshold frame will be destroyed by the transform below, so we need to use
+    // it to form the frame that will be shown in the tuning window here
+    if (tuning_on_)
+         frame.setTo(0, threshold_frame_ == 0);
+
+    // Find the largest contour in the threshold image
+    siftContours(threshold_frame_,
+                 object_position_,
+                 min_object_area_,
+                 max_object_area_);
+
+    // Use the GUI tuner if requested
+    tune(frame);
+
+    return object_position_;
 }
 
-void HSVDetector::applyThreshold() {
-    
-#ifdef NOIMP_OAT_USE_CUDA
-    hsv_lut->transform(hsv_image, lut_frame);
-    
-    std::vector<cv::cuda::GpuMat> channels;
-    cv::cuda::split(lut_frame, channels);
-    cv::cuda::bitwise_and(channels[0], channels[1], threshold_frame);
-    cv::cuda::bitwise_and(channels[2], threshold_frame, threshold_frame);
-#else  
-    cv::inRange(hsv_image, cv::Scalar(h_min, s_min, v_min), cv::Scalar(h_max, s_max, v_max), threshold_frame);
-    hsv_image.setTo(0, threshold_frame == 0);
-#endif
-}
+void siftContours(cv::Mat &frame, Position2D &position, double min_area, double max_area) {
 
-void HSVDetector::erodeDilate() {
-    
-#ifdef NOIMP_OAT_USE_CUDA
-    if (erode_on) {
-        erode_filter->apply(threshold_frame, threshold_frame);
-    }
-
-    if (dilate_on) {
-        dilate_filter->apply(threshold_frame, threshold_frame);
-    }
-#else     
-    if (erode_on) {
-        cv::erode(threshold_frame, threshold_frame, erode_element);
-    }
-
-    if (dilate_on) {
-        cv::dilate(threshold_frame, threshold_frame, dilate_element);
-    }
-#endif
-}
-
-void HSVDetector::siftBlobs() {
-
-    cv::Mat thesh_cpy;
-    
-#ifdef NOIMP_OAT_USE_CUDA
-    threshold_frame.download(thesh_cpy);
-#else
-    thesh_cpy = threshold_frame.clone();
-#endif
-    
-    std::vector< std::vector < cv::Point > > contours;
-    std::vector< cv::Vec4i > hierarchy;
+    std::vector<std::vector <cv::Point> > contours;
+    std::vector<cv::Vec4i> hierarchy;
 
     // This function will modify the threshold_img data.
-    cv::findContours(thesh_cpy, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(frame, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
 
-    object_area = 0;
-    object_position.position_valid = false;
+    double object_area = 0;
+    double countour_area = 0;
+    position.position_valid = false;
 
-    if (hierarchy.size() > 0) {
+    for (int index = 0; index >= 0; index = hierarchy[index][0]) {
 
-        for (int index = 0; index >= 0; index = hierarchy[index][0]) {
+        cv::Moments moment = cv::moments((cv::Mat)contours[index]);
+        countour_area = moment.m00;
 
-            cv::Moments moment = cv::moments((cv::Mat)contours[index]);
-            double area = moment.m00;
+        // Isolate the largest contour within the min/max range.
+        if (countour_area > min_area &&
+            countour_area < max_area &&
+            countour_area > object_area) {
 
-            // Isolate the largest contour within the min/max range.
-            if (area > min_object_area && area < max_object_area && area > object_area) {
-                object_position.position.x = moment.m10 / area;
-                object_position.position.y = moment.m01 / area;
-                object_position.position_valid = true;
-                object_area = area;
-            }
+            position.position.x = moment.m10 / countour_area;
+            position.position.y = moment.m01 / countour_area;
+            position.position_valid = true;
+            object_area = countour_area;
         }
-    }
-
-    if (tuning_on) {
-        
-        std::string msg = cv::format("Object not found"); 
-
-        // Plot a circle representing found object
-        if (object_position.position_valid) {
-            auto radius = std::sqrt(object_area / PI);
-            cv::Point center;
-            center.x = object_position.position.x;
-            center.y = object_position.position.y;
-            cv::circle(hsv_image, center, radius, cv::Scalar(0, 0, 255), 2);
-            msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
-        }
-
-        int baseline = 0;
-        cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
-        cv::Point text_origin(
-                hsv_image.cols - textSize.width - 10,
-                hsv_image.rows - 2 * baseline - 10);
-
-        cv::putText(hsv_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
     }
 }
 
-void HSVDetector::configure(const std::string& config_file, const std::string& config_key) {
+void HSVDetector::configure(const std::string &config_file, const std::string &config_key) {
 
     // Available options
-    std::vector<std::string> options {"erode", 
-                                      "dilate", 
-                                      "min_area", 
-                                      "max_area", 
-                                      "h_thresholds", 
-                                      "s_thresholds", 
-                                      "v_thresholds", 
+    std::vector<std::string> options {"erode",
+                                      "dilate",
+                                      "min_area",
+                                      "max_area",
+                                      "h_thresholds",
+                                      "s_thresholds",
+                                      "v_thresholds",
                                       "tune" };
-    
-    // This will throw cpptoml::parse_exception if a file 
+
+    // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
    auto config = cpptoml::parse_file(config_file);
 
@@ -194,7 +142,7 @@ void HSVDetector::configure(const std::string& config_file, const std::string& c
 
         // Get this components configuration table
         auto this_config = config->get_table(config_key);
-        
+
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
 
@@ -203,9 +151,9 @@ void HSVDetector::configure(const std::string& config_file, const std::string& c
             int64_t val;
             oat::config::getValue(this_config, "erode", val, (int64_t)0);
             set_erode_size(val);
-            
+
         }
-        
+
         // Dilate
         {
             int64_t val;
@@ -214,43 +162,43 @@ void HSVDetector::configure(const std::string& config_file, const std::string& c
         }
 
         // Minimum object area
-        oat::config::getValue(this_config, "min_area", min_object_area, 0.0);
-         
+        oat::config::getValue(this_config, "min_area", min_object_area_, 0.0);
+
         // Maximum object area
-        oat::config::getValue(this_config, "max_area", max_object_area, 0.0);
-        
+        oat::config::getValue(this_config, "max_area", max_object_area_, 0.0);
+
         // HSV thresholds
         oat::config::Table t;
         if (oat::config::getTable(this_config, "h_thresholds", t)) {
-            
-            int64_t val; 
+
+            int64_t val;
             oat::config::getValue(t, "min", val, (int64_t)0, (int64_t)256, true);
-            h_min = val;
+            h_min_ = val;
             oat::config::getValue(t, "max", val, (int64_t)0, (int64_t)256, true);
-            h_max = val; 
+            h_max_ = val;
         }
 
         if (oat::config::getTable(this_config, "s_thresholds", t)) {
-            
-            int64_t val; 
+
+            int64_t val;
             oat::config::getValue(t, "min", val, (int64_t)0, (int64_t)256, true);
-            s_min = val;
+            s_min_ = val;
             oat::config::getValue(t, "max", val, (int64_t)0, (int64_t)256, true);
-            s_max = val; 
+            s_max_ = val;
         }
-        
+
         if (oat::config::getTable(this_config, "v_thresholds", t)) {
-            
-            int64_t val; 
+
+            int64_t val;
             oat::config::getValue(t, "min", val, (int64_t)0, (int64_t)256, true);
-            v_min = val;
+            v_min_ = val;
             oat::config::getValue(t, "max", val, (int64_t)0, (int64_t)256, true);
-            v_max = val; 
+            v_max_ = val;
         }
 
         // Tuning
-        oat::config::getValue(this_config, "tune", tuning_on);
-        if (tuning_on) {
+        oat::config::getValue(this_config, "tune", tuning_on_);
+        if (tuning_on_) {
             createTuningWindows();
         }
 
@@ -259,24 +207,43 @@ void HSVDetector::configure(const std::string& config_file, const std::string& c
     }
 }
 
-void HSVDetector::tune() {
+void HSVDetector::tune(cv::Mat &image) {
 
-    if (tuning_on) {
-        if (!tuning_windows_created) {
-            createTuningWindows();
+    if (tuning_on_) {
+        std::string msg = cv::format("Object not found");
+
+        // Plot a circle representing found object
+        if (object_position_.position_valid) {
+            auto radius = std::sqrt(object_area_ / PI);
+            cv::Point center;
+            center.x = object_position_.position.x;
+            center.y = object_position_.position.y;
+            cv::circle(image, center, radius, cv::Scalar(0, 0, 255), 2);
+            msg = cv::format("(%d, %d) pixels",
+                    (int) object_position_.position.x,
+                    (int) object_position_.position.y);
         }
-        cv::imshow(tuning_image_title, hsv_image);
+
+        int baseline = 0;
+        cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
+        cv::Point text_origin(
+                image.cols - textSize.width - 10,
+                image.rows - 2 * baseline - 10);
+
+        cv::putText(image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+
+        if (!tuning_windows_created_)
+            createTuningWindows();
+
+        cv::imshow(tuning_image_title_, image);
         cv::waitKey(1);
-        
-#ifdef NOIMP_OAT_USE_CUDA
-        createHSVLUT();
-#endif
-    } else if (!tuning_on && tuning_windows_created) {
-        
+
+    } else if (!tuning_on_ && tuning_windows_created_) {
+
         // TODO: Window will not actually close!!
         // Destroy the tuning windows
-        cv::destroyWindow(tuning_image_title);
-        tuning_windows_created = false;
+        cv::destroyWindow(tuning_image_title_);
+        tuning_windows_created_ = false;
     }
 }
 
@@ -284,110 +251,51 @@ void HSVDetector::createTuningWindows() {
 
 #ifdef OAT_USE_OPENGL
     try {
-        cv::namedWindow(tuning_image_title, cv::WINDOW_OPENGL);
+        cv::namedWindow(tuning_image_title_, cv::WINDOW_OPENGL);
     } catch (cv::Exception& ex) {
-        oat::whoWarn(tuning_image_title, "OpenCV not compiled with OpenGL support. Falling back to OpenCV's display driver.\n");
-        cv::namedWindow(name, cv::WINDOW_NORMAL);
+        whoWarn(name_, "OpenCV not compiled with OpenGL support. Falling back to OpenCV's display driver.\n");
+        cv::namedWindow(name_, cv::WINDOW_NORMAL);
     }
 #else
-    cv::namedWindow(tuning_image_title, cv::WINDOW_NORMAL);
+    cv::namedWindow(tuning_image_title_, cv::WINDOW_NORMAL);
 #endif
 
     // Create sliders and insert them into window
-    cv::createTrackbar("H MIN", tuning_image_title, &h_min, 256);
-    cv::createTrackbar("H MAX", tuning_image_title, &h_max, 256);
-    cv::createTrackbar("S MIN", tuning_image_title, &s_min, 256);
-    cv::createTrackbar("S MAX", tuning_image_title, &s_max, 256);
-    cv::createTrackbar("V MIN", tuning_image_title, &v_min, 256);
-    cv::createTrackbar("V MAX", tuning_image_title, &v_max, 256);
-    cv::createTrackbar("MIN AREA", tuning_image_title, nullptr, 10000, &HSVDetector::minAreaSliderChangedCallback, this);
-    cv::createTrackbar("MAX AREA", tuning_image_title, nullptr, 10000, &HSVDetector::maxAreaSliderChangedCallback, this);
-    cv::createTrackbar("ERODE", tuning_image_title, &erode_px, 50, &HSVDetector::erodeSliderChangedCallback, this);
-    cv::createTrackbar("DILATE", tuning_image_title, &dilate_px, 50, &HSVDetector::dilateSliderChangedCallback, this);
+    cv::createTrackbar("H MIN", tuning_image_title_, &h_min_, 256);
+    cv::createTrackbar("H MAX", tuning_image_title_, &h_max_, 256);
+    cv::createTrackbar("S MIN", tuning_image_title_, &s_min_, 256);
+    cv::createTrackbar("S MAX", tuning_image_title_, &s_max_, 256);
+    cv::createTrackbar("V MIN", tuning_image_title_, &v_min_, 256);
+    cv::createTrackbar("V MAX", tuning_image_title_, &v_max_, 256);
+    cv::createTrackbar("MIN AREA", tuning_image_title_, nullptr, 10000, &HSVDetector::minAreaSliderChangedCallback, this);
+    cv::createTrackbar("MAX AREA", tuning_image_title_, nullptr, 10000, &HSVDetector::maxAreaSliderChangedCallback, this);
+    cv::createTrackbar("ERODE", tuning_image_title_, &erode_px_, 50, &HSVDetector::erodeSliderChangedCallback, this);
+    cv::createTrackbar("DILATE", tuning_image_title_, &dilate_px_, 50, &HSVDetector::dilateSliderChangedCallback, this);
 
-    tuning_windows_created = true;
-}
-
-#ifdef NOIMP_OAT_USE_CUDA
-
-void HSVDetector::createHSVLUT() {
-
-    std::vector<cv::Mat> lut_channels;
-    
-    lut_channels.push_back(cv::Mat(256, 1, CV_8UC1, cv::Scalar(0)));
-    if (h_min < h_max) {
-        auto h_inc = lut_channels[0].rowRange(h_min, h_max);
-        h_inc.setTo(cv::Scalar(1));
-    }
-
-    lut_channels.push_back(cv::Mat(256, 1, CV_8UC1, cv::Scalar(0)));
-    if (s_min < s_max) {
-        auto s_inc = lut_channels[1].rowRange(s_min, s_max);
-        s_inc.setTo(cv::Scalar(1));
-    }
-
-    lut_channels.push_back(cv::Mat(256, 1, CV_8UC1, cv::Scalar(0)));
-    if (v_min < v_max) {
-        auto v_inc = lut_channels[2].rowRange(v_min, v_max);
-        v_inc.setTo(cv::Scalar(1));
-    }
-    
-    cv::Mat lut;
-    cv::merge(lut_channels, lut);
-    hsv_lut = cv::cuda::createLookUpTable(lut);
-  
+    tuning_windows_created_ = true;
 }
 
 void HSVDetector::set_erode_size(int value) {
 
     if (value > 0) {
-        erode_on = true;
-        erode_px = value;
-        cv::Mat erode_element = 
-            cv::getStructuringElement(cv::MORPH_RECT, cv::Size(erode_px, erode_px));
-        erode_filter = 
-            cv::cuda::createMorphologyFilter(cv::MORPH_ERODE, CV_8UC1, erode_element);
+        erode_on_ = true;
+        erode_px_ = value;
+        erode_element_ = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(erode_px_, erode_px_));
     } else {
-        erode_on = false;
+        erode_on_ = false;
     }
 }
 
 void HSVDetector::set_dilate_size(int value) {
     if (value > 0) {
-        dilate_on = true;
-        dilate_px = value;
-        cv::Mat dilate_element = 
-            cv::getStructuringElement(cv::MORPH_RECT, cv::Size(dilate_px, dilate_px));
-        dilate_filter = 
-            cv::cuda::createMorphologyFilter(cv::MORPH_DILATE, CV_8UC1, dilate_element);
+        dilate_on_ = true;
+        dilate_px_ = value;
+        dilate_element_ = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(dilate_px_, dilate_px_));
     } else {
-        dilate_on = false;
+        dilate_on_ = false;
     }
 }
 
-#else
-
-void HSVDetector::set_erode_size(int value) {
-
-    if (value > 0) {
-        erode_on = true;
-        erode_px = value;
-        erode_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(erode_px, erode_px));
-    } else {
-        erode_on = false;
-    }
-}
-
-void HSVDetector::set_dilate_size(int value) {
-    if (value > 0) {
-        dilate_on = true;
-        dilate_px = value;
-        dilate_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(dilate_px, dilate_px));
-    } else {
-        dilate_on = false;
-    }
-}
-#endif // NOIMP_OAT_USE_CUDA
 
 void HSVDetector::minAreaSliderChangedCallback(int value, void* object) {
     HSVDetector* hsv_detector = (HSVDetector*) object;
@@ -408,3 +316,100 @@ void HSVDetector::dilateSliderChangedCallback(int value, void* object) {
     HSVDetector* hsv_detector = (HSVDetector*) object;
     hsv_detector->set_dilate_size(value);
 }
+
+} /* namespace oat */
+
+// NOTE: This code was from a leftover functional CUDA implementation that did not
+// give me the performance gains I was hoping for. I'm leaving it here in case
+// I figure something out that changes my mind about it.
+//
+//#ifdef NOIMP_OAT_USE_CUDA
+//    cv::cuda::GpuMat hsv_image_, lut_frame, threshold_frame_;
+//    cv::Mat search_frame;
+//    cv::Mat tuning_image;
+//    std::vector<cv::cuda::GpuMat> hsv_channels;
+//    cv::Ptr<cv::cuda::LookUpTable> hsv_lut;
+//    cv::Ptr<cv::cuda::Filter> erode_filter;
+//    cv::Ptr<cv::cuda::Filter> dilate_filter;
+//
+//void hsvThreshold(cv::Mat &in, cv::Mat &out,
+//        const &cv::Scalar min, const &cv::Scalar max) {
+//
+//#ifdef NOIMP_OAT_USE_CUDA
+//    hsv_lut->transform(hsv_image_, lut_frame);
+//
+//    std::vector<cv::cuda::GpuMat> channels;
+//    cv::cuda::split(lut_frame, channels);
+//    cv::cuda::bitwise_and(channels[0], channels[1], threshold_frame_);
+//    cv::cuda::bitwise_and(channels[2], threshold_frame_, threshold_frame_);
+//#endif
+//}
+
+//void HSVDetector::erodeDilate(cv::Mat &frame_io, cv::Mat &eroder, cv::Mat &dilator) {
+//
+//#ifdef NOIMP_OAT_USE_CUDA
+//    if (erode_on_)
+//        erode_filter->apply(frame_io, frame_io);
+//
+//    if (dilate_on_)
+//        dilate_filter->apply(frame_io, frame_io);
+//#endif
+//}
+//
+//
+//void HSVDetector::createHSVLUT() {
+//
+//    std::vector<cv::Mat> lut_channels;
+//
+//    lut_channels.push_back(cv::Mat(256, 1, CV_8UC1, cv::Scalar(0)));
+//    if (h_min < h_max) {
+//        auto h_inc = lut_channels[0].rowRange(h_min, h_max);
+//        h_inc.setTo(cv::Scalar(1));
+//    }
+//
+//    lut_channels.push_back(cv::Mat(256, 1, CV_8UC1, cv::Scalar(0)));
+//    if (s_min < s_max) {
+//        auto s_inc = lut_channels[1].rowRange(s_min, s_max);
+//        s_inc.setTo(cv::Scalar(1));
+//    }
+//
+//    lut_channels.push_back(cv::Mat(256, 1, CV_8UC1, cv::Scalar(0)));
+//    if (v_min < v_max) {
+//        auto v_inc = lut_channels[2].rowRange(v_min, v_max);
+//        v_inc.setTo(cv::Scalar(1));
+//    }
+//
+//    cv::Mat lut;
+//    cv::merge(lut_channels, lut);
+//    hsv_lut = cv::cuda::createLookUpTable(lut);
+//
+//}
+//
+//void HSVDetector::set_erode_size(int value) {
+//
+//    if (value > 0) {
+//        erode_on = true;
+//        erode_px = value;
+//        cv::Mat erode_element =
+//            cv::getStructuringElement(cv::MORPH_RECT, cv::Size(erode_px, erode_px));
+//        erode_filter =
+//            cv::cuda::createMorphologyFilter(cv::MORPH_ERODE, CV_8UC1, erode_element);
+//    } else {
+//        erode_on = false;
+//    }
+//}
+//
+//void HSVDetector::set_dilate_size(int value) {
+//    if (value > 0) {
+//        dilate_on = true;
+//        dilate_px = value;
+//        cv::Mat dilate_element =
+//            cv::getStructuringElement(cv::MORPH_RECT, cv::Size(dilate_px, dilate_px));
+//        dilate_filter =
+//            cv::cuda::createMorphologyFilter(cv::MORPH_DILATE, CV_8UC1, dilate_element);
+//    } else {
+//        dilate_on = false;
+//    }
+//}
+//
+//#endif // NOIMP_OAT_USE_CUDA

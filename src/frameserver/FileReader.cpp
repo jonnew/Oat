@@ -28,6 +28,8 @@
 
 #include "FileReader.h"
 
+namespace oat {
+
 FileReader::FileReader(const std::string &image_sink_address,
         const std::string &file_name_in,
         const double frames_per_second) :
@@ -141,3 +143,5 @@ void FileReader::calculateFramePeriod() {
     // Automatic conversion
     frame_period_in_sec_ = frame_period;
 }
+
+} /* namespace oat */

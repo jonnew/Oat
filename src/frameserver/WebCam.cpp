@@ -20,12 +20,16 @@
 #include "WebCam.h"
 
 #include <string>
+#include <opencv2/core/mat.hpp>
 #include <opencv2/videoio.hpp>
 
 #include <cpptoml.h>
+
 #include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/make_unique.h"
+
+namespace oat {
 
 WebCam::WebCam(const std::string &frame_sink_name) :
   FrameServer(frame_sink_name)
@@ -116,3 +120,5 @@ void WebCam::configure(const std::string& config_file, const std::string& config
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
+
+} /* namespace oat */

@@ -2,7 +2,7 @@
 //* File:   DifferenceDetector.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -21,41 +21,44 @@
 
 #include <string>
 #include <opencv2/opencv.hpp>
+#include <cpptoml.h>
 
 #include "../../lib/datatypes/Position2D.h"
-#include <cpptoml.h>
+#include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/OatTOMLSanitize.h"
 
 #include "DifferenceDetector.h"
 
+namespace oat {
+
 DifferenceDetector2D::DifferenceDetector2D(const std::string& image_source_name, const std::string& position_sink_name) :
 PositionDetector(image_source_name, position_sink_name)
-, tuning_image_title(position_sink_name + "_tuning")
-, tuning_windows_created(false)
-, last_image_set(false)
-, tuning_on(false) {
+, tuning_image_title_(position_sink_name + "_tuning")
+, tuning_windows_created_(false)
+, last_image_set_(false)
+{
 
-    // Cannot use initializer because if this is set to 0, erode_on or 
+    // Cannot use initializer because if this is set to 0, erode_on or
     // dilate_on must be set to false
     set_blur_size(2);
 }
 
-oat::Position2D DifferenceDetector2D::detectPosition(cv::Mat& frame) {
+oat::Position2D DifferenceDetector2D::detectPosition(cv::Mat &frame) {
 
-    this_image = frame;
+    this_image_ = frame;
     applyThreshold();
     siftBlobs();
     tune();
-    
-    return object_position;
+
+    return object_position_;
 }
 
 void DifferenceDetector2D::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
     std::vector<std::string> options {"blur", "diff_threshold", "tune"};
-    
-    // This will throw cpptoml::parse_exception if a file 
+
+    // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
    auto config = cpptoml::parse_file(config_file);
 
@@ -64,7 +67,7 @@ void DifferenceDetector2D::configure(const std::string& config_file, const std::
 
         // Get this components configuration table
         auto this_config = config->get_table(config_key);
-        
+
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
 
@@ -79,15 +82,15 @@ void DifferenceDetector2D::configure(const std::string& config_file, const std::
         {
             int64_t val;
             oat::config::getValue(this_config, "diff_threshold", val, (int64_t)0);
-            difference_intensity_threshold = val;
-        }       
+            difference_intensity_threshold_ = val;
+        }
 
         // Tuning
-        oat::config::getValue(this_config, "tune", tuning_on);
-        if (tuning_on) {
+        oat::config::getValue(this_config, "tune", tuning_on_);
+        if (tuning_on_) {
             createTuningWindows();
         }
-        
+
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
@@ -96,7 +99,7 @@ void DifferenceDetector2D::configure(const std::string& config_file, const std::
 
 void DifferenceDetector2D::siftBlobs() {
 
-    cv::Mat thresh_cpy = threshold_image.clone();
+    cv::Mat thresh_cpy = threshold_image_.clone();
     std::vector< std::vector < cv::Point > > contours;
     std::vector< cv::Vec4i > hierarchy;
     cv::Rect objectBoundingRectangle;
@@ -108,11 +111,11 @@ void DifferenceDetector2D::siftBlobs() {
 
     //if contours vector is not empty, we have found some objects
     if (contours.size() > 0) {
-        object_position.position_valid = true;
+        object_position_.position_valid = true;
     } else
-        object_position.position_valid = false;
+        object_position_.position_valid = false;
 
-    if (object_position.position_valid) {
+    if (object_position_.position_valid) {
 
         //the largest contour is found at the end of the contours vector
         //we will simply assume that the biggest contour is the object we are looking for.
@@ -122,68 +125,68 @@ void DifferenceDetector2D::siftBlobs() {
         //make a bounding rectangle around the largest contour then find its centroid
         //this will be the object's final estimated position.
         objectBoundingRectangle = cv::boundingRect(largestContourVec.at(0));
-        object_position.position.x = objectBoundingRectangle.x + 0.5 * objectBoundingRectangle.width;
-        object_position.position.y = objectBoundingRectangle.y + 0.5 * objectBoundingRectangle.height;
+        object_position_.position.x = objectBoundingRectangle.x + 0.5 * objectBoundingRectangle.width;
+        object_position_.position.y = objectBoundingRectangle.y + 0.5 * objectBoundingRectangle.height;
     }
 
-    if (tuning_on) {
+    if (tuning_on_) {
 
         std::string msg = cv::format("Object not found"); // TODO: This default msg will not show up. I have no idea why.
 
         // Plot a circle representing found object
-        if (object_position.position_valid) {
-            cv::cvtColor(threshold_image, threshold_image, cv::COLOR_GRAY2BGR);
-            cv::rectangle(threshold_image, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
-            msg = cv::format("(%d, %d) pixels", (int) object_position.position.x, (int) object_position.position.y);
+        if (object_position_.position_valid) {
+            cv::cvtColor(threshold_image_, threshold_image_, cv::COLOR_GRAY2BGR);
+            cv::rectangle(threshold_image_, objectBoundingRectangle.tl(), objectBoundingRectangle.br(), cv::Scalar(0, 0, 255), 2);
+            msg = cv::format("(%d, %d) pixels", (int) object_position_.position.x, (int) object_position_.position.y);
 
         }
 
         int baseline = 0;
         cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
         cv::Point text_origin(
-                threshold_image.cols - textSize.width - 10,
-                threshold_image.rows - 2 * baseline - 10);
+                threshold_image_.cols - textSize.width - 10,
+                threshold_image_.rows - 2 * baseline - 10);
 
-        cv::putText(threshold_image, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+        cv::putText(threshold_image_, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
     }
 }
 
 void DifferenceDetector2D::applyThreshold() {
 
-    if (last_image_set) {
-        cv::cvtColor(this_image, this_image, cv::COLOR_BGR2GRAY);
-        cv::absdiff(this_image, last_image, threshold_image);
-        cv::threshold(threshold_image, threshold_image, difference_intensity_threshold, 255, cv::THRESH_BINARY);
-        if (blur_on) {
-            cv::blur(threshold_image, threshold_image, blur_size);
+    if (last_image_set_) {
+        cv::cvtColor(this_image_, this_image_, cv::COLOR_BGR2GRAY);
+        cv::absdiff(this_image_, last_image_, threshold_image_);
+        cv::threshold(threshold_image_, threshold_image_, difference_intensity_threshold_, 255, cv::THRESH_BINARY);
+        if (blur_on_) {
+            cv::blur(threshold_image_, threshold_image_, blur_size_);
         }
-        cv::threshold(threshold_image, threshold_image, difference_intensity_threshold, 255, cv::THRESH_BINARY);
-        last_image = this_image.clone(); // Get a copy of the last image
+        cv::threshold(threshold_image_, threshold_image_, difference_intensity_threshold_, 255, cv::THRESH_BINARY);
+        last_image_ = this_image_.clone(); // Get a copy of the last image
     } else {
-        threshold_image = this_image.clone();
-        cv::cvtColor(threshold_image, threshold_image, cv::COLOR_BGR2GRAY);
-        last_image = this_image.clone();
-        cv::cvtColor(last_image, last_image, cv::COLOR_BGR2GRAY);
-        last_image_set = true;
+        threshold_image_ = this_image_.clone();
+        cv::cvtColor(threshold_image_, threshold_image_, cv::COLOR_BGR2GRAY);
+        last_image_ = this_image_.clone();
+        cv::cvtColor(last_image_, last_image_, cv::COLOR_BGR2GRAY);
+        last_image_set_ = true;
     }
 }
 
 void DifferenceDetector2D::tune() {
 
-    if (tuning_on) {
-        if (!tuning_windows_created) {
+    if (tuning_on_) {
+        if (!tuning_windows_created_) {
             createTuningWindows();
         }
-        cv::imshow(tuning_image_title, threshold_image);
+        cv::imshow(tuning_image_title_, threshold_image_);
         cv::waitKey(1);
 
-    } else if (!tuning_on && tuning_windows_created) {
-        
+    } else if (!tuning_on_ && tuning_windows_created_) {
+
         // TODO: Window will not actually close!!
-        
+
         // Destroy the tuning windows
-        cv::destroyWindow(tuning_image_title);
-        tuning_windows_created = false;
+        cv::destroyWindow(tuning_image_title_);
+        tuning_windows_created_ = false;
     }
 }
 
@@ -191,20 +194,20 @@ void DifferenceDetector2D::createTuningWindows() {
 
 #ifdef OAT_USE_OPENGL
     try {
-        cv::namedWindow(tuning_image_title, cv::WINDOW_OPENGL);
+        cv::namedWindow(tuning_image_title_, cv::WINDOW_OPENGL);
     } catch (cv::Exception& ex) {
-        oat::whoWarn(name, "OpenCV not compiled with OpenGL support. Falling back to OpenCV's display driver.\n");
-        cv::namedWindow(tuning_image_title, cv::WINDOW_NORMAL);
+        whoWarn(name_, "OpenCV not compiled with OpenGL support. Falling back to OpenCV's display driver.\n");
+        cv::namedWindow(tuning_image_title_, cv::WINDOW_NORMAL);
     }
 #else
-    cv::namedWindow(tuning_image_title, cv::WINDOW_NORMAL);
+    cv::namedWindow(tuning_image_title_, cv::WINDOW_NORMAL);
 #endif
 
     // Create sliders and insert them into window
-    cv::createTrackbar("THRESH", tuning_image_title, &difference_intensity_threshold, 256);
-    cv::createTrackbar("BLUR", tuning_image_title, &blur_size.height, 50, &DifferenceDetector2D::blurSliderChangedCallback, this);
+    cv::createTrackbar("THRESH", tuning_image_title_, &difference_intensity_threshold_, 256);
+    cv::createTrackbar("BLUR", tuning_image_title_, &blur_size_.height, 50, &DifferenceDetector2D::blurSliderChangedCallback, this);
 
-    tuning_windows_created = true;
+    tuning_windows_created_ = true;
 }
 
 void DifferenceDetector2D::blurSliderChangedCallback(int value, void* object) {
@@ -215,9 +218,11 @@ void DifferenceDetector2D::blurSliderChangedCallback(int value, void* object) {
 void DifferenceDetector2D::set_blur_size(int value) {
 
     if (value > 0) {
-        blur_on = true;
-        blur_size = cv::Size(value, value);
+        blur_on_ = true;
+        blur_size_ = cv::Size(value, value);
     } else {
-        blur_on = false;
+        blur_on_ = false;
     }
 }
+
+} /* namespace oat */

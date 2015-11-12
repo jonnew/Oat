@@ -44,7 +44,7 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(const std::shared_ptr<FrameServer>& server) {
+void run(const std::shared_ptr<oat::FrameServer>& server) {
 
     try {
 
@@ -192,12 +192,12 @@ int main(int argc, char *argv[]) {
     }
 
     // Create the specified TYPE of detector
-    std::shared_ptr<FrameServer> server;
+    std::shared_ptr<oat::FrameServer> server;
 
     switch (type_hash[type]) {
         case 'a':
         {
-            server = std::make_shared<WebCam>(sink);
+            server = std::make_shared<oat::WebCam>(sink);
             break;
         }
 
@@ -209,13 +209,13 @@ int main(int argc, char *argv[]) {
                     "flycapture support, so TYPE=gige is not available.\n");
             return -1;
 #else
-            server = std::make_shared<PGGigECam>(sink, index);
+            server = std::make_shared<oat::PGGigECam>(sink, index);
 #endif
             break;
         }
         case 'c':
         {
-            server = std::make_shared<FileReader>(sink, video_file, frames_per_second);
+            server = std::make_shared<oat::FileReader>(sink, video_file, frames_per_second);
             break;
         }
         default:

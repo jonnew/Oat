@@ -28,7 +28,12 @@
 
 #include "FrameServer.h"
 
+namespace oat {
+
+namespace pg = FlyCapture2;
+
 class PGGigECam : public FrameServer {
+
 public:
     PGGigECam(const std::string &frame_sink_address, const size_t index);
 
@@ -67,16 +72,16 @@ private:
     unsigned int number_transmit_retries {0};
 
     // GigE Camera interface
-    FlyCapture2::GigECamera camera;
+    pg::GigECamera camera;
 
     // Camera and control state info
-    FlyCapture2::CameraInfo camera_info;
-    FlyCapture2::TriggerModeInfo trigger_mode_info;
-    FlyCapture2::GigEImageSettingsInfo image_settings_info;
+    pg::CameraInfo camera_info;
+    pg::TriggerModeInfo trigger_mode_info;
+    pg::GigEImageSettingsInfo image_settings_info;
 
     // The current, unbuffered frame in PG's format
-    FlyCapture2::Image raw_image;
-    std::unique_ptr<FlyCapture2::Image> rgb_image;
+    pg::Image raw_image;
+    std::unique_ptr<pg::Image> rgb_image;
 
     // For establishing connection
     int setCameraIndex(unsigned int requested_idx);
@@ -111,14 +116,15 @@ private:
 
     // Diagnostics and meta
     int findNumCameras(void);
-    void printError(FlyCapture2::Error error);
+    void printError(pg::Error error);
     bool pollForTriggerReady(void);
     int printCameraInfo(void);
     int printBusInfo(void);
-    void printStreamChannelInfo(FlyCapture2::GigEStreamChannel *stream_channel);
+    void printStreamChannelInfo(pg::GigEStreamChannel *stream_channel);
 
     // TODO: Grabbed frame callback
     // void onGrabbedImage(FlyCapture2::Image* pImage, const void* pCallbackData);
 };
 
+}      /* namespace oat */
 #endif /* OAT_PGGIGECAM_H */

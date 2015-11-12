@@ -22,9 +22,11 @@
 
 #include <chrono>
 #include <string>
-#include <opencv2/opencv.hpp>
+#include <opencv2/videoio.hpp>
 
 #include "FrameServer.h"
+
+namespace oat {
 
 class FileReader : public FrameServer {
 public:
@@ -55,5 +57,6 @@ private:
     std::chrono::high_resolution_clock::time_point tick_;
 };
 
+}       /* namespace oat */
 #endif	/* OAT_FILEREADER_H */
 

@@ -2,7 +2,7 @@
 //* File:   PositionDetector.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,18 +17,18 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef POSITIONDETECTOR_H
-#define	POSITIONDETECTOR_H
+#ifndef OAT_POSITIONDETECTOR_H
+#define	OAT_POSITIONDETECTOR_H
 
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/MatClient.h"
-#include "../../lib/shmem/SMServer.h"
+#include "../../lib/datatypes/Position2D.h"
+#include "../../experiments/lib/Source.h"
+#include "../../experiments/lib/Sink.h"
+#include "../../experiments/lib/SharedCVMat.h"
 
 namespace oat {
-    class Position2D;
-}
 
 /**
  * Abstract object position detector.
@@ -40,16 +40,33 @@ public:
     /**
      * Abstract object position detector.
      * All concrete object position detector types implement this ABC.
-     * @param image_source_name Frame SOURCE name
-     * @param position_sink_name Position SINK name
+     * @param frame_source_address Frame SOURCE node address
+     * @param position_sink_address Position SINK node address
      */
-    PositionDetector(const std::string& image_source_name, const std::string& position_sink_name) :
-      name("posidet[" + image_source_name + "->" + position_sink_name + "]")
-    , frame_source(image_source_name)
-    , position_sink(position_sink_name) {
+    PositionDetector(const std::string &frame_source_address,
+                     const std::string &position_sink_address) :
+      name_("posidet[" + frame_source_address + "->" + position_sink_address + "]")
+    , frame_source_address_(frame_source_address)
+    , position_sink_address_(position_sink_address)
+    {
+        // Nothing
     }
 
     virtual ~PositionDetector() { }
+
+    /**
+     * PositionDetectors must be able to connect to a Source and Sink
+     * Nodes in shared memory
+     */
+    virtual void connectToNode() {
+
+        // Connect to source node and retrieve cv::Mat parameters
+        frame_source_.connect(frame_source_address_);
+
+        // Bind to sink sink node and create a shared cv::Mat
+        position_sink_.bind(position_sink_address_);
+        shared_position_ = *position_sink_.retrieve();
+    }
 
     /**
      * Obtain frame from SOURCE. Detect object position within the frame. Publish
@@ -58,15 +75,39 @@ public:
      */
     bool process(void) {
 
-        // If we are able to get a an image
-        if (frame_source.getSharedMat(current_frame)) {
+        // START CRITICAL SECTION //
+        ////////////////////////////
 
-            position_sink.pushObject(detectPosition(current_frame), 
-                                     frame_source.get_current_sample_number());
-        }
-        
-        // If server state is END, return true
-        return (frame_source.getSourceRunState() == oat::SinkState::END);
+        // Wait for sink to write to node
+        node_state_ = frame_source_.wait();
+
+        // Clone the shared frame
+        internal_frame_ = frame_source_.clone();
+
+        // Tell sink it can continue
+        frame_source_.post();
+
+        ////////////////////////////
+        //  END CRITICAL SECTION  //
+
+        // Mess with internal frame
+        internal_position_ = detectPosition(internal_frame_);
+
+        // START CRITICAL SECTION //
+        ////////////////////////////
+
+        // Wait for sources to read
+        position_sink_.wait();
+
+        shared_position_ = internal_position_;
+
+        // Tell sources there is new data
+        position_sink_.post();
+
+        ////////////////////////////
+        //  END CRITICAL SECTION  //
+
+        return (node_state_ == oat::NodeState::END);
     }
 
     /**
@@ -74,37 +115,44 @@ public:
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
+    virtual void configure(const std::string &config_file, const std::string &config_key) = 0;
 
-    /**
-     * Get FrameFilter name
-     * @return name 
-     */
-    std::string get_name(void) const { return name; }
+    // Accessors
+    std::string name(void) const { return name_; }
+    virtual void set_tuning(bool value) { tuning_on_ = value; }
 
 protected:
-    
+
     /**
      * Perform object position detection.
      * @param frame frame to look for object in.
      * @return detected object position.
      */
-    virtual oat::Position2D detectPosition(cv::Mat& frame) = 0;
-    
+    virtual oat::Position2D detectPosition(cv::Mat &frame) = 0;
+
     // Detector name
-    const std::string name;
- 
+    const std::string name_;
+
+    // Use GUI to tune detection parameters
+    bool tuning_on_ {false};
+
 private:
 
     // Current frame
-    cv::Mat current_frame;
+    cv::Mat internal_frame_;
+    oat::Position2D internal_position_, shared_position_;
 
-    // Frame SOURCE object for receiving frames
-    oat::MatClient frame_source;
+    // Frame source
+    const std::string frame_source_address_;
+    oat::NodeState node_state_;
+    oat::Source<oat::SharedCVMat> frame_source_;
 
-    // Position SINK object for publishing detected positions
-    oat::SMServer<oat::Position2D> position_sink;
+    // Position sink
+    const std::string position_sink_address_;
+    oat::Sink<oat::Position2D> position_sink_;
+
 };
 
-#endif	/* POSITIONDETECTOR_H */
+}       /* namespace oat */
+#endif	/* OAT_POSITIONDETECTOR_H */
 

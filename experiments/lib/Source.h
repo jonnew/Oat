@@ -275,8 +275,8 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
                      obj_shmem_.get_address_from_handle(sh_object_->data()));
 
     // Save parameters so that to construct cv::Mats with
-    parameters_.cols = sh_object_->rows();
-    parameters_.rows = sh_object_->cols();
+    parameters_.cols = sh_object_->cols();
+    parameters_.rows = sh_object_->rows();
     parameters_.type = sh_object_->type();
     parameters_.bytes = frame_.total() * frame_.elemSize();
 
