@@ -44,13 +44,7 @@ public:
      * @param position_sink_address Position SINK node address
      */
     PositionDetector(const std::string &frame_source_address,
-                     const std::string &position_sink_address) :
-      name_("posidet[" + frame_source_address + "->" + position_sink_address + "]")
-    , frame_source_address_(frame_source_address)
-    , position_sink_address_(position_sink_address)
-    {
-        // Nothing
-    }
+                     const std::string &position_sink_address);
 
     virtual ~PositionDetector() { }
 
@@ -58,64 +52,22 @@ public:
      * PositionDetectors must be able to connect to a Source and Sink
      * Nodes in shared memory
      */
-    virtual void connectToNode() {
-
-        // Connect to source node and retrieve cv::Mat parameters
-        frame_source_.connect(frame_source_address_);
-
-        // Bind to sink sink node and create a shared cv::Mat
-        position_sink_.bind(position_sink_address_);
-        shared_position_ = *position_sink_.retrieve();
-    }
+    virtual void connectToNode(void);
 
     /**
      * Obtain frame from SOURCE. Detect object position within the frame. Publish
      * detected position to SINK.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
-    bool process(void) {
-
-        // START CRITICAL SECTION //
-        ////////////////////////////
-
-        // Wait for sink to write to node
-        node_state_ = frame_source_.wait();
-
-        // Clone the shared frame
-        internal_frame_ = frame_source_.clone();
-
-        // Tell sink it can continue
-        frame_source_.post();
-
-        ////////////////////////////
-        //  END CRITICAL SECTION  //
-
-        // Mess with internal frame
-        internal_position_ = detectPosition(internal_frame_);
-
-        // START CRITICAL SECTION //
-        ////////////////////////////
-
-        // Wait for sources to read
-        position_sink_.wait();
-
-        shared_position_ = internal_position_;
-
-        // Tell sources there is new data
-        position_sink_.post();
-
-        ////////////////////////////
-        //  END CRITICAL SECTION  //
-
-        return (node_state_ == oat::NodeState::END);
-    }
+    virtual bool process(void);
 
     /**
      * Configure filter parameters.
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    virtual void configure(const std::string &config_file, const std::string &config_key) = 0;
+    virtual void configure(const std::string &config_file,
+                           const std::string &config_key) = 0;
 
     // Accessors
     std::string name(void) const { return name_; }
@@ -153,6 +105,6 @@ private:
 
 };
 
-}       /* namespace oat */
-#endif	/* OAT_POSITIONDETECTOR_H */
+}      /* namespace oat */
+#endif /* OAT_POSITIONDETECTOR_H */
 

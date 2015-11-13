@@ -21,15 +21,9 @@
 
 #include <string>
 #include <limits>
-#include <math.h>
+//#include <math.h>
 #include <opencv2/opencv.hpp>
-#ifdef NOIMP_OAT_USE_CUDA
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/cudaarithm.hpp>
-#include <opencv2/cudafilters.hpp>
-#include <opencv2/cudaimgproc.hpp>
-#endif
-#include <cmath>
+//#include <cmath>
 #include <cpptoml.h>
 
 #include "../../lib/datatypes/Position2D.h"
@@ -44,16 +38,13 @@ namespace oat {
 HSVDetector::HSVDetector(const std::string &frame_source_address,
                          const std::string &position_sink_address) :
   PositionDetector(frame_source_address, position_sink_address)
+, tuning_image_title_(position_sink_address + "_tuning")
 {
     // Set defaults for the erode and dilate blocks
     // Cannot use initializer because if these are set to 0, erode_on or
     // dilate_on must be set to false
     set_erode_size(0);
     set_dilate_size(10);
-
-#ifdef NOIMP_OAT_USE_CUDA
-    createHSVLUT();
-#endif
 }
 
 oat::Position2D HSVDetector::detectPosition(cv::Mat &frame) {
@@ -89,36 +80,6 @@ oat::Position2D HSVDetector::detectPosition(cv::Mat &frame) {
     tune(frame);
 
     return object_position_;
-}
-
-void siftContours(cv::Mat &frame, Position2D &position, double min_area, double max_area) {
-
-    std::vector<std::vector <cv::Point> > contours;
-    std::vector<cv::Vec4i> hierarchy;
-
-    // This function will modify the threshold_img data.
-    cv::findContours(frame, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
-
-    double object_area = 0;
-    double countour_area = 0;
-    position.position_valid = false;
-
-    for (int index = 0; index >= 0; index = hierarchy[index][0]) {
-
-        cv::Moments moment = cv::moments((cv::Mat)contours[index]);
-        countour_area = moment.m00;
-
-        // Isolate the largest contour within the min/max range.
-        if (countour_area > min_area &&
-            countour_area < max_area &&
-            countour_area > object_area) {
-
-            position.position.x = moment.m10 / countour_area;
-            position.position.y = moment.m01 / countour_area;
-            position.position_valid = true;
-            object_area = countour_area;
-        }
-    }
 }
 
 void HSVDetector::configure(const std::string &config_file, const std::string &config_key) {
@@ -251,10 +212,10 @@ void HSVDetector::createTuningWindows() {
 
 #ifdef OAT_USE_OPENGL
     try {
-        cv::namedWindow(tuning_image_title_, cv::WINDOW_OPENGL);
+        cv::namedWindow(tuning_image_title_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
     } catch (cv::Exception& ex) {
         whoWarn(name_, "OpenCV not compiled with OpenGL support. Falling back to OpenCV's display driver.\n");
-        cv::namedWindow(name_, cv::WINDOW_NORMAL);
+        cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
     }
 #else
     cv::namedWindow(tuning_image_title_, cv::WINDOW_NORMAL);
@@ -267,10 +228,10 @@ void HSVDetector::createTuningWindows() {
     cv::createTrackbar("S MAX", tuning_image_title_, &s_max_, 256);
     cv::createTrackbar("V MIN", tuning_image_title_, &v_min_, 256);
     cv::createTrackbar("V MAX", tuning_image_title_, &v_max_, 256);
-    cv::createTrackbar("MIN AREA", tuning_image_title_, nullptr, 10000, &HSVDetector::minAreaSliderChangedCallback, this);
-    cv::createTrackbar("MAX AREA", tuning_image_title_, nullptr, 10000, &HSVDetector::maxAreaSliderChangedCallback, this);
-    cv::createTrackbar("ERODE", tuning_image_title_, &erode_px_, 50, &HSVDetector::erodeSliderChangedCallback, this);
-    cv::createTrackbar("DILATE", tuning_image_title_, &dilate_px_, 50, &HSVDetector::dilateSliderChangedCallback, this);
+    cv::createTrackbar("MIN AREA", tuning_image_title_, &dummy0, 10000, &hsvDetectorMinAreaSliderChangedCallback, this);
+    cv::createTrackbar("MAX AREA", tuning_image_title_, &dummy1, 10000, &hsvDetectorMaxAreaSliderChangedCallback, this);
+    cv::createTrackbar("ERODE", tuning_image_title_, &erode_px_, 50, &hsvDetectorErodeSliderChangedCallback, this);
+    cv::createTrackbar("DILATE", tuning_image_title_, &dilate_px_, 50, &hsvDetectorDilateSliderChangedCallback, this);
 
     tuning_windows_created_ = true;
 }
@@ -296,24 +257,54 @@ void HSVDetector::set_dilate_size(int value) {
     }
 }
 
+// Non-member helper functions
 
-void HSVDetector::minAreaSliderChangedCallback(int value, void* object) {
-    HSVDetector* hsv_detector = (HSVDetector*) object;
+void siftContours(cv::Mat &frame, Position2D &position, double min_area, double max_area) {
+
+    std::vector<std::vector <cv::Point> > contours;
+
+    // NOTE: This function will modify the frame
+    cv::findContours(frame, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    double object_area = 0;
+    double countour_area = 0;
+    position.position_valid = false;
+
+    for (auto &c : contours) {
+
+        cv::Moments moment = cv::moments(static_cast<cv::Mat>(c));
+        countour_area = moment.m00;
+
+        // Isolate the largest contour within the min/max range.
+        if (countour_area > min_area &&
+                countour_area < max_area &&
+                countour_area > object_area) {
+
+            position.position.x = moment.m10 / countour_area;
+            position.position.y = moment.m01 / countour_area;
+            position.position_valid = true;
+            object_area = countour_area;
+        }
+    }
+}
+
+void hsvDetectorMinAreaSliderChangedCallback(int value, void * object) {
+    HSVDetector * hsv_detector = (HSVDetector *) object;
     hsv_detector->set_min_object_area(static_cast<double>(value));
 }
 
-void HSVDetector::maxAreaSliderChangedCallback(int value, void* object) {
-    HSVDetector* hsv_detector = (HSVDetector*) object;
+void hsvDetectorMaxAreaSliderChangedCallback(int value, void * object) {
+    HSVDetector * hsv_detector = (HSVDetector *) object;
     hsv_detector->set_max_object_area(static_cast<double>(value));
 }
 
-void HSVDetector::erodeSliderChangedCallback(int value, void* object) {
-    HSVDetector* hsv_detector = (HSVDetector*) object;
+void hsvDetectorErodeSliderChangedCallback(int value, void * object) {
+    HSVDetector * hsv_detector = (HSVDetector *) object;
     hsv_detector->set_erode_size(value);
 }
 
-void HSVDetector::dilateSliderChangedCallback(int value, void* object) {
-    HSVDetector* hsv_detector = (HSVDetector*) object;
+void hsvDetectorDilateSliderChangedCallback(int value, void * object) {
+    HSVDetector * hsv_detector = (HSVDetector *) object;
     hsv_detector->set_dilate_size(value);
 }
 
@@ -323,6 +314,16 @@ void HSVDetector::dilateSliderChangedCallback(int value, void* object) {
 // give me the performance gains I was hoping for. I'm leaving it here in case
 // I figure something out that changes my mind about it.
 //
+//#ifdef NOIMP_OAT_USE_CUDA
+//#include <opencv2/core/cuda.hpp>
+//#include <opencv2/cudaarithm.hpp>
+//#include <opencv2/cudafilters.hpp>
+//#include <opencv2/cudaimgproc.hpp>
+//#endif
+//
+//#ifdef NOIMP_OAT_USE_CUDA
+//    createHSVLUT();
+//#endif
 //#ifdef NOIMP_OAT_USE_CUDA
 //    cv::cuda::GpuMat hsv_image_, lut_frame, threshold_frame_;
 //    cv::Mat search_frame;

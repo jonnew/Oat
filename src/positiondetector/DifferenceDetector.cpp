@@ -31,20 +31,21 @@
 
 namespace oat {
 
-DifferenceDetector2D::DifferenceDetector2D(const std::string& image_source_name, const std::string& position_sink_name) :
-PositionDetector(image_source_name, position_sink_name)
-, tuning_image_title_(position_sink_name + "_tuning")
+DifferenceDetector2D::DifferenceDetector2D(const std::string &frame_source_address,
+                                           const std::string &position_sink_address) :
+  PositionDetector(frame_source_address, position_sink_address)
+, tuning_image_title_(position_sink_address + "_tuning")
 , tuning_windows_created_(false)
 , last_image_set_(false)
 {
-
-    // Cannot use initializer because if this is set to 0, erode_on or
-    // dilate_on must be set to false
+    // Cannot use initializer because if this is set to 0, blur_on
+    // must be set to false
     set_blur_size(2);
 }
 
 oat::Position2D DifferenceDetector2D::detectPosition(cv::Mat &frame) {
 
+    // TODO: These could be refactored, but I don't think I care right now
     this_image_ = frame;
     applyThreshold();
     siftBlobs();
@@ -53,7 +54,8 @@ oat::Position2D DifferenceDetector2D::detectPosition(cv::Mat &frame) {
     return object_position_;
 }
 
-void DifferenceDetector2D::configure(const std::string& config_file, const std::string& config_key) {
+void DifferenceDetector2D::configure(const std::string& config_file,
+                                     const std::string& config_key) {
 
     // Available options
     std::vector<std::string> options {"blur", "diff_threshold", "tune"};
@@ -194,10 +196,10 @@ void DifferenceDetector2D::createTuningWindows() {
 
 #ifdef OAT_USE_OPENGL
     try {
-        cv::namedWindow(tuning_image_title_, cv::WINDOW_OPENGL);
+        cv::namedWindow(tuning_image_title_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
     } catch (cv::Exception& ex) {
         whoWarn(name_, "OpenCV not compiled with OpenGL support. Falling back to OpenCV's display driver.\n");
-        cv::namedWindow(tuning_image_title_, cv::WINDOW_NORMAL);
+        cv::namedWindow(tuning_image_title_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
     }
 #else
     cv::namedWindow(tuning_image_title_, cv::WINDOW_NORMAL);

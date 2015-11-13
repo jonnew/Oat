@@ -25,7 +25,7 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 #ifdef NOIMP_OAT_USE_CUDA
-#include <opencv2/core/cuda.hpp>
+//#include <opencv2/core/cuda.hpp>
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudafilters.hpp>
 #include <opencv2/cudaimgproc.hpp>
@@ -61,7 +61,14 @@ public:
      */
     oat::Position2D detectPosition(cv::Mat &frame) override;
 
-    void configure(const std::string &config_file, const std::string &config_key);
+    void configure(const std::string &config_file,
+                   const std::string &config_key) override;
+
+    // Accessors (used for tuning GUI)
+    void set_erode_size(int erode_px);
+    void set_dilate_size(int dilate_px);
+    void set_min_object_area(double value) { min_object_area_ = value; }
+    void set_max_object_area(double value) { max_object_area_ = value; }
 
 private:
 
@@ -75,6 +82,7 @@ private:
     int h_min_ {0}, h_max_ {256};
     int s_min_ {0}, s_max_ {256};
     int v_min_ {0}, v_max_ {256};
+    int dummy0, dummy1;
 
     // Detect object area
     double object_area_ {0.0};
@@ -90,19 +98,10 @@ private:
     cv::Mat tune_image_;
     virtual void tune(cv::Mat &frame);
     virtual void createTuningWindows(void);
-    static void minAreaSliderChangedCallback(int, void *);
-    static void maxAreaSliderChangedCallback(int, void *);
-    static void erodeSliderChangedCallback(int, void *);
-    static void dilateSliderChangedCallback(int, void *);
 
-    // Accessors (for tuning GUI, not accessible to users...)
-    void set_erode_size(int erode_px);
-    void set_dilate_size(int dilate_px);
-    void set_min_object_area(double value) { min_object_area_ = value; }
-    void set_max_object_area(double value) { max_object_area_ = value; }
 };
 
-// Helper functions
+// Non member helper functions
 
 /**
  * Given a binary frame, find all contours and return a position corresponding
@@ -113,8 +112,14 @@ private:
  * @param max_area Maximum contour area to be considered candidate for position
  * @return Position corresponding the centroid of the largest contour in the frame.
  */
-void siftContours(cv::Mat &frame, Position2D &position, double min_area, double max_area);
+void siftContours(cv::Mat &frame, Position2D &position,
+                  double min_area, double max_area);
+
+// GUI callbacks
+void hsvDetectorMinAreaSliderChangedCallback(int, void *);
+void hsvDetectorMaxAreaSliderChangedCallback(int, void *);
+void hsvDetectorErodeSliderChangedCallback(int, void *);
+void hsvDetectorDilateSliderChangedCallback(int, void *);
 
 }       /* namespace oat */
 #endif	/* OAT_HSVDETECTOR_H */
-

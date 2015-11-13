@@ -308,6 +308,14 @@ __TYPE = `mask`__
   the mask image will be unaffected. Others will be set to zero. This image
   must have the same dimensions as frames from SOURCE.
 
+__TYPE = `mog`__
+
+- __`learning_coeff`__=`+float` Value, 0 to 1.0, specifying how quickly the
+  statistical model of the background image should be updated. Default is 0,
+  specifying no adaptation.
+- __`gpu_index`__=`+int` Index of the GPU to use for performing background
+  subtraction if Oat was compiled with CUDA support.  
+
 #### Examples
 ```bash
 # Receive frames from 'raw' stream

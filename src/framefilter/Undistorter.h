@@ -22,6 +22,8 @@
 
 #include "FrameFilter.h"
 
+namespace oat {
+
 /**
  * Lens distortion compensation.
  *
@@ -41,7 +43,9 @@ public:
     Undistorter(const std::string &frame_souce_address,
                 const std::string &frame_sink_address);
 
-    void configure(const std::string& config_file, const std::string& config_key) { } ;
+    void configure(const std::string &config_file,
+                   const std::string &config_key) override { };
+
     void loadCalibration(const std::string& calibration_file);
 
     // Accessors
@@ -51,11 +55,11 @@ public:
 private:
 
     /**
-     * Apply undistortion.
-     * @param frame unfiltered frame
-     * @return filtered frame
+     * Apply undistortion filter.
+     * @param frame Unfiltered frame
+     * @return Filtered frame
      */
-    void filter(cv::Mat& frame);
+    void filter(cv::Mat& frame) override;
 
     cv::Mat temp_matrix_;
     bool calibration_valid_ {false};
@@ -64,6 +68,6 @@ private:
 
 };
 
-
-#endif	/* OAT_UNDISTORTER_H */
+}      /* namespace oat */
+#endif /* OAT_UNDISTORTER_H */
 

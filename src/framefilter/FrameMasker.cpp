@@ -27,6 +27,8 @@
 #include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
+namespace oat {
+
 FrameMasker::FrameMasker(const std::string& source_name, const std::string& sink_name, bool invert_mask) :
   FrameFilter(source_name, sink_name)
 , invert_mask(false) { }
@@ -71,3 +73,5 @@ void FrameMasker::filter(cv::Mat& frame) {
     if (mask_set)
         frame.setTo(0, roi_mask == 0);
 }
+
+} /* namespace oat */

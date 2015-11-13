@@ -30,6 +30,8 @@
 
 #include "BackgroundSubtractor.h"
 
+namespace oat {
+
 BackgroundSubtractor::BackgroundSubtractor(
             const std::string &frame_source_address,
             const std::string &frame_sink_address) :
@@ -90,3 +92,5 @@ void BackgroundSubtractor::filter(cv::Mat& frame) {
         // not provided in a configuration file
         setBackgroundImage(frame);
 }
+
+} /* namespace oat */

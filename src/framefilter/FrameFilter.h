@@ -20,18 +20,18 @@
 #ifndef OAT_FRAMEFILT_H
 #define	OAT_FRAMEFILT_H
 
-#include <cstring>
 #include <string>
 #include <opencv2/core/mat.hpp>
-
-#ifdef OAT_USE_CUDA
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/cudaarithm.hpp>
-#endif
 
 #include "../../experiments/lib/Source.h"
 #include "../../experiments/lib/Sink.h"
 #include "../../experiments/lib/SharedCVMat.h"
+
+
+namespace oat {
+
+// Forward decl.
+class SharedCVMat;
 
 /**
  * Abstract frame filter.
@@ -47,13 +47,7 @@ public:
      * @param frame_sink_address Frame SINK node address
      */
     FrameFilter(const std::string &frame_source_address,
-                const std::string &frame_sink_address) :
-      name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
-    , frame_source_address_(frame_source_address)
-    , frame_sink_address_(frame_sink_address)
-    {
-        // Nothing
-    }
+                const std::string &frame_sink_address);
 
     virtual ~FrameFilter() { }
 
@@ -61,63 +55,14 @@ public:
      * FrameServers must be able to connect to a Source and Sink
      * Nodes in shared memory
      */
-    virtual void connectToNode() {
-
-        // Connect to source node and retrieve cv::Mat parameters
-        frame_source_.connect(frame_source_address_);
-        oat::Source<oat::SharedCVMat>::MatParameters param =
-                frame_source_.parameters();
-
-        // Bind to sink sink node and create a shared cv::Mat
-        frame_sink_.bind(frame_sink_address_, param.bytes);
-        shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
-    }
+    virtual void connectToNode(void);
 
     /**
      * Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
      * filtered frame to SINK.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
-    virtual bool processFrame(void) {
-
-        // START CRITICAL SECTION //
-        ////////////////////////////
-
-        // Wait for sink to write to node
-        node_state_ = frame_source_.wait();
-
-        // Clone the shared frame
-        internal_frame_ = frame_source_.clone();
-
-        // Tell sink it can continue
-        frame_source_.post();
-
-        ////////////////////////////
-        //  END CRITICAL SECTION  //
-
-        // Mess with internal frame
-        filter(internal_frame_);
-
-        // START CRITICAL SECTION //
-        ////////////////////////////
-
-        // Wait for sources to read
-        frame_sink_.wait();
-
-        // TODO: For some filters, it may be best for the filter operation to go
-        //       here instead of in a non-critical section followed by a copy
-        //       operation.
-        memcpy(shared_frame_.data, internal_frame_.data,
-                internal_frame_.total() * internal_frame_.elemSize());
-
-        // Tell sources there is new data
-        frame_sink_.post();
-
-        ////////////////////////////
-        //  END CRITICAL SECTION  //
-
-        return (node_state_ == oat::NodeState::END);
-    }
+    virtual bool processFrame(void);
 
     /**
      * Configure filter parameters.
@@ -162,5 +107,6 @@ private:
     cv::Mat shared_frame_;
 };
 
-#endif	/* OAT_FRAMEFILT_H */
+}      /* namespace oat */
+#endif /* OAT_FRAMEFILT_H */
 

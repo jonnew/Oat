@@ -62,7 +62,7 @@ void sigHandler(int s) {
 }
 
 // Processing loop
-void run(const std::shared_ptr<FrameFilter>& filter) {
+void run(const std::shared_ptr<oat::FrameFilter>& filter) {
 
     try {
 
@@ -210,18 +210,18 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    std::shared_ptr<FrameFilter> filter;
+    std::shared_ptr<oat::FrameFilter> filter;
 
     // Refine component type
     switch (type_hash[type]) {
         case 'a':
         {
-            filter = std::make_shared<BackgroundSubtractor>(source, sink);
+            filter = std::make_shared<oat::BackgroundSubtractor>(source, sink);
             break;
         }
         case 'b':
         {
-            filter = std::make_shared<FrameMasker>(source, sink, invert_mask);
+            filter = std::make_shared<oat::FrameMasker>(source, sink, invert_mask);
             if (!config_used)
                  std::cerr << oat::whoWarn(filter->name(),
                          "No mask configuration was provided."
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
         }
         case 'c':
         {
-            filter = std::make_shared<BackgroundSubtractorMOG>(source, sink);
+            filter = std::make_shared<oat::BackgroundSubtractorMOG>(source, sink);
             break;
         }
         default:
@@ -271,11 +271,9 @@ int main(int argc, char *argv[]) {
                   << oat::whoError(filter->name(), ex.what())
                   << "\n";
     } catch (const std::runtime_error ex) {
-        std::cerr << oat::whoError(filter->name(),ex.what())
-                  << "\n";
+        std::cerr << oat::whoError(filter->name(),ex.what()) << "\n";
     } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(filter->name(), ex.what())
-                  << "\n";
+        std::cerr << oat::whoError(filter->name(), ex.what()) << "\n";
     } catch (...) {
         std::cerr << oat::whoError(filter->name(), "Unknown exception.\n");
     }

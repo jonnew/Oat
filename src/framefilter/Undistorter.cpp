@@ -24,6 +24,8 @@
 
 #include "Undistorter.h"
 
+namespace oat {
+
 Undistorter::Undistorter(const std::string& source_name, const std::string& sink_name) :
   FrameFilter(source_name, sink_name)
 {
@@ -42,3 +44,4 @@ void Undistorter::filter(cv::Mat& frame) {
     cv::undistort(temp_matrix_, frame, camera_matrix_, distortion_coefficients_);
 }
 
+} /* namespace oat */

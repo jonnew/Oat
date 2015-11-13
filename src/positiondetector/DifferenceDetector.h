@@ -20,6 +20,9 @@
 #ifndef OAT_DIFFERENCEDETECTOR_H
 #define	OAT_DIFFERENCEDETECTOR_H
 
+#include <string>
+#include <opencv2/core/mat.hpp>
+
 #include "PositionDetector.h"
 
 namespace oat {
@@ -48,7 +51,8 @@ public:
      */
     Position2D detectPosition(cv::Mat &frame) override;
 
-    void configure(const std::string &config_file, const std::string &key);
+    void configure(const std::string &config_file,
+                   const std::string &config_key) override;
 private:
 
     // Intermediate variables

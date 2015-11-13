@@ -39,7 +39,8 @@ public:
 
     // Use a configuration file to specify parameters
     void configure(void) override; // Default options
-    void configure(const std::string &config_file, const std::string &config_key) override;
+    void configure(const std::string &config_file,
+                   const std::string &config_key) override;
     void connectToNode(void) override;
     bool serveFrame(void) override;
     void fireSoftwareTrigger(void);

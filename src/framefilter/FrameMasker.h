@@ -17,10 +17,12 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef FRAMEMASKER_H
-#define	FRAMEMASKER_H
+#ifndef OAT_FRAMEMASKER_H
+#define	OAT_FRAMEMASKER_H
 
 #include "FrameFilter.h"
+
+namespace oat {
 
 /**
  * A frame masker.
@@ -41,7 +43,9 @@ public:
                 const std::string &frame_sink_address,
                 bool invert_mask=false);
 
-    void configure(const std::string &config_file, const std::string &config_key);
+    void configure(const std::string &config_file,
+                   const std::string &config_key) override;
+
 
 private:
 
@@ -50,7 +54,7 @@ private:
      * @param frame unfiltered frame
      * @return filtered frame
      */
-    void filter(cv::Mat& frame);
+    void filter(cv::Mat& frame) override;
 
     // Should be inverted before application.
     bool invert_mask;
@@ -62,5 +66,6 @@ private:
     cv::Mat roi_mask;
 };
 
-#endif	/* FRAMEMASKER_H */
+}      /* namespace oat */
+#endif /* OAT_FRAMEMASKER_H */
 

@@ -28,6 +28,8 @@
 
 #include "FrameFilter.h"
 
+namespace oat {
+
 /**
  * A MOG background subtractor.
  */
@@ -42,7 +44,8 @@ public:
     BackgroundSubtractorMOG(const std::string &frame_souce_address,
                             const std::string &frame_sink_address);
 
-    void configure(const std::string& config_file, const std::string& config_key);
+    void configure(const std::string &config_file,
+                   const std::string &config_key) override;
 
 private:
 
@@ -51,18 +54,26 @@ private:
      * @param frame unfiltered frame
      * @return filtered frame
      */
-    void filter(cv::Mat& frame);
+    void filter(cv::Mat& frame) override;
 
 #ifdef OAT_USE_CUDA
-    cv::Ptr<cv::cuda::BackgroundSubtractorMOG> background_subtractor;
-    cv::cuda::GpuMat current_frame, background_mask;
+
+     /**
+     * Configure the GPU to perform background subtraction.
+     * @param index_ Index of the GPU to use for processing
+     */
+    void configureGPU(size_t index_);
+
+    cv::Ptr<cv::cuda::BackgroundSubtractorMOG> background_subtractor_;
+    cv::cuda::GpuMat current_frame_, background_mask_;
 #else
-    cv::Ptr<cv::BackgroundSubtractorMOG2> background_subtractor;
-    cv::Mat background_mask;
+    cv::Ptr<cv::BackgroundSubtractorMOG2> backgroRund_subtractor_;
+    cv::Mat background_mask_;
 #endif
 
-    double learning_coeff {0.0};
+    double learning_coeff_ {0.0};
 };
 
-#endif	/* OAT_BACKGROUNDSUBTRACTORMOG_H */
+}      /* namespace oat */
+#endif /* OAT_BACKGROUNDSUBTRACTORMOG_H */
 

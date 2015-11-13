@@ -26,8 +26,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
 #ifdef OAT_USE_CUDA
-#include <opencv2/core/cuda.hpp>
 #include <opencv2/cudabgsegm.hpp>
+#include <opencv2/cudaarithm.hpp>
 #endif
 
 #include <cpptoml.h>
@@ -36,48 +36,26 @@
 
 #include "BackgroundSubtractorMOG.h"
 
+namespace oat {
+
 BackgroundSubtractorMOG::BackgroundSubtractorMOG(
         const std::string &frame_source_address,
         const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address) {
 
-    #ifdef OAT_USE_CUDA
-
-        // Determine if a compatible device is available
-        int num_devices = cv::cuda::getCudaEnabledDeviceCount();
-        if (num_devices < 1) {
-            throw (std::runtime_error("No GPU found or OpenCV was compiled without CUDA support."));
-        }
-
-        // Set device
-        int selected_gpu = 0; // TODO: should be user defined
-
-        if (selected_gpu > num_devices) {
-            throw (std::runtime_error("Selected GPU index is invalid."));
-        }
-
-        cv::cuda::DeviceInfo gpu_info(selected_gpu);
-        if (!gpu_info.isCompatible()) {
-            throw (std::runtime_error("Selected GPU is not compatible with OpenCV."));
-        }
-
-        cv::cuda::setDevice(selected_gpu);
-
-#ifndef NDEBUG
-        cv::cuda::printShortCudaDeviceInfo(selected_gpu);
-#endif
-
-        background_subtractor = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
-
+#ifdef OAT_USE_CUDA
+    configureGPU(0);
+    background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
 #else
-         background_subtractor = cv::createBackgroundSubtractorMOG2(/*defaults OK?*/);
+    background_subtractor_ = cv::createBackgroundSubtractorMOG2(/*defaults OK?*/);
 #endif // OAT_USE_CUDA
 }
 
 void BackgroundSubtractorMOG::configure(const std::string &config_file, const std::string &config_key) {
 
     // Available options
-    std::vector<std::string> options {"learning_coeff"};
+    std::vector<std::string> options {"gpu_index",
+                                      "learning_coeff"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -92,24 +70,60 @@ void BackgroundSubtractorMOG::configure(const std::string &config_file, const st
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
 
+        // GPU index
+        int64_t index;
+        if (oat::config::getValue(this_config, "gpu_index", index, 0)) {
+            configureGPU(index);
+            background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
+        }
+
         // Learning coefficient
-        oat::config::getValue(this_config, "learning_coeff", learning_coeff, 0.0, 1.0);
+        oat::config::getValue(this_config, "learning_coeff", learning_coeff_, 0.0, 1.0);
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
 
+void BackgroundSubtractorMOG::configureGPU(size_t index) {
+
+    // Determine if a compatible device is available
+    int num_devices = cv::cuda::getCudaEnabledDeviceCount();
+    if (num_devices < 1) {
+        throw (std::runtime_error("No GPU found or OpenCV was compiled without CUDA support."));
+    }
+
+    // Set device
+    int selected_gpu = 0; // TODO: should be user defined
+
+    if (selected_gpu > num_devices) {
+        throw (std::runtime_error("Selected GPU index is invalid."));
+    }
+
+    cv::cuda::DeviceInfo gpu_info(selected_gpu);
+    if (!gpu_info.isCompatible()) {
+        throw (std::runtime_error("Selected GPU is not compatible with OpenCV."));
+    }
+
+    cv::cuda::setDevice(selected_gpu);
+
+#ifndef NDEBUG
+    cv::cuda::printShortCudaDeviceInfo(selected_gpu);
+#endif
+}
+
 void BackgroundSubtractorMOG::filter(cv::Mat &frame) {
 
 #ifdef OAT_USE_CUDA
-        current_frame.upload(frame);
-        background_subtractor->apply(current_frame, background_mask, learning_coeff);
-        cv::cuda::bitwise_not(background_mask, background_mask);
-        current_frame.setTo(0, background_mask);
-        current_frame.download(frame);
+    current_frame_.upload(frame);
+    background_subtractor_->apply(current_frame_, background_mask_, learning_coeff_);
+    cv::cuda::bitwise_not(background_mask_, background_mask_);
+    current_frame_.setTo(0, background_mask_);
+    current_frame_.download(frame);
 #else
-        background_subtractor->apply(frame, background_mask, learning_coeff);
-        frame.setTo(0, background_mask == 0);
+    background_subtractor_->apply(frame, background_mask_, learning_coeff_);
+    frame.setTo(0, background_mask_ == 0);
 #endif
 }
+
+} /* namespace oat */

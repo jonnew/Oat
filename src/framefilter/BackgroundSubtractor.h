@@ -22,6 +22,8 @@
 
 #include "FrameFilter.h"
 
+namespace oat {
+
 /**
  * A basic background subtractor.
  */
@@ -39,7 +41,8 @@ public:
     BackgroundSubtractor(const std::string &frame_souce_address,
                          const std::string &frame_sink_address);
 
-    void configure(const std::string& config_file, const std::string& config_key);
+    void configure(const std::string &config_file,
+                   const std::string &config_key) override;
 
 private:
 
@@ -48,7 +51,7 @@ private:
      * @param frame unfiltered frame
      * @return filtered frame
      */
-    void filter(cv::Mat& frame);
+    void filter(cv::Mat& frame) override;
 
     // Is the background frame set?
     bool background_set = false;
@@ -58,8 +61,8 @@ private:
 
     // Set the background frame
     void setBackgroundImage(const cv::Mat&);
-
 };
 
-#endif	/* OAT_BACKGROUNDSUBTRACTOR_H */
+}      /* namespace oat */
+#endif /* OAT_BACKGROUNDSUBTRACTOR_H */
 
