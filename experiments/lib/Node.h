@@ -47,7 +47,9 @@ public:
         source_slots_.reset();
     }
 
-    // Note: functions defined within the class definition are implicitly inline
+    // Nodes are not copyable
+    Node(const Node &) = delete;
+    Node & operator=(const Node &) = delete;
 
     // SINK state
     void set_sink_state(NodeState value) { sink_state_ = value; }
