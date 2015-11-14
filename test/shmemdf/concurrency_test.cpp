@@ -18,21 +18,24 @@
 //******************************************************************************
 
 #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
-#include <catch.hpp>
-//#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
+//#include <catch.hpp>
+#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
-#include <thread> // Simulate different processes
+#include <boost/thread.hpp>
 
-#include "../lib/Sink.h"
-#include "../lib/Source.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
 
 // Test outline
 //
 //- Given a fresh source
-//    - It should not be possible for the source to enter the critical section until the sink posts
+//    - It should not be possible for the source to enter the critical section until a sink posts
+//
+//- Given a set of fresh sources
+//    - It should not be possible for the sources to enter the critical
 //
 //- Given several fresh sources
-//    - It should not be possible for any of them to enter the crtical section until the sink posts
+//    - It should not be possible for any of them to enter the critical section until a sink posts
 //
 //- Given a sink in the critical section
 //    - It should not be possible for a source to enter
@@ -53,13 +56,15 @@
 //- Given two waiting sources
 //    - When the first source leaves, the second source should proceed when a sink posts
 
-sinkBind(oat:Sink<int> sink) { sink.bind("test"); }
-sinkPost(oat:Sink<int> sink) { sink.post(); }
-sourceConnect(oat:Source<int> source) { source.connect("test"); }
-sourcePost(oat:Source<int> source) { source.post(); }
+int sinkBind(oat::Sink<int> sink) { sink.bind("test"); return 0; }
+int sinkPost(oat::Sink<int> sink) { sink.post(); return 0; }
+int sinkWait(oat::Sink<int> sink) { sink.post(); return 0; }
+int sourceConnect(oat::Source<int> source) { source.connect("test"); return 0; }
+int sourcePost(oat::Source<int> source) { source.post(); return 0; }
+int sourceWait(oat::Source<int> source) { source.wait(); return 0; }
 
-SCENARIO ("Sinks and Sources bound to a common Nodes must respect 
-           eachothers' locks.", "[Sink, Source, Concurrency]") {
+SCENARIO ("Sinks and Sources bound to a common Nodes must respect "
+          "eachothers' locks.", "[Sink, Source, Concurrency]") {
 
     GIVEN ("A Sink and Source operating on separate threads") {
 
@@ -68,55 +73,24 @@ SCENARIO ("Sinks and Sources bound to a common Nodes must respect
 
         WHEN ("When the sink is in the critical section") {
 
-            // 
+            // Sink binds to "test" and enters critical section
+            sink.bind("test");
+            sink.wait();
+
+
+            
             std::thread sink_th(sourcePost(), source);
             std::thread sink_th(sinkWait(), sink);
-            
+
+            // Get ids of different threads
+            std::thread::id sink_th_id = sink_th.get_id();
+            std::thread::id sink_th_id = sink_th.get_id();
+
             THEN ("The the source shall wait until the sink post()'s to proceed") {
                 REQUIRE_NOTHROW(
                 for (size_t i = 0; i < oat::Node::NUM_SLOTS; i++) {
                     node.acquireSlot();
                 }
-                );
-            }
-        }
-
-        WHEN ("Node::NUM_SLOTS+1 sources are added") {
-
-            THEN ("The Node shall throw") {
-                REQUIRE_THROWS(
-                for (size_t i = 0; i <= oat::Node::NUM_SLOTS; i++) {
-                    node.acquireSlot();
-                }
-                );
-            }
-        }
-
-        WHEN ("a source is removed") {
-
-            node.releaseSlot(0);
-
-            THEN ("the source ref count remains 0") {
-                REQUIRE(node.source_ref_count() == 0);
-            }
-        }
-
-        WHEN ("a negatively indexed read-barrier is read") {
-
-            THEN ("The Node shall throw") {
-                REQUIRE_THROWS(
-                boost::interprocess::interprocess_semaphore &s = node.read_barrier(-1);
-                );
-            }
-        }
-
-        WHEN ("a single source is added") {
-
-            size_t idx = node.acquireSlot();
-
-            THEN ("reading a greater indexed read-barrier shall throw") {
-                REQUIRE_THROWS(
-                boost::interprocess::interprocess_semaphore &s = node.read_barrier(idx+1);
                 );
             }
         }

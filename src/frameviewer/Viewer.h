@@ -24,13 +24,18 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../experiments/lib/Source.h"
-#include "../../experiments/lib/SharedCVMat.h"
+#include "../../lib/shmemdf/Source.h"
+
+namespace oat {
+
+// Forward decl.
+class SharedCVMat;
 
 /**
  * View a frame stream on the monitor.
  */
 class Viewer {
+
 
     using Clock = std::chrono::high_resolution_clock;
     using Milliseconds = std::chrono::milliseconds;
@@ -84,4 +89,5 @@ private:
     std::string makeFileName(void);
 };
 
+}      /* namespace oat */
 #endif /* OAT_VIEWER_H */

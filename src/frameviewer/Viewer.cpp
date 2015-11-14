@@ -26,9 +26,12 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include "../../experiments/lib/Source.h"
+#include "../../lib/shmemdf/Source.h"
+#include "../../lib/shmemdf/SharedCVMat.h"
 
 #include "Viewer.h"
+
+namespace oat {
 
 namespace bfs = boost::filesystem;
 using namespace boost::interprocess;
@@ -161,3 +164,5 @@ std::string Viewer::makeFileName() {
 
     return file;
 }
+
+} /* namespace oat */

@@ -23,10 +23,8 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../experiments/lib/Source.h"
-#include "../../experiments/lib/Sink.h"
-#include "../../experiments/lib/SharedCVMat.h"
-
+#include "../../lib/shmemdf/Source.h"
+#include "../../lib/shmemdf/Sink.h"
 
 namespace oat {
 
@@ -69,7 +67,8 @@ public:
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
+    virtual void configure(const std::string &config_file,
+                           const std::string &config_key) = 0;
 
     /**
      * Get frame filter name

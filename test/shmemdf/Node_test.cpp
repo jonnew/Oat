@@ -21,7 +21,7 @@
 #include <catch.hpp>
 //#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
-#include "../lib/Node.h"
+#include "../../lib/shmemdf/Node.h"
 
 SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
 

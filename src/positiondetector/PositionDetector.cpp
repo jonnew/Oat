@@ -20,9 +20,10 @@
 #include <string>
 #include <opencv2/core/mat.hpp>
 
-#include "../../experiments/lib/Source.h"
-#include "../../experiments/lib/Sink.h"
-#include "../../experiments/lib/SharedCVMat.h"
+#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/shmemdf/Source.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/SharedCVMat.h"
 
 #include "PositionDetector.h"
 

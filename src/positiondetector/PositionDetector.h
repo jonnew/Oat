@@ -24,11 +24,13 @@
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
-#include "../../experiments/lib/Source.h"
-#include "../../experiments/lib/Sink.h"
-#include "../../experiments/lib/SharedCVMat.h"
+#include "../../lib/shmemdf/Source.h"
+#include "../../lib/shmemdf/Sink.h"
 
 namespace oat {
+
+// Forward decl.
+class SharedCVMat;
 
 /**
  * Abstract object position detector.

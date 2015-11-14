@@ -20,6 +20,7 @@
 #ifndef OAT_SINK_H
 #define	OAT_SINK_H
 
+#include <cassert>
 #include <string>
 #include <memory>
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -51,6 +52,7 @@ protected:
     T * sh_object_ {nullptr};
     std::string node_address_, obj_address_;
     bool bound_ {false};
+    bool did_wait_need_post_ {false};
 };
 
 template<typename T>
@@ -82,9 +84,12 @@ inline SinkBase<T>::~SinkBase() {
 template<typename T>
 inline void SinkBase<T>::wait() {
 
-    // TODO: Inefficient?
-    if (!bound_)
-        throw("Sink must be bound before call wait() is called.");
+    assert(bound_);
+    assert(!did_wait_need_post_);
+
+//    // TODO: Inefficient?
+//    if (!bound_)
+//        throw("Sink must be bound before call wait() is called.");
 
     boost::system_time timeout = boost::get_system_time() + msec_t(10);
 
@@ -95,14 +100,19 @@ inline void SinkBase<T>::wait() {
         // Loops checking if wait has been released
         timeout = boost::get_system_time() + msec_t(10);
     }
+
+    did_wait_need_post_ = true;
 }
 
 template<typename T>
 inline void SinkBase<T>::post() {
 
-    // TODO: Inefficient?
-    if (!bound_)
-        throw("Sink must be bound before call post() is called.");
+    assert(bound_);
+    assert(did_wait_need_post_);
+
+//    // TODO: Inefficient?
+//    if (!bound_)
+//        throw("Sink must be bound before call post() is called.");
 
     // Increment the number times this node has facilitated a shmem write
     node_->incrementWriteNumber();
@@ -114,8 +124,7 @@ inline void SinkBase<T>::post() {
     // Tell each source connected to the node it can read
     node_->notifySources();
 
-    //for (size_t i = 0; i < node_->source_ref_count(); i++)
-    //    node_->readBarrier(i).post();
+    did_wait_need_post_ = false;
 }
 
 // Specializations...

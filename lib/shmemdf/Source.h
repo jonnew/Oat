@@ -20,6 +20,7 @@
 #ifndef OAT_SOURCE_H
 #define	OAT_SOURCE_H
 
+#include <cassert>
 #include <string>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
@@ -49,10 +50,11 @@ protected:
     size_t slot_index_;
     bool bound_ {false};
     bool connected_ {false};
+    bool did_wait_need_post_ {false};
 
 private:
 
-    bool must_post_ {false};
+    //bool must_post_ {false};
 };
 
 template<typename T>
@@ -64,9 +66,9 @@ inline SourceBase<T>::SourceBase()
 template<typename T>
 inline SourceBase<T>::~SourceBase() {
 
-    // Ensure that no server is deadlocked
-    if (must_post_)
-        post();
+//    // Ensure that no server is deadlocked
+//    if (must_post_)
+//        post();
 
     // If the client reference count is 0 and there is no server
     // attached to the node, deallocate the shmem
@@ -132,9 +134,13 @@ inline void SourceBase<T>::connect(const std::string &address) {
 template<typename T>
 inline NodeState SourceBase<T>::wait() {
 
-    // TODO: Inefficient? Use assert and remove from release code?
-    if (!bound_)
-        throw("Source must be bound before call wait() is called.");
+    assert(bound_);
+    assert(!did_wait_need_post_);
+
+//#ifndef NDEBUG
+//    if (!bound_)
+//        throw("Source must be bound before call wait() is called.");
+//#endif
 
     boost::system_time timeout = boost::get_system_time() + msec_t(10);
 
@@ -150,8 +156,10 @@ inline NodeState SourceBase<T>::wait() {
             return NodeState::END;
     }
 
-    // Before *this is destructed, must post() to prevent deadlock
-    must_post_ = true;
+    //// Before *this is destructed, must post() to prevent deadlock
+    //must_post_ = true;
+
+    did_wait_need_post_ = true;
 
     return node_->sink_state();
 }
@@ -159,16 +167,20 @@ inline NodeState SourceBase<T>::wait() {
 template<typename T>
 inline void SourceBase<T>::post() {
 
-    // TODO: Inefficient? Use assert and remove from release code?
-    if (!bound_)
-        throw("Source must be connected before call post() is called.");
+    assert(bound_ && connected_);
+    assert(did_wait_need_post_);
 
-    if ( node_->incrementSourceReadCount() >= node_->source_ref_count()) {
+//#ifndef NDEBUG
+//    if (!bound_ && connected_)
+//        throw("Source must be bound before call wait() is called.");
+//#endif
+
+    if (node_->incrementSourceReadCount() >= node_->source_ref_count())
         node_->write_barrier.post();
-    }
 
-    // post() performed, so not needed when *this is destructed
-    must_post_ = false;
+    did_wait_need_post_ = false;
+    //// post() performed, so not needed when *this is destructed
+    //must_post_ = false;
 }
 
 // Specializations...

@@ -97,8 +97,8 @@ include_directories (${CPPTOML_INCLUDE_DIR})
 add_subdirectory (${EXT_PROJECTS_DIR}/rapidjson)
 include_directories (${RAPIDJSON_INCLUDE_DIR})
 
-# Include libshmem (TODO: maybe make into external project like above...)
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/experiments/lib/)
+# Include shmemdp
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)
 
 # TODO: Deprecated, remove on completion of refactor
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem "${CMAKE_CURRENT_BINARY_DIR}/shmem")
@@ -134,10 +134,7 @@ function(add_oat_test name libs)
 endfunction()
 
 # TODO: add this
-#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
-
-# TODO: remove on merge into master
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/experiments/)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
 
 # API documentation
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")

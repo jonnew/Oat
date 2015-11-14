@@ -42,7 +42,7 @@ void sigHandler(int s) {
     quit = 1;
 }
 
-void run(std::shared_ptr<Viewer>& viewer) {
+void run(std::shared_ptr<oat::Viewer>& viewer) {
 
     try {
 
@@ -154,8 +154,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    std::shared_ptr<Viewer> viewer =
-            std::make_shared<Viewer>(source, snapshot_path);
+    std::shared_ptr<oat::Viewer> viewer =
+            std::make_shared<oat::Viewer>(source, snapshot_path);
 
     try {
 

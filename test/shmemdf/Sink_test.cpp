@@ -23,8 +23,8 @@
 
 #include <string>
 
-#include "../lib/Sink.h"
-#include "../lib/SharedCVMat.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/SharedCVMat.h"
 
 SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 

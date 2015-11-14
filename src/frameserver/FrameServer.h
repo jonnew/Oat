@@ -23,8 +23,8 @@
 #include <atomic>
 #include <opencv2/opencv.hpp>
 
-#include "../../experiments/lib/Sink.h"
-#include "../../experiments/lib/SharedCVMat.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/SharedCVMat.h"
 
 namespace oat {
 

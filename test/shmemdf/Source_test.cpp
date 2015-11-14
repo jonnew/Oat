@@ -23,9 +23,9 @@
 
 #include <string>
 
-#include "../lib/Source.h"
-#include "../lib/Sink.h"
-#include "../lib/SharedCVMat.h"
+#include "../../lib/shmemdf/Source.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/SharedCVMat.h"
 
 SCENARIO ("Up to 10 sources can connect a single Node.", "[Source]") {
 
