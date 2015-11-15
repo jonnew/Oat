@@ -60,6 +60,7 @@ message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
 message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")
 
 # Boost
+# TODO: What is the oldest version of boost I can use?
 find_package (Boost 1.53.0 REQUIRED system thread program_options filesystem)
 include_directories (${Boost_INCLUDE_DIRS})
 link_directories (${Boost_LIBRARY_DIR})

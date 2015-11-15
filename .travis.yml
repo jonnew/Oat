@@ -11,13 +11,17 @@ addons:
     - g++-4.8
 
 before_install:
+  - sudo add-apt-repository ppa:apokluda/boost1.53 --yes
   - sudo apt-get update -qq
   - if [ "$CXX" = "g++" ]; then sudo apt-get install -y g++-4.8; fi
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+
+install:
   - sudo apt-get install -y 
   - sudo apt-get install -y libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
   - sudo apt-get install -y doxygen
-  - sudo apt-get install -y libboost-all-dev
+  - sudo apt-get install -y libboost1.53-all-dev
+
 
 before_script:
   # Install OpenCV 3.0
@@ -29,16 +33,11 @@ before_script:
   - make -j1
   - sudo make -j1 install
 
-  # RapidJSON and cpptoml
-  - cd $TRAVIS_BUILD_DIR
-  - cd lib
-  - sudo ./update_libs.sh
-
   # Build and install
   - cd $TRAVIS_BUILD_DIR
   - mkdir release
   - cd release
   - cmake -DCMAKE_BUILD_TYPE=RELEASE ..
 
-script: make
+script: make && make test
 
