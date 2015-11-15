@@ -55,6 +55,8 @@ bool PositionDetector::process() {
 
     // Wait for sink to write to node
     node_state_ = frame_source_.wait();
+    if (node_state_ == oat::NodeState::END)
+        return true;
 
     // Clone the shared frame
     internal_frame_ = frame_source_.clone();
@@ -82,7 +84,8 @@ bool PositionDetector::process() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    return (node_state_ == oat::NodeState::END);
+    // Sink was not at END state
+    return false;
 }
 
 } /* namespace oat */

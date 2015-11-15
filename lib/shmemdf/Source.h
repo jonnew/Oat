@@ -65,10 +65,6 @@ inline SourceBase<T>::SourceBase()
 template<typename T>
 inline SourceBase<T>::~SourceBase() {
 
-//    // Ensure that no server is deadlocked
-//    if (must_post_)
-//        post();
-
     // If the client reference count is 0 and there is no server
     // attached to the node, deallocate the shmem
     if (bound_ &&
@@ -152,7 +148,7 @@ inline NodeState SourceBase<T>::wait() {
 
         // If the sink has left the room, we should too
         if (node_->sink_state() == NodeState::END)
-            return NodeState::END;
+            break; 
     }
 
     did_wait_need_post_ = true;

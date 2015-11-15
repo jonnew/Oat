@@ -76,6 +76,8 @@ bool Viewer::showImage() {
 
     // Wait for sink to write to node
     node_state_ = frame_source_.wait();
+    if (node_state_ == oat::NodeState::END)
+        return true;
 
     // Clone the shared frame
     shared_frame_ = frame_source_.clone();
@@ -104,8 +106,8 @@ bool Viewer::showImage() {
             cv::imwrite(makeFileName(), shared_frame_, compression_params_);
     }
 
-    // If server state is END, return true
-    return (node_state_ == oat::NodeState::END);
+    // Sink was not at END state 
+    return false;
 }
 
 void Viewer::generateSnapshotPath() {
