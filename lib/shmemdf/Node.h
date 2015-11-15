@@ -1,7 +1,7 @@
 //******************************************************************************
 //* File:   Node.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//
+//*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
@@ -56,7 +56,7 @@ public:
     void set_sink_state(NodeState value) { sink_state_ = value; }
     NodeState sink_state(void) const { return sink_state_; }
 
-    // SINK writes (~ sample number)
+    // SINK writes (~sample number)
     // TODO: write_number_ being atomic is redundant because only one sink can
     //       be bound to a node, right?
     uint64_t write_number() const { return write_number_; }

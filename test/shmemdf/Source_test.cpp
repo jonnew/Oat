@@ -17,7 +17,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main()
+#define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 //#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
