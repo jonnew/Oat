@@ -21,6 +21,7 @@
 #define	OAT_DIFFERENCEDETECTOR_H
 
 #include <string>
+#include <limits>
 #include <opencv2/core/mat.hpp>
 
 #include "PositionDetector.h"
@@ -33,7 +34,7 @@ class Position2D;
 /**
  * Motion-based object position detector.
  */
-class DifferenceDetector2D : public PositionDetector {
+class DifferenceDetector : public PositionDetector {
 public:
 
     /**
@@ -41,8 +42,8 @@ public:
      * @param frame_source_address Frame SOURCE node address
      * @param position_sink_address Position SINK node address
      */
-    DifferenceDetector2D(const std::string &frame_source_address,
-                         const std::string &position_sink_address);
+    DifferenceDetector(const std::string &frame_source_address,
+                       const std::string &position_sink_address);
 
     /**
      * Perform motion-based object position detection.
@@ -53,12 +54,18 @@ public:
 
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
+
+    //Accessors (used for tuning GUI)
+    void set_min_object_area(double value) { min_object_area_ = value; }
+    void set_max_object_area(double value) { max_object_area_ = value; }
+    void set_blur_size(int value);
+
 private:
 
     // Intermediate variables
     cv::Mat this_image_, last_image_;
-    cv::Mat threshold_image_;
-    bool last_image_set_;
+    cv::Mat threshold_frame_;
+    bool last_image_set_ {false};
 
     // Object detection
     double object_area_;
@@ -69,24 +76,27 @@ private:
     // Detector parameters
     int difference_intensity_threshold_;
     cv::Size blur_size_;
-    bool blur_on_;
+    bool blur_on_ {false};
+    double min_object_area_ {0.0};
+    double max_object_area_ {std::numeric_limits<double>::max()};
 
     // Tuning stuff
-    bool tuning_windows_created_;
+    bool tuning_windows_created_ {false};
     const std::string tuning_image_title_;
-    cv::Mat tune_image_;
     void tune(void);
+    cv::Mat tune_frame_;
     void createTuningWindows(void);
-    static void blurSliderChangedCallback(int value, void *);
+    int dummy0_ {0}, dummy1_ {10000};
 
-    // Processing segregation
-    // TODO: These are terrible - no IO signature other than void -> void,
-    // no exceptions, etc
-    void applyThreshold(void);
-    void set_blur_size(int value);
-    void siftBlobs(void);
-    void servePosition(void);
+    // Processing functions
+    void tune(cv::Mat &frame);
+    void applyThreshold(cv::Mat &frame);
 };
+
+// Tuning GUI callbacks
+void diffDetectorBlurSliderChangedCallback(int value, void *);
+void diffDetectorMinAreaSliderChangedCallback(int value, void *);
+void diffDetectorMaxAreaSliderChangedCallback(int value, void *);
 
 }       /* namespace oat */
 #endif	/* OAT_DIFFERENCEDETECTOR_H */

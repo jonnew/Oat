@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
     switch (type_hash[type]) {
         case 'a':
         {
-            detector = std::make_shared<oat::DifferenceDetector2D>(source, sink);
+            detector = std::make_shared<oat::DifferenceDetector>(source, sink);
             break;
         }
         case 'b':

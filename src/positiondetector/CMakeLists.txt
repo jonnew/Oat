@@ -4,6 +4,7 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 # Create a SOURCE variable containing all required .cpp files:
 set (oat-posidet_SOURCE
      PositionDetector.cpp
+     DetectorFunc.cpp
      DifferenceDetector.cpp
      HSVDetector.cpp
      main.cpp)
