@@ -38,7 +38,8 @@ public:
 
     // Implement FrameServer interface
     void configure(void) override;
-    void configure(const std::string &config_file, const std::string &config_key) override;
+    void configure(const std::string &config_file, 
+                   const std::string &config_key) override;
     void connectToNode(void) override;
     bool serveFrame(void) override;
 
@@ -47,12 +48,9 @@ public:
 
 private:
 
-    bool aquisition_started_;
-
     // The webcam object
     int64_t index_;
     std::unique_ptr<cv::VideoCapture> cv_camera_;
-
 };
 
 }      /* namespace oat */

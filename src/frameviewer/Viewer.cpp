@@ -78,7 +78,7 @@ bool Viewer::showImage() {
     node_state_ = frame_source_.wait();
 
     // Clone the shared frame
-    shared_frame = frame_source_.clone();
+    shared_frame_ = frame_source_.clone();
 
     // Tell sink it can continue
     frame_source_.post();
@@ -95,13 +95,13 @@ bool Viewer::showImage() {
     // If the minimum update period has passed, show frame.
     if (duration > MIN_UPDATE_PERIOD_MS) {
 
-        cv::imshow(name_, shared_frame);
+        cv::imshow(name_, shared_frame_);
         tock_ = Clock::now();
 
         char command = cv::waitKey(1);
 
         if (command == 's')
-            cv::imwrite(makeFileName(), shared_frame, compression_params_);
+            cv::imwrite(makeFileName(), shared_frame_, compression_params_);
     }
 
     // If server state is END, return true

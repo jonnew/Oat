@@ -37,11 +37,9 @@ public:
      * the mask frame will be unchanged. All other pixels will be set to 0.
      * @param frame_source_address raw frame source address
      * @param frame_sink_address filtered frame sink address
-     * @param invert_mask invert the mask frame before filtering.
      */
     FrameMasker(const std::string &frame_souce_address,
-                const std::string &frame_sink_address,
-                bool invert_mask=false);
+                const std::string &frame_sink_address);
 
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
@@ -56,14 +54,11 @@ private:
      */
     void filter(cv::Mat& frame) override;
 
-    // Should be inverted before application.
-    bool invert_mask;
-
     // Do we have a mask to work with
-    bool mask_set = false;
+    bool mask_set_ = false;
 
     // Mask frames with an arbitrary ROI
-    cv::Mat roi_mask;
+    cv::Mat roi_mask_;
 };
 
 }      /* namespace oat */

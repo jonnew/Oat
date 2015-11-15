@@ -29,11 +29,15 @@
 
 namespace oat {
 
-FrameMasker::FrameMasker(const std::string& source_name, const std::string& sink_name, bool invert_mask) :
-  FrameFilter(source_name, sink_name)
-, invert_mask(false) { }
+FrameMasker::FrameMasker(const std::string &frame_source_address,
+                         const std::string &frame_sink_address) :
+  FrameFilter(frame_source_address, frame_sink_address)
+{
+    // Nothing
+}
 
-void FrameMasker::configure(const std::string& config_file, const std::string& config_key) {
+void FrameMasker::configure(const std::string &config_file, 
+                            const std::string &config_key) {
 
     // Available options
     std::vector<std::string> options {"mask"};
@@ -53,25 +57,24 @@ void FrameMasker::configure(const std::string& config_file, const std::string& c
 
         std::string mask_path;
         oat::config::getValue(this_config, "mask", mask_path, true);
-        roi_mask = cv::imread(mask_path, CV_LOAD_IMAGE_GRAYSCALE);
+        roi_mask_ = cv::imread(mask_path, CV_LOAD_IMAGE_GRAYSCALE);
 
-        if (roi_mask.data == NULL) {
+        if (roi_mask_.data == NULL)
             throw (std::runtime_error("File \"" + mask_path + "\" could not be read."));
-        }
 
-        mask_set = true;
+        mask_set_ = true;
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
 
-void FrameMasker::filter(cv::Mat& frame) {
+void FrameMasker::filter(cv::Mat &frame) {
 
     // Throws cv::Exception if there is a size mismatch between mask and frames
     // received from SOURCE or in any case where setTo() assertions fail.
-    if (mask_set)
-        frame.setTo(0, roi_mask == 0);
+    if (mask_set_)
+        frame.setTo(0, roi_mask_ == 0);
 }
 
 } /* namespace oat */

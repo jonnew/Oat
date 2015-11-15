@@ -48,7 +48,7 @@ BackgroundSubtractorMOG::BackgroundSubtractorMOG(
     background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
 #else
     background_subtractor_ = cv::createBackgroundSubtractorMOG2(/*defaults OK?*/);
-#endif // OAT_USE_CUDA
+#endif
 }
 
 void BackgroundSubtractorMOG::configure(const std::string &config_file, const std::string &config_key) {
@@ -70,13 +70,14 @@ void BackgroundSubtractorMOG::configure(const std::string &config_file, const st
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
 
+#ifdef OAT_USE_CUDA
         // GPU index
         int64_t index;
         if (oat::config::getValue(this_config, "gpu_index", index, 0)) {
             configureGPU(index);
             background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
         }
-
+#endif
         // Learning coefficient
         oat::config::getValue(this_config, "learning_coeff", learning_coeff_, 0.0, 1.0);
 
@@ -85,6 +86,7 @@ void BackgroundSubtractorMOG::configure(const std::string &config_file, const st
     }
 }
 
+#ifdef OAT_USE_CUDA
 void BackgroundSubtractorMOG::configureGPU(size_t index) {
 
     // Determine if a compatible device is available
@@ -111,6 +113,7 @@ void BackgroundSubtractorMOG::configureGPU(size_t index) {
     cv::cuda::printShortCudaDeviceInfo(selected_gpu);
 #endif
 }
+#endif
 
 void BackgroundSubtractorMOG::filter(cv::Mat &frame) {
 

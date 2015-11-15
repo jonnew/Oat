@@ -43,9 +43,7 @@ SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
             sink1.bind(addr);
 
             THEN ("An attempt to bind that segment by sink2 shall throw") {
-                REQUIRE_THROWS(
-                    sink2.bind(addr);
-                );
+                REQUIRE_THROWS( sink2.bind(addr); );
             }
         }
     }
@@ -61,18 +59,14 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
         WHEN ("When the sink calls wait() before binding a segment") {
 
             THEN ("The the sink shall throw") {
-                REQUIRE_THROWS(
-                    sink.wait();
-                );
+                REQUIRE_THROWS( sink.wait(); );
             }
         }
 
         WHEN ("When the sink calls post() before binding a segment") {
 
             THEN ("The the sink shall throw") {
-                REQUIRE_THROWS(
-                    sink.post();
-                );
+                REQUIRE_THROWS( sink.post(); );
             }
         }
 
@@ -81,20 +75,29 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
             sink.bind(addr);
 
             THEN ("The the sink shall not throw") {
-                REQUIRE_NOTHROW(
-                    sink.wait();
-                );
+                REQUIRE_NOTHROW( sink.wait(); );
             }
         }
 
-        WHEN ("When the sink calls post() after binding a segment") {
+        WHEN ("When the sink calls post() after binding a segment "
+               "before calling wait()") {
 
             sink.bind(addr);
 
+            THEN ("The the sink shall throw") {
+                REQUIRE_THROWS( sink.post(); );
+            }
+
+        }
+
+        WHEN ("When the sink calls post() after binding a segment "
+               "after calling wait()") {
+
+            sink.bind(addr);
+            sink.wait();
+
             THEN ("The the sink shall not throw") {
-                REQUIRE_NOTHROW(
-                    sink.post();
-                );
+                REQUIRE_NOTHROW( sink.post(); );
             }
         }
     }
@@ -151,27 +154,21 @@ SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.
         WHEN ("When the sink calls wait() before binding a segment") {
 
             THEN ("The the sink shall throw") {
-                REQUIRE_THROWS(
-                    sink.wait();
-                );
+                REQUIRE_THROWS( sink.wait(); );
             }
         }
 
         WHEN ("When the sink calls post() before binding a segment") {
 
             THEN ("The the sink shall throw") {
-                REQUIRE_THROWS(
-                    sink.post();
-                );
+                REQUIRE_THROWS( sink.post(); );
             }
         }
 
         WHEN ("When the sink calls retrieve() before binding a segment") {
 
             THEN ("The the sink shall throw") {
-                REQUIRE_THROWS(
-                    mat = sink.retrieve(cols, rows, type);
-                );
+                REQUIRE_THROWS( mat = sink.retrieve(cols, rows, type); );
             }
         }
     }

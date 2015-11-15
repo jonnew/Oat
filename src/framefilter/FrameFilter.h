@@ -102,7 +102,6 @@ private:
     oat::Sink<oat::SharedCVMat> frame_sink_;
 
     // Currently acquired, shared frame
-    bool frame_empty_;
     cv::Mat shared_frame_;
 };
 

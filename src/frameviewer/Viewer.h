@@ -36,7 +36,6 @@ class SharedCVMat;
  */
 class Viewer {
 
-
     using Clock = std::chrono::high_resolution_clock;
     using Milliseconds = std::chrono::milliseconds;
 
@@ -65,7 +64,7 @@ private:
     std::string name_;
 
     // Image data
-    cv::Mat shared_frame;
+    cv::Mat shared_frame_;
 
     // Frame SOURCE to get frames to display
     const std::string frame_source_address_;

@@ -52,6 +52,8 @@ protected:
     T * sh_object_ {nullptr};
     std::string node_address_, obj_address_;
     bool bound_ {false};
+
+private:
     bool did_wait_need_post_ {false};
 };
 
@@ -84,12 +86,13 @@ inline SinkBase<T>::~SinkBase() {
 template<typename T>
 inline void SinkBase<T>::wait() {
 
-    assert(bound_);
-    assert(!did_wait_need_post_);
-
-//    // TODO: Inefficient?
-//    if (!bound_)
-//        throw("Sink must be bound before call wait() is called.");
+#ifndef NDEBUG
+    // Don't use Asserts because it does not clean shmem
+    if(!bound_)
+        throw std::runtime_error("Sink must be bound before calling wait()");
+    if (did_wait_need_post_)
+        throw std::runtime_error("wait() called when post() was required.");
+#endif
 
     boost::system_time timeout = boost::get_system_time() + msec_t(10);
 
@@ -107,24 +110,28 @@ inline void SinkBase<T>::wait() {
 template<typename T>
 inline void SinkBase<T>::post() {
 
-    assert(bound_);
-    assert(did_wait_need_post_);
+#ifndef NDEBUG
+    // Don't use Asserts because it does not clean shmem
+    if(!bound_)
+        throw std::runtime_error("Source must be bound before calling post()");
+    if (!did_wait_need_post_)
+        throw std::runtime_error("post() called when wait() was required.");
+#endif
 
-//    // TODO: Inefficient?
-//    if (!bound_)
-//        throw("Sink must be bound before call post() is called.");
+    assert(bound_ && "Sink must be bound before calling wait()");
+    assert(did_wait_need_post_ && "post() called when wait() was required.");
 
     // Increment the number times this node has facilitated a shmem write
-    node_->incrementWriteNumber();
-
-    // Reset the source read count
-    // TODO: replace with index based structure
-    node_->resetSourceReadCount();
+    node_->notifySinkWriteComplete();
 
     // Tell each source connected to the node it can read
     node_->notifySources();
 
     did_wait_need_post_ = false;
+
+#ifndef NDEBUG
+    std::cout << "Write number: " << node_->write_number() << "\n";
+#endif
 }
 
 // Specializations...

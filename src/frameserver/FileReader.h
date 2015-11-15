@@ -37,7 +37,8 @@ public:
 
     // Implement FrameServer interface
     void configure(void) override;
-    void configure(const std::string &config_file, const std::string &config_key) override;
+    void configure(const std::string &config_file, 
+                   const std::string &config_key) override;
     void connectToNode(void) override;
     bool serveFrame(void) override;
 

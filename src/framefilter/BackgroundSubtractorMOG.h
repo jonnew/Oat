@@ -67,7 +67,7 @@ private:
     cv::Ptr<cv::cuda::BackgroundSubtractorMOG> background_subtractor_;
     cv::cuda::GpuMat current_frame_, background_mask_;
 #else
-    cv::Ptr<cv::BackgroundSubtractorMOG2> backgroRund_subtractor_;
+    cv::Ptr<cv::BackgroundSubtractorMOG2> background_subtractor_;
     cv::Mat background_mask_;
 #endif
 

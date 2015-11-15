@@ -7,7 +7,7 @@ set (oat-framefilt_SOURCE
      BackgroundSubtractor.cpp
      BackgroundSubtractorMOG.cpp
      FrameMasker.cpp
-     Undistorter.cpp
+     #Undistorter.cpp
      main.cpp)
 
 # Target

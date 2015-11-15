@@ -91,7 +91,6 @@ int main(int argc, char *argv[]) {
     std::string config_file;
     std::string config_key;
     bool config_used = false;
-    bool invert_mask = false;
     po::options_description visible_options("OPTIONS");
 
     std::unordered_map<std::string, char> type_hash;
@@ -111,7 +110,6 @@ int main(int argc, char *argv[]) {
         config.add_options()
                 ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
                 ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
-                ("invert-mask,m", "If using TYPE=mask, invert the mask before applying")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -181,17 +179,6 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if (variable_map.count("invert-mask")) {
-
-            if (type_hash[type] != 'b') {
-                std::cerr << oat::Warn("Invert-mask specified, but this is the"
-                          " wrong filter TYPE for that option.\n")
-                          << oat::Warn("Invert-mask option was ignored.\n");
-            } else {
-                invert_mask = true;
-            }
-        }
-
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
@@ -221,7 +208,7 @@ int main(int argc, char *argv[]) {
         }
         case 'b':
         {
-            filter = std::make_shared<oat::FrameMasker>(source, sink, invert_mask);
+            filter = std::make_shared<oat::FrameMasker>(source, sink);
             if (!config_used)
                  std::cerr << oat::whoWarn(filter->name(),
                          "No mask configuration was provided."

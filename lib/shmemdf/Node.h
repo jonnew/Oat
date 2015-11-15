@@ -45,6 +45,7 @@ public:
     Node()
     {
         source_slots_.reset();
+        source_read_required_.reset();
     }
 
     // Nodes are not copyable
@@ -56,12 +57,28 @@ public:
     NodeState sink_state(void) const { return sink_state_; }
 
     // SINK writes (~ sample number)
+    // TODO: write_number_ being atomic is redundant because only one sink can
+    //       be bound to a node, right?
     uint64_t write_number() const { return write_number_; }
-    uint64_t incrementWriteNumber() { return ++write_number_; }
+    void notifySinkWriteComplete() { 
+
+        mutex_.wait();
+        source_read_required_ = source_slots_;
+        mutex_.post();
+
+        ++write_number_; 
+    }
 
     // SOURCE read counting
-    size_t incrementSourceReadCount() { return ++source_read_count_; }
-    void resetSourceReadCount() { source_read_count_ = 0; }
+    bool notifySourceReadComplete(size_t index) { 
+
+        mutex_.wait();
+        source_read_required_[index] = false; 
+        bool reads_finished = source_read_required_.none();
+        mutex_.post();
+
+        return reads_finished;
+    }
 
     // SOURCE slots
     static constexpr size_t NUM_SLOTS {10};
@@ -169,6 +186,7 @@ private:
     std::atomic<NodeState> sink_state_ {oat::NodeState::UNDEFINED}; //!< SINK state
     std::atomic<size_t> source_read_count_ {0}; //!< Number SOURCE reads that have occured since last sink reset
     std::bitset<NUM_SLOTS> source_slots_;
+    std::bitset<NUM_SLOTS> source_read_required_;
 
     std::atomic<size_t> source_ref_count_ {0}; //!< Number of SOURCES sharing this node
     std::atomic<uint64_t> write_number_ {0}; //!< Number of writes to shmem that have been facilited by this node

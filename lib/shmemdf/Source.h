@@ -50,11 +50,10 @@ protected:
     size_t slot_index_;
     bool bound_ {false};
     bool connected_ {false};
-    bool did_wait_need_post_ {false};
 
 private:
 
-    //bool must_post_ {false};
+    bool did_wait_need_post_ {false};
 };
 
 template<typename T>
@@ -125,7 +124,7 @@ inline void SourceBase<T>::connect(const std::string &address) {
 
     // Only occurs when the name of the shared object does not match typeid(T).name()
     if (sh_object_ == nullptr)
-        throw("A Source<T> can only connect to a node bound by a Sink<T>.");
+        throw std::runtime_error("A Source<T> can only connect to a node bound by a Sink<T>.");
 
     connected_ = true;
 }
@@ -134,13 +133,13 @@ inline void SourceBase<T>::connect(const std::string &address) {
 template<typename T>
 inline NodeState SourceBase<T>::wait() {
 
-    assert(bound_);
-    assert(!did_wait_need_post_);
-
-//#ifndef NDEBUG
-//    if (!bound_)
-//        throw("Source must be bound before call wait() is called.");
-//#endif
+#ifndef NDEBUG
+    // Don't use Asserts because it does not clean shmem
+    if(!bound_)
+        throw std::runtime_error("Source must be bound before calling wait()");
+    if (did_wait_need_post_)
+        throw std::runtime_error("wait() called when post() was required.");
+#endif
 
     boost::system_time timeout = boost::get_system_time() + msec_t(10);
 
@@ -156,9 +155,6 @@ inline NodeState SourceBase<T>::wait() {
             return NodeState::END;
     }
 
-    //// Before *this is destructed, must post() to prevent deadlock
-    //must_post_ = true;
-
     did_wait_need_post_ = true;
 
     return node_->sink_state();
@@ -167,20 +163,20 @@ inline NodeState SourceBase<T>::wait() {
 template<typename T>
 inline void SourceBase<T>::post() {
 
-    assert(bound_ && connected_);
-    assert(did_wait_need_post_);
+#ifndef NDEBUG
+    // Don't use Asserts because it does not clean shmem
+    if(!bound_)
+        throw std::runtime_error("source must be bound before calling post()");
+    if(!connected_)
+        throw std::runtime_error("source must be connected before calling post()");
+    if (!did_wait_need_post_)
+        throw std::runtime_error("post() called when wait() was required.");
+#endif
 
-//#ifndef NDEBUG
-//    if (!bound_ && connected_)
-//        throw("Source must be bound before call wait() is called.");
-//#endif
-
-    if (node_->incrementSourceReadCount() >= node_->source_ref_count())
+    if (node_->notifySourceReadComplete(slot_index_))
         node_->write_barrier.post();
 
     did_wait_need_post_ = false;
-    //// post() performed, so not needed when *this is destructed
-    //must_post_ = false;
 }
 
 // Specializations...
@@ -232,10 +228,9 @@ public:
 
     void connect(const std::string &address) override;
 
-    //virtual SharedCVMat& retrieve() override = delete;
-    inline cv::Mat retrieve() const { return frame_; }
-    inline cv::Mat clone() const { return frame_.clone(); }
-    inline MatParameters parameters() const { return parameters_; }
+    cv::Mat retrieve() const { return frame_; }
+    cv::Mat clone() const { return frame_.clone(); }
+    MatParameters parameters() const { return parameters_; }
 
 private :
     cv::Mat frame_;
@@ -291,7 +286,8 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
     parameters_.rows = sh_object_->rows();
     parameters_.type = sh_object_->type();
     parameters_.bytes = frame_.total() * frame_.elemSize();
-
+    
+    connected_ = true;
 }
 
 } // namespace oat
