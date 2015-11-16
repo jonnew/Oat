@@ -22,7 +22,6 @@ install:
   - sudo apt-get install -y doxygen
   - sudo apt-get install -y libboost1.53-all-dev
 
-
 before_script:
   # Install OpenCV 3.0
   - git clone https://github.com/Itseez/opencv.git
@@ -40,4 +39,3 @@ before_script:
   - cmake -DCMAKE_BUILD_TYPE=RELEASE ..
 
 script: make && make test
-
