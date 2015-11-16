@@ -40,7 +40,7 @@ volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
+void sigHandler(int) {
     quit = 1;
 }
 

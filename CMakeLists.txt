@@ -2,10 +2,10 @@ cmake_minimum_required (VERSION 2.8)
 project (Oat)
 
 # Generate Oat version number: Major.Branch.Commit
-find_package(Git REQUIRED)
+find_package (Git REQUIRED)
 
 # Get the current working branch
-execute_process(
+execute_process (
   COMMAND git rev-parse --abbrev-ref HEAD
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   OUTPUT_VARIABLE GIT_BRANCH
@@ -13,7 +13,7 @@ execute_process(
 )
 
 # Get the latest abbreviated commit hash of working branch
-execute_process(
+execute_process (
   COMMAND git log -1 --format=%h
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   OUTPUT_VARIABLE GIT_COMMIT_HASH
@@ -23,28 +23,32 @@ execute_process(
 # Internal version list
 set (VERSION_LIST "${GIT_BRANCH}.${GIT_COMMIT_HASH}")
 
-# Configure a header file to pass CMake settings to source code
-configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
-include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
-
-# Make sure a build type has been specified
-if( NOT CMAKE_BUILD_TYPE )
-   set( CMAKE_BUILD_TYPE Release ... FORCE )
-endif()
-
 # Set compiler options
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -std=c++11")
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
-# Get a list of compiler options
-if (CMAKE_BUILD_TYPE MATCHES Debug)
+# Make sure a build type has been specified
+if (NOT CMAKE_BUILD_TYPE )
+   set (CMAKE_BUILD_TYPE Release ... FORCE )
+endif()
+
+# Build type case insenstivity
+string(TOLOWER ${CMAKE_BUILD_TYPE} LOWERCASE_CMAKE_BUILD_TYPE)
+
+# Swich compiler flags based on build type
+if (LOWERCASE_CMAKE_BUILD_TYPE STREQUAL "debug")
     set (FULL_CXX_FLAG_LIST "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
-elseif (CMAKE_BUILD_TYPE MATCHES Release)
+elseif (LOWERCASE_CMAKE_BUILD_TYPE STREQUAL "release")
     set (FULL_CXX_FLAG_LIST "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
 else()
-    message (FATAL_ERROR "Set and acceptable build type using -DCMAKE_BUILD_TYPE=<Debug or Release>")
+    message (FATAL_ERROR "Set and acceptable build type using -DCMAKE_BUILD_TYPE=<debug or release>")
 endif()
+
+# Configure a header file to pass CMake settings to source code containing
+# build options and version info
+configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
+include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 
 # Add preprocessor definition to compile with OpenGL support
 option (OAT_USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
@@ -54,7 +58,7 @@ option (OAT_USE_CUDA "Use CUDA GPU functionality in OpenCV" OFF)
 # Show options summary
 message (STATUS "Oat version: ${VERSION_LIST}")
 message (STATUS "Compilation options:" )
-message (STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message (STATUS "  Build type: ${LOWERCASE_CMAKE_BUILD_TYPE}")
 message (STATUS "  Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
 message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
 message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")

@@ -54,7 +54,7 @@ void printUsage(po::options_description options) {
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
+void sigHandler(int) {
     quit = 1;
 }
 

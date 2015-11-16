@@ -40,6 +40,7 @@ void printUsage(po::options_description options) {
               << "Combine positional information from two or more SOURCES.\n"
               << "Publish combined position to SINK.\n\n"
               << "TYPE\n"
+
               << "  mean: Geometric mean of SOURCE positions\n\n"
               << "SOURCES:\n"
               << "  User-supplied position source names (e.g. pos1 pos2).\n\n"
@@ -49,7 +50,7 @@ void printUsage(po::options_description options) {
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
+void sigHandler(int) {
     quit = 1;
 }
 
