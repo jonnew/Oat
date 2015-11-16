@@ -20,7 +20,6 @@
 #ifndef OAT_SINK_H
 #define	OAT_SINK_H
 
-#include <cassert>
 #include <string>
 #include <memory>
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -118,14 +117,8 @@ inline void SinkBase<T>::post() {
         throw std::runtime_error("post() called when wait() was required.");
 #endif
 
-    assert(bound_ && "Sink must be bound before calling wait()");
-    assert(did_wait_need_post_ && "post() called when wait() was required.");
-
     // Increment the number times this node has facilitated a shmem write
     node_->notifySinkWriteComplete();
-
-    // Tell each source connected to the node it can read
-    node_->notifySources();
 
     did_wait_need_post_ = false;
 
@@ -155,6 +148,10 @@ public:
 
 template<typename T>
 inline void Sink<T>::bind(const std::string &address) {
+
+    if (bound_)
+        throw std::runtime_error("A sink can only bind a "
+                                 "single time to a single node.");
 
     // Addresses for this block of shared memory
     node_address_ = address + "_node";
@@ -213,6 +210,10 @@ public:
 };
 
 inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
+
+    if (bound_)
+        throw std::runtime_error("A sink can only bind a "
+                                 "single time to a single node.");
 
     // Addresses for this block of shared memory
     node_address_ = address + "_node";

@@ -19,6 +19,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
+#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
 #include <future>
 #include <thread>
@@ -29,39 +30,51 @@
 
 // Test outline
 //
-//- Given a fresh source
-//    - When source attempts to enter the critical section first, it 
-//      should wait until the sink enters and leaves.
-//    - When a sink is in the critical section, it should not be 
-//      possible for the source to enter until a sink posts
-//    - When the source enters the critical section, it should not be
-//      possible for the sink to enter until the source posts
-//    - When the source enters the critical section, it should not be possible 
-//      for another source to connect(), and enter the critical section until
-//      the sink posts
+//### A Sink and Source bound to a common Node must respect eachothers' locks
+//- Given a sink and source
+//    - When source attempts to enter the critical section first
+//        - Then, the the source shall block until the sink post()'s
+//    - When the sink enters a critical section first
+//        - Then, the source shall block until the sink post()'s
+//    - When the source enters a critical section
+//        - Then, the sink shall block until the source post()s
+//        - Then, a second source should not be able to enter the critical section until the sink posts
 //
-//- Given several fresh sources
-//    - It should not be possible for any of them to enter the critical section until a sink posts
+//### The order of connecting and binding is irrelevant. The sink always enters the critical section first
+//- Given a sink and two sources
+//    - When, 1. The sources connect()
+//            2. The sources attempt to enter the critical section
+//            3. The sink bind()'s
+//        - Then, the sources shall block until the sink enters/exits the critical section
+//    - When, 1. The sink binds
+//            2. the sources connect()
+//            3. the sources try to enter critical section
+//        - Then, the sources shall block until the sink enters/exits the critical section
+//    - When, 1. The first source connect()'s
+//            2. The first sources tries to enter the critical section
+//            3. The sink binds,
+//            4. The second source connect()'s
+//            5. The second source tries to enter the critical section
+//        - Then, the sources shall block until the sink enters/exits the critical section
 //
-//- Given a source in the critical section
-//    - It should be possible for other sources to enter
-//
-//- Given a waiting sink
-//    - A source should have to post for the sink to proceed
-//
-//- Given a waiting source
-//    - A sink should have to post for the sink to proceed
-//
-//- Given a waiting source
-//    - When a second source joins, both sources should proceed when a sink posts
-//
-//- Given two waiting sources
-//    - When the first source leaves, the second source should proceed when a sink posts
+//### Sources attaching or detaching during source or sink wait() periods should not cause deadlocks
+//- Given a sink and two sources
+//    - When, 1. The sink binds
+//            2. the sources connect
+//            3. The sink enters the critical section
+//            4. One of the sources is destructed
+//        - Then, the first source shall block until the sink enters/exits the critical section even if the second destructs
+//- Given a sink and a source
+//    - When, 1. The sink binds
+//            2. The sink enters the critical section
+//            3. A source connects
+//            4. The source attempts to enter the critical section
+//        - Then, the source shall block until the sink enters/exits the critical section
 
 using msec = std::chrono::milliseconds;
 const std::string node_addr = "test";
 
-SCENARIO ("Sinks and Sources bound to a common Nodes must respect "
+SCENARIO ("A Sink and Source bound to a common Nodes must respect "
           "eachothers' locks.", "[Sink, Source, Concurrency]") {
 
     GIVEN ("A sink and source") {
@@ -70,15 +83,14 @@ SCENARIO ("Sinks and Sources bound to a common Nodes must respect "
         oat::Source<int> source;
 
         WHEN ("The source attempts to enter the critical section first.") {
-           
+
             sink.bind(node_addr);
 
             // Source connects and then attempts to enter critical section on a
             // separate thread
-            source.connect(node_addr);
-            auto fut = std::async(std::launch::async, [&source]{ source.wait(); });
+            auto fut = std::async(std::launch::async, [&source]{ source.connect(node_addr); source.wait(); });
 
-            THEN ("The the source shall block until the sink post()'s") {
+            THEN ("The source shall block until the sink post()'s") {
 
                 // Pause for 5 ms
                 std::this_thread::sleep_for(msec(5));
@@ -98,8 +110,8 @@ SCENARIO ("Sinks and Sources bound to a common Nodes must respect "
                 REQUIRE(status == std::future_status::ready);
             }
         }
-        
-        WHEN ("When the sink enters a critical section first") {
+
+        WHEN ("The sink enters a critical section first") {
 
             // Sink binds to "test" and enters critical section
             sink.bind(node_addr);
@@ -109,7 +121,7 @@ SCENARIO ("Sinks and Sources bound to a common Nodes must respect "
             source.connect(node_addr);
             auto fut = std::async(std::launch::async, [&source]{ source.wait(); });
 
-            THEN ("The the source shall block until the sink post()'s") {
+            THEN ("The source shall block until the sink post()'s") {
 
                 // Pause for 5 ms
                 std::this_thread::sleep_for(msec(5));
@@ -128,56 +140,50 @@ SCENARIO ("Sinks and Sources bound to a common Nodes must respect "
             }
         }
 
-        WHEN ("When the source enters a critical section") {
+        WHEN ("The source enters a critical section") {
 
-            // Sink binds and source connects to "test" 
+            // Sink binds and source connects to "test"
             sink.bind(node_addr);
             source.connect(node_addr);
 
-            // Sink enters critical section and leaves
-            sink.wait();
-            /* Critical */
-            sink.post();
+            // Sink tries to post without waiting first (bad lock order)
+            REQUIRE_THROWS(sink.post());
 
-            // Source enters the critical section
-            source.wait();
+            // The sink enters and exits critical section properly
+            REQUIRE_NOTHROW(sink.wait());
+             /* Critical */
+            REQUIRE_NOTHROW(sink.post());
 
-            // The sink attempts to enter the crtical section on
-            // a separate thread
-            auto fut = std::async(std::launch::async, [&sink]{ sink.wait(); });
+            // Source tries to post before waiting (Bad unlock order)
+            REQUIRE_THROWS(source.post());
+
+            // Source enters the critical section, correctly
+            REQUIRE_NOTHROW(source.wait());
 
             THEN ("The the sink shall block until the sink post()'s") {
+
+                // The sink attempts to enter the crtical section on
+                // a separate thread
+                auto fut = std::async(std::launch::async, [&sink]{ sink.wait(); });
 
                 // Pause for 5 ms
                 std::this_thread::sleep_for(msec(5));
 
-                // Check to see that the source has not stopped waiting
+                // Check to see that the sink has not stopped waiting
                 auto status = fut.wait_for(msec(0));
                 REQUIRE(status != std::future_status::ready);
 
-                // The sink posts()
-                source.post();
+                // Source tries to wait after just completeling wait (Bad lock order)
+                REQUIRE_THROWS( source.wait());
+
+                // Correct unlock order
+                REQUIRE_NOTHROW(source.post());
 
                 // Give sufficient time for wait to release
                 std::this_thread::sleep_for(msec(1));
                 status = fut.wait_for(msec(0));
                 REQUIRE(status == std::future_status::ready);
             }
-        }
-
-        WHEN ("When the source enters a critical section") {
-
-            // Sink binds and source connects to "test" 
-            sink.bind(node_addr);
-            source.connect(node_addr);
-
-            // Sink enters critical section and leaves
-            sink.wait();
-            /* Critical */
-            sink.post();
-
-            // Source enters the critical section
-            source.wait();
 
             THEN ("A second source should not be able to enter "
                   "the critical section until the sink posts") {
@@ -188,54 +194,61 @@ SCENARIO ("Sinks and Sources bound to a common Nodes must respect "
                 source1.connect(node_addr);
                 auto fut = std::async(std::launch::async, [&source1]{ source1.wait(); });
 
-                // Check to see that the source has not entered critical secion
+                // Check to see that the second source has not entered critical section
                 auto status = fut.wait_for(msec(0));
                 REQUIRE(status != std::future_status::ready);
 
-                // DEADLOCK : Node has two sources now, so for sink to proceed, it needs two posts!
-                // TODO: FIX
-                // First source posts
-                source.post();
+                // When the first source post's, such that the sink can proceed
+                REQUIRE_NOTHROW(source.post());
 
-                // Sink enters critical section and leaves
-                sink.wait();
-                /* Critical */
+                // The sink tries to post without waiting first (bad unlock order)
+                REQUIRE_THROWS(sink.post());
+
+                // The sink enters and exits critical section properly
+                /* Start Critical */
+                REQUIRE_NOTHROW(sink.wait());
 
                 // Check to see that the source1 has not entered critical section
                 status = fut.wait_for(msec(0));
                 REQUIRE(status != std::future_status::ready);
 
-                sink.post();
+                REQUIRE_NOTHROW(sink.post());
+                /* End Critical */
 
-                // Check to see that the source1 has entered critical section
                 // Give sufficient time for wait to release
                 std::this_thread::sleep_for(msec(1));
+
+                // Check to see that the second source has entered critical section
                 status = fut.wait_for(msec(0));
                 REQUIRE(status == std::future_status::ready);
+
+                // And confirm that the first source can also proceed
+                REQUIRE_NOTHROW(source.wait());
             }
         }
     }
+}
+
+SCENARIO ("The order of connecting and binding is irrelevant. "
+          "The sink always enters the critical section first",
+          "[Sink, Source, Concurrency]") {
 
     GIVEN ("Two sources and a sink.") {
-        
+
         oat::Sink<int> sink;
         oat::Source<int> s0, s1;
 
-        WHEN ("The sink binds, the sources connect, and then attempt "
-              "to enter the critical section first") {
+        WHEN ("1. The sources connect(), "
+              "2. The sources attempt to enter the critical section, "
+              "3. The sink bind()'s") {
 
-            // Sink binds
-            sink.bind(node_addr);
+            // Source0 tries to connect and enter critical section
+            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(node_addr); s0.wait(); });
 
-            // Sources connect and then attempt to enter critical section
-            // separate threads
-            s0.connect(node_addr);
-            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.wait(); });
+            // Source1 tries to connect and enter critical section
+            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(node_addr); s1.wait(); });
 
-            s1.connect(node_addr);
-            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.wait(); });
-
-            THEN ("Both sources shall block until the sink post()'s") {
+            THEN ("The sources shall block until the sink enters/exits the critical section.") {
 
                 // Pause for 5 ms
                 std::this_thread::sleep_for(msec(5));
@@ -247,21 +260,247 @@ SCENARIO ("Sinks and Sources bound to a common Nodes must respect "
                 auto status_1 = s1_fut.wait_for(msec(0));
                 REQUIRE(status_1 != std::future_status::ready);
 
-                // The sink enters and exits critical section
-                sink.wait();
-                /* Critical */
-                sink.post();
+                // Sink binds
+                sink.bind(node_addr);
+
+                // Tries to post without waiting first (bad lock order)
+                REQUIRE_THROWS(sink.post());
+
+                /* Start Critical */
+                REQUIRE_NOTHROW(sink.wait());
+
+                // Check to see that the sources have not stopped waiting
+                status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 != std::future_status::ready);
+
+                status_1 = s1_fut.wait_for(msec(0));
+                REQUIRE(status_1 != std::future_status::ready);
+
+                REQUIRE_NOTHROW(sink.post());
+                /* End Critical */
 
                 // Give sufficient time for wait to release
                 std::this_thread::sleep_for(msec(1));
 
-                // Check to see that the source has entered the critical
-                // section 
+                // Check to see that the sources have connected and entered
+                // critical section
                 status_0 = s0_fut.wait_for(msec(0));
                 REQUIRE(status_0 == std::future_status::ready);
 
                 status_1 = s1_fut.wait_for(msec(0));
                 REQUIRE(status_1 == std::future_status::ready);
+
+            }
+        }
+
+        WHEN ("1. The sink binds, "
+              "2. the sources connect(), "
+              "3. the sources try to enter critical section") {
+
+            // Sink binds
+            sink.bind(node_addr);
+
+            // Source0 tries to connect and enter critical section
+            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(node_addr); s0.wait(); });
+
+            // Source1 tries to connect and enter critical section
+            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(node_addr); s1.wait(); });
+
+            THEN ("The sources shall block until the sink enters/exits the critical section.") {
+
+                // Pause for 5 ms
+                std::this_thread::sleep_for(msec(5));
+
+                // Check to see that the source has not stopped waiting
+                auto status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 != std::future_status::ready);
+
+                auto status_1 = s1_fut.wait_for(msec(0));
+                REQUIRE(status_1 != std::future_status::ready);
+
+                // Tries to post without waiting first (bad lock order)
+                REQUIRE_THROWS(sink.post());
+
+                /* Start Critical */
+                // Enters and exits properly
+                REQUIRE_NOTHROW(sink.wait());
+
+                // Check to see that the sources have not stopped waiting
+                status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 != std::future_status::ready);
+
+                status_1 = s1_fut.wait_for(msec(0));
+                REQUIRE(status_1 != std::future_status::ready);
+
+                REQUIRE_NOTHROW(sink.post());
+                /* End Critical */
+
+                // Give sufficient time for wait to release
+                std::this_thread::sleep_for(msec(1));
+
+                // Check to see that the source has entered the critical
+                // section
+                status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 == std::future_status::ready);
+
+                status_1 = s1_fut.wait_for(msec(0));
+                REQUIRE(status_1 == std::future_status::ready);
+            }
+        }
+
+        WHEN ("1. The first source connect()'s, "
+              "2. The first sources tries to enter the critical section, "
+              "3. The sink binds, "
+              "4. The second source connect()'s, "
+              "5. The second source tries to enter the critical section.") {
+
+            // Source0 tries to connect and wait
+            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(node_addr); s0.wait(); });
+
+            // Sink binds
+            sink.bind(node_addr);
+
+            // Source1 tries to connect and wait
+            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(node_addr); s1.wait(); });
+
+            THEN ("The sources shall block until the sink enters/exits the critical section.") {
+
+                // Pause for 5 ms
+                std::this_thread::sleep_for(msec(5));
+
+                // Check to see that the sources have not stopped waiting
+                auto status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 != std::future_status::ready);
+
+                auto status_1 = s1_fut.wait_for(msec(0));
+                REQUIRE(status_1 != std::future_status::ready);
+
+                // Tries to post without waiting first (bad lock order)
+                REQUIRE_THROWS(sink.post());
+
+                /* Start Critical */
+                // Enters and exits properly
+                REQUIRE_NOTHROW(sink.wait());
+
+                // Check to see that the sources have not stopped waiting
+                status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 != std::future_status::ready);
+
+                status_1 = s1_fut.wait_for(msec(0));
+                REQUIRE(status_1 != std::future_status::ready);
+
+                REQUIRE_NOTHROW(sink.post());
+                /* End Critical */
+
+                // Give sufficient time for wait to release
+                std::this_thread::sleep_for(msec(1));
+
+                // Check to see that the sources have entered the critical
+                // section
+                status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 == std::future_status::ready);
+
+                status_1 = s1_fut.wait_for(msec(0));
+                REQUIRE(status_1 == std::future_status::ready);
+            }
+        }
+    }
+}
+
+SCENARIO ("Sources attaching or detaching during source or sink wait() periods "
+          "should not cause deadlocks", "[Sink, Source, Concurrency]") {
+
+    GIVEN ("Two sources and a sink.") {
+
+        oat::Sink<int> sink;
+        oat::Source<int> s0;
+        auto s1 = new oat::Source<int>();
+
+        WHEN ("1. The sink bind()'s, "
+              "2. The sources connect()'s, "
+              "3. The sink enters the critical section") {
+
+            sink.bind(node_addr);
+            s0.connect(node_addr);
+            s1->connect(node_addr);
+
+            sink.wait();
+
+            THEN ("The first source shall block until the sink enters/exits the "
+                  "critical section even if the second destructs") {
+
+                // Source0 tries enter critical section
+                auto s0_fut = std::async(std::launch::async, [&s0]{ s0.wait(); });
+
+                // Source1 destructs
+                delete s1;
+
+                // Pause for 5 ms
+                std::this_thread::sleep_for(msec(5));
+
+                // Check to see that the source0 has not stopped waiting
+                auto status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 != std::future_status::ready);
+
+                REQUIRE_NOTHROW(sink.post());
+                /* End Critical */
+
+                // Give sufficient time for wait to release
+                std::this_thread::sleep_for(msec(1));
+
+                // Check to see that source0 have connected and entered
+                // critical section
+                status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 == std::future_status::ready);
+
+            }
+        }
+    }
+
+    GIVEN ("Two sources and a sink.") {
+
+        oat::Sink<int> sink;
+        oat::Source<int> s0, s1;
+
+        WHEN ("1. The sink binds, "
+              "2. The sink enters the critical section, "
+              "3. A sources connect, "
+              "4. The sources attempt to enter the critical section.") {
+
+            REQUIRE_NOTHROW( sink.bind(node_addr));
+            /* Start Critical */
+            REQUIRE_NOTHROW( sink.wait());
+
+            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(node_addr); s0.wait(); });
+            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(node_addr); s1.wait(); });
+
+            THEN ("The source shall block until the sink enters/exits the "
+                  "critical section") {
+
+                // Pause for 5 ms
+                std::this_thread::sleep_for(msec(5));
+
+                // Check to see that the source0 has not stopped waiting
+                auto status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 != std::future_status::ready);
+
+                auto status_1 = s1_fut.wait_for(msec(0));
+                REQUIRE(status_1 != std::future_status::ready);
+
+                REQUIRE_NOTHROW(sink.post());
+                /* End Critical */
+
+                // Give sufficient time for wait to release
+                std::this_thread::sleep_for(msec(1));
+
+                // Check to see that the sources have entered the
+                // critical section
+                status_0 = s0_fut.wait_for(msec(0));
+                REQUIRE(status_0 == std::future_status::ready);
+
+                status_1 = s1_fut.wait_for(msec(0));
+                REQUIRE(status_1 == std::future_status::ready);
+
             }
         }
     }

@@ -60,21 +60,32 @@ public:
     // TODO: write_number_ being atomic is redundant because only one sink can
     //       be bound to a node, right?
     uint64_t write_number() const { return write_number_; }
-    void notifySinkWriteComplete() { 
+
+    void notifySinkWriteComplete() {
 
         mutex_.wait();
+
+        // Require one read from all connected sources
         source_read_required_ = source_slots_;
+
+        // Tell each source connected to the node that it may read
+        for (size_t i = 0; i < source_slots_.size(); i++)
+            if (source_slots_[i])
+                read_barrier(i).post();
+
         mutex_.post();
 
-        ++write_number_; 
+        ++write_number_;
     }
 
     // SOURCE read counting
-    bool notifySourceReadComplete(size_t index) { 
+    bool notifySourceReadComplete(size_t index) {
 
         mutex_.wait();
-        source_read_required_[index] = false; 
+
+        source_read_required_[index] = false;
         bool reads_finished = source_read_required_.none();
+
         mutex_.post();
 
         return reads_finished;
@@ -82,6 +93,7 @@ public:
 
     // SOURCE slots
     static constexpr size_t NUM_SLOTS {10};
+
     size_t acquireSlot() {
 
         mutex_.wait();
@@ -126,13 +138,14 @@ public:
     semaphore write_barrier {1};
 
     // This method is required because an std::array of semaphores requires
-    // each semaphore to be copy-constructed to intialized the array.
-    // Because of thier nature, semaphores are NOT copy constructable, so
+    // each semaphore to be copy-constructed to initialized the array.
+    // Because of their nature, semaphores are NOT copy constructable, so
     // this approach does not work.
     semaphore& read_barrier(size_t index) {
 
         if (!source_slots_[index])
-            throw std::runtime_error("Requested index refers to a SOURCE that is not bound to this node.");
+            throw std::runtime_error("Requested index refers to a SOURCE "
+                                     "that is not bound to this node.");
 
         switch (index) {
             case 0:
@@ -169,16 +182,6 @@ public:
                 throw std::runtime_error("Source index out of range.");
                 break;
         }
-    }
-
-    // Notify write finished
-    // Post to each filled source slot
-    void notifySources() {
-
-        // Naive but probably not worth optimizing
-        for (size_t i = 0; i < source_slots_.size(); i++)
-            if (source_slots_[i])
-                read_barrier(i).post();
     }
 
 private:

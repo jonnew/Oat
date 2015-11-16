@@ -36,6 +36,6 @@ before_script:
   - cd $TRAVIS_BUILD_DIR
   - mkdir release
   - cd release
-  - cmake -DCMAKE_BUILD_TYPE=RELEASE ..
+  - cmake -DCMAKE_BUILD_TYPE=DEBUG ..
 
 script: make && make test

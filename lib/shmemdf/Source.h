@@ -20,7 +20,6 @@
 #ifndef OAT_SOURCE_H
 #define	OAT_SOURCE_H
 
-#include <cassert>
 #include <string>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
@@ -83,6 +82,10 @@ inline SourceBase<T>::~SourceBase() {
 template<typename T>
 inline void SourceBase<T>::connect(const std::string &address) {
 
+    if (connected_ || bound_)
+        throw std::runtime_error("A source can only connect a "
+                                 "single time to a single node.");
+
     // Addresses for this block of shared memory
     node_address_ = address + "_node";
     obj_address_ = address + "_obj";
@@ -108,8 +111,10 @@ inline void SourceBase<T>::connect(const std::string &address) {
         wait();
 
         // Self post since all loops start with wait() and we just
-        // finished our wait()
+        // finished our wait(). This will make the first call to
+        // wait() a 'freebie'
         node_->read_barrier(slot_index_).post();
+        did_wait_need_post_ = false;
     }
 
     // Find an existing shared object constructed by the SINK
@@ -148,7 +153,7 @@ inline NodeState SourceBase<T>::wait() {
 
         // If the sink has left the room, we should too
         if (node_->sink_state() == NodeState::END)
-            break; 
+            break;
     }
 
     did_wait_need_post_ = true;
@@ -236,6 +241,10 @@ private :
 
 inline void Source<SharedCVMat>::connect(const std::string &address) {
 
+    if (connected_ || bound_)
+        throw std::runtime_error("A source can only connect a "
+                                 "single time to a single node.");
+
     // Addresses for this block of shared memory
     node_address_ = address + "_node";
     obj_address_ = address + "_obj";
@@ -282,7 +291,7 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
     parameters_.rows = sh_object_->rows();
     parameters_.type = sh_object_->type();
     parameters_.bytes = frame_.total() * frame_.elemSize();
-    
+
     connected_ = true;
 }
 

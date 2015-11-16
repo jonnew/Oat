@@ -19,7 +19,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
-//#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
+#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
 #include <string>
 
@@ -27,47 +27,48 @@
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/SharedCVMat.h"
 
+const std::string node_addr = "test";
+
 SCENARIO ("Up to 10 sources can connect a single Node.", "[Source]") {
 
     GIVEN ("11 sources and a bound sink with common node address") {
 
-        std::string addr {"test"};
         oat::Sink<int> sink;
 
         INFO ("The sink binds a node");
-        sink.bind(addr);
+        sink.bind(node_addr);
         oat::Source<int> s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10;
 
         WHEN ("sources 0 to Oat::Node:NUM_SLOTS connect a node") {
 
             THEN ("The first 10 connections will succeed") {
                 REQUIRE_NOTHROW(
-                    s0.connect(addr);
-                    s1.connect(addr);
-                    s2.connect(addr);
-                    s3.connect(addr);
-                    s4.connect(addr);
-                    s5.connect(addr);
-                    s6.connect(addr);
-                    s7.connect(addr);
-                    s8.connect(addr);
-                    s9.connect(addr);
+                    s0.connect(node_addr);
+                    s1.connect(node_addr);
+                    s2.connect(node_addr);
+                    s3.connect(node_addr);
+                    s4.connect(node_addr);
+                    s5.connect(node_addr);
+                    s6.connect(node_addr);
+                    s7.connect(node_addr);
+                    s8.connect(node_addr);
+                    s9.connect(node_addr);
                 );
             }
 
             AND_THEN ("The oat::Node:NUM_SLOTS+1 connection shall throw") {
                 REQUIRE_THROWS(
-                    s0.connect(addr);
-                    s1.connect(addr);
-                    s2.connect(addr);
-                    s3.connect(addr);
-                    s4.connect(addr);
-                    s5.connect(addr);
-                    s6.connect(addr);
-                    s7.connect(addr);
-                    s8.connect(addr);
-                    s9.connect(addr);
-                    s10.connect(addr);
+                    s0.connect(node_addr);
+                    s1.connect(node_addr);
+                    s2.connect(node_addr);
+                    s3.connect(node_addr);
+                    s4.connect(node_addr);
+                    s5.connect(node_addr);
+                    s6.connect(node_addr);
+                    s7.connect(node_addr);
+                    s8.connect(node_addr);
+                    s9.connect(node_addr);
+                    s10.connect(node_addr);
                 );
             }
         }
@@ -94,20 +95,35 @@ SCENARIO ("Sources must connect() before waiting or posting.", "[Source]") {
     }
 }
 
+SCENARIO ("Sources cannot connect() to the same node more than once.", "[Source]") {
+
+        oat::Sink<int> sink;
+        oat::Source<int> source;
+
+        INFO ("The sink binds a node");
+        sink.bind(node_addr);
+
+        WHEN ("The source connects 2x to the same node") {
+            THEN ("The source shall throw on the second connection.") {
+                REQUIRE_NOTHROW( source.connect(node_addr) );
+                REQUIRE_THROWS( source.connect(node_addr) );
+            }
+        }
+}
+
 SCENARIO ("A Source<T> can only connect to a node bound by a Sink<T>.", "[Source]") {
 
     GIVEN ("A bound Sink<int> and an Source<float> with common node address") {
 
-        std::string addr {"test"};
         oat::Sink<int> sink;
         oat::Source<float> source;
 
         INFO ("The sink binds a node");
-        sink.bind(addr);
+        sink.bind(node_addr);
 
         WHEN ("The source attempts to connect()") {
             THEN ("The source shall throw.") {
-                REQUIRE_THROWS( source.connect(addr); );
+                REQUIRE_THROWS( source.connect(node_addr); );
             }
         }
     }
@@ -115,16 +131,15 @@ SCENARIO ("A Source<T> can only connect to a node bound by a Sink<T>.", "[Source
 
 SCENARIO ("Connected sources can retrieve shared objects to mutate them.", "[Source]") {
 
-    GIVEN ("A bound Sink<int> and a connected Source<int> with common node addres") {
+    GIVEN ("A bound Sink<int> and a connected Source<int> with common node address") {
 
-        std::string addr {"test"};
         oat::Sink<int> sink;
         oat::Source<int> source;
         int * src_ptr = static_cast<int *>(0);
         int * snk_ptr = static_cast<int *>(0);
 
         INFO ("The sink binds a node");
-        sink.bind(addr);
+        sink.bind(node_addr);
 
         WHEN ("The source calls retrieve() before connecting") {
             THEN ("The source shall throw") {
@@ -135,7 +150,7 @@ SCENARIO ("Connected sources can retrieve shared objects to mutate them.", "[Sou
         WHEN ("The source calls retrieve() after connecting") {
 
             INFO ("The source connects to the node");
-            source.connect(addr);
+            source.connect(node_addr);
 
             THEN ("The source returns a pointer to mutate the int across source and sink") {
 

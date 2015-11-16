@@ -26,11 +26,12 @@
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/SharedCVMat.h"
 
+const std::string node_addr = "test";
+
 SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 
     GIVEN ("Two Sink<int>'s") {
 
-        std::string addr {"test"};
         oat::Sink<int> sink1;
         oat::Sink<int> sink2;
 
@@ -40,10 +41,10 @@ SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 
         WHEN ("sink1 binds a shmem segment") {
 
-            sink1.bind(addr);
+            sink1.bind(node_addr);
 
             THEN ("An attempt to bind that segment by sink2 shall throw") {
-                REQUIRE_THROWS( sink2.bind(addr); );
+                REQUIRE_THROWS( sink2.bind(node_addr); );
             }
         }
     }
@@ -54,7 +55,6 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
     GIVEN ("A single Sink<int>") {
 
         oat::Sink<int> sink;
-        std::string addr {"test"};
 
         WHEN ("When the sink calls wait() before binding a segment") {
 
@@ -72,7 +72,7 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
 
         WHEN ("When the sink calls wait() after binding a segment") {
 
-            sink.bind(addr);
+            sink.bind(node_addr);
 
             THEN ("The the sink shall not throw") {
                 REQUIRE_NOTHROW( sink.wait(); );
@@ -82,7 +82,7 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
         WHEN ("When the sink calls post() after binding a segment "
                "before calling wait()") {
 
-            sink.bind(addr);
+            sink.bind(node_addr);
 
             THEN ("The the sink shall throw") {
                 REQUIRE_THROWS( sink.post(); );
@@ -93,7 +93,7 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
         WHEN ("When the sink calls post() after binding a segment "
                "after calling wait()") {
 
-            sink.bind(addr);
+            sink.bind(node_addr);
             sink.wait();
 
             THEN ("The the sink shall not throw") {
@@ -103,13 +103,22 @@ SCENARIO ("Sinks must bind() before waiting or posting.", "[Sink]") {
     }
 }
 
+SCENARIO ("Sinks cannot bind() to the same node more than once.", "[Source]") {
+
+        oat::Sink<int> sink;
+
+        INFO ("The sink binds a node");
+        REQUIRE_NOTHROW( sink.bind(node_addr); );
+        REQUIRE_THROWS( sink.bind(node_addr); );
+
+}
+
 SCENARIO ("Bound sinks can retrieve shared objects to mutate them.", "[Sink]") {
 
     GIVEN ("A single Sink<int> and a shared *int=0") {
 
         int * shared = static_cast<int *>(0);
         oat::Sink<int> sink;
-        std::string addr {"test"};
 
         WHEN ("When the sink calls retrieve() before binding a segment") {
 
@@ -120,7 +129,7 @@ SCENARIO ("Bound sinks can retrieve shared objects to mutate them.", "[Sink]") {
 
         WHEN ("When the sink calls retrieve() after binding a segment") {
 
-            sink.bind(addr);
+            sink.bind(node_addr);
 
             THEN ("The the sink returns a pointer to mutate the shared integer") {
 
@@ -145,7 +154,6 @@ SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.
     GIVEN ("A single Sink<SharedCVMat>") {
 
         oat::Sink<oat::SharedCVMat> sink;
-        std::string addr {"test"};
         cv::Mat mat;
         size_t cols {100};
         size_t rows {100};
