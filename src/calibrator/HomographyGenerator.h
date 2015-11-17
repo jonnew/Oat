@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef HOMOGRAPHYGENERATOR_H
-#define HOMOGRAPHYGENERATOR_H
+#ifndef OAT_HOMOGRAPHYGENERATOR_H
+#define OAT_HOMOGRAPHYGENERATOR_H
 
 #include <iosfwd>
 #include <string>
@@ -26,6 +26,8 @@
 
 #include "Calibrator.h"
 #include "CalibratorVisitor.h"
+
+namespace oat {
 
 /**
  * Interactive homography generator.
@@ -63,8 +65,8 @@ public:
     void accept(OutputVisitor* visitor, std::ostream& out) override;
 
     // Accessors
-    const bool homography_valid() const { return homography_valid_; }
-    const cv::Mat& homography() const { return homography_; }
+    bool homography_valid() const { return homography_valid_; }
+    cv::Mat homography() const { return homography_; }
 
 protected:
 
@@ -121,4 +123,5 @@ private:
 
 };
 
-#endif //HOMOGRAPHYGENERATOR_H
+}      /* namespace oat */
+#endif /* OAT_HOMOGRAPHYGENERATOR_H */

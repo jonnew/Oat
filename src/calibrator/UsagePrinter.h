@@ -16,12 +16,14 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef USAGEPRINTER_H
-#define USAGEPRINTER_H
+#ifndef OAT_USAGEPRINTER_H
+#define OAT_USAGEPRINTER_H
 
 #include <iosfwd>
 
 #include "OutputVisitor.h"
+
+namespace oat {
 
 // Forward declarations
 class CameraCalibrator;
@@ -48,5 +50,6 @@ public:
 
 };
 
-#endif // USAGEPRINTER_H
+}      /* namespace oat */
+#endif /* OAT_USAGEPRINTER_H */
 

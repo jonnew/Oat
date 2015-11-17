@@ -42,6 +42,8 @@
 #include "PathChanger.h"
 #include "HomographyGenerator.h"
 
+namespace oat {
+
 HomographyGenerator::HomographyGenerator(const std::string& frame_source_name, const EstimationMethod method) :
   Calibrator(frame_source_name)
 , homography_valid_(false)
@@ -437,3 +439,5 @@ void HomographyGenerator::onMouseEvent(int event, int x, int y) {
         clicked_ = true;
     }
 }
+
+} /* namespace oat */

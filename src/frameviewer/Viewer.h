@@ -64,7 +64,7 @@ private:
     std::string name_;
 
     // Image data
-    cv::Mat shared_frame_;
+    cv::Mat internal_frame_;
 
     // Frame SOURCE to get frames to display
     const std::string frame_source_address_;

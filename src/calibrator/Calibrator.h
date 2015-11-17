@@ -17,18 +17,21 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef CALIBRATOR_H
-#define CALIBRATOR_H
+#ifndef OAT_CALIBRATOR_H
+#define OAT_CALIBRATOR_H
 
 #include <string>
 #include <iosfwd>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/shmem/MatClient.h"
+#include "../../lib/shmemdf/Source.h"
 
-// Forward declarations
+namespace oat {
+
+// Forward decl.
 class CalibratorVisitor;
 class OutputVisitor;
+class SharedCVMat;
 
 /**
  * Abstract calibrator.
@@ -41,32 +44,31 @@ public:
     /**
      * Abstract calibrator.
      * All concrete calibrator types implement this ABC.
-     * @param frame_source_name Frame SOURCE name
+     * @param frame_source_address Frame SOURCE address
      */
-    Calibrator(const std::string& frame_source_name) :
-      name_("calibrate[" + frame_source_name + "]")
-    , frame_source_(frame_source_name) {
+    Calibrator(const std::string &frame_source_address);
 
-        // Nothing
-    }
+    virtual ~Calibrator() {};
 
-    virtual ~Calibrator() {
-
-        // Nothing
-    }
+    /**
+     * Calibrator SOURCE must be able to connect to a NODE from
+     * which to receive frames.
+     */
+    virtual void connectToNode(void);
 
     /**
      * Run the calibration routine on the frame SOURCE.
      * @return True if SOURCE signals EOF
      */
-    bool process(void);
+    virtual bool process(void);
 
     /**
      * Configure calibration parameters.
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
+    virtual void configure(const std::string &config_file, 
+                           const std::string &config_key) = 0;
 
     /**
      * Create the calibration file path using a specified path.
@@ -81,8 +83,10 @@ public:
     virtual void accept(OutputVisitor* visitor, std::ostream& out) = 0;
 
     // Accessors
-    const std::string& name() const { return name_; }
-    const std::string& calibration_save_path() const { return calibration_save_path_; }
+    const std::string & name() const { return name_; }
+    const std::string & calibration_save_path() const { 
+        return calibration_save_path_; 
+    }
 
 protected:
 
@@ -95,9 +99,12 @@ protected:
 
 private:
 
-    std::string name_;                  //!< Calibrator name
-    cv::Mat current_frame_;             //!< Current frame provided by SOURCE
-    oat::MatClient frame_source_;       //!< The calibrator frame SOURCE
+    std::string name_;                      //!< Calibrator name
+    cv::Mat internal_frame_;                //!< Current frame provided by SOURCE
+    std::string frame_source_address_;      //!< Frame source address
+    oat::NodeState node_state_;             //!< Frame source node state
+    oat::Source<SharedCVMat> frame_source_; //!< The calibrator frame SOURCE
 };
 
-#endif // CALIBRATOR_H
+}      /* namespace oat */
+#endif /* OAT_CALIBRATOR_H */

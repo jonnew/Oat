@@ -16,10 +16,12 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef SAVER_H
-#define SAVER_H
+#ifndef OAT_SAVER_H
+#define OAT_SAVER_H
 
 #include "CalibratorVisitor.h"
+
+namespace oat {
 
 // Forward declarations
 class CameraCalibrator;
@@ -68,4 +70,5 @@ class Saver : public CalibratorVisitor {
 
 };
 
-#endif // SAVER_H
+}      /* namespace oat */
+#endif /* OAT_SAVER_H */

@@ -35,6 +35,8 @@
 
 namespace bfs = boost::filesystem;
 
+namespace oat {
+
 Saver::Saver(const std::string& entry_key, const std::string& calibration_file) :
   CalibratorVisitor()
 , entry_key_(entry_key) 
@@ -154,7 +156,6 @@ cpptoml::datetime Saver::generateDateTime() {
     // Generate current date-time 
     std::time_t raw_time;
     struct tm * time_info;
-    char buffer[100];
     std::time(&raw_time);
     time_info = std::localtime(&raw_time);
 
@@ -189,3 +190,5 @@ void Saver::saveCalibrationTable(const cpptoml::table& table, const std::string&
         std::cerr << oat::Error("Could not write to " + file + ".\n");
     }
 }
+
+} /* namespace oat */

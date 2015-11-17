@@ -39,6 +39,9 @@ namespace bfs = boost::filesystem;
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
+using homogMethod = oat::HomographyGenerator::EstimationMethod;
+using camModel = oat::CameraCalibrator::CameraModel;
+
 void printUsage(po::options_description options){
     std::cout << "Usage: calibrate [INFO]\n"
               << "   or: calibrate SOURCE [CONFIGURATION]\n"
@@ -54,15 +57,27 @@ void printUsage(po::options_description options){
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
+void sigHandler(int) {
     quit = 1;
 }
 
 // Processing loop
-void run(const std::shared_ptr<Calibrator>& calibrator) {
+void run(const std::shared_ptr<oat::Calibrator>& calibrator) {
 
-    while (!quit && !source_eof) {
-        source_eof = calibrator->process();
+    try {
+
+        calibrator->connectToNode();
+
+        while (!quit && !source_eof) {
+            source_eof = calibrator->process();
+        }
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
     }
 }
 
@@ -92,15 +107,15 @@ int main(int argc, char *argv[]) {
     type_hash["homography"] = 'b';
     
     // Homography estimation method
-    std::unordered_map<std::string, HomographyGenerator::EstimationMethod> homo_meth_hash;
-    homo_meth_hash["robust"] = HomographyGenerator::EstimationMethod::ROBUST;
-    homo_meth_hash["regular"] = HomographyGenerator::EstimationMethod::REGULAR;
-    homo_meth_hash["exact"] = HomographyGenerator::EstimationMethod::EXACT;
+    std::unordered_map<std::string, homogMethod> homo_meth_hash;
+    homo_meth_hash["robust"] = homogMethod::ROBUST;
+    homo_meth_hash["regular"] = homogMethod::REGULAR;
+    homo_meth_hash["exact"] = homogMethod::EXACT;
     
     // Camera calibration method
-    std::unordered_map<std::string,CameraCalibrator::CameraModel> camera_model_hash;
-    camera_model_hash["pinhole"] = CameraCalibrator::CameraModel::PINHOLE;
-    camera_model_hash["fisheye"] = CameraCalibrator::CameraModel::FISHEYE;
+    std::unordered_map<std::string,camModel> camera_model_hash;
+    camera_model_hash["pinhole"] = camModel::PINHOLE;
+    camera_model_hash["fisheye"] = camModel::FISHEYE;
 
     try {
 
@@ -232,7 +247,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    std::shared_ptr<Calibrator> calibrator;
+    std::shared_ptr<oat::Calibrator> calibrator;
 
     // Refine component type
     switch (type_hash[type]) {
@@ -240,13 +255,13 @@ int main(int argc, char *argv[]) {
         {
             auto chessboard_size = cv::Size(chessboard_height, chessboard_width);
             auto model =camera_model_hash.at(camera_model);
-            calibrator = std::make_shared<CameraCalibrator>(source, model, chessboard_size, square_length);
+            calibrator = std::make_shared<oat::CameraCalibrator>(source, model, chessboard_size, square_length);
             break;
         }
         case 'b':
         {
             auto meth = homo_meth_hash.at(homography_method);
-            calibrator = std::make_shared<HomographyGenerator>(source, meth);
+            calibrator = std::make_shared<oat::HomographyGenerator>(source, meth);
             break;
         }
         default:
@@ -280,18 +295,16 @@ int main(int argc, char *argv[]) {
         // Exit success
         return 0;
 
-    } catch (const cpptoml::parse_exception& ex) {
+    } catch (const cpptoml::parse_exception &ex) {
         std::cerr << oat::whoError(calibrator->name(),
-                     "Failed to parse configuration file "
-                     + config_file + "\n")
-                  << oat::whoError(calibrator->name(), ex.what())
-                  << "\n";
-    } catch (const std::runtime_error& ex) {
-        std::cerr << oat::whoError(calibrator->name(),ex.what())
-                  << "\n";
-    } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(calibrator->name(), ex.what())
-                  << "\n";
+                     "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(calibrator->name(), ex.what()) << "\n";
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::whoError(calibrator->name(), ex.what()) << "\n";
+    } catch (const cv::Exception &ex) {
+        std::cerr << oat::whoError(calibrator->name(), ex.what()) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(calibrator->name(), ex.what()) << "\n";
     } catch (...) {
         std::cerr << oat::whoError(calibrator->name(), "Unknown exception.\n");
     }

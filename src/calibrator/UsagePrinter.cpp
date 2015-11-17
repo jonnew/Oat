@@ -23,6 +23,8 @@
 #include "HomographyGenerator.h"
 #include "UsagePrinter.h"
 
+namespace oat {
+
 void UsagePrinter::visit(CameraCalibrator* camera_calibrator, std::ostream& out) {
     
     out << "COMMANDS\n"
@@ -86,3 +88,4 @@ void UsagePrinter::visit(HomographyGenerator* hg, std::ostream& out) {
         << "       an existing file not be affected.\n\n";
 }
 
+} /* namespace oat */

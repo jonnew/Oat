@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef CAMERACALIBRATOR_H
-#define CAMERACALIBRATOR_H
+#ifndef OAT_CAMERACALIBRATOR_H
+#define OAT_CAMERACALIBRATOR_H
 
 #include <chrono>
 #include <string>
@@ -30,6 +30,8 @@
 
 #include "Calibrator.h"
 #include "CalibratorVisitor.h"
+
+namespace oat {
 
 /**
  * Interactive camera calibration and distortion parameter generator.
@@ -68,17 +70,18 @@ public:
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    void configure(const std::string& config_file, const std::string& config_key) override;
+    void configure(const std::string &config_file, 
+                   const std::string &config_key) override;
 
     // Accept visitors
     void accept(CalibratorVisitor* visitor) override;
     void accept(OutputVisitor* visitor, std::ostream& out) override;
 
     // Accessors
-    const CameraModel model() const { return model_; }
-    const bool calibration_valid() const { return calibration_valid_; }
-    const cv::Mat& camera_matrix() const { return camera_matrix_; }
-    const cv::Mat& distortion_coefficients() const { return distortion_coefficients_; }
+    CameraModel model() const { return model_; }
+    bool calibration_valid() const { return calibration_valid_; }
+    cv::Mat camera_matrix() const { return camera_matrix_; }
+    cv::Mat distortion_coefficients() const { return distortion_coefficients_; }
 
 protected:
 
@@ -157,7 +160,7 @@ private:
     bool requireMode(M m, Args&&... args) {
         return mode_ == m || requireMode(args...);
     }
-    
 };
 
-#endif //CAMERACALIBRATOR_H
+}      /* namespace oat */
+#endif /* OAT_CAMERACALIBRATOR_H */

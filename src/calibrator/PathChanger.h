@@ -16,8 +16,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef PATHCHANGER_H
-#define PATHCHANGER_H
+#ifndef OAT_PATHCHANGER_H
+#define OAT_PATHCHANGER_H
 
 #include "CalibratorVisitor.h"
 
@@ -25,6 +25,8 @@
 class Calibrator;
 class CameraCalibrator;
 class HomographyGenerator;
+
+namespace oat {
 
 /**
  *
@@ -48,4 +50,5 @@ private:
     void setNewPath(Calibrator* cal);
 };
 
-#endif // PATHCHANGER_H
+}      /* namespace oat */
+#endif /* OAT_PATHCHANGER_H */

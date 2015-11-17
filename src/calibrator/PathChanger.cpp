@@ -28,6 +28,8 @@
 #include "HomographyGenerator.h"
 #include "PathChanger.h"
 
+namespace oat {
+
 void PathChanger::visit(CameraCalibrator* cc) {
     
     std::cout << "Type the path to save camera calibration information and press <enter>: ";
@@ -80,3 +82,5 @@ void PathChanger::setNewPath(Calibrator* cal) {
         throw std::runtime_error("Could not parse path.");
     }
 }
+
+} /* namespace oat */

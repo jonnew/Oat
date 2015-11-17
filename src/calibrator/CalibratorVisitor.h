@@ -17,17 +17,19 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef CALIBRATORVISITOR_H
-#define	CALIBRATORVISITOR_H
+#ifndef OAT_CALIBRATORVISITOR_H
+#define	OAT_CALIBRATORVISITOR_H
 
 #include <iosfwd>
+
+namespace oat {
 
 // Foward declarations
 class CameraCalibrator;
 class HomographyGenerator;
 
 /**
- *
+ * ABC for all vistor's to Calibrator objects.
  */
 class CalibratorVisitor {
 
@@ -38,5 +40,6 @@ public:
     virtual void visit(HomographyGenerator* hg) = 0;
 };
 
-#endif	/* CALIBRATORVISITOR_H */
+}      /* namespace oat */
+#endif /* OAT_CALIBRATORVISITOR_H */
 

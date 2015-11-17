@@ -26,17 +26,44 @@
 
 namespace bfs = boost::filesystem;
 
+namespace oat {
+
+    
+Calibrator::Calibrator(const std::string &frame_source_address) :
+  name_("calibrate[" + frame_source_address + "]")
+, frame_source_address_(frame_source_address)
+{
+    // Nothing
+}
+
+void Calibrator::connectToNode() {
+
+    frame_source_.connect(frame_source_address_);
+}
+
 bool Calibrator::process(void) {
 
-    // Only proceed with processing if we are getting a valid frame
-    if (frame_source_.getSharedMat(current_frame_)) {
+    // START CRITICAL SECTION //
+    ////////////////////////////
 
-        // Use the current frame for calibration
-        calibrate(current_frame_);
-    }
+    // Wait for sink to write to node
+    node_state_ = frame_source_.wait();
+    if (node_state_ == oat::NodeState::END)
+        return true;
 
-    // Check for end of frame stream
-    return (frame_source_.getSourceRunState() == oat::SinkState::END);
+    // Clone the shared frame
+    internal_frame_ = frame_source_.clone();
+
+    // Tell sink it can continue
+    frame_source_.post();
+
+    ////////////////////////////
+    //  END CRITICAL SECTION  //
+    
+    calibrate(internal_frame_);
+
+    // Sink was not at END state 
+    return false;
 }
 
 bool Calibrator::generateSavePath(const std::string& save_path) {
@@ -69,3 +96,5 @@ bool Calibrator::generateSavePath(const std::string& save_path) {
     // Check if file already exists
     return bfs::exists(calibration_save_path_.c_str());
 }
+
+} /* namespace oat */

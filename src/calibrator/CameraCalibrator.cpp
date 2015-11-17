@@ -39,6 +39,7 @@
 #include "PathChanger.h"
 #include "CameraCalibrator.h"
 
+namespace oat {
 
 CameraCalibrator::CameraCalibrator(
         const std::string& frame_source_name,
@@ -439,4 +440,4 @@ void CameraCalibrator::toggleMode(Mode mode) {
         mode_ = Mode::NORMAL;
 }
 
-
+} /* namespace oat */

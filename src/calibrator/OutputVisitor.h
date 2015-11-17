@@ -17,10 +17,12 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OUTPUTVISITOR_H
-#define	OUTPUTVISITOR_H
+#ifndef OAT_OUTPUTVISITOR_H
+#define	OAT_OUTPUTVISITOR_H
 
 #include <iosfwd>
+
+namespace oat {
 
 // Foward declarations
 class CameraCalibrator;
@@ -39,5 +41,6 @@ public:
 
 };
 
-#endif	/* OUTPUTVISITOR_H */
+}       /* namespace oat */
+#endif	/* OAT_OUTPUTVISITOR_H */
 
