@@ -164,7 +164,7 @@ void HomographyGenerator::accept(OutputVisitor* visitor, std::ostream& out) {
 
     visitor->visit(this, out);
 }
-    
+
 int HomographyGenerator::addDataPoint() {
 
     try {
@@ -238,7 +238,7 @@ int HomographyGenerator::removeDataPoint() {
             return -1;
         }
 
-        if (idx < 0 || idx >= pixels_.size()) {
+        if (idx >= pixels_.size()) {
             std::cerr << oat::Error("Index out of bounds. Delete unsuccessful.\n");
             printDataPoints(std::cout);
             return -1;

@@ -2,7 +2,7 @@
 //* File:   UsagePrinter.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -25,8 +25,8 @@
 
 namespace oat {
 
-void UsagePrinter::visit(CameraCalibrator* camera_calibrator, std::ostream& out) {
-    
+void UsagePrinter::visit(CameraCalibrator*, std::ostream& out) {
+
     out << "COMMANDS\n"
         << "(To use, make sure the display window is in focus.)\n\n"
         << "CMD    FUNCTION\n"
@@ -40,7 +40,7 @@ void UsagePrinter::visit(CameraCalibrator* camera_calibrator, std::ostream& out)
         << "  f    Specify the calibration file save path to which the\n"
         << "       camera matrix and distortion coefficients will be saved.\n"
         << "  g    Generate camera matrix and distortion coefficients using the\n"
-        << "       current set of chessboard corner locations. If successful,\n" 
+        << "       current set of chessboard corner locations. If successful,\n"
         << "       the camera matrix, distortion coefficients, and RMS\n"
         << "       reconstruction error will be printed.\n"
         << "  h    Print this information.\n"
@@ -50,13 +50,15 @@ void UsagePrinter::visit(CameraCalibrator* camera_calibrator, std::ostream& out)
         << "        - fisheye: ultra wide-angle lens with strong visual\n"
         << "          intended to create a wide panoramic or hemispherical image.\n"
         << "  p    Print the current calibration results.\n"
+        << "  u    Apply results of camera calibration to undistort the frame\n"
+        << "       stream shown in the display window.\n"
         << "  s    Save the camera calibration to the specified calibration file\n"
         << "       If the file exists, this will create or modify the\n"
         << "       'calibration-<subfield>' entries. If not, the file will be\n"
         << "       created. Other fields within an existing file not be affected.\n\n";
 }
 
-void UsagePrinter::visit(HomographyGenerator* hg, std::ostream& out) {
+void UsagePrinter::visit(HomographyGenerator*, std::ostream& out) {
 
     out << "COMMANDS\n"
         << "(To use, make sure the display window is in focus.)\n\n"

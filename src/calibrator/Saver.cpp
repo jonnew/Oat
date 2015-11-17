@@ -2,7 +2,7 @@
 //* File:   Saver.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -39,20 +39,20 @@ namespace oat {
 
 Saver::Saver(const std::string& entry_key, const std::string& calibration_file) :
   CalibratorVisitor()
-, entry_key_(entry_key) 
+, entry_key_(entry_key)
 , calibration_file_(calibration_file)
 {
     // Nothing
 }
 
 void Saver::visit(CameraCalibrator* cc) {
-    
+
     // Check the the calibration is valid
     if (!cc->calibration_valid()) {
         std::cerr << oat::Error("Calibration parameters must be computed before they are saved.\n");
         return;
     }
-    
+
     // Generate or get base calibration table
     auto calibration = cpptoml::make_table();
     try {
@@ -61,28 +61,29 @@ void Saver::visit(CameraCalibrator* cc) {
         std::cerr << ex.what();
         return;
     }
-    
-    // Get TOML value holding camera model type 
+
+    // Get TOML value holding camera model type
     auto temp = static_cast<int64_t>(cc->model());
     auto model = cpptoml::make_value<int64_t>(std::move(temp));
-    
+
+
     // Construct TOML array from camera matrix and distortion coefficients
+    auto _cam = cc->camera_matrix(); // Have to make copy or iterator does not work
     auto cam = cpptoml::make_array();
     cv::MatConstIterator_<double> it, end;
-    for (it = cc->camera_matrix().begin<double>(), end = cc->camera_matrix().end<double>(); it != end; ++it)  {
+    for (it = _cam.begin<double>(), end = _cam.end<double>(); it != end; ++it)
         cam->get().push_back(cpptoml::make_value<double>(*it));
-    }
-    
+
+    auto _dc = cc->distortion_coefficients(); // Have to make copy or iterator does not work
     auto dc = cpptoml::make_array();
-    for (it = cc->distortion_coefficients().begin<double>(), end = cc->distortion_coefficients().end<double>(); it != end; ++it)  {
+    for (it = _dc.begin<double>(), end = _dc.end<double>(); it != end; it++)
         dc->get().push_back(cpptoml::make_value<double>(*it));
-    }
-    
+
     // Insert camera matrix and distortion coeffs into TOML table
     calibration->insert(entry_key_ + "-model", model);
     calibration->insert(entry_key_ + "-camera-matrix", cam);
     calibration->insert(entry_key_ + "-distortion-coeffs", dc);
-    
+
      // Save the file
     saveCalibrationTable(*calibration, calibration_file_);
 }
@@ -105,11 +106,11 @@ void Saver::visit(HomographyGenerator* hg) {
     }
 
     // Construct TOML array from homography
+    auto _hg = hg->homography(); // Have to make copy or iterator does not work
     auto arr = cpptoml::make_array();
     cv::MatConstIterator_<double> it, end;
-    for (it = hg->homography().begin<double>(), end = hg->homography().end<double>(); it != end; ++it)  {
+    for (it = _hg.begin<double>(), end = _hg.end<double>(); it != end; ++it)
         arr->get().push_back(cpptoml::make_value<double>(*it));
-    }
 
     // Insert the array into the calibration table
     calibration->insert(entry_key_, arr);
@@ -145,7 +146,7 @@ std::shared_ptr<cpptoml::table> Saver::generateCalibrationTable(const std::strin
         }
     }
 
-    auto dt = cpptoml::make_value<cpptoml::datetime>(generateDateTime()); 
+    auto dt = cpptoml::make_value<cpptoml::datetime>(generateDateTime());
     table->insert("last-modified", dt);
 
     return table;
@@ -153,7 +154,7 @@ std::shared_ptr<cpptoml::table> Saver::generateCalibrationTable(const std::strin
 
 cpptoml::datetime Saver::generateDateTime() {
 
-    // Generate current date-time 
+    // Generate current date-time
     std::time_t raw_time;
     struct tm * time_info;
     std::time(&raw_time);
@@ -182,7 +183,7 @@ void Saver::saveCalibrationTable(const cpptoml::table& table, const std::string&
            << "."
            << Oat_VERSION_MINOR
            << "\n"
-           << "# DO NOT MANUALLY EDIT (unless you really want to).\n\n"  
+           << "# DO NOT MANUALLY EDIT (unless you really want to).\n\n"
            << table;
         std::cout << "Calibration saved to " + file + "\n";
         fs.close();
