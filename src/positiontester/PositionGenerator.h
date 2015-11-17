@@ -1,8 +1,8 @@
 //******************************************************************************
-//* File:   TestPosition.h
+//* File:   PositionGenerator.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,24 +17,26 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
-#ifndef TESTPOSITION_H
-#define	TESTPOSITION_H
+#ifndef OAT_POSITIONGENERATOR_H
+#define	OAT_POSITIONGENERATOR_H
 
 #include <chrono>
 #include <string>
 #include <random>
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/datatypes/Position.h"
-#include "../../lib/shmem/BufferedSMServer.h"
+#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/shmemdf/Sink.h"
+
+namespace oat {
 
 /**
  * Abstract test position server.
  * All concrete test position server types implement this ABC.
  */
 template <class T>
-class TestPosition  {
-    
+class PositionGenerator  {
+
 public:
 
     /**
@@ -45,82 +47,75 @@ public:
      * @param position_sink_name Position SINK to publish test positions
      * @param samples_per_second Sample rate in Hz
      */
-    TestPosition(const std::string& position_sink_name, const double samples_per_second = 30) : 
-      name("testpos[*->" + position_sink_name + "]")
-    , position_sink(position_sink_name)
-    , sample(0) { 
+    PositionGenerator(const std::string& position_sink_address,
+                      const double samples_per_second = 30);
 
-        generateSamplePeriod(samples_per_second);
-        tick = clock.now();
-    }
-      
-    virtual ~TestPosition() { }
+    virtual ~PositionGenerator() { }
+
+    /**
+     * PositionDetectors must be able to connect to a Source and Sink
+     * Nodes in shared memory
+     */
+    virtual void connectToNode(void);
 
     /**
      * Generate test position. Publish test position to SINK.
      * @return End-of-stream signal. If true, this component should exit.
      */
-    bool process(void) {
-        
-        // Publish simulated position
-        position_sink.pushObject(generatePosition(), sample);
-        ++sample;
-        
-        return false;   
-    }
-    
+    bool process(void);
+
     /**
      * Configure test position server parameters.
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    virtual void configure(const std::string& file_name, const std::string& key) = 0;
+    virtual void configure(const std::string &file_name,
+                           const std::string &key) = 0;
 
     /**
      * Get test position server name.
-     * @return name 
+     * @return name
      */
-    std::string get_name(void) const {return name; }
+    std::string name(void) const { return name_; }
 
 protected:
-    
+
     /**
      * Generate test position.
      * @return Test position.
      */
     virtual T generatePosition(void) = 0;
-    
+
     // Test position sample clock
     std::chrono::high_resolution_clock clock;
-    std::chrono::duration<double> sample_period_in_sec;
+    std::chrono::duration<double> sample_period_in_sec_;
     std::chrono::high_resolution_clock::time_point tick;
-    
+
     /**
      * Configure the sample period
      * @param samples_per_second Sample period in seconds.
      */
-    void generateSamplePeriod(const double samples_per_second) {
+    virtual void generateSamplePeriod(const double samples_per_second);
 
-        std::chrono::duration<double> period{1.0 / samples_per_second};
-
-        // Automatic conversion
-        sample_period_in_sec = period;
-    }    
-        
 private:
-    
+
     // Test position name
-    std::string name;
+    std::string name_;
+
+    // Internally generated position
+    T internal_position_;
+
+    // Shared position
+    T shared_position_;
 
     // The test position SINK
-    oat::BufferedSMServer<T> position_sink;
-    
-    // Test position sample number
-    uint32_t sample;
+    std::string position_sink_address_;
+    oat::Sink<T> position_sink_;
 };
 
 // Explicit declaration
-template class TestPosition<oat::Position2D>;
+//template class PositionGenerator<oat::Position2D>;
 
-#endif	/* TESTPOSITION_H */
+}      /* namespace oat */
+#endif /* OAT_POSITIONGENERATOR_H */
 

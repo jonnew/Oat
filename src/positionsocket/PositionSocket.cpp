@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   PositionDetector.cpp
+//* File:   PositionSocket.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -18,71 +18,47 @@
 //******************************************************************************
 
 #include <string>
-#include <opencv2/core/mat.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedCVMat.h"
 
-#include "PositionDetector.h"
+#include "PositionSocket.h"
 
 namespace oat {
 
-PositionDetector::PositionDetector(const std::string &frame_source_address,
-                                   const std::string &position_sink_address) :
-  name_("posidet[" + frame_source_address + "->" + position_sink_address + "]")
-, frame_source_address_(frame_source_address)
-, position_sink_address_(position_sink_address)
+PositionSocket::PositionSocket(const std::string &position_source_address) :
+  name_("posisock[" + position_source_address + "->*]")
+, position_source_address_(position_source_address)
 {
-  // Nothing
+    // Nothing
 }
 
-void PositionDetector::connectToNode() {
+void PositionSocket::connectToNode() {
 
     // Connect to source node and retrieve cv::Mat parameters
-    frame_source_.connect(frame_source_address_);
-
-    // Bind to sink sink node and create a shared position
-    position_sink_.bind(position_sink_address_);
-    shared_position_ = *position_sink_.retrieve();
+    position_source_.connect(position_source_address_);
 }
 
-bool PositionDetector::process() {
+bool PositionSocket::process() {
 
-    // START CRITICAL SECTION //
+     // START CRITICAL SECTION //
     ////////////////////////////
-
-    // Wait for sink to write to node
-    node_state_ = frame_source_.wait();
+    node_state_ = position_source_.wait();
     if (node_state_ == oat::NodeState::END)
         return true;
 
-    // Clone the shared frame
-    internal_frame_ = frame_source_.clone();
+    // Clone the shared position
+    internal_position_ = position_source_.clone();
 
     // Tell sink it can continue
-    frame_source_.post();
+    position_source_.post();
 
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Mess with internal frame
-    internal_position_ = detectPosition(internal_frame_);
-
-    // START CRITICAL SECTION //
-    ////////////////////////////
-
-    // Wait for sources to read
-    position_sink_.wait();
-
-    shared_position_ = internal_position_;
-
-    // Tell sources there is new data
-    position_sink_.post();
-
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
+    // Send the newly acquired position
+    sendPosition(internal_position_);
 
     // Sink was not at END state
     return false;

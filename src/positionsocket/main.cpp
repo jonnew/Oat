@@ -2,7 +2,7 @@
 //* File:   oat posisock main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -24,11 +24,11 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/IOFormat.h"
-#include <cpptoml.h>
+
 
 #include "PositionSocket.h"
-#include "UDPClient.h"
-#include "UDPServer.h"
+#include "UDPPositionClient.h"
+#include "UDPPositionServer.h"
 
 namespace po = boost::program_options;
 
@@ -45,37 +45,45 @@ void printUsage(po::options_description options) {
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
+void sigHandler(int) {
     quit = 1;
 }
 
-void run(std::shared_ptr<PositionSocket> sock) {
+void run(std::shared_ptr<oat::PositionSocket> socket) {
+    try {
 
-    while (!quit && !source_eof) {
-        source_eof = sock->process();
+        socket->connectToNode();
+
+        while (!quit && !source_eof) {
+            source_eof = socket->process();
+        }
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
     }
 }
 
 int main(int argc, char *argv[]) {
 
     std::signal(SIGINT, sigHandler);
-    
+
     // The image source to which the viewer will be attached
     std::string type;
     std::string source;
     std::string host;
     unsigned short port;
     bool server_side = false;
-    std::string config_file;
-    std::string config_key;
-    bool config_used = false;
     po::options_description visible_options("OPTIONS");
 
     std::unordered_map<std::string, char> type_hash;
     type_hash["udp"] = 'a';
 
     try {
-        
+
         po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
@@ -88,10 +96,8 @@ int main(int argc, char *argv[]) {
                 ("port,p", po::value<unsigned short>(&port), "Port on which to send positions.")
                 ("server", "Server-side socket sychronization. "
                            "Position data packets are sent whenever requested "
-                           "by a remote client. TODO: explain request protocol...")            
+                           "by a remote client. TODO: explain request protocol...")
                 //TODO: Serialization protocol (JSON, binary, etc)
-                ("config-file,c", po::value<std::string>(&config_file), "Configuration file.")
-                ("config-key,k", po::value<std::string>(&config_key), "Configuration key.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -105,7 +111,7 @@ int main(int argc, char *argv[]) {
         po::positional_options_description positional_options;
         positional_options.add("type", 1);
         positional_options.add("positionsource", 1);
-        
+
         visible_options.add(options).add(config);
 
         po::options_description all_options("ALL OPTIONS");
@@ -124,24 +130,24 @@ int main(int argc, char *argv[]) {
             printUsage(visible_options);
             return 0;
         }
-        
+
         if (variable_map.count("version")) {
             std::cout << "Oat Position Server version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
-        
+
         if (!variable_map.count("type")) {
             printUsage(visible_options);
             std::cout <<  oat::Error("A TYPE must be specified.\n");
             return -1;
         }
-        
+
         if (!variable_map.count("positionsource")) {
             printUsage(visible_options);
             std::cerr << oat::Error("A position SOURCE must be specified.\n");
@@ -157,16 +163,6 @@ int main(int argc, char *argv[]) {
                       << oat::Warn("Host address " + host + " will be ignored.\n");
         }
 
-        if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
-                (!variable_map.count("config-file") && variable_map.count("config-key"))) {
-            printUsage(visible_options);
-            std::cerr << oat::Error("A config file must be supplied "
-                    "with a corresponding config-key.\n");
-            return -1;
-        } else if (variable_map.count("config-file")) {
-            config_used = true;
-        }
-
     } catch (std::exception& e) {
         std::cerr << oat::Error(e.what()) << "\n";
         return -1;
@@ -174,20 +170,20 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::Error("Exception of unknown type.\n");
         return -1;
     }
-    
+
     // Create component
-    std::shared_ptr<PositionSocket> socket;
-     
+    std::shared_ptr<oat::PositionSocket> socket;
+
     try {
-        
+
         // Refine component type
         switch (type_hash[type]) {
             case 'a':
             {
-                if (server_side) 
-                    socket = std::make_shared<UDPServer>(source, port);
+                if (server_side)
+                    socket = std::make_shared<oat::UDPPositionServer>(source, port);
                 else
-                    socket = std::make_shared<UDPClient>(source, host, port);
+                    socket = std::make_shared<oat::UDPPositionClient>(source, host, port);
                 break;
             }
             default:
@@ -197,9 +193,6 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
         }
-
-//        if (config_used)
-//            server->configure(config_file, config_key);
 
         // Tell user
         std::cout << oat::whoMessage(socket->name(),
@@ -216,11 +209,6 @@ int main(int argc, char *argv[]) {
         // Exit
         return 0;
 
-    } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(socket->name(), 
-                     "Failed to parse configuration file " + config_file + "\n")
-                  << oat::whoError(socket->name(), ex.what())
-                  << "\n";
     } catch (const std::runtime_error& ex) {
         std::cerr << oat::whoError(socket->name(),ex.what())
                   << "\n";
@@ -232,5 +220,5 @@ int main(int argc, char *argv[]) {
     }
 
     // Exit failure
-    return -1; 
+    return -1;
 }

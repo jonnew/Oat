@@ -62,7 +62,7 @@ private:
      * Configure the GPU to perform background subtraction.
      * @param index_ Index of the GPU to use for processing
      */
-    void configureGPU(size_t index_);
+    void configureGPU(int64_t index_);
 
     cv::Ptr<cv::cuda::BackgroundSubtractorMOG> background_subtractor_;
     cv::cuda::GpuMat current_frame_, background_mask_;

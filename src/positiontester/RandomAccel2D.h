@@ -2,7 +2,7 @@
 //* File:   RandomAccel2D.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,55 +17,63 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
-#ifndef RANDOMACCEL2D
-#define	RANDOMACCEL2D
+#ifndef OAT_RANDOMACCEL2D_H
+#define	OAT_RANDOMACCEL2D_H
 
 #include <chrono>
 #include <string>
+#include <opencv2/core/mat.hpp>
 
-#include "TestPosition.h"
+#include "../../lib/datatypes/Position2D.h"
+
+#include "PositionGenerator.h"
+
+namespace oat {
 
 /**
- * A 2D Gaussian random acceleration generator.
+ * A 2D Gaussian random acceleration position generator.
  */
-class RandomAccel2D : public TestPosition<oat::Position2D> {
-    
+class RandomAccel2D : public PositionGenerator<oat::Position2D> {
+
 public:
 
     /**
      * A 2D Gaussian random acceleration generator.
-     * Test positions are subject to random, uncorrelated 2D, Gaussian 
-     * accelerations. 
+     * Test positions are subject to random, uncorrelated 2D, Gaussian
+     * accelerations.
      * @param position_sink_name Test position SINK name
      * @param samples_per_second Sample rate in Hz
      */
-    RandomAccel2D(const std::string& position_sink_name, const double samples_per_second=30);
+    RandomAccel2D(const std::string &position_sink_address,
+                  const double samples_per_second=30);
 
-    void configure(const std::string& file_name, const std::string& key);
+    void configure(const std::string &file_name,
+                   const std::string &key) override;
 
 private:
-    
+
     // Random number generator
-    std::default_random_engine accel_generator;
-    std::normal_distribution<double> accel_distribution;
+    std::default_random_engine accel_generator_;
+    std::normal_distribution<double> accel_distribution_ {0.0, 5.0};
 
     // Simulated position
-    cv::Matx41d state;
-    cv::Matx21d accel_vec;
+    cv::Matx41d state_ {0.0, 0.0, 0.0, 0.0};
+    cv::Matx21d accel_vec_;
 
     // STM and input matrix
-    cv::Matx44d state_transition_mat;
-    cv::Matx<double, 4, 2> input_mat;
+    cv::Matx44d state_transition_mat_;
+    cv::Matx<double, 4, 2> input_mat_;
 
     /**
      * Generate test position.
      * @return Test position
      */
-    oat::Position2D generatePosition(void);
+    oat::Position2D generatePosition(void) override;
     void createStaticMatracies(void);
     void simulateMotion(void);
 
 };
 
-#endif	/* RANDOMACCEL2D */
+}      /* namespace oat */
+#endif /* OAT_RANDOMACCEL2D_H */
 

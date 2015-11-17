@@ -49,9 +49,6 @@ protected:
     size_t slot_index_;
     bool bound_ {false};
     bool connected_ {false};
-
-private:
-
     bool did_wait_need_post_ {false};
 };
 
@@ -269,8 +266,10 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
         wait();
 
         // Self post since all loops start with wait() and we just
-        // finished our wait()
+        // finished our wait(). This will make the first call to
+        // wait() a 'freebie'
         node_->read_barrier(slot_index_).post();
+        did_wait_need_post_ = false;
     }
 
     // Find an existing shared object constructed by the SINK

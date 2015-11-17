@@ -2,7 +2,7 @@
 //* File:   RandomAccel2D.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -23,33 +23,38 @@
 #include <string>
 #include <thread>
 #include <opencv2/opencv.hpp>
-
 #include <cpptoml.h>
+
+#include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "RandomAccel2D.h"
 
-RandomAccel2D::RandomAccel2D(const std::string& position_sink_name, const double samples_per_second) :
-  TestPosition<oat::Position2D>(position_sink_name, samples_per_second) 
-, accel_distribution(0.0, 5.0) {
+namespace oat {
+
+RandomAccel2D::RandomAccel2D(const std::string &position_sink_address,
+                             const double samples_per_second) :
+  PositionGenerator<oat::Position2D>(position_sink_address, samples_per_second)
+//, accel_distribution(0.0, 5.0)
+{
 
     createStaticMatracies();
-    
-    // Initial condition
-    state(0) = 0.0; // x
-    state(1) = 0.0; // x'
-    state(2) = 0.0; // y
-    state(3) = 0.0; // y'
 
+//    // Initial condition
+//    state(0) = 0.0; // x
+//    state(1) = 0.0; // x'
+//    state(2) = 0.0; // y
+//    state(3) = 0.0; // y'
 }
 
-void RandomAccel2D::configure(const std::string& config_file, const std::string& config_key) {
+void RandomAccel2D::configure(const std::string &config_file,
+                              const std::string &config_key) {
 
     // Available options
     std::vector<std::string> options {"dt"};
-    
-    // This will throw cpptoml::parse_exception if a file 
+
+    // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
     auto config = cpptoml::parse_file(config_file);
 
@@ -58,7 +63,7 @@ void RandomAccel2D::configure(const std::string& config_file, const std::string&
 
         // Get this components configuration table
         auto this_config = config->get_table(config_key);
-        
+
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
 
@@ -67,7 +72,7 @@ void RandomAccel2D::configure(const std::string& config_file, const std::string&
         if (oat::config::getValue(this_config, "dt", dt, 0)) {
              generateSamplePeriod(1.0/dt);
         }
-     
+
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
@@ -75,77 +80,79 @@ void RandomAccel2D::configure(const std::string& config_file, const std::string&
 }
 
 oat::Position2D RandomAccel2D::generatePosition( ) {
-    
+
     // Simulate one step of random, but smooth, motion
-    simulateMotion(); 
-    
+    simulateMotion();
+
     // Transform into datatype::Position2D type
     oat::Position2D pos;
-    
+
     // Simulated position info
     pos.position_valid = true;
-    pos.position.x = state(0);
-    pos.position.y = state(2);
-    
+    pos.position.x = state_(0);
+    pos.position.y = state_(2);
+
     // We have access to the velocity info for comparison
     pos.velocity_valid = true;
-    pos.velocity.x = state(1);
-    pos.velocity.y = state(3);
-    
+    pos.velocity.x = state_(1);
+    pos.velocity.y = state_(3);
+
     // Enforce sample period
     auto tock = clock.now();
-    std::this_thread::sleep_for(sample_period_in_sec - (tock - tick));
+    std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick));
     tick = clock.now();
-    
+
     return pos;
 }
 
 void RandomAccel2D::simulateMotion() {
-    
+
     // Generate random acceleration
-    accel_vec(0) = accel_distribution(accel_generator);
-    accel_vec(1) = accel_distribution(accel_generator);
-    
+    accel_vec_(0) = accel_distribution_(accel_generator_);
+    accel_vec_(1) = accel_distribution_(accel_generator_);
+
     // Apply acceleration and transition matrix to the simulated position
-    state = state_transition_mat * state + input_mat * accel_vec;
+    state_ = state_transition_mat_ * state_ + input_mat_ * accel_vec_;
 }
 
-void RandomAccel2D::createStaticMatracies( ) {
-    
-    double Ts = sample_period_in_sec.count();
-    
+void RandomAccel2D::createStaticMatracies() {
+
+    double Ts = sample_period_in_sec_.count();
+
     // State transition matrix
-    state_transition_mat(0, 0) = 1.0;
-    state_transition_mat(0, 1) = Ts;
-    state_transition_mat(0, 2) = 0.0;
-    state_transition_mat(0, 3) = 0.0;
-    
-    state_transition_mat(1, 0) = 0.0;
-    state_transition_mat(1, 1) = 1.0;
-    state_transition_mat(1, 2) = 0.0;
-    state_transition_mat(1, 3) = 0.0;
-    
-    state_transition_mat(2, 0) = 0.0;
-    state_transition_mat(2, 1) = 0.0;
-    state_transition_mat(2, 2) = 1.0;
-    state_transition_mat(2, 3) = Ts;
-    
-    state_transition_mat(3, 0) = 0.0;
-    state_transition_mat(3, 1) = 0.0;
-    state_transition_mat(3, 2) = 0.0;
-    state_transition_mat(3, 3) = 1.0;
-    
+    state_transition_mat_(0, 0) = 1.0;
+    state_transition_mat_(0, 1) = Ts;
+    state_transition_mat_(0, 2) = 0.0;
+    state_transition_mat_(0, 3) = 0.0;
+
+    state_transition_mat_(1, 0) = 0.0;
+    state_transition_mat_(1, 1) = 1.0;
+    state_transition_mat_(1, 2) = 0.0;
+    state_transition_mat_(1, 3) = 0.0;
+
+    state_transition_mat_(2, 0) = 0.0;
+    state_transition_mat_(2, 1) = 0.0;
+    state_transition_mat_(2, 2) = 1.0;
+    state_transition_mat_(2, 3) = Ts;
+
+    state_transition_mat_(3, 0) = 0.0;
+    state_transition_mat_(3, 1) = 0.0;
+    state_transition_mat_(3, 2) = 0.0;
+    state_transition_mat_(3, 3) = 1.0;
+
     // Input Matrix
-    input_mat(0, 0) = (Ts*Ts)/2.0;
-    input_mat(0, 1) = 0.0;
+    input_mat_(0, 0) = (Ts*Ts)/2.0;
+    input_mat_(0, 1) = 0.0;
 
-    input_mat(1, 0) = Ts;
-    input_mat(1, 1) = 0.0;
+    input_mat_(1, 0) = Ts;
+    input_mat_(1, 1) = 0.0;
 
-    input_mat(2, 0) = 0.0;
-    input_mat(2, 1) = (Ts*Ts)/2.0;
-    
-    input_mat(3, 0) = 0.0;
-    input_mat(3, 1) = Ts;
-   
+    input_mat_(2, 0) = 0.0;
+    input_mat_(2, 1) = (Ts*Ts)/2.0;
+
+    input_mat_(3, 0) = 0.0;
+    input_mat_(3, 1) = Ts;
+
 }
+
+} /* namespace oat */

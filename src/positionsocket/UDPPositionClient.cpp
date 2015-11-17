@@ -2,7 +2,7 @@
 //* File:   UDPClient.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -25,23 +25,29 @@
 #include "../../lib/datatypes/Position2D.h"
 
 #include "SocketWriteStream.h"
-#include "UDPClient.h"
+#include "UDPPositionClient.h"
 
-UDPClient::UDPClient(const std::string& position_source_name, const std::string& host, const unsigned short port) :
-  PositionSocket(position_source_name)
-, socket_(io_service_, UDPEndpoint(boost::asio::ip::udp::v4(), 0)) { 
+namespace oat {
+
+UDPPositionClient::UDPPositionClient(const std::string &position_source_address,
+                                     const std::string& host,
+                                     const unsigned short port) :
+  PositionSocket(position_source_address)
+, socket_(io_service_, UDPEndpoint(boost::asio::ip::udp::v4(), 0)) {
 
     UDPResolver resolver(io_service_);
-    UDPEndpoint endpoint = *resolver.resolve({boost::asio::ip::udp::v4(), host, std::to_string(port)});
-    
+    UDPEndpoint endpoint = *resolver.resolve({boost::asio::ip::udp::v4(),
+                                              host,
+                                              std::to_string(port)});
+
     udp_stream_.reset(new rapidjson::SocketWriteStream<UDPSocket, UDPEndpoint>(
             &socket_, endpoint, buffer_, sizeof(buffer_)));
 }
 
 // Each position is sent in a single UDP packet
-void UDPClient::sendPosition(const oat::Position2D& current_position, const uint32_t sample) {
+void UDPPositionClient::sendPosition(const oat::Position2D& current_position) {
 
-    rapidjson::Writer < rapidjson::SocketWriteStream 
+    rapidjson::Writer < rapidjson::SocketWriteStream
                       < UDPSocket, UDPEndpoint > > udp_writer_ {*udp_stream_};
 
     current_position.Serialize(udp_writer_);
@@ -49,15 +55,6 @@ void UDPClient::sendPosition(const oat::Position2D& current_position, const uint
     // Flush the stream after each Serialization call so that each UDP packet
     // corresponds to a single position value
     udp_stream_->Flush();
-
-//    // TODO: Sample should be a data member of position type!
-//    std::string sample_str = std::to_string(sample);
-//#ifdef RAPIDJSON_HAS_STDSTRING
-//    udp_writer_.String(sample_str);
-//#else
-//    udp_writer_.String(sample_str.c_str(), 
-//            (rapidjson::SizeType)sample_str.length());
-//#endif
-//    current_position.Serialize(udp_writer_);
 }
 
+} /* namespace oat */

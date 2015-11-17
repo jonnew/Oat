@@ -2,7 +2,7 @@
 //* File:   oat positest main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 #include "../../lib/utility/IOFormat.h"
 #include <cpptoml.h>
 
-#include "TestPosition.h"
+#include "PositionGenerator.h"
 #include "RandomAccel2D.h"
 
 namespace po = boost::program_options;
@@ -49,15 +49,27 @@ void printUsage(po::options_description options) {
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
+void sigHandler(int) {
     quit = 1;
 }
 
 // Processing loop
-void run(std::shared_ptr< TestPosition<oat::Position2D> > test_position) {
+void run(std::shared_ptr<oat::PositionGenerator<oat::Position2D> > posigen) {
 
-    while (!quit && !source_eof) {
-        source_eof = test_position->process();
+     try {
+
+        posigen->connectToNode();
+
+        while (!quit && !source_eof) {
+            source_eof = posigen->process();
+        }
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
     }
 }
 
@@ -73,7 +85,7 @@ int main(int argc, char *argv[]) {
     std::string config_key;
     bool config_used = false;
     po::options_description visible_options("OPTIONS");
-    
+
     std::unordered_map<std::string, char> type_hash;
     type_hash["rand2D"] = 'a';
 
@@ -95,7 +107,7 @@ int main(int argc, char *argv[]) {
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("type", po::value<std::string>(&type), 
+                ("type", po::value<std::string>(&type),
                 "Type of test position to serve.")
                 ("sink", po::value<std::string>(&sink),
                 "The name of the SINK to which position background subtracted images will be served.")
@@ -128,14 +140,14 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("version")) {
             std::cout << "Oat Test-Position Server version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n"
                       << "Written by Jonathan P. Newman in the MWL@MIT.\n"
                       << "Licensed under the GPL3.0.\n";
             return 0;
         }
-        
+
         if (!variable_map.count("type")) {
             printUsage(visible_options);
             std::cerr << oat::Error("A TYPE name must be specified. Exiting.\n");
@@ -164,62 +176,62 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::Error("Exception of unknown type.\n");
         return -1;
     }
-    
+
     // TODO: Right now I need to use oat::Position2D as a template parameter
     // because otherwise this is no longer a valid base class for RandomAccel2D whose
     // base class is indeed TestPosition<oat::Position2D>
 
     // Create component
-    std::shared_ptr<TestPosition<oat::Position2D>> test_position;
+    std::shared_ptr<oat::PositionGenerator<oat::Position2D>> posigen;
 
-    // Refine component type
-    switch (type_hash[type]) {
-        case 'a':
-        {
-            test_position =  std::make_shared<RandomAccel2D>(sink, samples_per_second);
-            break;
-        }
-        default:
-        {
-            printUsage(visible_options);
-            std::cerr << oat::Error("Invalid TYPE specified.\n");
-            return -1;
-        }
-    }
-    
     // The business
     try {
 
+        // Refine component type
+        switch (type_hash[type]) {
+            case 'a':
+            {
+                posigen =  std::make_shared<oat::RandomAccel2D>(sink, samples_per_second);
+                break;
+            }
+            default:
+            {
+                printUsage(visible_options);
+                std::cerr << oat::Error("Invalid TYPE specified.\n");
+                return -1;
+            }
+        }
+
         if (config_used)
-            test_position->configure(config_file, config_key);
+            posigen->configure(config_file, config_key);
 
         // Tell user
-        std::cout << oat::whoMessage(test_position->get_name(),
+        std::cout << oat::whoMessage(posigen->name(),
                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(test_position->get_name(),
+                << oat::whoMessage(posigen->name(),
                 "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
-        run(test_position);
+        run(posigen);
 
         // Tell user
-        std::cout << oat::whoMessage(test_position->get_name(), "Exiting.\n");
+        std::cout << oat::whoMessage(posigen->name(), "Exiting.\n");
 
         // Exit
         return 0;
 
-    } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(test_position->get_name(), "Failed to parse configuration file " + config_file + "\n")
-                  << oat::whoError(test_position->get_name(), ex.what())
-                  << "\n";
-    } catch (const std::runtime_error ex) {
-        std::cerr << oat::whoError(test_position->get_name(), ex.what())
-                  << "\n";
-    } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(test_position->get_name(), ex.msg)
-                  << "\n";
+    } catch (const cpptoml::parse_exception &ex) {
+        std::cerr << oat::whoError(posigen->name(),
+                     "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(posigen->name(), ex.what()) << "\n";
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::whoError(posigen->name(), ex.what()) << "\n";
+    } catch (const cv::Exception &ex) {
+        std::cerr << oat::whoError(posigen->name(), ex.what()) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(posigen->name(), ex.what()) << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(test_position->get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(posigen->name(), "Unknown exception.\n");
     }
 
     // Exit failure

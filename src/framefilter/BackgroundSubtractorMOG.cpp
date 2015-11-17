@@ -87,30 +87,24 @@ void BackgroundSubtractorMOG::configure(const std::string &config_file, const st
 }
 
 #ifdef OAT_USE_CUDA
-void BackgroundSubtractorMOG::configureGPU(size_t index) {
+void BackgroundSubtractorMOG::configureGPU(int64_t index) {
 
     // Determine if a compatible device is available
     int num_devices = cv::cuda::getCudaEnabledDeviceCount();
-    if (num_devices < 1) {
+    if (num_devices < 1)
         throw (std::runtime_error("No GPU found or OpenCV was compiled without CUDA support."));
-    }
 
-    // Set device
-    int selected_gpu = 0; // TODO: should be user defined
-
-    if (selected_gpu > num_devices) {
+    if (index > num_devices)
         throw (std::runtime_error("Selected GPU index is invalid."));
-    }
 
-    cv::cuda::DeviceInfo gpu_info(selected_gpu);
-    if (!gpu_info.isCompatible()) {
+    cv::cuda::DeviceInfo gpu_info(index);
+    if (!gpu_info.isCompatible())
         throw (std::runtime_error("Selected GPU is not compatible with OpenCV."));
-    }
 
-    cv::cuda::setDevice(selected_gpu);
+    cv::cuda::setDevice(index);
 
 #ifndef NDEBUG
-    cv::cuda::printShortCudaDeviceInfo(selected_gpu);
+    cv::cuda::printShortCudaDeviceInfo(index);
 #endif
 }
 #endif
