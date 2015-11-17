@@ -17,51 +17,38 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "KalmanFilter2D.h"
+#include <string>
+#include <opencv2/opencv.hpp>
 #include <cpptoml.h>
+
 #include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
-/**
- * A Kalman filter for position measures. The assumed model is normally distributed
- * constant force applied at each time steps causes a random, constant acceleration
- * in between each time-step.
- *
- * @param position_source_name The position measure SOURCE
- * @param position_sink_name The filtered position SINK
- */
-KalmanFilter2D::KalmanFilter2D(const std::string& position_source_name, const std::string& position_sink_name) :
-  PositionFilter(position_source_name, position_sink_name)
-, filtered_position(position_sink_name)
-, dt(0.02)
-, kf(4, 2, 0, CV_64F)
-, kf_predicted_state(4, 1, CV_64F)
-, kf_meas(2, 1, CV_64F)
-, found(false)
-, not_found_count_threshold(0)
-, sig_accel(5.0)
-, sig_measure_noise(0.0)
-, tuning_windows_created(false)
-, draw_scale(10.0)
-, tuning_image_title(position_sink_name + "_tuning") {
+#include "KalmanFilter2D.h"
 
+namespace oat {
+
+KalmanFilter2D::KalmanFilter2D(const std::string& position_source_address,
+                               const std::string& position_sink_address) :
+  PositionFilter(position_source_address, position_sink_address)
+, tuning_image_title(position_sink_address + "_tuning")
+{
     sig_accel_tune = static_cast<int>(sig_measure_noise);
     sig_measure_noise_tune = static_cast<int>(sig_measure_noise);
 }
 
-oat::Position2D KalmanFilter2D::filterPosition(oat::Position2D& raw_position) {
+void KalmanFilter2D::filter(oat::Position2D &position) {
 
     // Transform raw position into kf_meas vector
-    if (raw_position.position_valid) {
-        kf_meas.at<double>(0) = raw_position.position.x;
-        kf_meas.at<double>(1) = raw_position.position.y;
+    if (position.position_valid) {
+        kf_meas.at<double>(0) = position.position.x;
+        kf_meas.at<double>(1) = position.position.y;
         not_found_count = 0;
 
         // We are coming from a time step where there were no measurements for a
         // long time, so we need to reinitialize the filter
-        if (!found) {
+        if (!found)
             initializeFilter();
-        }
 
         found = true;
     } else {
@@ -70,9 +57,8 @@ oat::Position2D KalmanFilter2D::filterPosition(oat::Position2D& raw_position) {
 
     // If we have not gotten a measurement of the object for a long time
     // we need to reinitialize the filter
-    if (not_found_count >= not_found_count_threshold) {
+    if (not_found_count >= not_found_count_threshold)
         found = false;
-    }
 
     // Only update if the object is found (this includes time points for which
     // the position measurement was invalid, but we are within the not_found_count_threshold)
@@ -84,36 +70,34 @@ oat::Position2D KalmanFilter2D::filterPosition(oat::Position2D& raw_position) {
         kf.correct(kf_meas);
     }
 
-    filtered_position.position.x = kf_predicted_state.at<double>(0);
-    filtered_position.velocity.x = kf_predicted_state.at<double>(1);
-    filtered_position.position.y = kf_predicted_state.at<double>(2);
-    filtered_position.velocity.y = kf_predicted_state.at<double>(3);
+    position.position.x = kf_predicted_state.at<double>(0);
+    position.velocity.x = kf_predicted_state.at<double>(1);
+    position.position.y = kf_predicted_state.at<double>(2);
+    position.velocity.y = kf_predicted_state.at<double>(3);
 
     // This Position is only valid if the not_found_count_threshold has not
     // be exceeded
     if (found) {
-        filtered_position.position_valid = true;
-        filtered_position.velocity_valid = true;
+        position.position_valid = true;
+        position.velocity_valid = true;
     } else {
-        filtered_position.position_valid = false;
-        filtered_position.velocity_valid = false;
+        position.position_valid = false;
+        position.velocity_valid = false;
     }
 
     // Tune the filter, if requested
     tune();
-
-    return filtered_position;
 }
 
-void KalmanFilter2D::configure(const std::string& config_file, const std::string& config_key) {
+void KalmanFilter2D::configure(const std::string &config_file,
+                               const std::string &config_key) {
 
     // Available options
-    std::vector<std::string> options {
-                "dt",
-                "timeout",
-                "sigma_accel",
-                "sigma_noise",
-                "tune" };
+    std::vector<std::string> options {"dt",
+                                      "timeout",
+                                      "sigma_accel",
+                                      "sigma_noise",
+                                      "tune" };
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -264,7 +248,6 @@ void KalmanFilter2D::tune() {
         tuning_windows_created = false;
 
     }
-
 }
 
 void KalmanFilter2D::createTuningWindows() {
@@ -306,3 +289,5 @@ void KalmanFilter2D::createTuningWindows() {
 //        cv::line(canvas, pos, cv::Point2f(x + dx, y + dy), cv::Scalar(0, 255, 0), 2, 8);
 //    }
 //}
+
+} /* namespace oat */

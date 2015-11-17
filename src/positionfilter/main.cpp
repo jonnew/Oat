@@ -2,7 +2,7 @@
 //* File:   oat posifilt main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -45,7 +45,7 @@ void printUsage(po::options_description options) {
               << "  homo: homography transform\n"
               << "  region: position region annotation\n\n"
               << "SOURCE:\n"
-              << "  User-supplied name of the memory segment to receive " 
+              << "  User-supplied name of the memory segment to receive "
               << "positions from (e.g. rpos).\n\n"
               << "SINK:\n"
               << "  User-supplied name of the memory segment to publish "
@@ -54,20 +54,32 @@ void printUsage(po::options_description options) {
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
+void sigHandler(int) {
     quit = 1;
 }
 
 // Processing loop
-void run(std::shared_ptr<PositionFilter> positionFilter) {
+void run(std::shared_ptr<oat::PositionFilter> filter) {
 
-    while (!quit && !source_eof) {
-        source_eof = positionFilter->process();
+    try {
+
+        filter->connectToNode();
+
+        while (!quit && !source_eof) {
+            source_eof = filter->process();
+        }
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
     }
 }
 
 int main(int argc, char *argv[]) {
-    
+
     std::signal(SIGINT, sigHandler);
 
     // The image source to which the viewer will be attached
@@ -85,7 +97,7 @@ int main(int argc, char *argv[]) {
     type_hash["region"] = 'c';
 
     try {
-        
+
         po::options_description options("INFO");
         options.add_options()
                 ("help", "Produce help message.")
@@ -113,7 +125,7 @@ int main(int argc, char *argv[]) {
         positional_options.add("type", 1);
         positional_options.add("positionsource", 1);
         positional_options.add("sink", 1);
-        
+
         visible_options.add(options).add(config);
 
         po::options_description all_options("ALL OPTIONS");
@@ -136,14 +148,14 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("version")) {
             std::cout << "Oat Position Filter version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
             return 0;
         }
-        
+
         if (!variable_map.count("type")) {
             printUsage(visible_options);
             std::cout <<  oat::Error("A TYPE must be specified.\n");
@@ -161,14 +173,14 @@ int main(int argc, char *argv[]) {
             std::cout <<  oat::Error("A position SINK must be specified.\n");
             return -1;
         }
-        
+
         if (!variable_map.count("config-file") && type.compare("homo") == 0) {
             printUsage(visible_options);
             std::cerr << oat::Error("When TYPE=homo, a configuration file must be specified"
                          " to provide homography matrix.\n");
             return -1;
         }
-        
+
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
                 (!variable_map.count("config-file") && variable_map.count("config-key"))) {
             printUsage(visible_options);
@@ -187,25 +199,25 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    std::shared_ptr<PositionFilter> filter;
-    
+    std::shared_ptr<oat::PositionFilter> filter;
+
     try {
-        
+
         // Refine component type
         switch (type_hash[type]) {
             case 'a':
             {
-                filter = std::make_shared<KalmanFilter2D>(source, sink);
+                filter = std::make_shared<oat::KalmanFilter2D>(source, sink);
                 break;
             }
             case 'b':
             {
-                filter = std::make_shared<HomographyTransform2D>(source, sink);
+                filter = std::make_shared<oat::HomographyTransform2D>(source, sink);
                 break;
             }
             case 'c':
             {
-                filter = std::make_shared<RegionFilter2D>(source, sink);
+                filter = std::make_shared<oat::RegionFilter2D>(source, sink);
                 break;
             }
             default:
@@ -220,36 +232,36 @@ int main(int argc, char *argv[]) {
             filter->configure(config_file, config_key);
 
         // Tell user
-        std::cout << oat::whoMessage(filter->get_name(),
+        std::cout << oat::whoMessage(filter->name(),
                      "Listening to source " + oat::sourceText(source) + ".\n")
-                  << oat::whoMessage(filter->get_name(),
+                  << oat::whoMessage(filter->name(),
                      "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                  << oat::whoMessage(filter->get_name(),
+                  << oat::whoMessage(filter->name(),
                      "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or server end-of-stream signal
         run(filter);
 
         // Tell user
-        std::cout << oat::whoMessage(filter->get_name(), "Exiting.\n");
+        std::cout << oat::whoMessage(filter->name(), "Exiting.\n");
 
         // Exit
         return 0;
 
-    } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(filter->get_name(), "Failed to parse configuration file " + config_file + "\n")
-                  << oat::whoError(filter->get_name(), ex.what())
-                  << "\n";
-    } catch (const std::runtime_error& ex) {
-        std::cerr << oat::whoError(filter->get_name(),ex.what())
-                  << "\n";
-    } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(filter->get_name(), ex.what())
-                  << "\n";
+    } catch (const cpptoml::parse_exception &ex) {
+        std::cerr << oat::whoError(filter->name(),
+                     "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(filter->name(), ex.what()) << "\n";
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::whoError(filter->name(), ex.what()) << "\n";
+    } catch (const cv::Exception &ex) {
+        std::cerr << oat::whoError(filter->name(), ex.what()) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(filter->name(), ex.what()) << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(filter->get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(filter->name(), "Unknown exception.\n");
     }
 
     // Exit failure
-    return -1; 
+    return -1;
 }

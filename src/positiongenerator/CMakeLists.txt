@@ -2,14 +2,14 @@
 set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create a SOURCES variable containing all required .cpp files:
-set (oat-positest_SOURCE
+set (oat-posigen_SOURCE
      PositionGenerator.cpp
      RandomAccel2D.cpp
      main.cpp)
 
 # Target
-add_executable (oat-positest ${oat-positest_SOURCE})
-target_link_libraries (oat-positest shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})
+add_executable (oat-posigen ${oat-posigen_SOURCE})
+target_link_libraries (oat-posigen shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
 # Installation
-install (TARGETS oat-positest DESTINATION ../../oat/libexec COMPONENT oat-processors)
+install (TARGETS oat-posigen DESTINATION ../../oat/libexec COMPONENT oat-processors)

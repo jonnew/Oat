@@ -2,7 +2,7 @@
 //* File:   PositionFilter.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,18 +17,23 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef POSITIONFILTER_H
-#define	POSITIONFILTER_H
+#ifndef OAT_POSITIONFILTER_H
+#define	OAT_POSITIONFILTER_H
 
-#include "../../lib/shmem/SMServer.h"
-#include "../../lib/shmem/SMClient.h"
+#include <string>
+
+#include "../../lib/shmemdf/Source.h"
+#include "../../lib/shmemdf/Sink.h"
 #include "../../lib/datatypes/Position2D.h"
+
+namespace oat {
 
 /**
  * Abstract position filter.
  * All concrete position filter types implement this ABC.
  */
-class PositionFilter { 
+class PositionFilter {
+
 public:
 
     /**
@@ -37,69 +42,64 @@ public:
      * @param position_source_name Un-filtered position SOURCE name
      * @param position_sink_name Filtered position SINK name
      */
-    PositionFilter(const std::string& position_source_name, const std::string& position_sink_name) :
-      name("posifilt[" + position_source_name + "->" + position_sink_name + "]")
-    , position(position_source_name)
-    , position_source(position_source_name)
-    , position_sink(position_sink_name) 
-    { 
-        // Nothing   
-    }
-
+    PositionFilter(const std::string &position_source_address,
+                   const std::string &position_sink_address);
 
     virtual ~PositionFilter() { }
 
     /**
-     * Obtain un-filtered position from SOURCE. Filter position. Publish filtered 
+     * PositionFilters must be able to connect to a Source and Sink
+     * Nodes in shared memory
+     */
+    virtual void connectToNode(void);
+
+    /**
+     * Obtain un-filtered position from SOURCE. Filter position. Publish filtered
      * position to SINK.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
-    bool process(void) {
-
-        if (position_source.getSharedObject(position)) {
-            
-            position_sink.pushObject(filterPosition(position), 
-                                     position_source.get_current_time_stamp());
-   
-        }
-        
-        // If server state is END, return true
-        return (position_source.getSourceRunState() == oat::SinkState::END);  
-    }
+    bool process(void);
 
     /**
      * Configure position filter parameters.
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    virtual void configure(const std::string& config_file, const std::string&  config_key) = 0;
+    virtual void configure(const std::string &config_file,
+                           const std::string &config_key) = 0;
 
     // Accessors
-    std::string get_name(void) const { return name; }
+    std::string name(void) const { return name_; }
 
 protected:
 
     /**
      * Perform position filtering.
-     * @param position_in Un-filtered position SOURCE
-     * @return filtered position
+     * @param position Position to be filtered
      */
-    virtual oat::Position2D filterPosition(oat::Position2D& position_in) = 0;
-        
+    virtual void filter(oat::Position2D &position) = 0;
+
 private:
-    
+
     // Filter name
-    const std::string name;
-    
-    // Un-filtered position SOURCE object
-    oat::SMClient<oat::Position2D> position_source;
-    
-    // Un-filtered position
-    oat::Position2D position;
-    
-    // Filtered position SINK object
-    oat::SMServer<oat::Position2D> position_sink;
+    const std::string name_;
+
+    // Un-filtered position SOURCE
+    const std::string position_source_address_;
+    oat::NodeState node_state_;
+    oat::Source<oat::Position2D> position_source_;
+
+    // Internal, mutable position
+    oat::Position2D internal_position_;
+
+    // Shared position
+    oat::Position2D * shared_position_;
+
+    // Position SINK
+    const std::string position_sink_address_;
+    oat::Sink<oat::Position2D> position_sink_;
 };
 
-#endif	/* POSITIONFILTER_H */
+}      /* namespace oat */
+#endif /* OAT_POSITIONFILTER_H */
 

@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   oat positest main.cpp
+//* File:   oat posigen main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -38,9 +38,9 @@ volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: positest [INFO]\n"
-              << "   or: positest TYPE SINK [CONFIGURATION]\n"
-              << "Publish test positions to SINK.\n\n"
+    std::cout << "Usage: posigen [INFO]\n"
+              << "   or: posigen TYPE SINK [CONFIGURATION]\n"
+              << "Publish generated positions to SINK.\n\n"
               << "TYPE\n"
               << "  rand2D: Randomly accelerating 2D Position\n\n"
               << "SINK:\n"

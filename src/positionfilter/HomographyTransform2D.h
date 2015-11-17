@@ -2,7 +2,7 @@
 //* File:   HomographyTransform2D.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,47 +17,51 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef HOMGRAPHICTRANSFORM2D_H
-#define	HOMGRAPHICTRANSFORM2D_H
+#ifndef OAT_HOMGRAPHICTRANSFORM2D_H
+#define	OAT_HOMGRAPHICTRANSFORM2D_H
 
 #include <string>
 #include <opencv2/core/mat.hpp>
 
 #include "PositionFilter.h"
 
+namespace oat {
+
 /**
  * A 2D homography.
  */
 class HomographyTransform2D : public PositionFilter {
 public:
-    
+
     /**
      * A 2D homography.
      * Transform position units. Typically used to perform projective transformation
-     * to map pixels coordinates to world coordinates. 
-     * @param position_source_name Un-filtered position SOURCE name
-     * @param position_sink_name Filtered position SINK name
+     * to map pixels coordinates to world coordinates.
+     * @param position_source_address Un-filtered position SOURCE name
+     * @param position_sink_address Filtered position SINK name
      */
-    HomographyTransform2D(const std::string& position_source_name, const std::string& position_sink_name);
+    HomographyTransform2D(const std::string& position_source_address,
+                          const std::string& position_sink_address);
 
-    void configure(const std::string& config_file, const std::string& config_key);
+    void configure(const std::string &config_file,
+                   const std::string &config_key) override;
 
 private:
 
     // 2D homography matrix
-    bool homography_valid;
-    cv::Matx33d homography;
-    
+    bool homography_valid_ {false};
+    cv::Matx33d homography_ {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
+
     // Filtered position
-    oat::Position2D filtered_position;
-    
+    oat::Position2D filtered_position_;
+
     /**
      * Apply homography transform.
-     * @param position_in Un-projected position SOURCE
-     * @return projected position
+     * @param Position to be projected
      */
-    oat::Position2D filterPosition(oat::Position2D& position_in);
+    void filter(oat::Position2D& position) override;
 };
 
-#endif	/* HOMGRAPHICTRANSFORM2D_H */
+}      /* namespace oat */
+#endif /* OAT_HOMGRAPHICTRANSFORM2D_H */
 

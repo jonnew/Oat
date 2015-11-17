@@ -36,16 +36,8 @@ namespace oat {
 RandomAccel2D::RandomAccel2D(const std::string &position_sink_address,
                              const double samples_per_second) :
   PositionGenerator<oat::Position2D>(position_sink_address, samples_per_second)
-//, accel_distribution(0.0, 5.0)
 {
-
     createStaticMatracies();
-
-//    // Initial condition
-//    state(0) = 0.0; // x
-//    state(1) = 0.0; // x'
-//    state(2) = 0.0; // y
-//    state(3) = 0.0; // y'
 }
 
 void RandomAccel2D::configure(const std::string &config_file,

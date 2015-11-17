@@ -2,7 +2,7 @@
 //* File:   HomgraphicTransform2D.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,55 +17,63 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "HomographyTransform2D.h"
-
+#include <string>
 #include <cpptoml.h>
+
 #include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
-HomographyTransform2D::HomographyTransform2D(const std::string& position_source_name, const std::string& position_sink_name) :
-PositionFilter(position_source_name, position_sink_name)
-, homography_valid(false)
-, homography(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0) { }
+#include "HomographyTransform2D.h"
 
-oat::Position2D HomographyTransform2D::filterPosition(oat::Position2D& raw_position) {
-    
-    filtered_position = raw_position;
+namespace oat {
+
+HomographyTransform2D::HomographyTransform2D(const std::string &position_source_address,
+                                             const std::string& position_sink_address) :
+PositionFilter(position_source_address, position_sink_address)
+{
+    // Nothing
+}
+
+void HomographyTransform2D::filter(oat::Position2D& position) {
+
+    //filtered_position = raw_position;
 
     // Position transforms
     std::vector<oat::Point2D> in_positions;
     std::vector<oat::Point2D> out_positions;
-    in_positions.push_back(raw_position.position);
-    cv::perspectiveTransform(in_positions, out_positions, homography);
-    filtered_position.position = out_positions[0];
+    in_positions.push_back(position.position);
+    cv::perspectiveTransform(in_positions, out_positions, homography_);
+    position.position = out_positions[0];
 
     // Velocity transform
     std::vector<oat::Velocity2D> in_velocities;
     std::vector<oat::Velocity2D> out_velocities;
-    cv::Matx33d vel_homo = homography;
+    cv::Matx33d vel_homo = homography_;
     vel_homo(0, 2) = 0.0; // offsets do not apply to velocity
     vel_homo(1, 2) = 0.0; // offsets do not apply to velocity
-    in_velocities.push_back(raw_position.velocity);
+    in_velocities.push_back(position.velocity);
     cv::perspectiveTransform(in_velocities, out_velocities, vel_homo);
-    filtered_position.velocity = out_velocities[0];
+    position.velocity = out_velocities[0];
 
     // Head direction is normalized and unit-free, and therefore
     // does not require conversion
     // TODO: No, this is not true. what about shear distortion??
-    
+
+    // TODO: If the homography_ is not valid, why would I even do the above
+    //       transforms??
     // Return value uses world coordinates
-    if (homography_valid)
-        filtered_position.coord_system = oat::WORLD;
-    
-    return filtered_position;
+    if (homography_valid_)
+        position.coord_system = oat::WORLD;
+
 }
 
-void HomographyTransform2D::configure(const std::string& config_file, const std::string& config_key) {
+void HomographyTransform2D::configure(const std::string &config_file,
+                                      const std::string &config_key) {
 
     // Available options
-    std::vector<std::string> options {"homography"};
-    
-    // This will throw cpptoml::parse_exception if a file 
+    std::vector<std::string> options {"homography_"};
+
+    // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
     auto config = cpptoml::parse_file(config_file);
 
@@ -77,26 +85,28 @@ void HomographyTransform2D::configure(const std::string& config_file, const std:
 
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
-        
+
         // Homography matrix
         oat::config::Array homo_array;
-        if (oat::config::getArray(this_config, "homography", homo_array, 9, true)) {
+        if (oat::config::getArray(this_config, "homography_", homo_array, 9, true)) {
 
             auto homo_vec = homo_array->array_of<double>();
-            
-            homography(0, 0) = homo_vec[0]->get();
-            homography(0, 1) = homo_vec[1]->get();
-            homography(0, 2) = homo_vec[2]->get();
-            homography(1, 0) = homo_vec[3]->get();
-            homography(1, 1) = homo_vec[4]->get();
-            homography(1, 2) = homo_vec[5]->get();
-            homography(2, 0) = homo_vec[6]->get();
-            homography(2, 1) = homo_vec[7]->get();
-            homography(2, 2) = homo_vec[8]->get();
 
-            homography_valid = true;
+            homography_(0, 0) = homo_vec[0]->get();
+            homography_(0, 1) = homo_vec[1]->get();
+            homography_(0, 2) = homo_vec[2]->get();
+            homography_(1, 0) = homo_vec[3]->get();
+            homography_(1, 1) = homo_vec[4]->get();
+            homography_(1, 2) = homo_vec[5]->get();
+            homography_(2, 0) = homo_vec[6]->get();
+            homography_(2, 1) = homo_vec[7]->get();
+            homography_(2, 2) = homo_vec[8]->get();
+
+            homography_valid_ = true;
         }
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
+
+} /* namespace oat */

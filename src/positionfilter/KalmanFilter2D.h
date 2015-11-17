@@ -2,7 +2,7 @@
 //* File:   KalmanFilter2D.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,77 +17,78 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef KALMANFILTER2D_H
-#define	KALMANFILTER2D_H
+#ifndef OAT_KALMANFILTER2D_H
+#define	OAT_KALMANFILTER2D_H
 
 #include <string>
 #include <opencv2/opencv.hpp>
 
 #include "PositionFilter.h"
 
+namespace oat {
+
 /**
  * A 2D Kalman filter.
  */
 class KalmanFilter2D : public PositionFilter {
-    
+
 public:
-    
+
     /**
      * A 2D Kalman filter.
-     * The assumed model is normally distributed constant force applied at each 
+     * The assumed model is normally distributed constant force applied at each
      * time steps causes a random, constant acceleration in between each time-step.
      * Measurement noise is assumed to be Gaussian with a user supplied variance.
      * Model parameters (time step size, standard deviation of random acceleration,
      * and measurement noise standard deviation, etc) are supplied using the
      * configure method.
-     * @param position_source_name Un-filtered position SOURCE name
-     * @param position_sink_name Filtered position SINK name
+     * @param position_source_address Un-filtered position SOURCE name
+     * @param position_sink_address Filtered position SINK name
      */
-    KalmanFilter2D(const std::string& position_source_name, const std::string& position_sink_name);
+    KalmanFilter2D(const std::string &position_source_address,
+                   const std::string& position_sink_address);
 
-    void configure(const std::string& config_file, const std::string& config_key);
+    void configure(const std::string &config_file,
+                   const std::string& config_key) override;
 
 private:
-    
+
     // Kalman state estimate and measurement vectors
-    cv::Mat kf_predicted_state;
-    cv::Mat kf_meas;
+    cv::Mat kf_predicted_state {4, 1, CV_64F};
+    cv::Mat kf_meas {2, 1, CV_64F};
 
     // Sample period
-    double dt;
+    double dt {0.02};
 
     // Standard deviation of assumed random accelerations.
-    double sig_accel;
-    double sig_measure_noise;
+    double sig_accel {5.0};
+    double sig_measure_noise {0.0};
 
     // Parameter tuning
-    bool tuning_windows_created;
+    std::string tuning_image_title;
+    bool tuning_windows_created {false};
     int sig_accel_tune;
     int sig_measure_noise_tune;
-    bool tuning_on;
-    float draw_scale;
+    bool tuning_on {false};
+    float draw_scale {10.0};
 
     // Variables and parameters to control whether or not to apply the filter
-    bool found;
-    int not_found_count;
-    int not_found_count_threshold;
-    
+    bool found {false};
+    int not_found_count {0};
+    int not_found_count_threshold {0};
+
     // Filtered position
     oat::Position2D filtered_position;
 
-    // Tuning window name
-    std::string tuning_image_title;
-
     // Kalman filter object
-    cv::KalmanFilter kf;
-    
+    cv::KalmanFilter kf {4, 2, 0, CV_64F};
+
     /**
      * Perform Kalman filtering.
-     * @param position_in Un-filtered position SOURCE
-     * @return filtered position
+     * @param position Position to filter
      */
-    oat::Position2D filterPosition(oat::Position2D& position_in);
-    
+    void filter(oat::Position2D& position) override;
+
     // TODO: These subroutines have pretty boring type signatures...
     void tune(void);
     void initializeFilter(void);
@@ -96,5 +97,6 @@ private:
     void drawPosition(cv::Mat& canvas, const oat::Position2D& position);
 };
 
-#endif	/* KALMANFILTER2D_H */
+}      /* namespace oat */
+#endif /* OAT_KALMANFILTER2D_H */
 
