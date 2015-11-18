@@ -20,7 +20,6 @@
 #ifndef OAT_NODE_H
 #define	OAT_NODE_H
 
-#include <iostream>
 #include <array>
 #include <atomic>
 #include <bitset>
