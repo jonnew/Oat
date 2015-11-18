@@ -20,7 +20,6 @@
 #ifndef OAT_SOURCE_H
 #define	OAT_SOURCE_H
 
-#include <iostream>
 #include <string>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
