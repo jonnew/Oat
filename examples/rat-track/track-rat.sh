@@ -9,16 +9,16 @@ case "$1" in
 		#sleep 0.1
 		#oat posifilt homo posi wld -c config.toml -k homo &
 
-		#sleep 0.1
-		#oat view final &
-		#sleep 0.1
-		#oat decorate raw final -p pix -S -s -R &
-		#sleep 0.1
-		#oat posifilt region posi pix -c config.toml -k region &
-		#sleep 0.1
-		#oat posifilt kalman det posi -c config.toml -k kalman &
 		sleep 0.1
-		oat posidet hsv bac det -c config.toml -k hsv --tune &
+		oat view final &
+		sleep 0.1
+		oat decorate raw final -p pix -SsR &
+		sleep 0.1
+		oat posifilt region posi pix -c config.toml -k region &
+		sleep 0.1
+		oat posifilt kalman det posi -c config.toml -k kalman &
+		sleep 0.1
+		oat posidet hsv bac det -c config.toml -k hsv &
 		sleep 0.1
 		oat framefilt mog roi bac &
 		sleep 0.1

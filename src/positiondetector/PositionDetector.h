@@ -94,7 +94,8 @@ private:
 
     // Current frame
     cv::Mat internal_frame_;
-    oat::Position2D internal_position_, shared_position_;
+    oat::Position2D internal_position_;
+    oat::Position2D * shared_position_;
 
     // Frame source
     const std::string frame_source_address_;

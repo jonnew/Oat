@@ -832,23 +832,20 @@ int PGGigECam::findNumCameras(void) {
     pg::BusManager busMgr;
 
     error = busMgr.GetNumOfCameras(&num_cameras);
-    if (num_cameras == 0) {
+    if (num_cameras == 0)
         throw (std::runtime_error("No GigE cameras were detected.\n"));
-    }
 
     max_index = num_cameras - 1;
-    if (error != pg::PGRERROR_OK) {
+    if (error != pg::PGRERROR_OK)
         throw (std::runtime_error(error.GetDescription()));
-    }
 
     return 0;
 }
 
 void PGGigECam::printError(pg::Error error) {
     error.PrintErrorTrace();
-    if (!camera.IsConnected()) {
+    if (!camera.IsConnected())
         std::cerr << "Camera must be connected before getting its info.\n";
-    }
 }
 
 bool PGGigECam::pollForTriggerReady() {

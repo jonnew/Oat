@@ -47,6 +47,7 @@ public:
 
 protected:
 
+    std::string address_;
     shmem_t node_shmem_, obj_shmem_;
     Node * node_ {nullptr};
     T * sh_object_ {nullptr};
@@ -124,7 +125,8 @@ inline void SinkBase<T>::post() {
     did_wait_need_post_ = false;
 
 #ifndef NDEBUG
-    std::cout << "Write number: " << node_->write_number() << "\n";
+    // Flush to keep things in order
+    std::cout << address_ << " write number: " << node_->write_number() << std::endl;
 #endif
 }
 
@@ -133,6 +135,7 @@ inline void SinkBase<T>::post() {
 template<typename T>
 class Sink : public SinkBase<T> {
 
+    using SinkBase<T>::address_;
     using SinkBase<T>::node_address_;
     using SinkBase<T>::obj_address_;
     using SinkBase<T>::node_shmem_;
@@ -155,6 +158,7 @@ inline void Sink<T>::bind(const std::string &address) {
                                  "single time to a single node.");
 
     // Addresses for this block of shared memory
+    address_ = address;
     node_address_ = address + "_node";
     obj_address_ = address + "_obj";
 
@@ -193,9 +197,11 @@ inline void Sink<T>::bind(const std::string &address) {
 template<typename T>
 inline T * Sink<T>::retrieve() {
 
-    //assert(SinkBase<T>::bound_);
+#ifndef NDEBUG
+    // Don't use Asserts because it does not clean shmem
     if (!bound_)
         throw (std::runtime_error("SINK must be bound before shared object is retrieved."));
+#endif
 
     return sh_object_;
 }
@@ -217,6 +223,7 @@ inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t byt
                                  "single time to a single node.");
 
     // Addresses for this block of shared memory
+    address_ = address;
     node_address_ = address + "_node";
     obj_address_ = address + "_obj";
 

@@ -45,7 +45,6 @@ public:
         return (node_ == nullptr ? 0 : node_->write_number());
     }
 
-
 protected:
 
     shmem_t node_shmem_, obj_shmem_;
@@ -199,19 +198,23 @@ public:
 template<typename T>
 inline T * Source<T>::retrieve() {
 
-    //assert(SinkBase<T>::bound_);
+#ifndef NDEBUG
+    // Don't use Asserts because it does not clean shmem
     if (!connected_)
         throw (std::runtime_error("Source must be connected before shared object is retrieved."));
+#endif
 
     return sh_object_;
 }
 
 template<typename T>
-inline T Source<T>::clone() const {
+inline T  Source<T>::clone() const {
 
-    //assert(SinkBase<T>::bound_);
+#ifndef NDEBUG
+    // Don't use Asserts because it does not clean shmem
     if (!connected_)
         throw (std::runtime_error("Source must be connected before shared object is cloned."));
+#endif
 
     return *sh_object_;
 }

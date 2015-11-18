@@ -45,7 +45,7 @@ void PositionDetector::connectToNode() {
 
     // Bind to sink sink node and create a shared position
     position_sink_.bind(position_sink_address_);
-    shared_position_ = *position_sink_.retrieve();
+    shared_position_ = position_sink_.retrieve();
 }
 
 bool PositionDetector::process() {
@@ -76,7 +76,7 @@ bool PositionDetector::process() {
     // Wait for sources to read
     position_sink_.wait();
 
-    shared_position_ = internal_position_;
+    *shared_position_ = internal_position_;
 
     // Tell sources there is new data
     position_sink_.post();

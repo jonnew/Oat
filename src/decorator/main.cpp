@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
             print_sample_number = true;
         }
 
-        if (variable_map.count("samplecode")) {
+        if (variable_map.count("sample-code")) {
             encode_sample_number = true;
         }
 
