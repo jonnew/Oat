@@ -40,6 +40,11 @@ public:
     NodeState wait();
     void post();
 
+    uint64_t write_number() const {
+        return (node_ == nullptr ? 0 : node_->write_number());
+    }
+
+
 protected:
 
     shmem_t node_shmem_, obj_shmem_;

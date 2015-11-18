@@ -5,21 +5,22 @@ case "$1" in
 	run)
 		#oat record -i final -f ./ -n result -F 30 &
 		#sleep 0.1
-		oat record -p pix wld -f ./ -n result &
+		#oat record -p pix wld -f ./ -n result &
+		#sleep 0.1
+		#oat posifilt homo posi wld -c config.toml -k homo &
+
+		#sleep 0.1
+		#oat view final &
+		#sleep 0.1
+		#oat decorate raw final -p pix -S -s -R &
+		#sleep 0.1
+		#oat posifilt region posi pix -c config.toml -k region &
+		#sleep 0.1
+		#oat posifilt kalman det posi -c config.toml -k kalman &
 		sleep 0.1
-		oat posifilt homo posi wld -c config.toml -k homo &
+		oat posidet hsv bac det -c config.toml -k hsv --tune &
 		sleep 0.1
-		oat view final &
-		sleep 0.1
-		oat decorate raw final -p pix -S -s -R &
-		sleep 0.1
-		oat posifilt region posi pix -c config.toml -k region &
-		sleep 0.1
-		oat posifilt kalman det posi -c config.toml -k kalman &
-		sleep 0.1
-		oat posidet hsv bac det -c config.toml -k hsv &
-		sleep 0.1
-		oat framefilt bsub roi bac &
+		oat framefilt mog roi bac &
 		sleep 0.1
 		oat framefilt mask raw roi -c config.toml -k mask &
 		sleep 0.1
@@ -39,3 +40,4 @@ case "$1" in
 		exit 1
 
 esac
+

@@ -928,8 +928,12 @@ me:
   issues with X, cinnamon, etc, to the point where I could not even boot my
   computer into anything but text mode. Instead, install the NVIDIA drivers
   using either the package manager (`nvidia-current`) or even more preferably,
-  using the [`device-drivers`'(http://askubuntu.com/a/476659) program or
+  using the [`device-drivers`]'(http://askubuntu.com/a/476659) program or
   equivalent.
+- If you hare getting a `cv::exception` complaining that about
+  `code=30(cudaErrorUnknown) "cudaGetDeviceCount(&device_count)"` or similar,
+  run the affected command as [root one
+  time](https://devtalk.nvidia.com/default/topic/699610/linux/334-21-driver-returns-999-on-cuinit-cuda-/).
 
 To compile OpenCV with CUDA support, add the `-DWITH_CUDA=ON` flag in the cmake
 command below.

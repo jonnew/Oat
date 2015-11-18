@@ -99,9 +99,8 @@ void HomographyGenerator::configure(const std::string& config_file, const std::s
 
 void HomographyGenerator::calibrate(cv::Mat& frame) {
 
-    if (clicked_) {
+    if (clicked_)
         frame = drawMousePoint(frame);
-    }
 
     cv::imshow(name(), frame);
     char command = cv::waitKey(1);
@@ -297,9 +296,9 @@ int HomographyGenerator::selectHomographyMethod() {
             std::cerr << oat::Error("Invalid selection.\n");
             return -1;
         }
-
-        return 0;
     }
+
+    return 0;
 }
 
 void HomographyGenerator::printDataPoints(std::ostream& out) {

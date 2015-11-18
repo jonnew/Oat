@@ -2,7 +2,7 @@
 //* File:   oat decorate main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -32,7 +32,23 @@ namespace po = boost::program_options;
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
-void run(Decorator* decorator) {
+void run(std::shared_ptr<oat::Decorator> decorator) {
+
+    try {
+
+        decorator->connectToNodes();
+
+        while (!quit && !source_eof) {
+            source_eof = decorator->decorateFrame();
+        }
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
+    }
 
     while (!quit && !source_eof) {
         source_eof = decorator->decorateFrame();
@@ -54,12 +70,12 @@ void printUsage(po::options_description options) {
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
+void sigHandler(int) {
     quit = 1;
 }
 
 int main(int argc, char *argv[]) {
-    
+
     std::signal(SIGINT, sigHandler);
 
     // The image source to which the viewer will be attached
@@ -101,7 +117,7 @@ int main(int argc, char *argv[]) {
 
         po::positional_options_description positional_options;
 
-        // If not overridden by explicit --imagesource or --sink, 
+        // If not overridden by explicit --imagesource or --sink,
         // last positional arguments are imagesource and sink in that order
         positional_options.add("framesource", 1);
         positional_options.add("framesink", 1);
@@ -127,10 +143,10 @@ int main(int argc, char *argv[]) {
         }
 
         if (variable_map.count("version")) {
-            std::cout << "Oat Decorator, version " 
+            std::cout << "Oat Decorator, version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
@@ -148,7 +164,7 @@ int main(int argc, char *argv[]) {
             std::cout <<  oat::Error("At least a single FRAME_SINK must be specified.\n");
             return -1;
         }
-        
+
         if (variable_map.count("position-sources")) {
             position_sources = variable_map["position-sources"].as< std::vector<std::string> >();
         }
@@ -164,7 +180,7 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("samplecode")) {
             encode_sample_number = true;
         }
-        
+
         if (variable_map.count("region")) {
             print_region = true;
         }
@@ -178,37 +194,39 @@ int main(int argc, char *argv[]) {
     }
 
     // Make the decorator
-    Decorator decorator(position_sources, frame_source, frame_sink);
-    decorator.set_print_timestamp(print_timestamp);
-    decorator.set_print_sample_number(print_sample_number);
-    decorator.set_encode_sample_number(encode_sample_number);
-    decorator.set_print_region(print_region);
-    
+    auto decorator = std::make_shared<oat::Decorator>(position_sources, frame_source, frame_sink);
+    decorator->set_print_timestamp(print_timestamp);
+    decorator->set_print_sample_number(print_sample_number);
+    decorator->set_encode_sample_number(encode_sample_number);
+    decorator->set_print_region(print_region);
+
      // Tell user
-    std::cout << oat::whoMessage(decorator.get_name(),
+    std::cout << oat::whoMessage(decorator->name(),
             "Listening to source " + oat::sourceText(frame_source) + ".\n")
-            << oat::whoMessage(decorator.get_name(),
+            << oat::whoMessage(decorator->name(),
             "Steaming to sink " + oat::sinkText(frame_sink) + ".\n")
-            << oat::whoMessage(decorator.get_name(),
+            << oat::whoMessage(decorator->name(),
             "Press CTRL+C to exit.\n");
 
     try {
-        
+
         // Infinite loop until ctrl-c or end of stream signal
-        run(&decorator);
+        run(decorator);
 
         // Tell user
-        std::cout << oat::whoMessage(decorator.get_name(), "Exiting.\n");
+        std::cout << oat::whoMessage(decorator->name(), "Exiting.\n");
 
         // Exit
         return 0;
 
-    } catch (const std::runtime_error ex) {
-        std::cerr << oat::whoError(decorator.get_name(), ex.what()) << "\n";
-    } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(decorator.get_name(), ex.what()) << "\n";
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::whoError(decorator->name(), ex.what()) << "\n";
+    } catch (const cv::Exception &ex) {
+        std::cerr << oat::whoError(decorator->name(), ex.what()) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(decorator->name(), ex.what()) << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(decorator.get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(decorator->name(), "Unknown exception.\n");
     }
 
     // Exit failure

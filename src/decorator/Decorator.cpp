@@ -2,7 +2,7 @@
 //* File:   Decorator.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,100 +17,122 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include "Decorator.h"
-
 #include <string>
+#include <tuple>
+#include <vector>
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <opencv2/opencv.hpp>
 #include <ctime>
 #include <cmath>
 
-Decorator::Decorator(const std::vector<std::string>& position_source_names,
-        const std::string& frame_source_name,
-        const std::string& frame_sink_name) :
-  name("decorator[" + frame_source_name + "->" + frame_sink_name + "]")
-, frame_source(frame_source_name)
-, frame_read_success(false)
-, frame_sink(frame_sink_name)
-, number_of_position_sources(position_source_names.size())
-, position_read_required(number_of_position_sources)
-, sources_eof(false)
-, decorate_position(true)
-, print_region(false)
-, print_timestamp(false)
-, print_sample_number(false)
-, encode_sample_number(false)
-, font_color(0, 255, 0) {
+#include "../../lib/datatypes/Position2D.h"
 
-    if (!position_source_names.empty()) {
-        for (auto &source_name : position_source_names) {
+#include "Decorator.h"
 
-            position_sources.push_back(new oat::SMClient<oat::Position2D>(source_name));
-            source_positions.push_back(new oat::Position2D(source_name));
+namespace oat {
+
+Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
+                     const std::string &frame_source_address,
+                     const std::string &frame_sink_address) :
+  name_("decorator[" + frame_sink_address + "->" + frame_sink_address + "]")
+, frame_source_address_(frame_source_address)
+, frame_sink_address_(frame_sink_address)
+{
+
+    if (!position_source_addresses.empty()) {
+        for (auto &addr : position_source_addresses) {
+
+            oat::Position2D pos(addr);
+
+            auto t = std::make_tuple(std::move(addr),
+                                     std::move(pos),
+                                     new oat::Source<oat::Position2D>());
+
+            position_sources_.push_back(t);
         }
     } else {
         decorate_position = false;
     }
-    
-    position_read_required.set();
 }
 
 Decorator::~Decorator() {
 
-    // Release resources
-    for (auto &value : position_sources) {
-        delete value;
-    }
-    
-    for (auto &value : source_positions) {
-        delete value;
-    }
+    // TODO: Necessary? Vectors manage their own contents; no?
+    for (auto &pos : position_sources_)
+        delete std::get<2>(pos);
+}
+
+void Decorator::connectToNodes() {
+
+    // Connect to source node and retrieve cv::Mat parameters
+    frame_source_.connect(frame_source_address_);
+    oat::Source<oat::SharedCVMat>::MatParameters param =
+            frame_source_.parameters();
+
+    // Connect to position source nodes
+    for (auto &pos : position_sources_)
+        std::get<2>(pos)->connect(std::get<0>(pos));
+
+    // Bind to sink sink node and create a shared cv::Mat
+    frame_sink_.bind(frame_sink_address_, param.bytes);
+    shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
 }
 
 bool Decorator::decorateFrame() {
 
-    // Make sure all sources are still running
-    sources_eof |= (frame_source.getSourceRunState() 
-        == oat::SinkState::END);
+    // 1. Get frame
+    // START CRITICAL SECTION //
+    ////////////////////////////
 
-    for (int i = 0; i < number_of_position_sources; i++) {
+    // Wait for sink to write to node
+    if (frame_source_.wait() == oat::NodeState::END )
+        return true;
 
-        sources_eof |= (position_sources[i]->getSourceRunState()
-                == oat::SinkState::END);
+    // Clone the shared frame
+    internal_frame_ = frame_source_.clone();
+
+    // Tell sink it can continue
+    frame_source_.post();
+
+    ////////////////////////////
+    //  END CRITICAL SECTION  //
+
+    // 2. Get positions
+    for (auto &pos : position_sources_) {
+
+        // START CRITICAL SECTION //
+        ////////////////////////////
+        if (std::get<2>(pos)->wait() == oat::NodeState::END )
+            return true;
+
+        std::get<1>(pos) = std::get<2>(pos)->clone();
+
+        std::get<2>(pos)->post();
+        ////////////////////////////
+        //  END CRITICAL SECTION  //
     }
-    
-    // Get the image to be decorated
-    if (!frame_read_success) {
-        frame_read_success = frame_source.getSharedMat(current_frame);
-    }
-    
-    boost::dynamic_bitset<>::size_type i = position_read_required.find_first();
 
-    // Get current positions
-    while (i < number_of_position_sources) {
+    // Decorate frame
+    drawSymbols();
 
-        position_read_required[i] =
-                !position_sources[i]->getSharedObject(*source_positions[i]);
-        
-        i = position_read_required.find_next(i);
-        
-    }
+    // START CRITICAL SECTION //
+    ////////////////////////////
 
-    // If we have not finished reading _any_ of the clients, we cannot proceed
-    if (frame_read_success && position_read_required.none()) {
+    // Wait for sources to read
+    frame_sink_.wait();
 
-        // Reset the frame and position client read counter
-        frame_read_success = false;
-        position_read_required.set();
+    // Copy data to shared frame
+    memcpy(shared_frame_.data, internal_frame_.data,
+            internal_frame_.total() * internal_frame_.elemSize());
 
-        // Decorated image
-        drawSymbols();
+    // Tell sources there is new data
+    frame_sink_.post();
 
-        // Serve the finished product
-        frame_sink.pushMat(current_frame, frame_source.get_current_sample_number());
-    }
-    
-    return sources_eof;
+    ////////////////////////////
+    //  END CRITICAL SECTION  //
+
+    // None of the sink's were at the END state
+    return false;
 }
 
 void Decorator::drawSymbols() {
@@ -119,67 +141,63 @@ void Decorator::drawSymbols() {
         drawPosition();
         drawHeading();
         drawVelocity();
-        
-        if (print_region) {
+
+        if (print_region)
             printRegion();
-        }
     }
 
-    if (print_timestamp) {
+    if (print_timestamp)
         printTimeStamp();
-    }
 
-    if (print_sample_number) {
+    if (print_sample_number)
         printSampleNumber();
-    }
 
-    if (encode_sample_number) {
+    if (encode_sample_number)
         encodeSampleNumber();
-    }
 }
 
 void Decorator::drawPosition() {
 
-    for (auto position : source_positions) {
-        if (position->position_valid) {
-            cv::circle(current_frame, position->position, position_circle_radius, cv::Scalar(0, 0, 255), 2);
+    for (auto pos : position_sources_) {
+        if (std::get<1>(pos).position_valid) {
+            cv::circle(internal_frame_, std::get<1>(pos).position, position_circle_radius, cv::Scalar(0, 0, 255), 2);
         }
     }
 }
 
 void Decorator::drawHeading() {
-    for (auto position : source_positions) {
-        if (position->position_valid && position->heading_valid) {
-            cv::Point2d start = position->position - (heading_line_length * position->heading);
-            cv::Point2d end = position->position + (heading_line_length * position->heading);
+    for (auto pos : position_sources_) {
+        if (std::get<1>(pos).position_valid && std::get<1>(pos).heading_valid) {
+            cv::Point2d start = std::get<1>(pos).position - (heading_line_length * std::get<1>(pos).heading);
+            cv::Point2d end = std::get<1>(pos).position + (heading_line_length * std::get<1>(pos).heading);
 
             // Draw arrow
-            cv::line(current_frame, start, end, cv::Scalar(255, 0, 0), 2, 8);
+            cv::line(internal_frame_, start, end, cv::Scalar(255, 0, 0), 2, 8);
             double angle = std::atan2((double) start.y - end.y, (double) start.x - end.x);
             start.x = end.x + heading_arrow_length * std::cos(angle + PI / 4);
             start.y = end.y + heading_arrow_length * std::sin(angle + PI / 4);
-            cv::line(current_frame, start, end, cv::Scalar(255, 0, 0), 2, 8);
+            cv::line(internal_frame_, start, end, cv::Scalar(255, 0, 0), 2, 8);
             start.x = end.x + heading_arrow_length * std::cos(angle - PI / 4);
             start.y = end.y + heading_arrow_length * std::sin(angle - PI / 4);
-            cv::line(current_frame, start, end, cv::Scalar(255, 0, 0), 2, 8);
+            cv::line(internal_frame_, start, end, cv::Scalar(255, 0, 0), 2, 8);
         }
     }
 }
 
 void Decorator::drawVelocity() {
-    for (auto position : source_positions) {
-        if (position->velocity_valid && position->position_valid) {        
-            cv::Point2d end = position->position + (velocity_scale_factor * position->velocity);
-            cv::line(current_frame, position->position, end, cv::Scalar(0, 255, 0), 2, 8);
+    for (auto pos : position_sources_) {
+        if (std::get<1>(pos).velocity_valid && std::get<1>(pos).position_valid) {
+            cv::Point2d end = std::get<1>(pos).position + (velocity_scale_factor * std::get<1>(pos).velocity);
+            cv::line(internal_frame_, std::get<1>(pos).position, end, cv::Scalar(0, 255, 0), 2, 8);
         }
     }
 }
 
 void Decorator::printRegion() {
-    for (auto position : source_positions) {
-        if (position->region_valid) {          
-            cv::Point text_origin(current_frame.cols - 100, 20);
-            cv::putText(current_frame, "Region: " + std::string(position->region), text_origin, 1, font_scale, font_color);
+    for (auto pos : position_sources_) {
+        if (std::get<1>(pos).region_valid) {
+            cv::Point text_origin(internal_frame_.cols - 100, 20);
+            cv::putText(internal_frame_, "Region: " + std::string(std::get<1>(pos).region), text_origin, 1, font_scale, font_color);
         }
     }
 }
@@ -195,42 +213,41 @@ void Decorator::printTimeStamp() {
 
     std::strftime(buffer, 80, "%c", time_info);
 
-    cv::Point text_origin(current_frame.cols - 230, current_frame.rows - 10);
-    cv::putText(current_frame, std::string(buffer), text_origin, 1, font_scale, font_color);
+    cv::Point text_origin(internal_frame_.cols - 230, internal_frame_.rows - 10);
+    cv::putText(internal_frame_, std::string(buffer), text_origin, 1, font_scale, font_color);
 }
 
 void Decorator::printSampleNumber() {
 
-    cv::Point text_origin(10, current_frame.rows - 10);
-    cv::putText(current_frame, 
-                std::to_string(frame_source.get_current_sample_number()), 
-                text_origin, 
-                1, 
-                font_scale, 
+    cv::Point text_origin(10, internal_frame_.rows - 10);
+    cv::putText(internal_frame_,
+                std::to_string(frame_source_.write_number()),
+                text_origin,
+                1,
+                font_scale,
                 font_color);
 }
 
 /**
  * Encode the current sample number into the first row of the matrix
  */
-
 void Decorator::encodeSampleNumber() {
 
-    uint32_t sample_number = frame_source.get_current_sample_number();
+    uint64_t sample_number = frame_source_.write_number();
 
     int column = 0;
     for (int shift = 0; shift < 32; shift++) {
 
-        cv::Mat sub_square = current_frame.colRange(column, column + encode_bit_size).rowRange(0, encode_bit_size);
+        cv::Mat sub_square = internal_frame_.colRange(column, column + encode_bit_size).rowRange(0, encode_bit_size);
 
         if (sample_number & 0x1) {
 
-            cv::Mat true_mat(encode_bit_size, encode_bit_size, current_frame.type(), CV_RGB(255, 255, 255));
+            cv::Mat true_mat(encode_bit_size, encode_bit_size, internal_frame_.type(), CV_RGB(255, 255, 255));
             true_mat.copyTo(sub_square);
 
         } else {
 
-            cv::Mat false_mat = cv::Mat::zeros(encode_bit_size, encode_bit_size, current_frame.type());
+            cv::Mat false_mat = cv::Mat::zeros(encode_bit_size, encode_bit_size, internal_frame_.type());
             false_mat.copyTo(sub_square);
         }
 
@@ -238,3 +255,5 @@ void Decorator::encodeSampleNumber() {
         column += encode_bit_size;
     }
 }
+
+} /* namespace oat */

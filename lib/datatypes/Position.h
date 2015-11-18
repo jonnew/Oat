@@ -37,6 +37,7 @@ namespace oat {
 
         Position() { };
 
+        // TODO: should label version be explicit?
         Position(const std::string& label) :
             label_{*label.data()} {
         }
