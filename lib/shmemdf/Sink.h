@@ -20,7 +20,6 @@
 #ifndef OAT_SINK_H
 #define	OAT_SINK_H
 
-#include <iostream>
 #include <string>
 #include <memory>
 #include <boost/interprocess/managed_shared_memory.hpp>
