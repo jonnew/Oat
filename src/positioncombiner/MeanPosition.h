@@ -2,7 +2,7 @@
 //* File:   MeanPosition.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,45 +17,53 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef MEANPOSITION_H
-#define	MEANPOSITION_H
+#ifndef OAT_MEANPOSITION_H
+#define	OAT_MEANPOSITION_H
+
+#include <string>
+#include <vector>
 
 #include "PositionCombiner.h"
+
+namespace oat {
 
 /**
  * A mean position combiner.
  */
 class MeanPosition : public PositionCombiner {
 public:
-    
+
     /**
      * A mean position combiner.
      * A mean position combiner to generate a mean position from 2 or more
      * source positions. Can be used to generate the mean position heading
      * using a specified anchor position as a reference.
-     * @param position_source_names
-     * @param sink_name
+     * @param position_source_addresses A vector of position SOURCE addresses
+     * @param position_sink_address Combined position SINK address
      */
-    MeanPosition(std::vector<std::string> position_source_names, std::string sink_name);
-    
-    void configure(const std::string& config_file, const std::string& config_key);
-    
+    MeanPosition(const std::vector<std::string> &position_source_addresses,
+                 const std::string &position_sink_address);
+
+    void configure(const std::string &config_file,
+                   const std::string &config_key) override;
+
 private:
 
     /**
      * Calculate the mean of SOURCE positions.
      * @param sources SOURCE positions to combine
-     * @return mean position
+     * @param combined_position Combined position output
      */
-    oat::Position2D combinePositions(const std::vector<oat::Position2D*>& sources);
-    
-    // Should a heading be generated?
-    bool generate_heading;
-    
-    // SOURCE position to be used ad an anchor when calculating headings
-    int64_t heading_anchor_idx;
+    void combine(const std::vector<oat::Position2D>& source_positions,
+                 oat::Position2D &combined_position) override;
 
+    /// Should a heading be generated?
+    bool generate_heading_ {false};
+
+    /// SOURCE position to be used ad an anchor when calculating heading
+    int64_t heading_anchor_idx_ {0};
 };
 
-#endif	/* MEANPOSITION2D_H */
+}      /* namespace oat */
+#endif /* OAT_MEANPOSITION_H */
 

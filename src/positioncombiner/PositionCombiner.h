@@ -2,7 +2,7 @@
 //* File:   PositionCombiner.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,101 +17,64 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef POSITIONCOMBINER_H
-#define	POSITIONCOMBINER_H
+#ifndef OAT_POSITIONCOMBINER_H
+#define	OAT_POSITIONCOMBINER_H
 
 #include <string>
-#include <boost/dynamic_bitset.hpp>
+#include <vector>
+#include <utility>
 
-#include "../../lib/shmem/SMServer.h"
-#include "../../lib/shmem/SMClient.h"
-#include "../../lib/datatypes/Position.h"
+#include "../../lib/shmemdf/Source.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/datatypes/Position2D.h"
+
+namespace oat {
 
 /**
  * Abstract position combiner.
  * All concrete position combiner types implement this ABC.
  */
-class PositionCombiner { 
+class PositionCombiner {
+
 public:
+
+    using PositionSource = std::pair< std::string,
+                                      oat::Source<oat::Position2D>* >;
+    using pvec_size_t = std::vector<PositionSource>::size_type;
 
     /**
      * Abstract position combiner.
      * All concrete position combiner types implement this ABC.
-     * @param position_sources A vector of position SOURCE names
-     * @param sink Combined position SINK name
+     * @param position_source_addresses A vector of position SOURCE addresses
+     * @param position_sink_address Combined position SINK address
      */
-    PositionCombiner(std::vector<std::string> position_source_names, std::string sink_name) :
-      name("posicom[" + position_source_names[0] + "...->" + sink_name + "]") 
-    , position_sink(sink_name)
-    , number_of_position_sources(position_source_names.size())
-    , position_read_required(number_of_position_sources)
-    , sources_eof(false) {
-         
-        for (auto &name : position_source_names) {
-            
-            position_sources.push_back(new oat::SMClient<oat::Position2D>(name));
-            source_positions.push_back(new oat::Position2D); 
-        }
-        
-        position_read_required.set();
-    }
+    PositionCombiner(const std::vector<std::string> &position_source_addresses,
+                     const std::string &position_sink_address);
 
-    ~PositionCombiner() {
+    virtual ~PositionCombiner();
 
-        // Release resources
-        for (auto &value : position_sources) {
-            delete value;
-        }
-
-        for (auto &value : source_positions) {
-            delete value;
-        }
-    }
+    /**
+     * Position combiner SOURCEs must be able to connect to a NODEs from
+     * which to receive positions and a SINK to send combined positions.
+     */
+    virtual void connectToNodes(void);
 
     /**
      * Obtain positions from all SOURCES. Combine positions. Publish combined position
      * to SINK.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
-    bool process() {
+    bool process(void);
 
-        // Make sure all sources are still running
-        for (int i = 0; i < number_of_position_sources; i++) {
-            
-            sources_eof |= (position_sources[i]->getSourceRunState()
-                    == oat::SinkState::END);
-        }
+    std::string name(void) const { return name_; }
 
-        boost::dynamic_bitset<>::size_type i = position_read_required.find_first();
-
-        while (i < number_of_position_sources) {
-
-            position_read_required[i] =
-                    !position_sources[i]->getSharedObject(*source_positions[i]);
-
-            i = position_read_required.find_next(i);
-        }
-
-        // If we have not finished reading _any_ of the clients, we cannot proceed
-        if (position_read_required.none()) {
-
-            // Reset the position client read counter
-            position_read_required.set();
-            combined_position = combinePositions(source_positions);
-            position_sink.pushObject(combined_position, position_sources[0]->get_current_time_stamp());
-        }
-
-        return sources_eof;
-    }
-
-    std::string get_name(void) const { return name; }
-    
     /**
      * Configure position combiner parameters.
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    virtual void configure(const std::string& config_file, const std::string& config_key) = 0;
+    virtual void configure(const std::string &config_file,
+                           const std::string &config_key) = 0;
 
 protected:
 
@@ -120,32 +83,33 @@ protected:
      * @param sources SOURCE position servers
      * @return combined position
      */
-    virtual oat::Position2D combinePositions(const std::vector<oat::Position2D*>& sources) = 0;
-    
+    virtual void combine(const std::vector<oat::Position2D>& source_positions,
+                         oat::Position2D &combined_position) = 0;
+
     /**
      * Get the number of SOURCE positions.
      * @return number of SOURCE positions
      */
-    int get_number_of_sources(void) const {return number_of_position_sources; };
-    
+    int num_sources(void) const {return position_sources_.size(); };
+
 private:
-    
+
     // Combiner name
-    std::string name;
-    
+    std::string name_;
+
     // Position SOURCES object for un-combined positions
-    std::vector<oat::Position2D* > source_positions; // Positions to be combined
-    std::vector<oat::SMClient<oat::Position2D>* > position_sources; // Position SOURCES
-    boost::dynamic_bitset<>::size_type number_of_position_sources;
-    boost::dynamic_bitset<> position_read_required;
-    bool sources_eof;
+    std::vector<oat::Position2D> positions_;
+    std::vector<PositionSource> position_sources_;
 
     // Combined position
-    oat::Position2D combined_position;
-    
+    oat::Position2D internal_position_;
+
     // Position SINK object for publishing combined position
-    oat::SMServer<oat::Position2D> position_sink;
+    oat::Position2D * shared_position_;
+    const std::string position_sink_address_;
+    oat::Sink<oat::Position2D> position_sink_;
 };
 
-#endif	// POSITIONCOMBINER_H
+}      /* namespace oat */
+#endif	/* OAT_POSITIONCOMBINER_H */
 

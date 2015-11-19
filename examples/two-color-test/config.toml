@@ -14,7 +14,7 @@ trigger_source = 0                      # GPIO pin that trigger will be sent to
 
 # -- Post record processing --
 [video]
-frame_rate = 100.0                      # Hz
+frame_rate = 10.0                      # Hz
 
 [mask]
 mask = "./mask_loose.png"
@@ -46,7 +46,7 @@ heading_anchor = 0                      # Position to use as heading anchor
 dt = 0.03333333                         # Real-world sample period, seconds
                                         # In this case, this is from frame rate of VT1 video
                                         # which is 30 FPS
-not_found_timeout = 10.0                # Seconds
+timeout = 10.0                          # Seconds
 sigma_accel = 1000.0                    # Pixels/sec^2
 sigma_noise = 7.0                       # Noise measurement (pixels)
 tune = true                             # Use the GUI to tweak parameters

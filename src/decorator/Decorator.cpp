@@ -34,7 +34,7 @@ namespace oat {
 Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
                      const std::string &frame_source_address,
                      const std::string &frame_sink_address) :
-  name_("decorator[" + frame_sink_address + "->" + frame_sink_address + "]")
+  name_("decorator[" + frame_source_address+ "->" + frame_sink_address + "]")
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
@@ -57,7 +57,7 @@ Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
 
 Decorator::~Decorator() {
 
-    // TODO: Necessary? Vectors manage their own contents; no?
+    // Delete the memory pointed to by `new oat::Source<oat::Position2D>()`
     for (auto &pos : position_sources_)
         delete std::get<2>(pos);
 }

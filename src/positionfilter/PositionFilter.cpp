@@ -48,8 +48,7 @@ bool PositionFilter::process() {
     ////////////////////////////
 
     // Wait for sink to write to node
-    node_state_ = position_source_.wait();
-    if (node_state_ == oat::NodeState::END)
+    if (position_source_.wait() == oat::NodeState::END)
         return true;
 
     // Clone the shared frame

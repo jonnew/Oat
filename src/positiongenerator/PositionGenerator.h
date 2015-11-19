@@ -106,7 +106,7 @@ private:
     T internal_position_;
 
     // Shared position
-    T shared_position_;
+    T * shared_position_;
 
     // The test position SINK
     std::string position_sink_address_;

@@ -43,7 +43,7 @@ void PositionDetector::connectToNode() {
     // Connect to source node and retrieve cv::Mat parameters
     frame_source_.connect(frame_source_address_);
 
-    // Bind to sink sink node and create a shared position
+    // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_);
     shared_position_ = position_sink_.retrieve();
 }
@@ -54,8 +54,7 @@ bool PositionDetector::process() {
     ////////////////////////////
 
     // Wait for sink to write to node
-    node_state_ = frame_source_.wait();
-    if (node_state_ == oat::NodeState::END)
+    if (frame_source_.wait() == oat::NodeState::END)
         return true;
 
     // Clone the shared frame

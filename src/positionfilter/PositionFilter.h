@@ -86,7 +86,6 @@ private:
 
     // Un-filtered position SOURCE
     const std::string position_source_address_;
-    oat::NodeState node_state_;
     oat::Source<oat::Position2D> position_source_;
 
     // Internal, mutable position

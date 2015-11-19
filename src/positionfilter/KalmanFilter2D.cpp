@@ -212,7 +212,7 @@ void KalmanFilter2D::initializeStaticMatracies() {
 void KalmanFilter2D::tune() {
 
     // TODO: The display output of this tuning feature is pretty useless. The constant
-    // rescaling makes it very difficutl to get a sense of the absolute accuracy of
+    // rescaling makes it very difficult to get a sense of the absolute accuracy of
     // filtering and how parameters affect this over time.
     if (tuning_on) {
 

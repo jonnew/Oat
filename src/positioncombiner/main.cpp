@@ -2,7 +2,7 @@
 //* File:   oat posicom main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -55,10 +55,22 @@ void sigHandler(int) {
 }
 
 // Processing loop
-void run(const std::shared_ptr<PositionCombiner>& combiner) {
+void run(const std::shared_ptr<oat::PositionCombiner>& combiner) {
 
-    while (!quit && !source_eof) { 
-        source_eof = combiner->process(); 
+    try {
+
+        combiner->connectToNodes();
+
+        while (!quit && !source_eof) {
+            source_eof = combiner->process();
+        }
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
     }
 }
 
@@ -93,7 +105,7 @@ int main(int argc, char *argv[]) {
                 ;
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("type", po::value<std::string>(&type), 
+                ("type", po::value<std::string>(&type),
                 "Type of test position combiner to use.")
                 ("sources", po::value< std::vector<std::string> >(),
                 "The names the SOURCES supplying the Position2D objects to be combined.")
@@ -127,8 +139,8 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("version")) {
             std::cout << "Oat Position Combiner version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
@@ -158,7 +170,7 @@ int main(int argc, char *argv[]) {
 
             // If not overridden by explicit --sink, last positional argument is the sink.
             sink = sources.back();
-            sources.pop_back(); 
+            sources.pop_back();
         }
 
         if ((variable_map.count("config-file") && !variable_map.count("config-key")) ||
@@ -179,13 +191,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    std::shared_ptr<PositionCombiner> combiner;
+    std::shared_ptr<oat::PositionCombiner> combiner;
 
     // Refine component type
     switch (type_hash[type]) {
         case 'a':
         {
-            combiner = std::make_shared<MeanPosition>(sources, sink);
+            combiner = std::make_shared<oat::MeanPosition>(sources, sink);
             break;
         }
         default:
@@ -203,36 +215,36 @@ int main(int argc, char *argv[]) {
             combiner->configure(config_file, config_key);
 
         // Tell user
-        std::cout << oat::whoMessage(combiner->get_name(), "Listening to sources ");
+        std::cout << oat::whoMessage(combiner->name(), "Listening to sources ");
         for (auto s : sources)
             std::cout << oat::sourceText(s) << " ";
         std::cout << ".\n"
-                << oat::whoMessage(combiner->get_name(),
+                << oat::whoMessage(combiner->name(),
                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(combiner->get_name(),
+                << oat::whoMessage(combiner->name(),
                 "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or server end-of-stream signal
         run(combiner);
 
         // Tell user
-        std::cout << oat::whoMessage(combiner->get_name(), "Exiting.\n");
+        std::cout << oat::whoMessage(combiner->name(), "Exiting.\n");
 
         // Exit
         return 0;
 
-    } catch (const cpptoml::parse_exception& ex) {
-        std::cerr << oat::whoError(combiner->get_name(), "Failed to parse configuration file " + config_file + "\n")
-                  << oat::whoError(combiner->get_name(), ex.what())
-                  << "\n";
-    } catch (const std::runtime_error ex) {
-        std::cerr << oat::whoError(combiner->get_name(),ex.what())
-                  << "\n";
-    } catch (const cv::Exception ex) {
-        std::cerr << oat::whoError(combiner->get_name(), ex.what())
-                  << "\n";
+    } catch (const cpptoml::parse_exception &ex) {
+        std::cerr << oat::whoError(combiner->name(),
+                     "Failed to parse configuration file " + config_file + "\n")
+                  << oat::whoError(combiner->name(), ex.what()) << "\n";
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::whoError(combiner->name(), ex.what()) << "\n";
+    } catch (const cv::Exception &ex) {
+        std::cerr << oat::whoError(combiner->name(), ex.what()) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(combiner->name(), ex.what()) << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(combiner->get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(combiner->name(), "Unknown exception.\n");
     }
 
     // Exit failure

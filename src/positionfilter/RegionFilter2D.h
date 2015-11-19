@@ -56,9 +56,6 @@ public:
 
 private:
 
-    // Have the region contours been configured
-    bool regions_configured {false};
-
     // Regions
     std::vector< std::string > region_ids;
     std::vector< std::vector<cv::Point> * > region_contours;

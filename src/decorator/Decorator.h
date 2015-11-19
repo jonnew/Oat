@@ -37,6 +37,7 @@ static const constexpr double PI {3.141592653589793238463};
  * Adds positional, sample, and date information to frames.
  */
 class Decorator {
+    
 public:
 
     using PositionSource = std::tuple< std::string,

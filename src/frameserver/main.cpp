@@ -39,6 +39,20 @@ namespace po = boost::program_options;
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
+void printUsage(po::options_description options) {
+    std::cout << "Usage: frameserve [INFO]\n"
+              << "   or: frameserve TYPE SINK [CONFIGURATION]\n"
+              << "Serve image stream to a frame SINK\n\n"
+              << "TYPE:\n"
+              << "  wcam: Onboard or USB webcam.\n"
+              << "  gige: Point Grey GigE camera.\n"
+              << "  file: Video from file (*.mpg, *.avi, etc.).\n\n"
+              << "SINK:\n"
+              << "  User-supplied name of the memory segment to publish frames "
+              << "to (e.g. raw).\n\n"
+              << options << "\n";
+}
+
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int) {
     quit = 1;
@@ -63,19 +77,7 @@ void run(const std::shared_ptr<oat::FrameServer>& server) {
     }
 }
 
-void printUsage(po::options_description options) {
-    std::cout << "Usage: frameserve [INFO]\n"
-              << "   or: frameserve TYPE SINK [CONFIGURATION]\n"
-              << "Serve image stream to a frame SINK\n\n"
-              << "TYPE:\n"
-              << "  wcam: Onboard or USB webcam.\n"
-              << "  gige: Point Grey GigE camera.\n"
-              << "  file: Video from file (*.mpg, *.avi, etc.).\n\n"
-              << "SINK:\n"
-              << "  User-supplied name of the memory segment to publish frames "
-              << "to (e.g. raw).\n\n"
-              << options << "\n";
-}
+
 
 int main(int argc, char *argv[]) {
 

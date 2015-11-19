@@ -2,7 +2,7 @@
 //* File:   Recorder.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -30,6 +30,8 @@
 #include "../../lib/utility/make_unique.h"
 
 #include "Recorder.h"
+
+namespace oat {
 
 namespace bfs = boost::filesystem;
 
@@ -60,10 +62,10 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
                 << "attempting to use the current directory instead.\n";
         save_path = bfs::current_path().c_str();
     }
-    
+
     // Start recorder name construction
     name = "recorder[" ;
-    
+
     // Create recording timestamp
     std::time_t raw_time;
     struct tm * time_info;
@@ -79,7 +81,7 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         name += position_source_names[0];
         if (position_source_names.size() > 1)
             name += "..";
-        
+
         for (auto &s : position_source_names) {
 
             position_sources.push_back(std::make_unique<oat::SMClient< oat::Position2D> >(s));
@@ -102,28 +104,28 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
         if (!allow_overwrite) {
             checkFile(posi_fid);
         }
-        
+
         position_fp = fopen(posi_fid.c_str(), "wb");
         if (!position_fp) {
             throw (std::runtime_error("Error: unable to open, " + posi_fid + ".\n"));
         }
 
-        file_stream.reset(new rapidjson::FileWriteStream(position_fp, 
+        file_stream.reset(new rapidjson::FileWriteStream(position_fp,
                 position_write_buffer, sizeof(position_write_buffer)));
         json_writer.Reset(*file_stream);
-        
+
         // Main object, end this object before write flush
         json_writer.StartObject();
-        
+
         // Coordinate system
         // TODO: replace with cmake-managed version
         json_writer.String("oat_version");
         json_writer.String("1.0");
-        
+
         // Complete header object
         json_writer.String("header");
         writePositionFileHeader(date_now, frames_per_second, position_source_names);
-        
+
         // Start data object
         json_writer.String("positions");
         json_writer.StartArray();
@@ -133,9 +135,9 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
     uint32_t idx = 0;
     if (!frame_source_names.empty()) {
 
-        if (!position_source_names.empty()) 
+        if (!position_source_names.empty())
             name += ", ";
-        
+
         name += frame_source_names[0];
         if (frame_source_names.size() > 1)
             name += "..";
@@ -161,10 +163,10 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
 
             video_file_names.push_back(frame_fid);
             frame_sources.push_back(std::make_unique<oat::MatClient>(frame_source_name));
-            
+
             frame_write_buffers.push_back(
                 std::make_unique< boost::lockfree::spsc_queue
-                                < cv::Mat, boost::lockfree::capacity 
+                                < cv::Mat, boost::lockfree::capacity
                                 < FRAME_WRITE_BUFFER_SIZE> > >());
             video_writers.push_back(std::make_unique<cv::VideoWriter>());
 
@@ -175,12 +177,12 @@ Recorder::Recorder(const std::vector<std::string>& position_source_names,
             frame_write_threads.push_back(std::make_unique<std::thread>
                     (&Recorder::writeFramesToFileFromBuffer, this, idx++));
 
-        }    
-    } 
-    
+        }
+    }
+
     frame_read_required.set();
     position_read_required.set();
-    
+
     name +="]";
 }
 
@@ -191,7 +193,7 @@ Recorder::~Recorder() {
     for (auto &value : frame_write_condition_variables) {
         value->notify_one();
     }
-    
+
     // Join all threads
     for (auto &value : frame_write_threads) {
         value->join();
@@ -213,15 +215,15 @@ bool Recorder::writeStreams() {
         sources_eof |= (frame_sources[i]->getSourceRunState()
                 == oat::SinkState::END);
     }
-    
+
     for (int i = 0; i < number_of_position_sources; i++) {
 
         sources_eof |= (position_sources[i]->getSourceRunState()
                 == oat::SinkState::END);
     }
-    
+
     boost::dynamic_bitset<>::size_type i = frame_read_required.find_first();
-    
+
     while (i < number_of_frame_sources) {
 
         // Check if we need to read frame_client_idx, or if the read has been
@@ -229,7 +231,7 @@ bool Recorder::writeStreams() {
         frame_read_required[i] = !frame_sources[i]->getSharedMat(current_frame);
 
         if (!frame_read_required[i]) {
-            
+
             // Push newest frame into client N's queue
             if (frame_write_buffers[i]->push(current_frame) == 0) {
 
@@ -241,35 +243,35 @@ bool Recorder::writeStreams() {
             // Notify a writer thread that there is new data in the queue
             frame_write_condition_variables[i]->notify_one();
         }
-        
+
         i = frame_read_required.find_next(i);
     }
-    
+
     // Position source iterator
     i = position_read_required.find_first();
 
     // Get current positions
     while (i < number_of_position_sources) {
-        
+
         // Check if we need to read position_client_idx, or if the read has been
         // performed already
-        position_read_required[i] = 
+        position_read_required[i] =
                 !position_sources[i]->getSharedObject(*source_positions[i]);
-        
+
         i = position_read_required.find_next(i);
     }
-    
+
     // If we have not finished reading _any_ of the clients, we cannot proceed
     if (frame_read_required.none() && position_read_required.none()) {
-    
+
         // Reset the frame and position client read counter
         position_read_required.set();
         frame_read_required.set();
 
         // Write the frames to file
         writePositionsToFile();
-    } 
-    
+    }
+
     return sources_eof;
 }
 
@@ -303,13 +305,13 @@ void Recorder::writePositionsToFile() {
         int idx = 0;
         for (auto &pos : source_positions) {
 
-            std::string sample_str = 
+            std::string sample_str =
                 std::to_string(position_sources[idx]->get_current_time_stamp());
-            
+
 #ifdef RAPIDJSON_HAS_STDSTRING
             json_writer.String(sample_str);
 #else
-            json_writer.String(sample_str.c_str(), 
+            json_writer.String(sample_str.c_str(),
                     static_cast<rapidjson::SizeType>(sample_str.length()));
 #endif
 
@@ -321,25 +323,25 @@ void Recorder::writePositionsToFile() {
     }
 }
 
-void Recorder::writePositionFileHeader(const std::string& date, 
-        const double sample_rate, 
+void Recorder::writePositionFileHeader(const std::string& date,
+        const double sample_rate,
         const std::vector<std::string>& sources) {
-    
+
     json_writer.StartObject();
-    
+
     json_writer.String("date");
     json_writer.String(date.c_str());
-    
+
     json_writer.String("sample_rate_hz");
     json_writer.Double(sample_rate);
-    
+
     json_writer.String("position_sources");
     json_writer.StartArray();
     for (auto &s : sources) {
         json_writer.String(s.c_str());
     }
     json_writer.EndArray();
-    
+
     json_writer.EndObject();
 
 }
@@ -385,3 +387,5 @@ bool Recorder::checkFile(std::string& file) {
 
     return file_exists;
 }
+
+} /* namespace oat */

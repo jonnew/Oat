@@ -69,6 +69,7 @@ inline SinkBase<T>::~SinkBase() {
 
     // Detach this server from shared mat header
     if (bound_) {
+
         node_->set_sink_state(NodeState::END);
 
         // If the client ref count is 0, memory can be deallocated

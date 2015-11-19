@@ -99,7 +99,6 @@ private:
 
     // Frame source
     const std::string frame_source_address_;
-    oat::NodeState node_state_;
     oat::Source<oat::SharedCVMat> frame_source_;
 
     // Position sink

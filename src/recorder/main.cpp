@@ -2,7 +2,7 @@
 //* File:   oat record main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -41,12 +41,12 @@ void printUsage(po::options_description options) {
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int s) {
+void sigHandler(int) {
     quit = 1;
 }
 
 // Processing loop
-void run(Recorder* recorder) {
+void run(oat::Recorder* recorder) {
 
     while (!quit && !source_eof) {
         source_eof = recorder->writeStreams();
@@ -54,7 +54,7 @@ void run(Recorder* recorder) {
 }
 
 int main(int argc, char *argv[]) {
-    
+
     std::signal(SIGINT, sigHandler);
 
     std::vector<std::string> frame_sources;
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     std::string file_name;
     std::string save_path;
     bool allow_overwrite = false;
-    
+
     int fps;
     bool append_date = false;
 
@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("version")) {
             std::cout << "Oat Recorder version "
                       << Oat_VERSION_MAJOR
-                      << "." 
-                      << Oat_VERSION_MINOR 
+                      << "."
+                      << Oat_VERSION_MINOR
                       << "\n";
             std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
             std::cout << "Licensed under the GPL3.0.\n";
@@ -131,12 +131,12 @@ int main(int argc, char *argv[]) {
             save_path = ".";
             std::cerr << oat::Warn("Warning: Saving files to the current directory.\n");
         }
-        
+
         if (!variable_map.count("filename") ) {
             file_name = "";
             std::cerr << oat::Warn("Warning: No base filename was provided.\n");
         }
-        
+
         if (!variable_map.count("frames-per-second") && variable_map.count("image-sources")) {
             fps = 30;
             std::cerr << oat::Warn("Warning: Video playback speed set to 30 FPS.\n");
@@ -145,35 +145,35 @@ int main(int argc, char *argv[]) {
         // May contain imagesource and sink information!]
         if (variable_map.count("position-sources")) {
             position_sources = variable_map["position-sources"].as< std::vector<std::string> >();
-            
+
             // Assert that all positions sources are unique. If not, remove duplicates, and issue warning.
             std::vector<std::string>::iterator it;
-            it = std::unique (position_sources.begin(), position_sources.end());   
+            it = std::unique (position_sources.begin(), position_sources.end());
             if (it != position_sources.end()) {
-                position_sources.resize(std::distance(position_sources.begin(),it)); 
+                position_sources.resize(std::distance(position_sources.begin(),it));
                 std::cerr << oat::Warn("Warning: duplicate position sources have been removed.\n");
             }
         }
-        
+
         if (variable_map.count("image-sources")) {
             frame_sources = variable_map["image-sources"].as< std::vector<std::string> >();
-            
+
             // Assert that all positions sources are unique. If not, remove duplicates, and issue warning.
             std::vector<std::string>::iterator it;
-            it = std::unique (frame_sources.begin(), frame_sources.end());   
+            it = std::unique (frame_sources.begin(), frame_sources.end());
             if (it != frame_sources.end()) {
-                frame_sources.resize(std::distance(frame_sources.begin(),it)); 
+                frame_sources.resize(std::distance(frame_sources.begin(),it));
                  std::cerr << oat::Warn("Warning: duplicate frame sources have been removed.\n");
             }
         }
-        
+
         if (variable_map.count("date")) {
             append_date = true;
-        } 
-        
+        }
+
         if (variable_map.count("allow-overwrite")) {
             allow_overwrite = true;
-        } 
+        }
 
 
     } catch (std::exception& e) {
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date, fps, allow_overwrite);
+    oat::Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date, fps, allow_overwrite);
 
     // Tell user
     if (!frame_sources.empty()) {
@@ -209,13 +209,13 @@ int main(int argc, char *argv[]) {
 
         std::cout << ".\n";
     }
-    
-    std::cout << oat::whoMessage(recorder.get_name(), 
+
+    std::cout << oat::whoMessage(recorder.get_name(),
                  "Press CTRL+C to exit.\n");
 
     // The business
     try {
-        
+
         // Infinite loop until ctrl-c or end of stream signal
         run(&recorder);
 
@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
 
         // Exit
         return 0;
-        
+
     } catch (const std::runtime_error& ex) {
         std::cerr << oat::whoError(recorder.get_name(), ex.what())
                   << "\n";

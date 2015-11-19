@@ -2,7 +2,7 @@
 //* File:   Recorder.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
-#ifndef RECORDER_H
-#define RECORDER_H
+#ifndef OAT_RECORDER_H
+#define OAT_RECORDER_H
 
 #include <atomic>
 #include <condition_variable>
@@ -35,11 +35,13 @@
 #include "../../lib/shmem/SMClient.h"
 #include "../../lib/datatypes/Position2D.h"
 
+namespace oat {
+
 /**
  * Position and frame recorder.
  */
 class Recorder {
-public: 
+public:
 
     /**
      * Position and frame recorder.
@@ -60,21 +62,21 @@ public:
             const bool overwrite = false);
 
     ~Recorder();
-    
+
     /**
      * Collect frames and positions from SOURCES. Write frames and positions to file.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
     bool writeStreams(void);
-    
+
     /**
      * Get recorder name
-     * @return name 
+     * @return name
      */
     std::string get_name(void) { return name; }
 
 private:
-    
+
     // Name of this recorder
     std::string name;
 
@@ -83,17 +85,17 @@ private:
     std::string file_name;
     const bool append_date;
     const bool allow_overwrite;
-    
+
     // File writer in running state (i.e. all threads should remain responsive for
     // new data coming down the pipeline)
-    std::atomic<bool> running; 
-    
+    std::atomic<bool> running;
+
     // Video files
     const int frames_per_second;
     std::vector< std::string > video_file_names;
     std::vector< std::unique_ptr
                < cv::VideoWriter > > video_writers;
-    
+
     // Position file
     FILE* position_fp;
     char position_write_buffer[65536];
@@ -119,7 +121,7 @@ private:
                < boost::lockfree::spsc_queue
                < cv::Mat, boost::lockfree::capacity
                < FRAME_WRITE_BUFFER_SIZE > > > > frame_write_buffers;
-    
+
     // Position sources
     boost::dynamic_bitset<>::size_type number_of_position_sources;
     std::vector< std::unique_ptr
@@ -128,7 +130,7 @@ private:
     std::vector< std::unique_ptr
                < oat::Position2D > > source_positions;
     boost::dynamic_bitset<> position_read_required;
-    
+
     // SOURCES EOF flag
     bool sources_eof;
 
@@ -145,9 +147,10 @@ private:
     void writeFramesToFileFromBuffer(uint32_t writer_idx);
     void writePositionsToFile(void);
     void writePositionFileHeader(
-        const std::string& date, 
-        const double sample_rate, 
+        const std::string& date,
+        const double sample_rate,
         const std::vector<std::string>& sources);
 };
 
-#endif // RECORDER_H
+}      /* namespace oat */
+#endif /* OAT_RECORDER_H */
