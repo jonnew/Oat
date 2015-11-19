@@ -6,7 +6,7 @@ set (oat-record_SOURCE Recorder.cpp main.cpp)
 
 # Target
 add_executable (oat-record ${oat-record_SOURCE})
-target_link_libraries (oat-record shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
+target_link_libraries (oat-record ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
 	
 # Installation
 install (TARGETS oat-record DESTINATION ../../oat/libexec COMPONENT oat-processors)

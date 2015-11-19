@@ -105,9 +105,6 @@ include_directories (${RAPIDJSON_INCLUDE_DIR})
 # Include shmemdp
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)
 
-# TODO: Deprecated, remove on completion of refactor
-add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmem "${CMAKE_CURRENT_BINARY_DIR}/shmem")
-
 # Oat components
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/cleaner)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/decorator)
@@ -137,7 +134,7 @@ function(add_oat_test name libs)
   add_test(${name}_test ${name}_test)
 endfunction()
 
-# TODO: add this
+# Tests
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
 
 # API documentation

@@ -9,7 +9,7 @@ set (oat-posicom_SOURCE
 
 # Target
 add_executable (oat-posicom ${oat-posicom_SOURCE})
-target_link_libraries (oat-posicom shmem ${OpenCV_LIBS} ${Boost_LIBRARIES})
+target_link_libraries (oat-posicom ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
 # Installation
 install (TARGETS oat-posicom DESTINATION ../../oat/libexec COMPONENT oat-processors)

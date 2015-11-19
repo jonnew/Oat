@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <string>
 #include <csignal>
+#include <memory>
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/IOFormat.h"
@@ -46,10 +47,21 @@ void sigHandler(int) {
 }
 
 // Processing loop
-void run(oat::Recorder* recorder) {
+void run(std::shared_ptr<oat::Recorder>& recorder) {
+    try {
 
-    while (!quit && !source_eof) {
-        source_eof = recorder->writeStreams();
+        recorder->connectToNodes();
+
+        while (!quit && !source_eof) {
+            source_eof = recorder->writeStreams();
+        }
+
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+
+        // Error code 1 indicates a SIGNINT during a call to wait(), which
+        // is normal behavior
+        if (ex.get_error_code() != 1)
+            throw;
     }
 }
 
@@ -185,12 +197,18 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    oat::Recorder recorder(position_sources, frame_sources, save_path, file_name, append_date, fps, allow_overwrite);
+    auto recorder = std::make_shared<oat::Recorder>(position_sources,
+                                                    frame_sources,
+                                                    save_path,
+                                                    file_name,
+                                                    append_date,
+                                                    fps,
+                                                    allow_overwrite);
 
     // Tell user
     if (!frame_sources.empty()) {
 
-        std::cout << oat::whoMessage(recorder.get_name(),
+        std::cout << oat::whoMessage(recorder->name(),
                 "Listening to frame sources ");
 
         for (auto s : frame_sources)
@@ -201,7 +219,7 @@ int main(int argc, char *argv[]) {
 
     if (!position_sources.empty()) {
 
-        std::cout << oat::whoMessage(recorder.get_name(),
+        std::cout << oat::whoMessage(recorder->name(),
                 "Listening to position sources ");
 
         for (auto s : position_sources)
@@ -210,29 +228,29 @@ int main(int argc, char *argv[]) {
         std::cout << ".\n";
     }
 
-    std::cout << oat::whoMessage(recorder.get_name(),
+    std::cout << oat::whoMessage(recorder->name(),
                  "Press CTRL+C to exit.\n");
 
     // The business
     try {
 
         // Infinite loop until ctrl-c or end of stream signal
-        run(&recorder);
+        run(recorder);
 
         // Tell user
-        std::cout << oat::whoMessage(recorder.get_name(), "Exiting.\n");
+        std::cout << oat::whoMessage(recorder->name(), "Exiting.\n");
 
         // Exit
         return 0;
 
-    } catch (const std::runtime_error& ex) {
-        std::cerr << oat::whoError(recorder.get_name(), ex.what())
-                  << "\n";
-    } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(recorder.get_name(), ex.what())
-                  << "\n";
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::whoError(recorder->name(), ex.what()) << "\n";
+    } catch (const cv::Exception &ex) {
+        std::cerr << oat::whoError(recorder->name(), ex.what()) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(recorder->name(), ex.what()) << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(recorder.get_name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(recorder->name(), "Unknown exception.\n");
     }
 
     // Exit failure

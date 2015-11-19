@@ -6,7 +6,7 @@ set (oat-decorate_SOURCE Decorator.cpp main.cpp)
 
 # Target
 add_executable (oat-decorate ${oat-decorate_SOURCE})
-target_link_libraries (oat-decorate shmem ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
+target_link_libraries (oat-decorate ${OpenCV_LIBS} ${Boost_LIBRARIES}) 
 	
 # Installation
 install (TARGETS oat-decorate DESTINATION ../../oat/libexec COMPONENT oat-processors)

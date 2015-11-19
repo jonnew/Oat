@@ -21,6 +21,7 @@
 
 #include <csignal>
 #include <unordered_map>
+#include <memory>
 #include <boost/program_options.hpp>
 #include <boost/interprocess/exceptions.hpp>
 
@@ -76,8 +77,6 @@ void run(const std::shared_ptr<oat::FrameServer>& server) {
             throw;
     }
 }
-
-
 
 int main(int argc, char *argv[]) {
 

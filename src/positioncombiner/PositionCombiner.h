@@ -20,6 +20,7 @@
 #ifndef OAT_POSITIONCOMBINER_H
 #define	OAT_POSITIONCOMBINER_H
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <utility>
@@ -38,8 +39,9 @@ class PositionCombiner {
 
 public:
 
-    using PositionSource = std::pair< std::string,
-                                      oat::Source<oat::Position2D>* >;
+    using PositionSource =
+        std::pair< std::string, std::unique_ptr<oat::Source<oat::Position2D> > >;
+
     using pvec_size_t = std::vector<PositionSource>::size_type;
 
     /**
