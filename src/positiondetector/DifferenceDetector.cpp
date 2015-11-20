@@ -42,7 +42,7 @@ DifferenceDetector::DifferenceDetector(const std::string &frame_source_address,
     set_blur_size(2);
 }
 
-oat::Position2D DifferenceDetector::detectPosition(cv::Mat &frame) {
+void DifferenceDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
 
     if (tuning_on_)
         tune_frame_ = frame.clone();
@@ -54,23 +54,21 @@ oat::Position2D DifferenceDetector::detectPosition(cv::Mat &frame) {
     if (tuning_on_)
          tune_frame_.setTo(0, threshold_frame_ == 0);
 
-    siftContours(threshold_frame_, 
-                 object_position_, 
+    siftContours(threshold_frame_,
+                 position,
                  object_area_,
-                 min_object_area_, 
+                 min_object_area_,
                  max_object_area_);
 
-    tune(tune_frame_);
-
-    return object_position_;
+    tune(tune_frame_, position);
 }
 
 void DifferenceDetector::configure(const std::string& config_file,
                                      const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {"blur", 
-                                      "diff_threshold", 
+    std::vector<std::string> options {"blur",
+                                      "diff_threshold",
                                       "min_area",
                                       "max_area",
                                       "tune"};
@@ -120,23 +118,23 @@ void DifferenceDetector::configure(const std::string& config_file,
 
 }
 
-void DifferenceDetector::tune(cv::Mat &frame) {
+void DifferenceDetector::tune(cv::Mat &frame, const oat::Position2D &position) {
 
     if (tuning_on_) {
         std::string msg = cv::format("Object not found");
 
         // Plot a circle representing found object
-        if (object_position_.position_valid) {
+        if (position.position_valid) {
 
             // TODO: object_area_ is not set, so this will be 0!
             auto radius = std::sqrt(object_area_ / PI);
             cv::Point center;
-            center.x = object_position_.position.x;
-            center.y = object_position_.position.y;
+            center.x = position.position.x;
+            center.y = position.position.y;
             cv::circle(frame, center, radius, cv::Scalar(0, 0, 255), 4);
             msg = cv::format("(%d, %d) pixels",
-                    (int) object_position_.position.x,
-                    (int) object_position_.position.y);
+                    (int) position.position.x,
+                    (int) position.position.y);
         }
 
         int baseline = 0;
@@ -180,7 +178,7 @@ void DifferenceDetector::tune(cv::Mat &frame) {
 //        object_position_.position_valid = false;
 //
 //    if (object_position_.position_valid) {
-//        
+//
 //        // TODO: This is wrong. Look at hsvdetector for efficient and correct
 //        //       implementation
 //        //the largest contour is found at the end of the contours vector
@@ -199,7 +197,7 @@ void DifferenceDetector::tune(cv::Mat &frame) {
 //
 //    if (tuning_on_) {
 //
-//        std::string msg = cv::format("Object not found"); 
+//        std::string msg = cv::format("Object not found");
 //
 //        // Plot a circle representing found object
 //        if (object_position_.position_valid) {
@@ -272,13 +270,13 @@ void DifferenceDetector::createTuningWindows() {
 #endif
 
     // Create sliders and insert them into window
-    cv::createTrackbar("THRESH", tuning_image_title_, 
+    cv::createTrackbar("THRESH", tuning_image_title_,
             &difference_intensity_threshold_, 256);
-    cv::createTrackbar("BLUR", tuning_image_title_, 
+    cv::createTrackbar("BLUR", tuning_image_title_,
             &blur_size_.height, 50, &diffDetectorBlurSliderChangedCallback, this);
-    cv::createTrackbar("MIN AREA", tuning_image_title_, 
+    cv::createTrackbar("MIN AREA", tuning_image_title_,
             &dummy0_, 10000, &diffDetectorMinAreaSliderChangedCallback, this);
-    cv::createTrackbar("MAX AREA", tuning_image_title_, 
+    cv::createTrackbar("MAX AREA", tuning_image_title_,
             &dummy1_, 10000, &diffDetectorMaxAreaSliderChangedCallback, this);
     tuning_windows_created_ = true;
 }

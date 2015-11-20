@@ -37,10 +37,11 @@ class Position2D : public Position {
 
 public:
 
-    Position2D() : Position() { }
-
-    Position2D(const std::string& label) :
-        Position(label) { }
+    Position2D(const std::string &label) :
+      Position(label)
+    {
+        // Nothing
+    }
 
     bool position_valid {false};
     Point2D position;
@@ -59,13 +60,13 @@ public:
 
         writer.StartObject();
 
-        // Name
-        writer.String("ID");
-        writer.String(label_);
+        // Sample number
+        writer.String("samp");
+        writer.Int(sample_);
 
         // Coordinate system
         writer.String("unit");
-        writer.Int(unit_of_length);
+        writer.Int(static_cast<int>(unit_of_length_));
 
         // Position
         writer.String("pos_ok");

@@ -50,7 +50,7 @@ public:
      * @param frame frame to look for object in.
      * @return  detected object position.
      */
-    Position2D detectPosition(cv::Mat &frame) override;
+    void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
 
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
@@ -70,9 +70,6 @@ private:
     // Object detection
     double object_area_;
 
-    // The detected object position
-    Position2D object_position_;
-
     // Detector parameters
     int difference_intensity_threshold_;
     cv::Size blur_size_;
@@ -83,13 +80,12 @@ private:
     // Tuning stuff
     bool tuning_windows_created_ {false};
     const std::string tuning_image_title_;
-    void tune(void);
     cv::Mat tune_frame_;
     void createTuningWindows(void);
     int dummy0_ {0}, dummy1_ {10000};
 
     // Processing functions
-    void tune(cv::Mat &frame);
+    void tune(cv::Mat &frame, const oat::Position2D &position);
     void applyThreshold(cv::Mat &frame);
 };
 

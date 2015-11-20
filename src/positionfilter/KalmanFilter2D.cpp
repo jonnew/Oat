@@ -31,53 +31,53 @@ namespace oat {
 KalmanFilter2D::KalmanFilter2D(const std::string& position_source_address,
                                const std::string& position_sink_address) :
   PositionFilter(position_source_address, position_sink_address)
-, tuning_image_title(position_sink_address + "_tuning")
+, tuning_image_title_(position_sink_address + "_tuning")
 {
-    sig_accel_tune = static_cast<int>(sig_measure_noise);
-    sig_measure_noise_tune = static_cast<int>(sig_measure_noise);
+    sig_accel_tune_ = static_cast<int>(sig_measure_noise_);
+    sig_measure_noise_tune_ = static_cast<int>(sig_measure_noise_);
 }
 
 void KalmanFilter2D::filter(oat::Position2D &position) {
 
-    // Transform raw position into kf_meas vector
+    // Transform raw position into kf_meas_ vector
     if (position.position_valid) {
-        kf_meas.at<double>(0) = position.position.x;
-        kf_meas.at<double>(1) = position.position.y;
-        not_found_count = 0;
+        kf_meas_.at<double>(0) = position.position.x;
+        kf_meas_.at<double>(1) = position.position.y;
+        not_found_count_ = 0;
 
         // We are coming from a time step where there were no measurements for a
         // long time, so we need to reinitialize the filter
-        if (!found)
+        if (!found_)
             initializeFilter();
 
-        found = true;
+        found_ = true;
     } else {
-        not_found_count++;
+        not_found_count_++;
     }
 
     // If we have not gotten a measurement of the object for a long time
     // we need to reinitialize the filter
-    if (not_found_count >= not_found_count_threshold)
-        found = false;
+    if (not_found_count_ >= not_found_count_threshold_)
+        found_ = false;
 
-    // Only update if the object is found (this includes time points for which
-    // the position measurement was invalid, but we are within the not_found_count_threshold)
-    if (found) {
+    // Only update if the object is found_ (this includes time points for which
+    // the position measurement was invalid, but we are within the not_found_count_threshold_)
+    if (found_) {
 
-        kf_predicted_state = kf.predict();
+        kf_predicted_state_ = kf_.predict();
 
         // Apply the Kalman update
-        kf.correct(kf_meas);
+        kf_.correct(kf_meas_);
     }
 
-    position.position.x = kf_predicted_state.at<double>(0);
-    position.velocity.x = kf_predicted_state.at<double>(1);
-    position.position.y = kf_predicted_state.at<double>(2);
-    position.velocity.y = kf_predicted_state.at<double>(3);
+    position.position.x = kf_predicted_state_.at<double>(0);
+    position.velocity.x = kf_predicted_state_.at<double>(1);
+    position.position.y = kf_predicted_state_.at<double>(2);
+    position.velocity.y = kf_predicted_state_.at<double>(3);
 
-    // This Position is only valid if the not_found_count_threshold has not
+    // This Position is only valid if the not_found_count_threshold_ has not
     // be exceeded
-    if (found) {
+    if (found_) {
         position.position_valid = true;
         position.velocity_valid = true;
     } else {
@@ -113,26 +113,26 @@ void KalmanFilter2D::configure(const std::string &config_file,
         oat::config::checkKeys(options, this_config);
 
         // Time step
-        oat::config::getValue(this_config, "dt", dt, 0.0);
+        oat::config::getValue(this_config, "dt", dt_, 0.0);
 
         // Occlusion timeout
         double timeout_in_sec {0};
         if (oat::config::getValue(this_config, "timeout", timeout_in_sec, 0.0)) {
-            not_found_count_threshold = static_cast<int>(timeout_in_sec / dt);
+            not_found_count_threshold_ = static_cast<int>(timeout_in_sec / dt_);
         }
 
         // Acceleration stdev
-        oat::config::getValue(this_config, "sigma_accel", sig_accel, 0.0);
+        oat::config::getValue(this_config, "sigma_accel", sig_accel_, 0.0);
 
         // Measurement noise stdev
-        oat::config::getValue(this_config, "sigma_noise", sig_measure_noise, 0.0);
+        oat::config::getValue(this_config, "sigma_noise", sig_measure_noise_, 0.0);
 
         // GUI for tuning
         bool config_tune {false};
         oat::config::getValue(this_config, "tune", config_tune);
 
         if (config_tune) {
-            tuning_on = true;
+            tuning_on_ = true;
             createTuningWindows();
         }
 
@@ -147,66 +147,66 @@ void KalmanFilter2D::initializeFilter(void) {
 
     // Error covariance matrix (initialize with large value to indicate a lack
     // of trust in the model)
-    cv::setIdentity(kf.errorCovPre, 1000.0);
+    cv::setIdentity(kf_.errorCovPre, 1000.0);
 
     // TODO: Add head direction?
     // The state is
     // [ x  x'  y  y']^T, where ' denotes the time derivative
     // Initialize the state using the current measurement
-    kf.statePre.at<double>(0) = kf_meas.at<double>(0);
-    kf.statePre.at<double>(1) = 0.0;
-    kf.statePre.at<double>(2) = kf_meas.at<double>(1);
-    kf.statePre.at<double>(3) = 0.0;
+    kf_.statePre.at<double>(0) = kf_meas_.at<double>(0);
+    kf_.statePre.at<double>(1) = 0.0;
+    kf_.statePre.at<double>(2) = kf_meas_.at<double>(1);
+    kf_.statePre.at<double>(3) = 0.0;
 }
 
 void KalmanFilter2D::initializeStaticMatracies() {
 
     // State transition matrix
-    // [ 1  dt 0  0  ]
+    // [ 1  dt_ 0  0  ]
     // [ 0  1  0  0  ]
-    // [ 0  0  1  dt ]
+    // [ 0  0  1  dt_ ]
     // [ 0  0  0  1  ]
-    cv::setIdentity(kf.transitionMatrix);
-    kf.transitionMatrix.at<double>(0, 1) = dt;
-    kf.transitionMatrix.at<double>(2, 3) = dt;
-    kf.transitionMatrix.at<double>(4, 5) = dt;
+    cv::setIdentity(kf_.transitionMatrix);
+    kf_.transitionMatrix.at<double>(0, 1) = dt_;
+    kf_.transitionMatrix.at<double>(2, 3) = dt_;
+    kf_.transitionMatrix.at<double>(4, 5) = dt_;
 
     // Observation Matrix (can only see position directly)
     // [ 1  0  0  0 ]
     // [ 0  0  1  0 ]
     cv::Mat::zeros(3, 6, CV_32F);
-    kf.measurementMatrix.at<double>(0, 0) = 1.0;
-    kf.measurementMatrix.at<double>(1, 2) = 1.0;
+    kf_.measurementMatrix.at<double>(0, 0) = 1.0;
+    kf_.measurementMatrix.at<double>(1, 2) = 1.0;
 
     // Noise covariance matrix (see pp13-15 of MWL.JPN.105.02.002 for derivation)
-    // [ dt^4/4 dt^3/2 		     ]
-    // [ dt^3/2 dt^2   		     ]
-    // [               dt^4/2 dt^2/3 ] * sigma_accel^2
-    // [               dt^2/3 dt^2   ]
-    kf.processNoiseCov.at<double>(0, 0) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
-    kf.processNoiseCov.at<double>(0, 1) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<double>(0, 2) = 0.0;
-    kf.processNoiseCov.at<double>(0, 3) = 0.0;
+    // [ dt_^4/4 dt_^3/2 		     ]
+    // [ dt_^3/2 dt_^2   		     ]
+    // [               dt_^4/2 dt_^2/3 ] * sigma_accel^2
+    // [               dt_^2/3 dt_^2   ]
+    kf_.processNoiseCov.at<double>(0, 0) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_ * dt_) / 4.0;
+    kf_.processNoiseCov.at<double>(0, 1) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_) / 2.0;
+    kf_.processNoiseCov.at<double>(0, 2) = 0.0;
+    kf_.processNoiseCov.at<double>(0, 3) = 0.0;
 
-    kf.processNoiseCov.at<double>(1, 0) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<double>(1, 1) = sig_accel * sig_accel * (dt * dt);
-    kf.processNoiseCov.at<double>(1, 2) = 0.0;
-    kf.processNoiseCov.at<double>(1, 3) = 0.0;
+    kf_.processNoiseCov.at<double>(1, 0) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_) / 2.0;
+    kf_.processNoiseCov.at<double>(1, 1) = sig_accel_ * sig_accel_ * (dt_ * dt_);
+    kf_.processNoiseCov.at<double>(1, 2) = 0.0;
+    kf_.processNoiseCov.at<double>(1, 3) = 0.0;
 
-    kf.processNoiseCov.at<double>(2, 0) = 0.0;
-    kf.processNoiseCov.at<double>(2, 1) = 0.0;
-    kf.processNoiseCov.at<double>(2, 2) = sig_accel * sig_accel * (dt * dt * dt * dt) / 4.0;
-    kf.processNoiseCov.at<double>(2, 3) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
+    kf_.processNoiseCov.at<double>(2, 0) = 0.0;
+    kf_.processNoiseCov.at<double>(2, 1) = 0.0;
+    kf_.processNoiseCov.at<double>(2, 2) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_ * dt_) / 4.0;
+    kf_.processNoiseCov.at<double>(2, 3) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_) / 2.0;
 
-    kf.processNoiseCov.at<double>(3, 0) = 0.0;
-    kf.processNoiseCov.at<double>(3, 1) = 0.0;
-    kf.processNoiseCov.at<double>(3, 2) = sig_accel * sig_accel * (dt * dt * dt) / 2.0;
-    kf.processNoiseCov.at<double>(3, 3) = sig_accel * sig_accel * (dt * dt);
+    kf_.processNoiseCov.at<double>(3, 0) = 0.0;
+    kf_.processNoiseCov.at<double>(3, 1) = 0.0;
+    kf_.processNoiseCov.at<double>(3, 2) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_) / 2.0;
+    kf_.processNoiseCov.at<double>(3, 3) = sig_accel_ * sig_accel_ * (dt_ * dt_);
 
     // Measurement noise covariance
     // [ sig_x^2  0 ]
     // [ 0  sig_y^2 ]
-    cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(sig_measure_noise * sig_measure_noise));
+    cv::setIdentity(kf_.measurementNoiseCov, cv::Scalar(sig_measure_noise_ * sig_measure_noise_));
 }
 
 void KalmanFilter2D::tune() {
@@ -214,15 +214,15 @@ void KalmanFilter2D::tune() {
     // TODO: The display output of this tuning feature is pretty useless. The constant
     // rescaling makes it very difficult to get a sense of the absolute accuracy of
     // filtering and how parameters affect this over time.
-    if (tuning_on) {
+    if (tuning_on_) {
 
-        if (!tuning_windows_created) {
+        if (!tuning_windows_created_) {
             createTuningWindows();
         }
 
         // Use the new parameters to create new static filter matracies
-        sig_accel = static_cast<double>(sig_accel_tune);
-        sig_measure_noise = static_cast<double>(sig_measure_noise_tune);
+        sig_accel_ = static_cast<double>(sig_accel_tune_);
+        sig_measure_noise_ = static_cast<double>(sig_measure_noise_tune_);
         initializeStaticMatracies();
 
         //cv::Mat tuning_canvas(canvas_hw, canvas_hw, CV_8UC3);
@@ -231,21 +231,21 @@ void KalmanFilter2D::tune() {
         //drawPosition(tuning_canvas, filtered_position);
 
         // Draw the result, update sliders
-        //cv::imshow(tuning_image_title, tuning_canvas);
+        //cv::imshow(tuning_image_title_, tuning_canvas);
 
         // If user hits escape, close the tuning windows
         char user_input;
         user_input = cv::waitKey(1);
         if (user_input == 27) { // Capture 'ESC' key
-            tuning_on = false;
+            tuning_on_ = false;
         }
 
-    } else if (!tuning_on && tuning_windows_created) {
+    } else if (!tuning_on_ && tuning_windows_created_) {
         // Destroy the tuning windows
 
         // TODO: Window will not actually close!!
-        cv::destroyWindow(tuning_image_title);
-        tuning_windows_created = false;
+        cv::destroyWindow(tuning_image_title_);
+        tuning_windows_created_ = false;
 
     }
 }
@@ -253,15 +253,15 @@ void KalmanFilter2D::tune() {
 void KalmanFilter2D::createTuningWindows() {
 
     // Create window for sliders
-    cv::namedWindow(tuning_image_title, cv::WINDOW_AUTOSIZE);
+    cv::namedWindow(tuning_image_title_, cv::WINDOW_AUTOSIZE);
 
     // Create sliders and insert them into window
-    sig_accel_tune = static_cast<int>(sig_accel);
-    sig_measure_noise_tune = static_cast<int>(sig_measure_noise);
-    cv::createTrackbar("SIGMA ACCEL.", tuning_image_title, &sig_accel_tune, 1000);
-    cv::createTrackbar("SIGMA NOISE", tuning_image_title, &sig_measure_noise_tune, 10);
+    sig_accel_tune_ = static_cast<int>(sig_accel_);
+    sig_measure_noise_tune_ = static_cast<int>(sig_measure_noise_);
+    cv::createTrackbar("SIGMA ACCEL.", tuning_image_title_, &sig_accel_tune_, 1000);
+    cv::createTrackbar("SIGMA NOISE", tuning_image_title_, &sig_measure_noise_tune_, 10);
 
-    tuning_windows_created = true;
+    tuning_windows_created_ = true;
 }
 
 //void KalmanFilter2D::drawPosition(cv::Mat& canvas, const datatypes::Position2D& position) {

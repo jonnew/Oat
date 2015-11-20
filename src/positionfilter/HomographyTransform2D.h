@@ -52,9 +52,6 @@ private:
     bool homography_valid_ {false};
     cv::Matx33d homography_ {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
 
-    // Filtered position
-    oat::Position2D filtered_position_;
-
     /**
      * Apply homography transform.
      * @param Position to be projected

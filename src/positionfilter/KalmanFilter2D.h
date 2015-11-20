@@ -49,39 +49,36 @@ public:
                    const std::string& position_sink_address);
 
     void configure(const std::string &config_file,
-                   const std::string& config_key) override;
+                   const std::string &config_key) override;
 
 private:
 
     // Kalman state estimate and measurement vectors
-    cv::Mat kf_predicted_state {4, 1, CV_64F};
-    cv::Mat kf_meas {2, 1, CV_64F};
+    cv::Mat kf_predicted_state_ {4, 1, CV_64F};
+    cv::Mat kf_meas_ {2, 1, CV_64F};
 
     // Sample period
-    double dt {0.02};
+    double dt_ {0.02};
 
     // Standard deviation of assumed random accelerations.
-    double sig_accel {5.0};
-    double sig_measure_noise {0.0};
+    double sig_accel_ {5.0};
+    double sig_measure_noise_ {0.0};
 
     // Parameter tuning
-    std::string tuning_image_title;
-    bool tuning_windows_created {false};
-    int sig_accel_tune;
-    int sig_measure_noise_tune;
-    bool tuning_on {false};
-    float draw_scale {10.0};
+    std::string tuning_image_title_;
+    bool tuning_windows_created_ {false};
+    int sig_accel_tune_;
+    int sig_measure_noise_tune_;
+    bool tuning_on_ {false};
+    float draw_scale_ {10.0};
 
     // Variables and parameters to control whether or not to apply the filter
-    bool found {false};
-    int not_found_count {0};
-    int not_found_count_threshold {0};
-
-    // Filtered position
-    oat::Position2D filtered_position;
+    bool found_ {false};
+    int not_found_count_ {0};
+    int not_found_count_threshold_ {0};
 
     // Kalman filter object
-    cv::KalmanFilter kf {4, 2, 0, CV_64F};
+    cv::KalmanFilter kf_ {4, 2, 0, CV_64F};
 
     /**
      * Perform Kalman filtering.

@@ -45,7 +45,7 @@ HSVDetector::HSVDetector(const std::string &frame_source_address,
     set_dilate_size(10);
 }
 
-oat::Position2D HSVDetector::detectPosition(cv::Mat &frame) {
+void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
 
     // Transform frame to HSV
     cv::cvtColor(frame, frame, cv::COLOR_BGR2HSV);
@@ -70,18 +70,16 @@ oat::Position2D HSVDetector::detectPosition(cv::Mat &frame) {
 
     // Find the largest contour in the threshold image
     siftContours(threshold_frame_,
-                 object_position_,
+                 position,
                  object_area_,
                  min_object_area_,
                  max_object_area_);
 
     // Use the GUI tuner if requested
-    tune(frame);
-
-    return object_position_;
+    tune(frame, position);
 }
 
-void HSVDetector::configure(const std::string &config_file, 
+void HSVDetector::configure(const std::string &config_file,
                             const std::string &config_key) {
 
     // Available options
@@ -168,21 +166,21 @@ void HSVDetector::configure(const std::string &config_file,
     }
 }
 
-void HSVDetector::tune(cv::Mat &frame) {
+void HSVDetector::tune(cv::Mat &frame, const oat::Position2D &position) {
 
     if (tuning_on_) {
         std::string msg = cv::format("Object not found");
 
         // Plot a circle representing found object
-        if (object_position_.position_valid) {
+        if (position.position_valid) {
             auto radius = std::sqrt(object_area_ / PI);
             cv::Point center;
-            center.x = object_position_.position.x;
-            center.y = object_position_.position.y;
+            center.x = position.position.x;
+            center.y = position.position.y;
             cv::circle(frame, center, radius, cv::Scalar(0, 0, 255), 4);
             msg = cv::format("(%d, %d) pixels",
-                    (int) object_position_.position.x,
-                    (int) object_position_.position.y);
+                    (int) position.position.x,
+                    (int) position.position.y);
         }
 
         int baseline = 0;
@@ -228,13 +226,13 @@ void HSVDetector::createTuningWindows() {
     cv::createTrackbar("S MAX", tuning_image_title_, &s_max_, 256);
     cv::createTrackbar("V MIN", tuning_image_title_, &v_min_, 256);
     cv::createTrackbar("V MAX", tuning_image_title_, &v_max_, 256);
-    cv::createTrackbar("MIN AREA", tuning_image_title_, &dummy0_, 10000, 
+    cv::createTrackbar("MIN AREA", tuning_image_title_, &dummy0_, 10000,
             &hsvDetectorMinAreaSliderChangedCallback, this);
-    cv::createTrackbar("MAX AREA", tuning_image_title_, &dummy1_, 10000, 
+    cv::createTrackbar("MAX AREA", tuning_image_title_, &dummy1_, 10000,
             &hsvDetectorMaxAreaSliderChangedCallback, this);
-    cv::createTrackbar("ERODE", tuning_image_title_, &erode_px_, 50, 
+    cv::createTrackbar("ERODE", tuning_image_title_, &erode_px_, 50,
             &hsvDetectorErodeSliderChangedCallback, this);
-    cv::createTrackbar("DILATE", tuning_image_title_, &dilate_px_, 50, 
+    cv::createTrackbar("DILATE", tuning_image_title_, &dilate_px_, 50,
             &hsvDetectorDilateSliderChangedCallback, this);
 
     tuning_windows_created_ = true;

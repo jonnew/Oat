@@ -301,15 +301,16 @@ void Recorder::writePositionsToFile() {
 
         for (pvec_size_t i = 0; i !=  positions_.size(); i++) {
 
-            std::string sample_str = std::to_string(position_write_number_[i]);
+//            std::string sample_str = std::to_string(position_write_number_[i]);
+//
+//#ifdef RAPIDJSON_HAS_STDSTRING
+//            json_writer_.String(sample_str);
+//#else
+//            json_writer_.String(sample_str.c_str(),
+//                    static_cast<rapidjson::SizeType>(sample_str.length()));
+//#endif
 
-#ifdef RAPIDJSON_HAS_STDSTRING
-            json_writer_.String(sample_str);
-#else
-            json_writer_.String(sample_str.c_str(),
-                    static_cast<rapidjson::SizeType>(sample_str.length()));
-#endif
-
+            json_writer_.String(positions_[i].label());
             positions_[i].Serialize(json_writer_);
         }
 

@@ -35,29 +35,43 @@ namespace oat {
 
     public:
 
-        Position() { };
-
-        // TODO: should label version be explicit?
-        Position(const std::string& label) :
-            label_{*label.data()} {
+        Position(const std::string &label) {
+            strncpy(label_, label.c_str(), sizeof(label_));
+            label_[sizeof(label_) - 1] = 0;
         }
 
         virtual ~Position() { };
 
-        // Positions use one of two coordinate systems
-        DistanceUnit unit_of_length {DistanceUnit::PIXELS};
+        Position & operator = (const Position &p) {
+
+            // Check for self assignment
+            if(this == &p)
+                return *this;
+
+            // Copy all except label_
+            unit_of_length_ = p.unit_of_length_;
+            sample_ = p.sample_;
+            sample_period_sec_ = p.sample_period_sec_;
+            return *this;
+        }
 
         // sample_ only settable via incrementation
-        uint64_t incrementSampleCount() { return ++sample_; }
-        
+        void incrementSampleCount() { ++sample_; }
+
         // Accessors
+        DistanceUnit unit_of_length(void) const { return unit_of_length_; }
+        void set_unit_of_length(DistanceUnit value) { unit_of_length_ = value; }
+        double sample_period_sec(void) const { return sample_period_sec_; }
+        void set_sample_period_sec(double value) { sample_period_sec_ = value; }
         uint64_t sample() const { return sample_; }
+        char * label() {return label_; }
 
     protected:
 
-        char label_[100] {'N', 'A'}; //!< Position label (e.g. "anterior")
-
+        char label_[100]; //!< Position label (e.g. "anterior")
+        DistanceUnit unit_of_length_ {DistanceUnit::PIXELS};
         uint64_t sample_ {0};
+        double sample_period_sec_ {0.0};
     };
 
 }      /* namespace oat */

@@ -148,12 +148,6 @@ private:
     std::vector<uint64_t> position_write_number_;
     std::vector<PositionSource> position_sources_;
 
-    //boost::dynamic_bitset<>::size_type number_of_position_sources_;
-//    std::vector<PositionSource> position_sources_;
-//    std::vector< std::unique_ptr
-//               < oat::Position2D > > positions_;
-//    boost::dynamic_bitset<> position_read_required_;
-
     // SOURCES EOF flag
     bool sources_eof {false};
 

@@ -34,8 +34,8 @@ namespace oat {
 PositionCombiner::PositionCombiner(
                         const std::vector<std::string> &position_source_addresses,
                         const std::string &position_sink_address) :
-      name_("posicom[" + position_source_addresses[0] + "...->" + position_sink_address + "]")
-    , position_sink_address_(position_sink_address)
+  name_("posicom[" + position_source_addresses[0] + "...->" + position_sink_address + "]")
+, position_sink_address_(position_sink_address)
 {
 
     for (auto &addr : position_source_addresses) {
@@ -61,7 +61,7 @@ void PositionCombiner::connectToNodes() {
         pos.second->connect(pos.first);
 
     // Bind to sink node and create a shared position
-    position_sink_.bind(position_sink_address_);
+    position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
 }
 

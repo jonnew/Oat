@@ -79,10 +79,10 @@ protected:
 
     /**
      * Perform object position detection.
-     * @param frame frame to look for object in.
-     * @return detected object position.
+     * @param Frame to look for object within.
+     * @param position Detected object position.
      */
-    virtual oat::Position2D detectPosition(cv::Mat &frame) = 0;
+    virtual void detectPosition(cv::Mat &frame, oat::Position2D &position) = 0;
 
     // Detector name
     const std::string name_;
@@ -94,7 +94,7 @@ private:
 
     // Current frame
     cv::Mat internal_frame_;
-    oat::Position2D internal_position_;
+    oat::Position2D internal_position_ {"internal"};
     oat::Position2D * shared_position_;
 
     // Frame source

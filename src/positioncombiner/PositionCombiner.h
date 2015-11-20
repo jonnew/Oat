@@ -105,7 +105,7 @@ private:
     std::vector<PositionSource> position_sources_;
 
     // Combined position
-    oat::Position2D internal_position_;
+    oat::Position2D internal_position_ {"internal"};
 
     // Position SINK object for publishing combined position
     oat::Position2D * shared_position_;

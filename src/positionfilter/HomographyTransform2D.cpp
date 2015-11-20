@@ -36,8 +36,6 @@ PositionFilter(position_source_address, position_sink_address)
 
 void HomographyTransform2D::filter(oat::Position2D& position) {
 
-    //filtered_position = raw_position;
-
     // Position transforms
     std::vector<oat::Point2D> in_positions;
     std::vector<oat::Point2D> out_positions;
@@ -63,7 +61,7 @@ void HomographyTransform2D::filter(oat::Position2D& position) {
     //       transforms??
     // Return value uses world coordinates
     if (homography_valid_)
-        position.unit_of_length = oat::DistanceUnit::WORLD;
+        position.set_unit_of_length(oat::DistanceUnit::WORLD);
 
 }
 

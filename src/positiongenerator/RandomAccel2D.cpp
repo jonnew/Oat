@@ -71,30 +71,25 @@ void RandomAccel2D::configure(const std::string &config_file,
 
 }
 
-oat::Position2D RandomAccel2D::generatePosition( ) {
+void RandomAccel2D::generatePosition(oat::Position2D &position) {
 
     // Simulate one step of random, but smooth, motion
     simulateMotion();
 
-    // Transform into datatype::Position2D type
-    oat::Position2D pos;
-
     // Simulated position info
-    pos.position_valid = true;
-    pos.position.x = state_(0);
-    pos.position.y = state_(2);
+    position.position_valid = true;
+    position.position.x = state_(0);
+    position.position.y = state_(2);
 
     // We have access to the velocity info for comparison
-    pos.velocity_valid = true;
-    pos.velocity.x = state_(1);
-    pos.velocity.y = state_(3);
+    position.velocity_valid = true;
+    position.velocity.x = state_(1);
+    position.velocity.y = state_(3);
 
     // Enforce sample period
     auto tock = clock.now();
     std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick));
     tick = clock.now();
-
-    return pos;
 }
 
 void RandomAccel2D::simulateMotion() {

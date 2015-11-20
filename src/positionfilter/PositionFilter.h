@@ -89,7 +89,7 @@ private:
     oat::Source<oat::Position2D> position_source_;
 
     // Internal, mutable position
-    oat::Position2D internal_position_;
+    oat::Position2D internal_position_ {"internal"};
 
     // Shared position
     oat::Position2D * shared_position_;

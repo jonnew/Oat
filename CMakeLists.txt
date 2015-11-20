@@ -1,5 +1,4 @@
 cmake_minimum_required (VERSION 2.8)
-project (Oat)
 
 # Generate Oat version number: Major.Branch.Commit
 find_package (Git REQUIRED)

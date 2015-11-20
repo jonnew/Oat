@@ -44,7 +44,7 @@ void PositionDetector::connectToNode() {
     frame_source_.connect(frame_source_address_);
 
     // Bind to sink node and create a shared position
-    position_sink_.bind(position_sink_address_);
+    position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
 }
 
@@ -67,7 +67,7 @@ bool PositionDetector::process() {
     //  END CRITICAL SECTION  //
 
     // Mess with internal frame
-    internal_position_ = detectPosition(internal_frame_);
+    detectPosition(internal_frame_, internal_position_);
 
     // START CRITICAL SECTION //
     ////////////////////////////

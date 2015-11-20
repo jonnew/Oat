@@ -147,12 +147,14 @@ class Sink : public SinkBase<T> {
 
 public:
 
-    void bind(const std::string &address);
+    template<typename ...Targs>
+    void bind(const std::string &address, Targs... args);
     T * retrieve();
 };
 
 template<typename T>
-inline void Sink<T>::bind(const std::string &address) {
+template<typename ...Targs>
+inline void Sink<T>::bind(const std::string &address, Targs... args) {
 
     if (bound_)
         throw std::runtime_error("A sink can only bind a "
@@ -189,7 +191,7 @@ inline void Sink<T>::bind(const std::string &address) {
             1024 + sizeof (T));
 
         // Find an existing shared object or construct one
-        sh_object_ = obj_shmem_.template find_or_construct<T>(typeid(T).name())();
+        sh_object_ = obj_shmem_.template find_or_construct<T>(typeid(T).name())(args...);
         node_->set_sink_state(NodeState::SINK_BOUND);
         bound_ = true;
     }

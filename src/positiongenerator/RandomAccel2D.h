@@ -64,11 +64,7 @@ private:
     cv::Matx44d state_transition_mat_;
     cv::Matx<double, 4, 2> input_mat_;
 
-    /**
-     * Generate test position.
-     * @return Test position
-     */
-    oat::Position2D generatePosition(void) override;
+    void generatePosition(oat::Position2D &position) override;
     void createStaticMatracies(void);
     void simulateMotion(void);
 

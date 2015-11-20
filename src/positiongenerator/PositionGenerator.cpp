@@ -39,7 +39,7 @@ template<typename T>
 void PositionGenerator<T>::connectToNode() {
 
     // Bind to sink sink node and create a shared position
-    position_sink_.bind(position_sink_address_);
+    position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
 }
 
@@ -47,7 +47,10 @@ template<typename T>
 bool PositionGenerator<T>::process() {
 
     // Generate internal frame
-    internal_position_ = generatePosition();
+    generatePosition(internal_position_);
+
+    // This is pure SINK, so it increments the sample count
+    internal_position_.incrementSampleCount();
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -74,6 +77,7 @@ void PositionGenerator<T>::generateSamplePeriod(const double samples_per_second)
 
     // Automatic conversion
     sample_period_in_sec_ = period;
+    internal_position_.set_sample_period_sec(period.count());
 }
 
 // Explicit declaration to get around link errors due to this being in its own

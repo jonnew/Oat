@@ -42,7 +42,7 @@ public:
     virtual ~PositionSocket() { }
 
     /**
-     * PositioSockets must be able to connect to a source
+     * PositionSockets must be able to connect to a source
      * node in shared memory
      */
     virtual void connectToNode(void);
@@ -78,7 +78,7 @@ private:
     oat::Source<oat::Position2D> position_source_;
 
     // The current, internally allocated position
-    oat::Position2D internal_position_;
+    oat::Position2D internal_position_ {"internal"};
 };
 
 }      /* namespace oat */

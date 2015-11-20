@@ -82,9 +82,9 @@ protected:
 
     /**
      * Generate test position.
-     * @return Test position.
+     * @param position Generated position.
      */
-    virtual T generatePosition(void) = 0;
+    virtual void generatePosition(T &position) = 0;
 
     // Test position sample clock
     std::chrono::high_resolution_clock clock;
@@ -103,7 +103,7 @@ private:
     std::string name_;
 
     // Internally generated position
-    T internal_position_;
+    T internal_position_ {"internal"};
 
     // Shared position
     T * shared_position_;

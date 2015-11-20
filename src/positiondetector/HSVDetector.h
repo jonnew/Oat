@@ -53,10 +53,10 @@ public:
 
     /**
      * Perform color-based object position detection.
-     * @param frame frame to look for object in.
-     * @return  detected object position.
+     * @param Frame to look for object within.
+     * @param position Detected object position.
      */
-    oat::Position2D detectPosition(cv::Mat &frame) override;
+    void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
 
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
@@ -86,13 +86,10 @@ private:
     double min_object_area_ {0.0};
     double max_object_area_ {std::numeric_limits<double>::max()};
 
-    // The detected object position
-    oat::Position2D object_position_;
-
     // Parameter tuning GUI functions and properties
     bool tuning_windows_created_ {false};
     const std::string tuning_image_title_;
-    virtual void tune(cv::Mat &frame);
+    virtual void tune(cv::Mat &frame, const oat::Position2D &position);
     virtual void createTuningWindows(void);
 
 };
