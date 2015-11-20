@@ -65,7 +65,7 @@ public:
 
         // Coordinate system
         writer.String("unit");
-        writer.Int(coord_system);
+        writer.Int(unit_of_length);
 
         // Position
         writer.String("pos_ok");

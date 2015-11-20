@@ -17,15 +17,15 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef POSITION_H
-#define	POSITION_H
+#ifndef OAT_POSITION_H
+#define	OAT_POSITION_H
 
 namespace oat {
 
     /**
      * Unit of length used to specify position.
      */
-    enum length_unit
+    enum class DistanceUnit
     {
         PIXELS = 0,   //!< Position measured in pixels. Origin is upper left.
         WORLD = 1     //!< Position measured in units specified via homography
@@ -45,22 +45,21 @@ namespace oat {
         virtual ~Position() { };
 
         // Positions use one of two coordinate systems
-        int coord_system {PIXELS};
+        DistanceUnit unit_of_length {DistanceUnit::PIXELS};
 
-        inline void set_sample(const uint32_t value) {
-            sample = value;
-        }
+        // sample_ only settable via incrementation
+        uint64_t incrementSampleCount() { return ++sample_; }
+        
+        // Accessors
+        uint64_t sample() const { return sample_; }
 
     protected:
 
         char label_[100] {'N', 'A'}; //!< Position label (e.g. "anterior")
 
-        // TODO: sample number should be managed globally for a data processing
-        // chain
-        uint32_t sample {0};
+        uint64_t sample_ {0};
     };
 
-} // namespace datatypes
-
-#endif	/* POSITION_H */
+}      /* namespace oat */
+#endif /* OAT_POSITION_H */
 

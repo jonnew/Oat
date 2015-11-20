@@ -63,7 +63,7 @@ void HomographyTransform2D::filter(oat::Position2D& position) {
     //       transforms??
     // Return value uses world coordinates
     if (homography_valid_)
-        position.coord_system = oat::WORLD;
+        position.unit_of_length = oat::DistanceUnit::WORLD;
 
 }
 

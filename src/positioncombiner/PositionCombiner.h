@@ -65,6 +65,7 @@ public:
      * Obtain positions from all SOURCES. Combine positions. Publish combined position
      * to SINK.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
+     * TODO: check that position length units are the same before combination
      */
     bool process(void);
 
