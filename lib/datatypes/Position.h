@@ -22,57 +22,55 @@
 
 namespace oat {
 
-    /**
-     * Unit of length used to specify position.
-     */
-    enum class DistanceUnit
-    {
-        PIXELS = 0,   //!< Position measured in pixels. Origin is upper left.
-        WORLD = 1     //!< Position measured in units specified via homography
-    };
+/**
+ * Unit of length used to specify position.
+ */
+enum class DistanceUnit
+{
+    PIXELS = 0,   //!< Position measured in pixels. Origin is upper left.
+    WORLD = 1     //!< Position measured in units specified via homography
+};
 
-    class Position {
+struct Position {
 
-    public:
+    Position(const std::string &label) {
+        strncpy(label_, label.c_str(), sizeof(label_));
+        label_[sizeof(label_) - 1] = 0;
+    }
 
-        Position(const std::string &label) {
-            strncpy(label_, label.c_str(), sizeof(label_));
-            label_[sizeof(label_) - 1] = 0;
-        }
+    virtual ~Position() { };
 
-        virtual ~Position() { };
+    Position & operator = (const Position &p) {
 
-        Position & operator = (const Position &p) {
-
-            // Check for self assignment
-            if(this == &p)
-                return *this;
-
-            // Copy all except label_
-            unit_of_length_ = p.unit_of_length_;
-            sample_ = p.sample_;
-            sample_period_sec_ = p.sample_period_sec_;
+        // Check for self assignment
+        if(this == &p)
             return *this;
-        }
 
-        // sample_ only settable via incrementation
-        void incrementSampleCount() { ++sample_; }
+        // Copy all except label_
+        unit_of_length_ = p.unit_of_length_;
+        sample_ = p.sample_;
+        sample_period_sec_ = p.sample_period_sec_;
+        return *this;
+    }
 
-        // Accessors
-        DistanceUnit unit_of_length(void) const { return unit_of_length_; }
-        void set_unit_of_length(DistanceUnit value) { unit_of_length_ = value; }
-        double sample_period_sec(void) const { return sample_period_sec_; }
-        void set_sample_period_sec(double value) { sample_period_sec_ = value; }
-        uint64_t sample() const { return sample_; }
-        char * label() {return label_; }
+    // sample_ only settable via incrementation
+    void incrementSampleCount() { ++sample_; }
 
-    protected:
+    // Accessors
+    DistanceUnit unit_of_length(void) const { return unit_of_length_; }
+    void set_unit_of_length(DistanceUnit value) { unit_of_length_ = value; }
+    double sample_period_sec(void) const { return sample_period_sec_; }
+    void set_sample_period_sec(double value) { sample_period_sec_ = value; }
+    uint64_t sample() const { return sample_; }
+    char * label() {return label_; }
 
-        char label_[100]; //!< Position label (e.g. "anterior")
-        DistanceUnit unit_of_length_ {DistanceUnit::PIXELS};
-        uint64_t sample_ {0};
-        double sample_period_sec_ {0.0};
-    };
+protected:
+
+    char label_[100]; //!< Position label (e.g. "anterior")
+    DistanceUnit unit_of_length_ {DistanceUnit::PIXELS};
+    uint64_t sample_ {0};
+    double sample_period_sec_ {0.0};
+};
 
 }      /* namespace oat */
 #endif /* OAT_POSITION_H */

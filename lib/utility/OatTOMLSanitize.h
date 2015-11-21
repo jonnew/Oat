@@ -226,7 +226,6 @@ inline bool getArray(const Table table, const std::string& key, Array& array_out
     }
 }
 
-} // namespace config
-} // namespace oat
-
+}      /* namespace config */
+}      /* namespace oat */
 #endif /* OAT_CONFIG_TOMLSANATIZE_H */

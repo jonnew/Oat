@@ -17,33 +17,33 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef IOUTILITY_H
-#define IOUTILITY_H
+#ifndef OAT_IOUTILITY_H
+#define OAT_IOUTILITY_H
 
 #include <iostream>
 #include <limits>
 
 namespace oat {
 
-    /**
-     * Used to clear the input stream after bad input is detected.  Ignores
-     * stream content up to a newline.
-     */
-    inline void ignoreLine(std::istream& in) {
+/**
+ * Used to clear the input stream after bad input is detected.  Ignores
+ * stream content up to a newline.
+ */
+inline void ignoreLine(std::istream& in) {
 
-        in.clear();
-        in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    }
-
-    /**
-     * Used to clear the input stream after bad input is detected.  Ignores
-     * all stream content.
-     */
-    inline void ignoreAll(std::istream& in) {
-
-        in.clear();
-        in.ignore(std::numeric_limits<std::streamsize>::max());
-    }
+    in.clear();
+    in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
-#endif // IOUTILITY_H
+/**
+ * Used to clear the input stream after bad input is detected.  Ignores
+ * all stream content.
+ */
+inline void ignoreAll(std::istream& in) {
+
+    in.clear();
+    in.ignore(std::numeric_limits<std::streamsize>::max());
+}
+
+}      /* namespace oat */
+#endif /* OAT_IOUTILITY_H */

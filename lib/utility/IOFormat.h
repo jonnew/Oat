@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef IOFORMAT_H
-#define IOFORMAT_H
+#ifndef OAT_IOFORMAT_H
+#define OAT_IOFORMAT_H
 
 #include <string>
 #include <iomanip>
@@ -26,70 +26,70 @@
 
 namespace oat {
 
-    inline std::string bold(const std::string& message) {
+inline std::string bold(const std::string& message) {
 
-        return "\033[1m" + message + "\033[0m";
-    }
-
-    inline std::string sourceText(const std::string& source_name) {
-
-        return "\033[32m" + source_name + "\033[0m";
-    }
-
-    inline std::string sinkText(const std::string& sink_name) {
-
-        return "\033[31m" + sink_name + "\033[0m";
-    }
-
-    inline std::string whoMessage(const std::string& source, const std::string& message) {
-
-        return "\033[1m" + source + ": \033[0m" + message;
-    }
-
-    inline std::string whoWarn(const std::string& source, const std::string& message) {
-
-        return "\033[1m" + source + ": \033[0m\033[33m" + message + "\033[0m";
-    }
-
-    inline std::string Warn(const std::string& message) {
-
-        return "\033[0m\033[33m" + message + "\033[0m";
-    }
-
-    inline std::string whoError(const std::string& source, const std::string& message) {
-
-        return "\033[1m" + source + ": \033[0m\033[31m" + message + "\033[0m";
-    }
-
-    inline std::string configNoTableError(const std::string& table_name,
-                                          const std::string& config_file) {
-
-        return  "No configuration table named '" + table_name +
-                "' was provided in the configuration file '" + config_file + "'";
-    }
-
-    inline std::string configValueError(const std::string& entry_name,
-                                        const std::string& table_name,
-                                        const std::string& config_file,
-                                        const std::string& message) {
-
-        return "'" + entry_name + "' in '" + table_name + "' in '" + config_file + "' " + message;
-    }
-
-    inline std::string Error(const std::string& message) {
-
-        return "\033[31m" + message + "\033[0m";
-    }
-
-    inline std::string dbgMessage(const std::string& message) {
-
-        return "\033[35mdebug: " + message + "\033[0m";
-    }
-
-    inline std::string dbgColor(const std::string& message) {
-
-        return "\033[35m" + message + "\033[0m";
-    }
+    return "\033[1m" + message + "\033[0m";
 }
 
-#endif // IOFORMAT_H
+inline std::string sourceText(const std::string& source_name) {
+
+    return "\033[32m" + source_name + "\033[0m";
+}
+
+inline std::string sinkText(const std::string& sink_name) {
+
+    return "\033[31m" + sink_name + "\033[0m";
+}
+
+inline std::string whoMessage(const std::string& source, const std::string& message) {
+
+    return "\033[1m" + source + ": \033[0m" + message;
+}
+
+inline std::string whoWarn(const std::string& source, const std::string& message) {
+
+    return "\033[1m" + source + ": \033[0m\033[33m" + message + "\033[0m";
+}
+
+inline std::string Warn(const std::string& message) {
+
+    return "\033[0m\033[33m" + message + "\033[0m";
+}
+
+inline std::string whoError(const std::string& source, const std::string& message) {
+
+    return "\033[1m" + source + ": \033[0m\033[31m" + message + "\033[0m";
+}
+
+inline std::string configNoTableError(const std::string& table_name,
+                                      const std::string& config_file) {
+
+    return  "No configuration table named '" + table_name +
+            "' was provided in the configuration file '" + config_file + "'";
+}
+
+inline std::string configValueError(const std::string& entry_name,
+                                    const std::string& table_name,
+                                    const std::string& config_file,
+                                    const std::string& message) {
+
+    return "'" + entry_name + "' in '" + table_name + "' in '" + config_file + "' " + message;
+}
+
+inline std::string Error(const std::string& message) {
+
+    return "\033[31m" + message + "\033[0m";
+}
+
+inline std::string dbgMessage(const std::string& message) {
+
+    return "\033[35mdebug: " + message + "\033[0m";
+}
+
+inline std::string dbgColor(const std::string& message) {
+
+    return "\033[35m" + message + "\033[0m";
+}
+
+}      /* namespace oat */
+#endif /* OAT_IOFORMAT_H */
