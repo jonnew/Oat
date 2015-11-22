@@ -22,8 +22,8 @@
 
 #include <chrono>
 #include <string>
-#include <opencv2/core/mat.hpp>
 
+#include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace oat {
@@ -64,7 +64,7 @@ private:
     std::string name_;
 
     // Image data
-    cv::Mat internal_frame_;
+    oat::Frame internal_frame_;
 
     // Frame SOURCE to get frames to display
     const std::string frame_source_address_;

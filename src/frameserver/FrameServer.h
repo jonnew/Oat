@@ -23,6 +23,7 @@
 #include <atomic>
 #include <opencv2/opencv.hpp>
 
+#include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/SharedCVMat.h"
 
@@ -80,7 +81,7 @@ protected:
 
     // Currently acquired, shared frame
     bool frame_empty_;
-    cv::Mat shared_frame_;
+    oat::Frame shared_frame_;
 };
 
 }       /* namespace oat */

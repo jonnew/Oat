@@ -26,6 +26,8 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
 
+#include "../datatypes/Frame.h"
+
 #include "ForwardsDecl.h"
 #include "Node.h"
 #include "SharedCVMat.h"
@@ -216,7 +218,7 @@ class Sink<SharedCVMat> : public SinkBase<SharedCVMat> {
 
 public:
     void bind(const std::string &address, const size_t bytes);
-    cv::Mat retrieve(const size_t rows, size_t cols, const int type);
+    oat::Frame retrieve(const size_t rows, size_t cols, const int type);
 };
 
 inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
@@ -261,7 +263,7 @@ inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t byt
     }
 }
 
-inline cv::Mat Sink<SharedCVMat>::retrieve(const size_t rows, const size_t cols, const int type) {
+inline oat::Frame Sink<SharedCVMat>::retrieve(const size_t rows, const size_t cols, const int type) {
 
     // Make sure that the SINK is bound to a shared memory segment
     //assert(bound_);
@@ -277,7 +279,7 @@ inline cv::Mat Sink<SharedCVMat>::retrieve(const size_t rows, const size_t cols,
     sh_object_->setParameters(handle, rows, cols, type);
 
     // Return pointer to memory allocated for shared object
-    return cv::Mat(rows, cols, type, data);
+    return oat::Frame(rows, cols, type, data);
 }
 
 } // namespace oat

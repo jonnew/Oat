@@ -25,6 +25,8 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
 
+#include "../datatypes/Frame.h"
+
 #include "ForwardsDecl.h"
 #include "Node.h"
 #include "SharedCVMat.h"
@@ -235,12 +237,12 @@ public:
 
     void connect(const std::string &address) override;
 
-    cv::Mat retrieve() const { return frame_; }
-    cv::Mat clone() const { return frame_.clone(); }
+    oat::Frame retrieve() const { return frame_; }
+    oat::Frame clone() const { return frame_.clone(); }
     MatParameters parameters() const { return parameters_; }
 
 private :
-    cv::Mat frame_;
+    oat::Frame frame_;
     MatParameters parameters_;
 
 };
@@ -289,10 +291,10 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
     sh_object_ = temp.first;
 
     // Generate cv::Mat header using info in shmem segment
-    frame_ = cv::Mat(sh_object_->rows(),
-                     sh_object_->cols(),
-                     sh_object_->type(),
-                     obj_shmem_.get_address_from_handle(sh_object_->data()));
+    frame_ = oat::Frame(sh_object_->rows(),
+                        sh_object_->cols(),
+                        sh_object_->type(),
+                        obj_shmem_.get_address_from_handle(sh_object_->data()));
 
     // Save parameters so that to construct cv::Mats with
     parameters_.cols = sh_object_->cols();

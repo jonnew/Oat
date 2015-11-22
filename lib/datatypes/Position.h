@@ -31,8 +31,9 @@ enum class DistanceUnit
     WORLD = 1     //!< Position measured in units specified via homography
 };
 
-struct Position {
+class Position {
 
+public:
     Position(const std::string &label) {
         strncpy(label_, label.c_str(), sizeof(label_));
         label_[sizeof(label_) - 1] = 0;

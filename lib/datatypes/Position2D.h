@@ -33,8 +33,9 @@ using Point2D = cv::Point2d;
 using Velocity2D = cv::Point2d;
 using UnitVector2D = cv::Point2d;
 
-struct Position2D : public Position {
+class Position2D : public Position {
 
+public:
     Position2D(const std::string &label) :
       Position(label)
     {

@@ -67,8 +67,9 @@ bool FileReader::serveFrame() {
     // Wait for sources to read
     frame_sink_.wait();
 
-    // Acquire frame and
+    // Acquire frame and increment sample count
     file_reader_ >> shared_frame_;
+    shared_frame_.incrementSampleCount();
 
     // Crop if necessary
     if (use_roi_)
@@ -142,6 +143,7 @@ void FileReader::calculateFramePeriod() {
 
     // Automatic conversion
     frame_period_in_sec_ = frame_period;
+    shared_frame_.set_sample_period_sec(frame_period_in_sec_.count());
 }
 
 } /* namespace oat */

@@ -31,15 +31,17 @@ class Frame : public cv::Mat {
 public:
 
     Frame() { }
+    Frame(int r, int c, int t, void *data) : cv::Mat(r, c, t, data) { }
     Frame(cv::Mat m) : cv::Mat(m) { }
 
     // Clone override
     Frame clone() const {
-        cv::Mat m;
+        Frame m;
         copyTo(m);
+        m.sample_period_sec_ = sample_period_sec_;
+        m.sample_ = sample_;
 
-        Frame f(m); 
-        return Frame(f);
+        return m;
     }
 
     // sample_ only settable via incrementation
