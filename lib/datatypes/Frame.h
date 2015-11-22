@@ -31,7 +31,12 @@ class Frame : public cv::Mat {
 public:
 
     Frame() { }
-    Frame(int r, int c, int t, void *data) : cv::Mat(r, c, t, data) { }
+    Frame(int r, int c, int t, void * data, void ** samp_ptr) :
+      cv::Mat(r, c, t, data)
+    {
+        sample_ = static_cast<uint64_t *>(*samp_ptr);
+    }
+
     Frame(cv::Mat m) : cv::Mat(m) { }
 
     // Clone override
@@ -45,15 +50,15 @@ public:
     }
 
     // sample_ only settable via incrementation
-    void incrementSampleCount() { ++sample_; }
+    void incrementSampleCount() { ++(*sample_); }
 
     // Accessors
     double sample_period_sec(void) const { return sample_period_sec_; }
     void set_sample_period_sec(double value) { sample_period_sec_ = value; }
-    uint64_t sample(void) const { return sample_; }
+    uint64_t sample(void) const { return *sample_; }
 
 private:
-    uint64_t sample_ {0};
+    uint64_t * sample_ {0};
     double sample_period_sec_ {0.0};
 };
 

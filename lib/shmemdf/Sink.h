@@ -253,7 +253,7 @@ inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t byt
         obj_shmem_ = bip::managed_shared_memory(
             bip::create_only,
             obj_address_.c_str(),
-            1024 + sizeof(SharedCVMat) + bytes);
+            1024 + sizeof(SharedCVMat) + bytes + sizeof(uint64_t));
 
         // Find an existing shared object or construct one
         sh_object_ = obj_shmem_.find_or_construct<SharedCVMat>(typeid(SharedCVMat).name())();
@@ -270,16 +270,20 @@ inline oat::Frame Sink<SharedCVMat>::retrieve(const size_t rows, const size_t co
     if (!bound_)
         throw (std::runtime_error("SINK must be bound before shared cvMat is retrieved."));
 
+    // Allocate memory for sample number
+    void * sample = obj_shmem_.allocate(sizeof(uint64_t));
+    handle_t sample_handle = obj_shmem_.get_handle_from_address(sample);
+
     // Allocate memory for the shared object's data
     cv::Mat temp(rows, cols, type);
-    void *data = obj_shmem_.allocate(temp.total() * temp.elemSize());
-    handle_t handle = obj_shmem_.get_handle_from_address(data);
+    void * data = obj_shmem_.allocate(temp.total() * temp.elemSize());
+    handle_t data_handle = obj_shmem_.get_handle_from_address(data);
 
     // Reset the SharedCVMat's parameters now that we know what they should be
-    sh_object_->setParameters(handle, rows, cols, type);
+    sh_object_->setParameters(data_handle, sample_handle, rows, cols, type);
 
     // Return pointer to memory allocated for shared object
-    return oat::Frame(rows, cols, type, data);
+    return oat::Frame(rows, cols, type, data, &sample);
 }
 
 } // namespace oat

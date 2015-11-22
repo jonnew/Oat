@@ -44,11 +44,15 @@ public :
     size_t rows() const { return rows_; }
     size_t cols() const { return cols_; }
     int type() const { return type_; }
-    size_t step() const {return step_; }
+    //size_t step() const {return step_; }
 
-    void setParameters(const handle_t data, const size_t rows,
-                       const size_t cols, const int type) {
+    void setParameters(const handle_t data,
+                       const handle_t sample,
+                       const size_t rows,
+                       const size_t cols,
+                       const int type) {
         data_ = data;
+        sample_ = sample;
         rows_ = rows;
         cols_ = cols;
         type_ = type;
@@ -56,11 +60,11 @@ public :
 
 private :
 
-    // Matrix metadata and handle to data
+    // Matrix metadata
     std::atomic<int> rows_ {0};
     std::atomic<int> cols_ {0};
     std::atomic<int> type_ {0};
-    std::atomic<size_t> step_ {0};
+    //std::atomic<size_t> step_ {0};
 
 };
 

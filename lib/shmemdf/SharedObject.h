@@ -33,12 +33,12 @@ public :
 
     SharedObject() { };
 
-    SharedObject(handle_t data) : //size_t bytes,
-      //bytes_(bytes)
-      data_(data)
-    {
-        // Nothing
-    }
+//    SharedObject(handle_t data) : //size_t bytes,
+//      //bytes_(bytes)
+//      data_(data)
+//    {
+//        // Nothing
+//    }
 
     virtual ~SharedObject() { };
 
@@ -47,11 +47,13 @@ public :
     // pointed by a pointer from this handle. This means that
     // both client and server, existing in _different processes_, will have direct
     // access to this data structure
+    handle_t sample() const { return sample_; }
     handle_t data() const { return data_; }
 
 protected :
 
     std::atomic<handle_t> data_;
+    std::atomic<handle_t> sample_;
 };
 
 } // namepace oat
