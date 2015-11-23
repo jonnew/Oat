@@ -41,8 +41,8 @@ void KalmanFilter2D::filter(oat::Position2D &position) {
 
     // Transform raw position into kf_meas_ vector
     if (position.position_valid) {
-        kf_meas_.at<double>(0) = position.position.x;
-        kf_meas_.at<double>(1) = position.position.y;
+        kf_meas_(0,0) = position.position.x;
+        kf_meas_(1,0) = position.position.y;
         not_found_count_ = 0;
 
         // We are coming from a time step where there were no measurements for a
@@ -70,10 +70,10 @@ void KalmanFilter2D::filter(oat::Position2D &position) {
         kf_.correct(kf_meas_);
     }
 
-    position.position.x = kf_predicted_state_.at<double>(0);
-    position.velocity.x = kf_predicted_state_.at<double>(1);
-    position.position.y = kf_predicted_state_.at<double>(2);
-    position.velocity.y = kf_predicted_state_.at<double>(3);
+    position.position.x = kf_predicted_state_(0,0);
+    position.velocity.x = kf_predicted_state_(1,0);
+    position.position.y = kf_predicted_state_(2,0);
+    position.velocity.y = kf_predicted_state_(3,0);
 
     // This Position is only valid if the not_found_count_threshold_ has not
     // be exceeded

@@ -69,7 +69,7 @@ void HomographyTransform2D::configure(const std::string &config_file,
                                       const std::string &config_key) {
 
     // Available options
-    std::vector<std::string> options {"homography_"};
+    std::vector<std::string> options {"homography"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -86,7 +86,7 @@ void HomographyTransform2D::configure(const std::string &config_file,
 
         // Homography matrix
         oat::config::Array homo_array;
-        if (oat::config::getArray(this_config, "homography_", homo_array, 9, true)) {
+        if (oat::config::getArray(this_config, "homography", homo_array, 9, true)) {
 
             auto homo_vec = homo_array->array_of<double>();
 

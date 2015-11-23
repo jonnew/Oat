@@ -42,7 +42,7 @@ void printUsage(po::options_description options) {
               << "to SINK.\n\n"
               << "TYPE\n"
               << "  kalman: Kalman filter\n"
-              << "  homo: homography transform\n"
+              << "  homography: homography transform\n"
               << "  region: position region annotation\n\n"
               << "SOURCE:\n"
               << "  User-supplied name of the memory segment to receive "
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 
     std::unordered_map<std::string, char> type_hash;
     type_hash["kalman"] = 'a';
-    type_hash["homo"] = 'b';
+    type_hash["homography"] = 'b';
     type_hash["region"] = 'c';
 
     try {
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
                 ("type", po::value<std::string>(&type), "Filter TYPE.")
-                ("positionsource", po::value<std::string>(&source),
+                ("position-source", po::value<std::string>(&source),
                 "The name of the server that supplies object position information."
                 "The server must be of type SMServer<Position>\n")
                 ("sink", po::value<std::string>(&sink),
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 
         po::positional_options_description positional_options;
         positional_options.add("type", 1);
-        positional_options.add("positionsource", 1);
+        positional_options.add("position-source", 1);
         positional_options.add("sink", 1);
 
         visible_options.add(options).add(config);
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if (!variable_map.count("positionsource")) {
+        if (!variable_map.count("position-source")) {
             printUsage(visible_options);
             std::cout <<  oat::Error("A position SOURCE must be specified.\n");
             return -1;
@@ -174,10 +174,10 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if (!variable_map.count("config-file") && type.compare("homo") == 0) {
+        if (!variable_map.count("config-file") && type.compare("homography") == 0) {
             printUsage(visible_options);
-            std::cerr << oat::Error("When TYPE=homo, a configuration file must be specified"
-                         " to provide homography matrix.\n");
+            std::cerr << oat::Error("When TYPE=homography, a configuration file must be specified"
+                                    " to provide homography matrix.\n");
             return -1;
         }
 

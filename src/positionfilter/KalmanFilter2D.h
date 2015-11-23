@@ -54,8 +54,8 @@ public:
 private:
 
     // Kalman state estimate and measurement vectors
-    cv::Mat kf_predicted_state_ {4, 1, CV_64F};
-    cv::Mat kf_meas_ {2, 1, CV_64F};
+    cv::Mat_<double> kf_predicted_state_ {4, 1, CV_64F};
+    cv::Mat_<double> kf_meas_ {2, 1, CV_64F};
 
     // Sample period
     double dt_ {0.02};

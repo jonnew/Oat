@@ -22,7 +22,7 @@ sigma_accel = 500.0                     # Pixels/sec^2
 sigma_noise = 10.0                      # Noise SD (pixesl)    
 tune = false                            # Use the GUI to tweak parameters
 
-[homo]
+[homography]
 # Homography matrix for 2D position
 homography =  [ 4.4708341438051686e+00, 1.1030803466026207e-01, -1.6637627408844000e+03, 
 			    1.6538020239166329e-01, -4.8791297859318021e+00, 1.6150394484415021e+03, 

@@ -3,12 +3,11 @@
 case "$1" in
 
 	run)
-		#oat record -i final -f ./ -n result -F 30 &
-		#sleep 0.1
-		#oat record -p pix wld -f ./ -n result &
-		#sleep 0.1
-		#oat posifilt homo posi wld -c config.toml -k homo &
-
+		oat record -i final -f ./ -n result -F 30 &
+		sleep 0.1
+		oat record -p pix wld -f ./ -n result &
+		sleep 0.1
+		oat posifilt homography posi wld -c config.toml -k homography &
 		sleep 0.1
 		oat view final &
 		sleep 0.1
@@ -25,9 +24,6 @@ case "$1" in
 		oat framefilt mask raw roi -c config.toml -k mask &
 		sleep 0.1
 		oat frameserve file raw -f ./rat.avi -c config.toml -k video  
-
-		sleep 0.5
-		oat clean raw roi bac det posi final reg world
 		;;
 
 	clean)
