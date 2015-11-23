@@ -31,16 +31,15 @@ class SharedObject {
 
 public :
 
-    SharedObject() { };
+    SharedObject()
+    {
+        // Nothing
+    };
 
-//    SharedObject(handle_t data) : //size_t bytes,
-//      //bytes_(bytes)
-//      data_(data)
-//    {
-//        // Nothing
-//    }
-
-    virtual ~SharedObject() { };
+    virtual ~SharedObject()
+    {
+        // Nothing
+    };
 
     // This data handle is a way to pass a pointer to a data structure
     // through shared memory. Clients can construct cotainers that use data

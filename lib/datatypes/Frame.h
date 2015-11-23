@@ -20,61 +20,88 @@
 #ifndef OAT_FRAME_H
 #define	OAT_FRAME_H
 
+#include <algorithm>
+
 #include <opencv2/core/mat.hpp>
 
 namespace oat {
 
 /**
  * Wrapper class for cv::Mat that contains sample number information.
- * NOTE: cv::Mat does not delcare a virtual destructor, so you must not
- * delete Frames through a pointer to cv::Mat.
+ *
+ * NOTE 1: cv::Mat does not declare a virtual destructor, so you must not
+ * delete Frames through a pointer to the base cv::Mat.
+ *
+ * NOTE 2: Only the cv::Mat operators and constructors that are specifically needed by the
+ * oat codebase are overriden in this class. Others remain callable, and might
+ * not make any sense or result in object slicing.
  */
 class Frame : public cv::Mat {
 
 public:
 
-    Frame()
+    Frame() :
+      cv::Mat()
+    , sample_ptr_(&sample_)
     {
         // Nothing
     }
 
     Frame(cv::Mat m, const cv::Rect &roi) :
-      cv::Mat(m,roi) 
+      cv::Mat(m,roi)
+    , sample_ptr_(&sample_)
     {
         // Nothing
     }
 
-    Frame(int r, int c, int t, void * data, void ** samp_ptr) :
-      cv::Mat(r, c, t, data)
+    Frame(cv::Mat m) :
+      cv::Mat(m)
+    , sample_ptr_(&sample_)
     {
-        sample_ = static_cast<uint64_t *>(*samp_ptr);
+        // Nothing
     }
 
-    // Clone override
-    Frame clone() const {
-        Frame m;
-        copyTo(m);
-        m.sample_period_sec_ = sample_period_sec_;
-        m.sample_ = sample_;
+    Frame(int r, int c, int t, void * data, void * samp_ptr) :
+      cv::Mat(r, c, t, data)
+    , sample_ptr_((Sample *)(samp_ptr))
+    {
+        // Nothing
+    }
 
-        return m;
+    Frame clone() const {
+        Frame f(cv::Mat::clone());
+        *(f.sample_ptr_) = *sample_ptr_;
+        return f;
+    }
+
+    void copyTo(Frame &f) const {
+        cv::Mat::copyTo(f);
+        *(f.sample_ptr_) = *sample_ptr_;
     }
 
     Frame operator()( const cv::Rect &roi ) const {
         return Frame(*this, roi);
     }
 
-    // sample_ only settable via incrementation
-    void incrementSampleCount() { ++(*sample_); }
+    // sample_count_ only settable via incrementation
+    void incrementSampleCount() { ++(sample_ptr_->sample_count_); }
 
     // Accessors
-    double sample_period_sec(void) const { return sample_period_sec_; }
-    void set_sample_period_sec(double value) { sample_period_sec_ = value; }
-    uint64_t sample(void) const { return *sample_; }
+    double sample_period_sec(void) const { return sample_ptr_->sample_period_sec_; }
+    void set_sample_period_sec(double value) { sample_ptr_->sample_period_sec_ = value; }
+    uint64_t sample_count(void) const { return sample_ptr_->sample_count_; }
+
+    struct Sample {
+        uint64_t sample_count_    {0};
+        double sample_period_sec_ {0.0};
+    };
 
 private:
-    uint64_t * sample_ {0};
-    double sample_period_sec_ {0.0};
+
+    // sample_ptr_ can point either to outside data (shmem) or internal
+    // sample_ object.
+    Sample * sample_ptr_;
+    Sample sample_;
 };
 
 }      /* namespace oat */

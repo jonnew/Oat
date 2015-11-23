@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/SharedCVMat.h"
@@ -37,7 +38,7 @@ static const constexpr double PI {3.141592653589793238463};
  * Adds positional, sample, and date information to frames.
  */
 class Decorator {
-    
+
 public:
 
     using PositionSource = std::tuple< std::string,
@@ -83,14 +84,14 @@ private:
     std::string name_;
 
     // Internal frame copy
-    cv::Mat internal_frame_;
+    oat::Frame internal_frame_;
 
     // Mat client object for receiving frames
     std::string frame_source_address_;
     oat::Source<SharedCVMat> frame_source_;
 
     // Mat server for sending decorated frames
-    cv::Mat shared_frame_;
+    oat::Frame shared_frame_;
     std::string frame_sink_address_;
     oat::Sink<SharedCVMat> frame_sink_;
 

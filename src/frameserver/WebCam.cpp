@@ -49,6 +49,8 @@ void WebCam::connectToNode() {
 
     shared_frame_ = frame_sink_.retrieve(
             example_frame.rows, example_frame.cols, example_frame.type());
+
+    shared_frame_.set_sample_period_sec(cv_camera_->get(CV_CAP_PROP_FPS));
 }
 
 bool WebCam::serveFrame() {

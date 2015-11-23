@@ -21,8 +21,8 @@
 #define	OAT_POSITIONDETECTOR_H
 
 #include <string>
-#include <opencv2/core/mat.hpp>
 
+#include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
@@ -93,7 +93,7 @@ protected:
 private:
 
     // Current frame
-    cv::Mat internal_frame_;
+    oat::Frame internal_frame_;
     oat::Position2D internal_position_ {"internal"};
     oat::Position2D * shared_position_;
 

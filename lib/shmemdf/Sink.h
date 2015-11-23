@@ -152,6 +152,7 @@ public:
     template<typename ...Targs>
     void bind(const std::string &address, Targs... args);
     T * retrieve();
+
 };
 
 template<typename T>
@@ -219,6 +220,10 @@ class Sink<SharedCVMat> : public SinkBase<SharedCVMat> {
 public:
     void bind(const std::string &address, const size_t bytes);
     oat::Frame retrieve(const size_t rows, size_t cols, const int type);
+
+//private:
+//    void * data {nullptr};
+//    void * sample {nullptr};
 };
 
 inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
@@ -271,7 +276,7 @@ inline oat::Frame Sink<SharedCVMat>::retrieve(const size_t rows, const size_t co
         throw (std::runtime_error("SINK must be bound before shared cvMat is retrieved."));
 
     // Allocate memory for sample number
-    void * sample = obj_shmem_.allocate(sizeof(uint64_t));
+    void * sample = obj_shmem_.allocate(sizeof(oat::Frame::Sample));
     handle_t sample_handle = obj_shmem_.get_handle_from_address(sample);
 
     // Allocate memory for the shared object's data
@@ -283,7 +288,7 @@ inline oat::Frame Sink<SharedCVMat>::retrieve(const size_t rows, const size_t co
     sh_object_->setParameters(data_handle, sample_handle, rows, cols, type);
 
     // Return pointer to memory allocated for shared object
-    return oat::Frame(rows, cols, type, data, &sample);
+    return oat::Frame(rows, cols, type, data, sample);
 }
 
 } // namespace oat

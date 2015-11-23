@@ -34,6 +34,7 @@
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/SharedCVMat.h"
+#include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Position2D.h"
 
 namespace oat {
@@ -41,25 +42,26 @@ namespace oat {
 static constexpr int FRAME_WRITE_BUFFER_SIZE {1000};
 static constexpr int POSITION_WRITE_BUFFER_SIZE {65536};
 
+namespace blf = boost::lockfree;
+
 /**
  * Position and frame recorder.
  */
 class Recorder {
 public:
 
-    using PositionSource = std::pair <
-                                std::string,
-                                std::unique_ptr<oat::Source<oat::Position2D> >
-                            >;
+    using PositionSource = std::pair < std::string, std::unique_ptr
+                                     < oat::Source
+                                     < oat::Position2D > > >;
+
+    using FrameSource = std::pair < std::string, std::unique_ptr
+                                  < oat::Source<oat::SharedCVMat > > >;
+
+    using FrameQueue =  blf::spsc_queue < oat::Frame, boost::lockfree::capacity
+                                        < FRAME_WRITE_BUFFER_SIZE > >;
 
     using psvec_size_t = std::vector<PositionSource>::size_type;
     using pvec_size_t = std::vector<oat::Position2D>::size_type;
-
-    using FrameSource = std::pair <
-                            std::string,
-                            std::unique_ptr<oat::Source<oat::SharedCVMat> >
-                        >;
-
     using fvec_size_t = std::vector<FrameSource>::size_type;
 
     /**
@@ -139,9 +141,7 @@ private:
     std::vector< std::unique_ptr
                < std::condition_variable > > frame_write_condition_variables_;
     std::vector< std::unique_ptr
-               < boost::lockfree::spsc_queue
-               < cv::Mat, boost::lockfree::capacity
-               < FRAME_WRITE_BUFFER_SIZE > > > > frame_write_buffers_;
+               < FrameQueue > > frame_write_buffers_;
 
     // Position sources
     std::vector<oat::Position2D> positions_;
@@ -156,8 +156,8 @@ private:
                    const bool& save_images);
 
     void initializeWriter(cv::VideoWriter& writer,
-                          const std::string& file_name,
-                          const cv::Mat& image);
+                          const std::string &file_name,
+                          const oat::Frame &image);
 
     bool checkFile(std::string& file);
 

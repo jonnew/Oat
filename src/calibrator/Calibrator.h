@@ -24,6 +24,7 @@
 #include <iosfwd>
 #include <opencv2/core/mat.hpp>
 
+#include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace oat {
@@ -67,7 +68,7 @@ public:
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    virtual void configure(const std::string &config_file, 
+    virtual void configure(const std::string &config_file,
                            const std::string &config_key) = 0;
 
     /**
@@ -84,8 +85,8 @@ public:
 
     // Accessors
     const std::string & name() const { return name_; }
-    const std::string & calibration_save_path() const { 
-        return calibration_save_path_; 
+    const std::string & calibration_save_path() const {
+        return calibration_save_path_;
     }
 
 protected:
@@ -100,7 +101,7 @@ protected:
 private:
 
     std::string name_;                      //!< Calibrator name
-    cv::Mat internal_frame_;                //!< Current frame provided by SOURCE
+    oat::Frame internal_frame_;                //!< Current frame provided by SOURCE
     std::string frame_source_address_;      //!< Frame source address
     oat::NodeState node_state_;             //!< Frame source node state
     oat::Source<SharedCVMat> frame_source_; //!< The calibrator frame SOURCE

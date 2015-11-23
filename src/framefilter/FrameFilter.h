@@ -21,8 +21,8 @@
 #define	OAT_FRAMEFILT_H
 
 #include <string>
-#include <opencv2/core/mat.hpp>
 
+#include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 
@@ -90,7 +90,7 @@ private:
     const std::string name_;
 
     // Currently processed frame
-    cv::Mat internal_frame_;
+    oat::Frame internal_frame_;
 
     // Frame source
     const std::string frame_source_address_;
@@ -102,7 +102,7 @@ private:
     oat::Sink<oat::SharedCVMat> frame_sink_;
 
     // Currently acquired, shared frame
-    cv::Mat shared_frame_;
+    oat::Frame shared_frame_;
 };
 
 }      /* namespace oat */

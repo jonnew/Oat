@@ -239,12 +239,12 @@ public:
 
     oat::Frame retrieve() const { return frame_; }
     oat::Frame clone() const { return frame_.clone(); }
+    void copyTo(oat::Frame &frame) const { frame_.copyTo(frame); };
     MatParameters parameters() const { return parameters_; }
 
 private :
     oat::Frame frame_;
     MatParameters parameters_;
-
 };
 
 inline void Source<SharedCVMat>::connect(const std::string &address) {
@@ -290,14 +290,12 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
             obj_shmem_.find<SharedCVMat>(typeid(SharedCVMat).name());
     sh_object_ = temp.first;
 
-    void * samp_ptr = obj_shmem_.get_address_from_handle(sh_object_->sample());
-
     // Generate cv::Mat header using info in shmem segment
     frame_ = oat::Frame(sh_object_->rows(),
                         sh_object_->cols(),
                         sh_object_->type(),
                         obj_shmem_.get_address_from_handle(sh_object_->data()),
-                        &samp_ptr);
+                        obj_shmem_.get_address_from_handle(sh_object_->sample()));
 
     // Save parameters so that to construct cv::Mats with
     parameters_.cols = sh_object_->cols();

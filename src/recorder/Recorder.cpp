@@ -173,11 +173,8 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
                     addr, std::make_unique<oat::Source < oat::SharedCVMat >> ()
             ));
 
-            frame_write_buffers_.push_back(
-                std::make_unique< boost::lockfree::spsc_queue
-                                < cv::Mat, boost::lockfree::capacity
-                                < FRAME_WRITE_BUFFER_SIZE> > >()
-            );
+            frame_write_buffers_.push_back(std::make_unique<FrameQueue>());
+
             video_writers_.push_back(std::make_unique<cv::VideoWriter>());
 
             // Spawn frame writer threads and synchronize to incoming data
@@ -309,8 +306,8 @@ void Recorder::writePositionsToFile() {
 }
 
 void Recorder::writePositionFileHeader(const std::string& date,
-        const double sample_rate,
-        const std::vector<std::string>& sources) {
+                                       const double sample_rate,
+                                       const std::vector<std::string>& sources) {
 
     json_writer_.StartObject();
 
@@ -332,13 +329,12 @@ void Recorder::writePositionFileHeader(const std::string& date,
 }
 
 void Recorder::initializeWriter(cv::VideoWriter& writer,
-        const std::string& file_name,
-        const cv::Mat& image) {
+                                const std::string  &file_name,
+                                const oat::Frame &image) {
 
     // Initialize writer using the first frame taken from server
     int fourcc = CV_FOURCC('H', '2', '6', '4');
     writer.open(file_name, fourcc, frames_per_second_, image.size());
-
 }
 
 bool Recorder::checkFile(std::string& file) {

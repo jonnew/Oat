@@ -80,7 +80,8 @@ bool Viewer::showImage() {
         return true;
 
     // Clone the shared frame
-    internal_frame_ = frame_source_.clone();
+    //internal_frame_ = frame_source_.clone();
+    frame_source_.copyTo(internal_frame_);
 
     // Tell sink it can continue
     frame_source_.post();
@@ -106,7 +107,7 @@ bool Viewer::showImage() {
             cv::imwrite(makeFileName(), internal_frame_, compression_params_);
     }
 
-    // Sink was not at END state 
+    // Sink was not at END state
     return false;
 }
 

@@ -57,6 +57,9 @@ void FileReader::connectToNode() {
 
     // Reset the video to the start
     file_reader_.set(CV_CAP_PROP_POS_AVI_RATIO, 0);
+
+    // Put the sample rate in the shared frame
+    shared_frame_.set_sample_period_sec(frame_period_in_sec_.count());
 }
 
 bool FileReader::serveFrame() {
@@ -143,7 +146,6 @@ void FileReader::calculateFramePeriod() {
 
     // Automatic conversion
     frame_period_in_sec_ = frame_period;
-    shared_frame_.set_sample_period_sec(frame_period_in_sec_.count());
 }
 
 } /* namespace oat */

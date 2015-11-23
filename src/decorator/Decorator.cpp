@@ -89,7 +89,7 @@ bool Decorator::decorateFrame() {
         return true;
 
     // Clone the shared frame
-    internal_frame_ = frame_source_.clone();
+    frame_source_.copyTo(internal_frame_);
 
     // Tell sink it can continue
     frame_source_.post();

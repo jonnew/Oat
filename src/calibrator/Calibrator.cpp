@@ -28,7 +28,7 @@ namespace bfs = boost::filesystem;
 
 namespace oat {
 
-    
+
 Calibrator::Calibrator(const std::string &frame_source_address) :
   name_("calibrate[" + frame_source_address + "]")
 , frame_source_address_(frame_source_address)
@@ -52,17 +52,17 @@ bool Calibrator::process(void) {
         return true;
 
     // Clone the shared frame
-    internal_frame_ = frame_source_.clone();
+    frame_source_.copyTo(internal_frame_);
 
     // Tell sink it can continue
     frame_source_.post();
 
     ////////////////////////////
     //  END CRITICAL SECTION  //
-    
+
     calibrate(internal_frame_);
 
-    // Sink was not at END state 
+    // Sink was not at END state
     return false;
 }
 
