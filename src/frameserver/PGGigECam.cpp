@@ -816,6 +816,7 @@ bool PGGigECam::serveFrame() {
     frame_sink_.wait();
 
     raw_image.Convert(pg::PIXEL_FORMAT_BGR, rgb_image.get());
+    shared_frame_.incrementSampleCount();
 
     // Tell sources there is new data
     frame_sink_.post();

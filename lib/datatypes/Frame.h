@@ -24,20 +24,31 @@
 
 namespace oat {
 
-// TODO: cv::Mat's destructor is not virtual! Might be best just use
-// cv::Mat as a public member
+/**
+ * Wrapper class for cv::Mat that contains sample number information.
+ * NOTE: cv::Mat does not delcare a virtual destructor, so you must not
+ * delete Frames through a pointer to cv::Mat.
+ */
 class Frame : public cv::Mat {
 
 public:
 
-    Frame() { }
+    Frame()
+    {
+        // Nothing
+    }
+
+    Frame(cv::Mat m, const cv::Rect &roi) :
+      cv::Mat(m,roi) 
+    {
+        // Nothing
+    }
+
     Frame(int r, int c, int t, void * data, void ** samp_ptr) :
       cv::Mat(r, c, t, data)
     {
         sample_ = static_cast<uint64_t *>(*samp_ptr);
     }
-
-    Frame(cv::Mat m) : cv::Mat(m) { }
 
     // Clone override
     Frame clone() const {
@@ -47,6 +58,10 @@ public:
         m.sample_ = sample_;
 
         return m;
+    }
+
+    Frame operator()( const cv::Rect &roi ) const {
+        return Frame(*this, roi);
     }
 
     // sample_ only settable via incrementation

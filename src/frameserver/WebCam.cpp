@@ -60,6 +60,7 @@ bool WebCam::serveFrame() {
     frame_sink_.wait();
 
     *cv_camera_ >> shared_frame_;
+    shared_frame_.incrementSampleCount();
 
     // Crop if necessary
     if (use_roi_)
