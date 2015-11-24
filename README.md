@@ -457,7 +457,7 @@ Filter positions from SOURCE and published filtered positions to SINK.
 
 TYPE
   kalman: Kalman filter
-  homo: homography transform
+  homography: homography transform
   region: position region label annotation
 
 SOURCE:
@@ -488,7 +488,7 @@ __TYPE = `kalman`__
   position measurement noise (position units; e.g. pixels).
 - __`tune`__=`bool` Use the GUI to tweak parameters.
 
-__TYPE = `homo`__
+__TYPE = `homography`__
 
 - __`homography`__ =
   `[[+float,+float,+float],[+float,+float,+float],[+float,+float,+float]]`,
@@ -1069,12 +1069,17 @@ camera with your computer.
 # TODO
 - [ ] Networked communication with remote endpoints that use extracted
   positional information
-    - ~~Strongly prefer to consume JSON over something ad hoc, opaque and
-      untyped~~
-    - ~~UDP~~, TCP/IP, Broadcast with single endpoint
+    - ~~Strongly prefer to consume JSON over something opaque and untyped~~
+    - ~~UDP~~ 
+        - ~~Client version (sends data without request)~~
+        - ~~Server version (pipeline is heldup by client position requests)~~
+    - TCP/IP 
         - Client version (sends data without request)
         - Server version (pipeline is heldup by client position requests)
-- [ ] Cmake/build improvements
+    - Broadcast 
+        - Client version (sends data without request)
+    - Move to ZMQ sockets?
+- [ ] Build improvements
     - ~~Global build script to make all of the programs in the project~~
     - ~~CMake managed versioning~~
     - ~~Option for building with/without point-grey support~~
@@ -1084,10 +1089,18 @@ camera with your computer.
       `-DOAT_USE_OPENGL` and `-DOAT_USE_CUDA` accordingly
     - ~~Put boost in a more standard location~~
         - EDIT: compiles with v1.54, which is provided in package manager.
-    - Clang build?
+    - ~~Clang build?~~
     - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
+- [ ] Unit and stress testing
+    - Unit tests for `libshmemdf`
+        - ~~Nominal data types, `T`~~
+        - Specializations for `SharedCVMat`
+    - Stress tests for data processing chains
+        - I need to come up with a series of scripts that configure and run
+          components in odd and intensive, but legal, ways to ensure sample
+          sychronization is maintianed, graceful exits, etc
 - [ ] Frame and position server sample synchronization
     - [ ] Dealing with dropped frames
         - Right now, I poll the camera for frames. This is fine for a file, but
@@ -1097,6 +1110,10 @@ camera with your computer.
           of a dropped frame, the server __must__ increment the sample number,
           even if it does not serve the frame, to prevent offsets from
           occurring.
+        - EDIT: `libshmemdf` and `oat::Frame` allow the sample number to be
+          incremented and travel with the frame, even if the frame is dropped.
+          This means that samples should be able to maintain accuracy even when
+          frames are discarded due to buffer overflow
     - [ ] Pull-based synchronization with remote client.
         - By virtue of the sychronization architecture I'm using to coordinate
           samples between SOURCE and SINK components, I get both push and pull
@@ -1122,14 +1139,6 @@ camera with your computer.
      - In anycase, the `pure SOURCE` components, esspecially `oat-frameserve`,
        are by far the most primative components in the project at this point
        and need refactoring to deal with these two issues in a reasonable way.
-- [ ] Ideas for shmem performance optimization
-     - cv::Mat's have a constructor option that takes a pointer to user data.
-       The resultant object does not manage the lifetime of the mat data. If I
-       can make this pointer point to shmem, then I can avoid needless copying
-       of mat data.
-     - EDIT: the /src/experiments project now contains a couple simple programs
-       demonstrating how to do this. If used correctly, this method could have
-       huge performance benefits.
 - [ ] In line with the comments above about central clock management, it might
   also be better to have a central anonymous shared memory management. Instead
   of creating a named shared block that can potentially be stranded in the case
@@ -1137,20 +1146,18 @@ camera with your computer.
   clock could be smarter about shmem allocation/freeing.
      - There could be, for instance, a directed adjacentcy list to describe a
        data processing graph stored in shmem.
-- [ ] shmem type checking by clients, exit gracefully in the case of incorrect
-  type
-   - e.g. a framefilter tries to use a position filter as a SOURCE. In this
-     case, the framefilter needs to realize that the SOURCE type is wrong and
-     exit.
 - [ ] GigE interface cleanup
     - The PGGigeCam class is a big mess. It has has tons of code redundancy.
     - Additionally, it needs to be optimized for performance. Are their
       unnessesary copies of images being made during conversion from PG Image
       to cv::Mat? Can I employ some move casts to help?
+        - EDIT: shmemdf takes care of this.
     - There are a couple examples of GigE interfaces in OpenCV targeting other
       3rd party APIs: `modules/videoio/src/cap_giganetix.cpp` and
       `opencv/modules/videoio/src/cap_pvapi.cpp`. I don't know that these are
       great pieces of code, but I should at least use them for inspiration.
+    - `oat-frameserve gige` lacks the ability to set FPS in free running
+      (non-triggered mode)
 -  [ ] Exception safety for all components and libs
     - frameserve
     - ~~framefilt~~
@@ -1161,38 +1168,24 @@ camera with your computer.
     - ~~record~~
     - ~~view~~
     - ~~decorate~~
-    - There are a bunch of unsafe exit conditions in the shmem library,
-      especially having to do with EXITs after boost interprocess exceptions
-      during shmem segment setup.
 - [ ] Decorator is primitive
     - Size of position markers, sample numbers, etc do not change with image
       resolution
     - How are multi-region tags displayed using the -R option?
-- [ ] Maybe use OpenCV's Qt integration to improve GUIs overall
-    - `oat-view`
-    - `oat-calibrate`
-- [x] When a position sink decrements the client reference count, positest
-  deadlocks instead of continuing to serve. Problem with SMServer?
-    - EDIT: Could not replicate with positest --> posifilt. Need to get
-      breakage scenario to reopen.
-- [ ] `oat-frameserve gige` lacks the ability to set FPS in free running
-  (non-triggered mode)
-- [x] `oat-calibrate` is a complete hack. It would be best to move this
-  component out of oat-frameserve source directory and make it its own utility
-  component that can listen to a frame-stream from oat-frameserve
-    - EDIT: This has been made into its own component.
 - [ ] For config file specification, there should be a single command line
   option with two values (file, key) instead of a single option for each.
     - See [this SO post](http://stackoverflow.com/questions/8175723/vector-arguments-in-boost-program-options)
       for how.
-- [ ] Shared objects
-    - Instead of having classes like SMServer and SMClient to manage putting
-      and retreiving objects in shared memory, it might be more natural to have
-      shared objects whose copy/move constructor and assignement operator
-      automatically implement all synchronization steps. 
 - [ ] Something is wrong with sample synchronization
     - When working with Jennie's data, we found that position samples were
       being recorded multiple times - they had the same sample number and
       position info. Seems to be very intermittent, but points to a serious
       issue with sample synchronization. It seems likely this occurring in the
       recorder component due to its mulitthreaded implementation.
+    - With `libshmemdf`, sample numbers now travel with samples. I need to use
+      this to implement `asserts` in each component that (1) check that samples
+      increase monotonically (buffer overflows means that samples can be
+      skipped, so uniary incrementation is not a given) and (2) that
+      multisource components are dealing with sychonized sample numbers when
+      pull-based sychornization strategy is enforced (no external clock driving
+      acqusition, so no chance for buffer overrun).

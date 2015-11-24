@@ -22,7 +22,6 @@
 
 #include <atomic>
 #include <boost/interprocess/managed_shared_memory.hpp>
-#include <opencv2/core.hpp>
 
 #include "SharedObject.h"
 
@@ -63,7 +62,6 @@ private :
     std::atomic<int> rows_ {0};
     std::atomic<int> cols_ {0};
     std::atomic<int> type_ {0};
-
 };
 
 }

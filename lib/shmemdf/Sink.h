@@ -220,10 +220,6 @@ class Sink<SharedCVMat> : public SinkBase<SharedCVMat> {
 public:
     void bind(const std::string &address, const size_t bytes);
     oat::Frame retrieve(const size_t rows, size_t cols, const int type);
-
-//private:
-//    void * data {nullptr};
-//    void * sample {nullptr};
 };
 
 inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {

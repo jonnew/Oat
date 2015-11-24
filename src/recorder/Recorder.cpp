@@ -51,8 +51,6 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
 , append_date_(prepend_date)
 , allow_overwrite_(overwrite)
 , frames_per_second_(frames_per_second)
-//, number_of_position_sources_(position_source_addresses.size())
-//, position_read_required_(number_of_position_sources_)
 , sources_eof(false) {
 
     // First check that the save_path is valid
@@ -121,7 +119,6 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
         json_writer_.StartObject();
 
         // Coordinate system
-        // TODO: replace with cmake-managed version
         char version[255];
         strcpy (version, Oat_VERSION_MAJOR);
         strcat (version, ".");
