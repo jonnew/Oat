@@ -77,11 +77,7 @@ bool FrameFilter::processFrame() {
     // Wait for sources to read
     frame_sink_.wait();
 
-    // TODO: For some filters, it may be best for the filter operation to go
-    //       here instead of in a non-critical section followed by a copy
-    //       operation.
-    memcpy(shared_frame_.data, internal_frame_.data,
-            internal_frame_.total() * internal_frame_.elemSize());
+    internal_frame_.copyTo(shared_frame_);
 
     // Tell sources there is new data
     frame_sink_.post();

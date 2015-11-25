@@ -121,9 +121,7 @@ bool Decorator::decorateFrame() {
     // Wait for sources to read
     frame_sink_.wait();
 
-    // Copy data to shared frame
-    memcpy(shared_frame_.data, internal_frame_.data,
-            internal_frame_.total() * internal_frame_.elemSize());
+    internal_frame_.copyTo(shared_frame_);
 
     // Tell sources there is new data
     frame_sink_.post();
