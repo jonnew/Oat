@@ -29,7 +29,7 @@
 namespace oat {
 
 // Forward decl.
-class SharedCVMat;
+class SharedFrameHeader;
 
 /**
  * View a frame stream on the monitor.
@@ -69,7 +69,7 @@ private:
     // Frame SOURCE to get frames to display
     const std::string frame_source_address_;
     oat::NodeState node_state_;
-    oat::Source<oat::SharedCVMat> frame_source_;
+    oat::Source<oat::SharedFrameHeader> frame_source_;
 
     // Minimum viewer refresh period
     Clock::time_point tick_, tock_;

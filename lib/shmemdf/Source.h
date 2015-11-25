@@ -29,7 +29,7 @@
 
 #include "ForwardsDecl.h"
 #include "Node.h"
-#include "SharedCVMat.h"
+#include "SharedFrameHeader.h"
 
 namespace oat {
 
@@ -221,14 +221,14 @@ inline T  Source<T>::clone() const {
     return *sh_object_;
 }
 
-// 1. SharedCVMat
+// 1. SharedFrameHeader
 
 template<>
-class Source<SharedCVMat> : public SourceBase<SharedCVMat> {
+class Source<SharedFrameHeader> : public SourceBase<SharedFrameHeader> {
 
 public:
 
-    struct MatParameters {
+    struct ConnectionParameters {
         size_t cols  {0};
         size_t rows  {0};
         size_t type  {0};
@@ -240,14 +240,14 @@ public:
     oat::Frame retrieve() const { return frame_; }
     oat::Frame clone() const { return frame_.clone(); }
     void copyTo(oat::Frame &frame) const { frame_.copyTo(frame); };
-    MatParameters parameters() const { return parameters_; }
+    ConnectionParameters parameters() const { return parameters_; }
 
 private :
     oat::Frame frame_;
-    MatParameters parameters_;
+    ConnectionParameters parameters_;
 };
 
-inline void Source<SharedCVMat>::connect(const std::string &address) {
+inline void Source<SharedFrameHeader>::connect(const std::string &address) {
 
     if (connected_ || bound_)
         throw std::runtime_error("A source can only connect a "
@@ -286,11 +286,11 @@ inline void Source<SharedCVMat>::connect(const std::string &address) {
     // Find an existing shared object constructed by the SINK
     obj_shmem_ =
             bip::managed_shared_memory(bip::open_only, obj_address_.c_str());
-    std::pair<SharedCVMat *,std::size_t> temp =
-            obj_shmem_.find<SharedCVMat>(typeid(SharedCVMat).name());
+    std::pair<SharedFrameHeader *,std::size_t> temp =
+            obj_shmem_.find<SharedFrameHeader>(typeid(SharedFrameHeader).name());
     sh_object_ = temp.first;
 
-    // Generate cv::Mat header using info in shmem segment
+    // Generate frame header using info in shmem segment
     frame_ = oat::Frame(sh_object_->rows(),
                         sh_object_->cols(),
                         sh_object_->type(),

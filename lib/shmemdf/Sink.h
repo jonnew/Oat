@@ -30,7 +30,7 @@
 
 #include "ForwardsDecl.h"
 #include "Node.h"
-#include "SharedCVMat.h"
+#include "SharedFrameHeader.h"
 
 namespace oat {
 
@@ -135,6 +135,8 @@ inline void SinkBase<T>::post() {
 
 // Specializations...
 
+// 0. Generic without need for zero-copy storage
+
 template<typename T>
 class Sink : public SinkBase<T> {
 
@@ -212,17 +214,17 @@ inline T * Sink<T>::retrieve() {
     return sh_object_;
 }
 
-// 1. SharedCVMat
+// 1. SharedFrameHeader
 
 template<>
-class Sink<SharedCVMat> : public SinkBase<SharedCVMat> {
+class Sink<SharedFrameHeader> : public SinkBase<SharedFrameHeader> {
 
 public:
     void bind(const std::string &address, const size_t bytes);
     oat::Frame retrieve(const size_t rows, size_t cols, const int type);
 };
 
-inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t bytes) {
+inline void Sink<SharedFrameHeader>::bind(const std::string &address, const size_t bytes) {
 
     if (bound_)
         throw std::runtime_error("A sink can only bind a "
@@ -254,17 +256,17 @@ inline void Sink<SharedCVMat>::bind(const std::string &address, const size_t byt
         obj_shmem_ = bip::managed_shared_memory(
             bip::create_only,
             obj_address_.c_str(),
-            1024 + sizeof(SharedCVMat) + bytes + sizeof(uint64_t));
+            1024 + sizeof(SharedFrameHeader) + bytes + sizeof(uint64_t));
 
         // Find an existing shared object or construct one
-        sh_object_ = obj_shmem_.find_or_construct<SharedCVMat>(typeid(SharedCVMat).name())();
+        sh_object_ = obj_shmem_.find_or_construct<SharedFrameHeader>(typeid(SharedFrameHeader).name())();
 
         node_->set_sink_state(NodeState::SINK_BOUND);
         bound_ = true;
     }
 }
 
-inline oat::Frame Sink<SharedCVMat>::retrieve(const size_t rows, const size_t cols, const int type) {
+inline oat::Frame Sink<SharedFrameHeader>::retrieve(const size_t rows, const size_t cols, const int type) {
 
     // Make sure that the SINK is bound to a shared memory segment
     //assert(bound_);
@@ -280,7 +282,7 @@ inline oat::Frame Sink<SharedCVMat>::retrieve(const size_t rows, const size_t co
     void * data = obj_shmem_.allocate(temp.total() * temp.elemSize());
     handle_t data_handle = obj_shmem_.get_handle_from_address(data);
 
-    // Reset the SharedCVMat's parameters now that we know what they should be
+    // Reset the SharedFrameHeader's parameters now that we know what they should be
     sh_object_->setParameters(data_handle, sample_handle, rows, cols, type);
 
     // Return pointer to memory allocated for shared object

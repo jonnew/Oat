@@ -22,7 +22,7 @@
 
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedCVMat.h"
+#include "../../lib/shmemdf/SharedFrameHeader.h"
 
 #include "FrameFilter.h"
 
@@ -41,7 +41,7 @@ void FrameFilter::connectToNode() {
 
     // Connect to source node and retrieve cv::Mat parameters
     frame_source_.connect(frame_source_address_);
-    oat::Source<oat::SharedCVMat>::MatParameters param =
+    oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
             frame_source_.parameters();
 
     // Bind to sink sink node and create a shared cv::Mat

@@ -25,7 +25,7 @@
 
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedCVMat.h"
+#include "../../lib/shmemdf/SharedFrameHeader.h"
 
 namespace oat {
 
@@ -77,7 +77,7 @@ protected:
 
     // Frame sink
     const std::string frame_sink_address_;
-    oat::Sink<oat::SharedCVMat> frame_sink_;
+    oat::Sink<oat::SharedFrameHeader> frame_sink_;
 
     // Currently acquired, shared frame
     bool frame_empty_;

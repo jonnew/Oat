@@ -29,7 +29,7 @@
 namespace oat {
 
 // Forward decl.
-class SharedCVMat;
+class SharedFrameHeader;
 
 /**
  * Abstract frame filter.
@@ -95,11 +95,11 @@ private:
     // Frame source
     const std::string frame_source_address_;
     oat::NodeState node_state_;
-    oat::Source<oat::SharedCVMat> frame_source_;
+    oat::Source<oat::SharedFrameHeader> frame_source_;
 
     // Frame sink
     const std::string frame_sink_address_;
-    oat::Sink<oat::SharedCVMat> frame_sink_;
+    oat::Sink<oat::SharedFrameHeader> frame_sink_;
 
     // Currently acquired, shared frame
     oat::Frame shared_frame_;

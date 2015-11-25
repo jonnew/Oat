@@ -23,7 +23,7 @@
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedCVMat.h"
+#include "../../lib/shmemdf/SharedFrameHeader.h"
 
 #include "PositionDetector.h"
 

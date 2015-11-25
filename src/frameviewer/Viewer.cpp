@@ -27,7 +27,7 @@
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/shmemdf/Source.h"
-#include "../../lib/shmemdf/SharedCVMat.h"
+#include "../../lib/shmemdf/SharedFrameHeader.h"
 
 #include "Viewer.h"
 
@@ -162,7 +162,6 @@ std::string Viewer::makeFileName() {
 
         // Recreate file name
         file = folder.string() + "/" + stem.string() + "." + extension.string();
-
     }
 
     return file;

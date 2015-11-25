@@ -30,7 +30,7 @@ namespace oat {
  * Wrapper class for cv::Mat that contains sample number information.
  *
  * NOTE 1: cv::Mat does not declare a virtual destructor, so you must not
- * delete Frames through a pointer to the base cv::Mat.
+ * delete Frames through a pointer to cv::Mat.
  *
  * NOTE 2: Only the cv::Mat operators and constructors that are specifically needed by the
  * oat codebase are overriden in this class. Others remain callable, and might
@@ -102,6 +102,7 @@ private:
     // sample_ object.
     Sample * sample_ptr_;
     Sample sample_;
+
 };
 
 }      /* namespace oat */

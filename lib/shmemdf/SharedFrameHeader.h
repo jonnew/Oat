@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   SharedCVMat.h
+//* File:   SharedFrameHeader.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -23,19 +23,26 @@
 #include <atomic>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
-#include "SharedObject.h"
-
 namespace oat {
 namespace bip = boost::interprocess;
 
-// Class containing handle to server process's address of matrix data
-class SharedCVMat : public SharedObject{
+/** Header to facilitate zero-copy oat::Frame exchange through shared
+  * memory.
+  *
+  * This class contains everything required to pass Frames through shared
+  * memory without a copy. Basically, this class contains two critical shmem
+  * handles: data_ and sample_. These objects provide cross-process pointer
+  * access to two blocks of shared memory, one for matrix data and other for
+  * sample count and rate information. Non-pointer members allow construction
+  * of Frames at source and sink end contain this data and sample information.
+  */
+class SharedFrameHeader {
 
     using handle_t = bip::managed_shared_memory::handle_t;
 
 public :
 
-    SharedCVMat() : SharedObject()
+    SharedFrameHeader() 
     {
         // Nothing
     }
@@ -43,7 +50,18 @@ public :
     size_t rows() const { return rows_; }
     size_t cols() const { return cols_; }
     int type() const { return type_; }
+    handle_t sample() const { return sample_; }
+    handle_t data() const { return data_; }
 
+    /**
+     * Set header data fields.
+     *
+     * @param data Interprocess handle to matrix data pointer
+     * @param sample Interprocess handle to frame sample struct pointer
+     * @param rows Number of rows in the matrix
+     * @param cols Number of columns in the matrix
+     * @param type OpenCV cv::Mat type of the frame
+     */
     void setParameters(const handle_t data,
                        const handle_t sample,
                        const size_t rows,
@@ -58,13 +76,21 @@ public :
 
 private :
 
+    // TODO: Should these be atomic? They should already be protected by
+    // the semaphores wrapping critical sections in the code. I guess they
+    // are manipulated by bind() and connect() methods without semaphore 
+    // protection though.
+
     // Matrix metadata
     std::atomic<int> rows_ {0};
     std::atomic<int> cols_ {0};
     std::atomic<int> type_ {0};
+
+    // Interprocess matrix data and sample handles
+    std::atomic<handle_t> data_;
+    std::atomic<handle_t> sample_;
 };
 
 }
-
 #endif	/* OAT_SHAREDCVMAT_H */
 

@@ -30,7 +30,7 @@
 namespace oat {
 
 // Forward decl.
-class SharedCVMat;
+class SharedFrameHeader;
 
 /**
  * Abstract object position detector.
@@ -99,7 +99,7 @@ private:
 
     // Frame source
     const std::string frame_source_address_;
-    oat::Source<oat::SharedCVMat> frame_source_;
+    oat::Source<oat::SharedFrameHeader> frame_source_;
 
     // Position sink
     const std::string position_sink_address_;
