@@ -32,7 +32,7 @@ namespace oat {
 // Forward decl.
 class CalibratorVisitor;
 class OutputVisitor;
-class SharedCVMat;
+class SharedFrameHeader;
 
 /**
  * Abstract calibrator.
@@ -101,10 +101,10 @@ protected:
 private:
 
     std::string name_;                      //!< Calibrator name
-    oat::Frame internal_frame_;                //!< Current frame provided by SOURCE
+    oat::Frame internal_frame_;             //!< Current frame provided by SOURCE
     std::string frame_source_address_;      //!< Frame source address
     oat::NodeState node_state_;             //!< Frame source node state
-    oat::Source<SharedCVMat> frame_source_; //!< The calibrator frame SOURCE
+    oat::Source<SharedFrameHeader> frame_source_; //!< The calibrator frame SOURCE
 };
 
 }      /* namespace oat */

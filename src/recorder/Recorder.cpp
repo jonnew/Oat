@@ -32,6 +32,7 @@
 #include <boost/dynamic_bitset.hpp>
 
 #include "../../lib/utility/make_unique.h"
+#include "../../lib/shmemdf/SharedFrameHeader.h"
 
 #include "Recorder.h"
 
@@ -167,7 +168,7 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
             video_file_names_.push_back(frame_fid);
 
             frame_sources_.push_back(std::make_pair(
-                    addr, std::make_unique<oat::Source < oat::SharedCVMat >> ()
+                    addr, std::make_unique<oat::Source < oat::SharedFrameHeader >> ()
             ));
 
             frame_write_buffers_.push_back(std::make_unique<FrameQueue>());

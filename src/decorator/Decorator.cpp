@@ -219,7 +219,7 @@ void Decorator::printSampleNumber() {
 
     cv::Point text_origin(10, internal_frame_.rows - 10);
     cv::putText(internal_frame_,
-                std::to_string(frame_source_.write_number()),
+                std::to_string(internal_frame_.sample_count()),
                 text_origin,
                 1,
                 font_scale,
@@ -231,14 +231,14 @@ void Decorator::printSampleNumber() {
  */
 void Decorator::encodeSampleNumber() {
 
-    uint64_t sample_number = frame_source_.write_number();
+    uint64_t sample_count = internal_frame_.sample_count();
 
     int column = 0;
-    for (int shift = 0; shift < 32; shift++) {
+    for (int shift = 0; shift < 64; shift++) {
 
         cv::Mat sub_square = internal_frame_.colRange(column, column + encode_bit_size).rowRange(0, encode_bit_size);
 
-        if (sample_number & 0x1) {
+        if (sample_count & 0x1) {
 
             cv::Mat true_mat(encode_bit_size, encode_bit_size, internal_frame_.type(), CV_RGB(255, 255, 255));
             true_mat.copyTo(sub_square);
@@ -249,7 +249,7 @@ void Decorator::encodeSampleNumber() {
             false_mat.copyTo(sub_square);
         }
 
-        sample_number >>= 1;
+        sample_count >>= 1;
         column += encode_bit_size;
     }
 }

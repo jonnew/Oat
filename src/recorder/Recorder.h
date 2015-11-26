@@ -33,16 +33,18 @@
 
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedCVMat.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Position2D.h"
 
 namespace oat {
+namespace blf = boost::lockfree;
 
+// Constants
 static constexpr int FRAME_WRITE_BUFFER_SIZE {1000};
 static constexpr int POSITION_WRITE_BUFFER_SIZE {65536};
 
-namespace blf = boost::lockfree;
+// Forward decl.
+class SharedFrameHeader;
 
 /**
  * Position and frame recorder.
@@ -55,7 +57,7 @@ public:
                                      < oat::Position2D > > >;
 
     using FrameSource = std::pair < std::string, std::unique_ptr
-                                  < oat::Source<oat::SharedCVMat > > >;
+                                  < oat::Source<oat::SharedFrameHeader > > >;
 
     using FrameQueue =  blf::spsc_queue < oat::Frame, boost::lockfree::capacity
                                         < FRAME_WRITE_BUFFER_SIZE > >;

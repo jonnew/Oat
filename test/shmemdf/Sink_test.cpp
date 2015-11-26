@@ -24,7 +24,7 @@
 #include <string>
 
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedCVMat.h"
+#include "../../lib/shmemdf/SharedFrameHeader.h"
 
 const std::string node_addr = "test";
 
@@ -149,11 +149,11 @@ SCENARIO ("Bound sinks can retrieve shared objects to mutate them.", "[Sink]") {
 }
 
 
-SCENARIO ("Sink<SharedCVMat> must bind() before waiting, posting, or allocating.", "[Sink, SharedCVMat]") {
+SCENARIO ("Sink<SharedFrameHeader> must bind() before waiting, posting, or allocating.", "[Sink, SharedFrameHeader]") {
 
-    GIVEN ("A single Sink<SharedCVMat>") {
+    GIVEN ("A single Sink<SharedFrameHeader>") {
 
-        oat::Sink<oat::SharedCVMat> sink;
+        oat::Sink<oat::SharedFrameHeader> sink;
         cv::Mat mat;
         size_t cols {100};
         size_t rows {100};
