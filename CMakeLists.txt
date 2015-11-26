@@ -61,6 +61,7 @@ message (STATUS "  Build type: ${LOWERCASE_CMAKE_BUILD_TYPE}")
 message (STATUS "  Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
 message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
 message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")
+message (STATUS "  Build documentation: ${BUILD_DOCS}")
 
 # Boost
 # TODO: What is the oldest version of boost I can use?

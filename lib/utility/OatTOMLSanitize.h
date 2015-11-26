@@ -22,9 +22,13 @@
 
 #include <string>
 #include <typeinfo>
-#include <boost/core/demangle.hpp>
+#include <boost/type_index.hpp>
 
 #include "cpptoml.h"
+
+// TODO: Add a second template argument to getX functions that provides an explicit type comparison. 
+// usage should be something like getValue<U>(...), and within function body, must pass
+// typeid(U) == typeid(value extracted from toml table).
 
 namespace oat{
 namespace config {
@@ -95,7 +99,7 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error("'" + key + "' must be a TOML value of type "
-                    + boost::core::demangle(typeid(T).name()) + ".\n"));
+                    + boost::typeindex::type_id<T>().pretty_name() + ".\n"));
         }
 
     } else if (required) {
@@ -131,7 +135,7 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error("'" + key + "' must be a TOML value of type "
-                    + boost::core::demangle(typeid(T).name()) + ".\n"));
+                    + boost::typeindex::type_id<T>().pretty_name() + ".\n"));
         }
     } else if (required) {
          throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
@@ -166,7 +170,7 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error("'" + key + "' must be a TOML value of type "
-                    + boost::core::demangle(typeid(T).name()) + ".\n"));
+                    + boost::typeindex::type_id<T>().pretty_name() +  ".\n"));
         }
     } else if (required) {
          throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
