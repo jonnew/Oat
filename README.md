@@ -8,7 +8,7 @@ processing chains. Oat is primarily used for real-time animal position tracking
 in the context of experimental neuroscience, but can be used in any
 circumstance that requires real-time object tracking.
 
-[![Build Status](https://travis-ci.org/jonnew/Oat.svg?branch=shmem-refactor)](https://travis-ci.org/jonnew/Oat)
+[![Build Status](https://travis-ci.org/jonnew/Oat.png?branch=master)](https://travis-ci.org/jonnew/Oat)
 
 __Contributors__
 
@@ -16,7 +16,7 @@ __Contributors__
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+**Table of Contents**
 
   - [Manual](#manual)
     - [Frame Server](#frame-server)
@@ -749,14 +749,11 @@ oat record -i raw -p pos -d -f ~/Desktop -n my_data
 
 \newpage
 ### Position Network Socket
-`oat-posisock` - Stream detected object positions to the network in both client
-and/or server configurations.
+`oat-posisock` - Stream detected object positions to the network in either
+client or server configurations.
 
 #### Signature
-    position 0 --> |
-    position 1 --> |
-      :            | oat-posisock
-    position N --> |
+    position --> oat-posisock
 
 #### Usage
 ```
