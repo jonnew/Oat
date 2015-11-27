@@ -38,6 +38,8 @@ using Value = std::shared_ptr<cpptoml::base>;
 using Table = std::shared_ptr<cpptoml::table>;
 using Array = std::shared_ptr<cpptoml::array>;
 
+using boost::typeindex::type_id_with_cvr;
+
 inline void checkKeys(const std::vector<std::string>& options, const Table user_config) {
 
     auto it = user_config->begin();
@@ -99,7 +101,7 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error("'" + key + "' must be a TOML value of type "
-                    + boost::typeindex::type_id<T>().pretty_name() + ".\n"));
+                    + type_id_with_cvr<T>().pretty_name() + ".\n"));
         }
 
     } else if (required) {
@@ -135,7 +137,7 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error("'" + key + "' must be a TOML value of type "
-                    + boost::typeindex::type_id<T>().pretty_name() + ".\n"));
+                    + type_id_with_cvr<T>().pretty_name() + ".\n"));
         }
     } else if (required) {
          throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
@@ -170,7 +172,7 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error("'" + key + "' must be a TOML value of type "
-                    + boost::typeindex::type_id<T>().pretty_name() +  ".\n"));
+                    +  type_id_with_cvr<T>().pretty_name() +  ".\n"));
         }
     } else if (required) {
          throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));

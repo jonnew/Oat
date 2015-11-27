@@ -76,7 +76,7 @@ __Contributors__
 ## Manual
 Oat components are a set of programs that communicate through shared memory to
 capture, process, perform object detection within, and record video streams.
-Oat components act on two basic data types: `frames` and `positions`. 
+Oat components act on two basic data types: `frames` and `positions`.
 
 * `frame` - Video frame.
 * `position` - 2D position.
@@ -91,11 +91,11 @@ object in pre-recorded video file might look like this:
 # Serve frames from a video file to the 'raw' stream
 oat frameserve file raw -f ./video.mpg &
 
-# Perform background subtraction on the 'raw' stream 
+# Perform background subtraction on the 'raw' stream
 # Serve the result to the 'filt' stream
 oat framefilt bsub raw filt &
 
-# Perform color-based object position detection on the 'filt' stream 
+# Perform color-based object position detection on the 'filt' stream
 # Serve the object positionto the 'pos' stream
 oat posidet hsv filt pos &
 
@@ -114,7 +114,7 @@ This script has the following graphical representation:
 ```
 frameserve --> framefilt --> posidet --> decorate ---> view
            \                           /         \
-             -------------------------            ---> record   	
+             -------------------------            ---> record
 ```
 
 Generally, an Oat component is called in the following pattern:
@@ -193,7 +193,7 @@ INFO:
 CONFIGURATION:
   -c [ --config-file ] arg  Configuration file.
   -k [ --config-key ] arg   Configuration key.
-  -f [ --video-file ] arg   Path to video file if 'file' is selected as the 
+  -f [ --video-file ] arg   Path to video file if 'file' is selected as the
                             server TYPE.
 ```
 
@@ -212,7 +212,7 @@ __TYPE = `gige`__
   option (dB).
 - __`white_bal`__=`{red=+int, blue=+int}` White-balance specified as red/blue
   intensity values (0-1000).
-- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of 
+- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of
   interest to extract from the camera or video stream (pixels).
 - __`trigger_on`__=`bool` True to use camera trigger, false to use software
   polling.
@@ -234,7 +234,7 @@ __TYPE = `gige`__
 __TYPE = `file`__
 
 - __`frame_rate`__=`float` Frame rate in frames per second
-- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of 
+- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of
   interest to extract from the camera or video stream (pixels).
 
 __TYPE = `wcam`__
@@ -244,8 +244,8 @@ __TYPE = `wcam`__
 
 #### Examples
 ```bash
-# Serve to the 'wraw' stream from a webcam 
-oat frameserve wcam wraw 
+# Serve to the 'wraw' stream from a webcam
+oat frameserve wcam wraw
 
 # Stream to the 'graw' stream from a point-grey GIGE camera
 # using the gige_config tag from the config.toml file
@@ -314,7 +314,7 @@ __TYPE = `mog`__
   statistical model of the background image should be updated. Default is 0,
   specifying no adaptation.
 - __`gpu_index`__=`+int` Index of the GPU to use for performing background
-  subtraction if Oat was compiled with CUDA support.  
+  subtraction if Oat was compiled with CUDA support.
 
 #### Examples
 ```bash
@@ -331,7 +331,7 @@ oat framefilt mask raw roi -c config.toml -k mask-config
 
 \newpage
 ### Frame Viewer
-`oat-view` - Receive frames from named shared memory and display them on a 
+`oat-view` - Receive frames from named shared memory and display them on a
 monitor. Additionally, allow the user to take snapshots of the currently
 displayed frame by pressing <kbd>s</kbd> while the display window is
 in focus.
@@ -354,17 +354,17 @@ INFO:
 
 CONFIGURATION:
   -n [ --filename ] arg  The base snapshot file name.
-                         The timestamp of the snapshot will be prepended to 
-                         this name.If not provided, the SOURCE name will be 
+                         The timestamp of the snapshot will be prepended to
+                         this name.If not provided, the SOURCE name will be
                          used.
-                         
+
   -f [ --folder ] arg    The folder in which snapshots will be saved.
 ```
 
 #### Example
 ```bash
 # View frame stream named raw
-oat view raw 
+oat view raw
 
 # View frame stream named raw and specify that snapshots should be saved
 # to the Desktop with base name 'snapshot'
@@ -392,11 +392,11 @@ TYPE
   hsv : HSV detector (color)
 
 SOURCE:
-  User-supplied name of the memory segment to receive 
+  User-supplied name of the memory segment to receive
   frames from (e.g. raw).
 
 SINK:
-  User-supplied name of the memory segment to publish 
+  User-supplied name of the memory segment to publish
   detected positions to (e.g. pos).
 
 INFO:
@@ -417,25 +417,25 @@ __TYPE = `hsv`__
 - __`min_area`__=`+double` Minimum object area (pixels<sup>2</sup>)
 - __`max_area`__=`+double` Maximum object area (pixels<sup>2</sup>)
 - __`h_thresholds`__=`{min=+int, max=+int}` Hue pass band
-- __`s_thresholds`__=`{min=+int, max=+int}` Saturation pass band 
+- __`s_thresholds`__=`{min=+int, max=+int}` Saturation pass band
 - __`v_thresholds`__=`{min=+int, max=+int}` Value pass band
 
 __TYPE = `diff`__
 
 - __`tune`__=`bool` Provide sliders for tuning diff parameters
 - __`blur`__=`+int` Blurring kernel size (normalized box filter; pixels)
-- __`diff_threshold`__=`+int` Intensity difference threshold 
+- __`diff_threshold`__=`+int` Intensity difference threshold
 
 #### Example
 ```bash
-# Use color-based object detection on the 'raw' frame stream 
+# Use color-based object detection on the 'raw' frame stream
 # publish the result to the 'cpos' position stream
 # Use detector settings supplied by the hsv_config key in config.toml
 oat posidet hsv raw cpos -c config.toml -k hsv_config
 
-# Use motion-based object detection on the 'raw' frame stream 
+# Use motion-based object detection on the 'raw' frame stream
 # publish the result to the 'mpos' position stream
-oat posidet diff raw mpos  
+oat posidet diff raw mpos
 ```
 
 \newpage
@@ -493,8 +493,8 @@ __TYPE = `homography`__
 - __`homography`__ =
   `[[+float,+float,+float],[+float,+float,+float],[+float,+float,+float]]`,
   Homography matrix for 2D position (3x3; world units/pixel).
-             
-__TYPE = `region`__ 
+
+__TYPE = `region`__
 
 - __`<regions>`__=`[[+float, +float],[+float, +float],...,[+float, +float]]`
   User-named region contours (pixels). Regions counters are specified as
@@ -519,10 +519,10 @@ R0 = [[654.00, 380.00],
       [714.00, 316.67],
       [655.33, 319.33]]
 ```
-  
+
 #### Example
 ```bash
-# Perform Kalman filtering on object position from the 'pos' position stream 
+# Perform Kalman filtering on object position from the 'pos' position stream
 # publish the result to the 'kpos' position stream
 # Use detector settings supplied by the kalman_config key in config.toml
 oat posifilt kalman pos kfilt -c config.toml -k kalman_config
@@ -579,7 +579,7 @@ oat posicom mean pos1 pos2 com
 ```
 
 ### Frame Decorator
-`oat-decorate` - Annotate frames with sample times, dates, and/or positional 
+`oat-decorate` - Annotate frames with sample times, dates, and/or positional
 information.
 
 #### Signature
@@ -610,16 +610,16 @@ INFO:
   -v [ --version ]              Print version information.
 
 CONFIGURATION:
-  -p [ --position-sources ] arg  The name of position server(s) used to draw 
+  -p [ --position-sources ] arg  The name of position server(s) used to draw
                                 object position markers.
-                                
+
   -t [ --timestamp ]            Write the current date and time on each frame.
-                                
+
   -s [ --sample ]               Write the frame sample number on each frame.
-                                
-  -S [ --sample-code ]           Write the binary encoded sample on the corner 
+
+  -S [ --sample-code ]           Write the binary encoded sample on the corner
                                 of each frame.
-                                
+
   -R [ --region ]               Write region information on each frame if there
                                 is a position stream that contains it.
 ```
@@ -631,12 +631,12 @@ oat decorate raw -s
 
 # Add position markers to each frame from the 'raw' stream to indicate
 # objection positions for the 'pos1' and 'pos2' streams
-oat decorate raw -p pos1 pos2 
+oat decorate raw -p pos1 pos2
 ```
 
 \newpage
 ### Recorder
-`oat-record` - Save frame and position streams to file. 
+`oat-record` - Save frame and position streams to file.
 
 * `frame` streams are compressed and saved as individual video files (
   [H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI
@@ -646,8 +646,8 @@ oat decorate raw -p pos1 pos2
 
 ```
 {oat-version: X.X},
-{header: {timestamp: YYYY-MM-DD-hh-mm-ss}, 
-         {sample_rate_hz: X.X}, 
+{header: {timestamp: YYYY-MM-DD-hh-mm-ss},
+         {sample_rate_hz: X.X},
          {sources: [ID_1, ID_2, ..., ID_N]} }
 {samples: [ [0, {Position1}, {Position2}, ..., {PositionN} ],
             [1, {Position1}, {Position2}, ..., {PositionN} ],
@@ -659,13 +659,13 @@ where each position object is defined as:
 ```
 { ID: String,                 | A string matching an ID from the header sources
   unit: String,               | Enum spcifying length units (0=pixels, 1=meters)
-  pos_ok: Bool,               | Boolean indicating if position is valid 
+  pos_ok: Bool,               | Boolean indicating if position is valid
   pos_xy: [Double, Double],   | Position x,y values
-  vel_ok: Bool,               | Boolean indicating if velocity is valid 
+  vel_ok: Bool,               | Boolean indicating if velocity is valid
   vel_xy: [Double, Double],   | Velocity x,y values
-  head_ok: Bool,              | Boolean indicating if heading  is valid 
+  head_ok: Bool,              | Boolean indicating if heading  is valid
   head_xy: [Double, Double],  | Heading x,y values
-  reg_ok: Bool,               | Boolean indicating if region tag  is valid 
+  reg_ok: Bool,               | Boolean indicating if region tag  is valid
   reg: String }               | Region tagk
 ```
 Data fields are only populated if the values are valid. For instance, in the
@@ -710,16 +710,16 @@ OPTIONS:
 CONFIGURATION:
   -n [ --filename ] arg         The base file name to which to source name will
                                 be appended
-  -f [ --folder ] arg           The path to the folder to which the video 
+  -f [ --folder ] arg           The path to the folder to which the video
                                 stream and position information will be saved.
-  -d [ --date ]                 If specified, YYYY-MM-DD-hh-mm-ss_ will be 
+  -d [ --date ]                 If specified, YYYY-MM-DD-hh-mm-ss_ will be
                                 prepended to the filename.
-  -p [ --positionsources ] arg  The name of the server(s) that supply object 
-                                position information.The server(s) must be of 
+  -p [ --positionsources ] arg  The name of the server(s) that supply object
+                                position information.The server(s) must be of
                                 type SMServer<Position>
-                                
-  -i [ --imagesources ] arg     The name of the server(s) that supplies images 
-                                to save to video.The server must be of type 
+
+  -i [ --imagesources ] arg     The name of the server(s) that supplies images
+                                to save to video.The server must be of type
                                 SMServer<SharedCVMatHeader>
 
 ```
@@ -728,19 +728,19 @@ CONFIGURATION:
 
 ```bash
 # Save positional stream 'pos' to current directory
-oat record -p pos 
+oat record -p pos
 
 # Save positional stream 'pos1' and 'pos2' to current directory
 oat record -p pos1 pos2
 
-# Save positional stream 'pos1' and 'pos2' to Desktop directory and 
+# Save positional stream 'pos1' and 'pos2' to Desktop directory and
 # prepend the timestamp to the file name
 oat record -p pos1 pos2 -d -f ~/Desktop
 
 # Save frame stream 'raw' to current directory
 oat record -i raw
 
-# Save frame stream 'raw' and positional stream 'pos' to Desktop 
+# Save frame stream 'raw' and positional stream 'pos' to Desktop
 # directory and prepend the timestamp and 'my_data' to each filename
 oat record -i raw -p pos -d -f ~/Desktop -n my_data
 ```
@@ -774,8 +774,8 @@ INFO:
 CONFIGURATION:
   -h [ --host ] arg         Remote host to send positions to.
   -p [ --port ] arg         Port on which to send positions.
-  --server                  Server-side socket sychronization. Position data 
-                            packets are sent whenever requestedby a remote 
+  --server                  Server-side socket sychronization. Position data
+                            packets are sent whenever requestedby a remote
                             client. TODO: explain request protocol...
   -c [ --config-file ] arg  Configuration file.
   -k [ --config-key ] arg   Configuration key.
@@ -809,14 +809,20 @@ can be built using `make [component-name]`, e.g. `make oat-view`. Available
 cmake options and their default values are:
 
 ```
-OAT_USE_FLYCAP=Off // Compile with support for Point Grey Cameras
-OAT_USE_OPENGL=Off // Compile with support for OpenGL rendering
-OAT_USE_CUDA=Off   // Compile with NVIDIA GPU accerated processing
+-DOAT_USE_FLYCAP=Off // Compile with support for Point Grey Cameras
+-DOAT_USE_OPENGL=Off // Compile with support for OpenGL rendering
+-DOAT_USE_CUDA=Off   // Compile with NVIDIA GPU accerated processing
 ```
 
-See the [Dependencies](#dependencies) sections to make sure you have the
-required dependencies to support each of these options if you plan to set them
-to `On`. To complete installation, add the following to your `.bashrc` or equivalent.
+If you had to install Boost from source, you must let cmake know where it is
+installed via the following swtich. Obviously, provide the correct path to the
+installation on your system.
+
+```
+-DBOOST_ROOT=/opt/boost_1_59_0
+```
+
+To complete installation, add the following to your `.bashrc` or equivalent.
 This makes Oat commands available within your user profile:
 
 ```bash
@@ -825,7 +831,7 @@ eval "$(path/to/Oat/oat/bin/oat init -)"
 ```
 
 ## Dependencies
-### Flycapture SDK 
+### Flycapture SDK
 The FlyCapture SDK is used to communicate with Point Grey digital cameras. It
 is not required to compile any Oat components.  However, the Flycapture SDK is
 required if a Point Grey camera is to be to be used with the `oat-frameserve`
@@ -855,11 +861,25 @@ sudo ./install_flycapture
 
 ### Boost
 The [Boost libraries](http://www.boost.org/) are required to compile all Oat
-components. We have tested and had success with Boost versions >= 1.54. To
+components. You will need to install versions >= 1.56. To
 install Boost, use APT or equivalent,
 
 ```bash
 sudo apt-get install libboost-all-dev
+```
+
+If you are using an Ubuntu distribution older than Wily Werewolf, Boost will be
+too old and you will need to install from source via
+
+```bash
+# Install latest boost
+wget http://sourceforge.net/projects/boost/files/latest/download?source=files -O tarboost
+tar -xf tarboost
+cd ./boost*
+./bootstrap.sh
+./b2 --with-program_options --with-system --with-thread
+cd ..
+sudo mv boost* /opt
 ```
 
 ### OpenCV
@@ -944,7 +964,7 @@ You can build OpenCV with Qt by first installing the [Qt
 SDK](http://download.qt.io/official_releases/online_installers/qt-unified-linux-x64-online.run)
 and these dependencies:
 
-``` 
+```
 # Additional dependencies for integraged QT with OpenGL
 sudo apt-get install libqt5opengl5 libqt5opengl5-dev
 ```
@@ -968,7 +988,7 @@ wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
 unzip opencv.zip -d opencv
 
 # Build OpenCV
-cd opencv/opencv-3.0.0-rc1 
+cd opencv/opencv-3.0.0-rc1
 mkdir release
 cd release
 
@@ -1003,12 +1023,12 @@ Oat components:
 [Catch](https://github.com/philsquared/Catch) is required to make and run tests
 using `make test`
 
-###  Setting up a Point-grey PGE camera in Linux 
+###  Setting up a Point-grey PGE camera in Linux
 `oat-frameserve` supports using Point Grey GIGE cameras to collect frames. I
 found the setup process to be straightforward and robust, but only after
 cobbling together the following notes.
 
-#### Camera IP Address Configuration 
+#### Camera IP Address Configuration
 First, assign your camera a static IP address. The easiest way to do this is to
 use a Windows machine to run the Point Grey 'GigE Configurator'. If someone
 knows a way to do this without Windows, please tell me. An example IP
@@ -1018,7 +1038,7 @@ Configuration might be:
 - Subnet mask: 255.255.255.0
 - Default gateway: 192.168.0.64
 
-#### Point Greg GigE Host Adapter Card Configuration 
+#### Point Greg GigE Host Adapter Card Configuration
 Using network manager or something similar, you must configure the IPv4
 configuration of the GigE host adapter card you are using to interface the
 camera with your computer.
@@ -1026,7 +1046,7 @@ camera with your computer.
 - First, set the ipv4 method to __manual__.
 - Next, you must configure the interface to (1) have the same network prefix
   and (2) be on the same subnet as the camera you setup in the previous
-  section. 
+  section.
     - Assuming you used the camera IP configuration specified above, your host
       adapter card should be assigned the following private IPv4 configuration:
         - POE gigabit card IP: 192.168.0.100
@@ -1040,14 +1060,14 @@ camera with your computer.
   into the terminal will enable 9000 MB frames for the `eth2` adapter.
 - Finally, to prevent image tearing, you should increase the amount of memory
   Linux uses for network receive buffers using the `sysctl` interface by typing
- 
+
         sudo sysctl -w net.core.rmem_max=1048576 net.core.rmem_default=1048576
 
   into the terminal. _In order for these changes to persist after system
   reboots, the following lines must be added to the bottom of the
   `/etc/sysctl.conf` file_:
 
-        net.core.rmem_max=1048576 
+        net.core.rmem_max=1048576
         net.core.rmem_default=1048576
 
 #### Multiple Cameras
@@ -1070,13 +1090,13 @@ camera with your computer.
 - [ ] Networked communication with remote endpoints that use extracted
   positional information
     - ~~Strongly prefer to consume JSON over something opaque and untyped~~
-    - ~~UDP~~ 
+    - ~~UDP~~
         - ~~Client version (sends data without request)~~
         - ~~Server version (pipeline is heldup by client position requests)~~
-    - TCP/IP 
+    - TCP/IP
         - Client version (sends data without request)
         - Server version (pipeline is heldup by client position requests)
-    - Broadcast 
+    - Broadcast
         - Client version (sends data without request)
     - Move to ZMQ sockets?
 - [ ] Build improvements

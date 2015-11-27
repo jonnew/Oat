@@ -12,24 +12,30 @@ addons:
 
 before_install:
   - sudo add-apt-repository ppa:amarburg/opencv3 --yes
-  - sudo add-apt-repository ppa:boost-latest/ppa --yes
   - sudo apt-get update -qq
   - if [ "$CXX" = "g++" ]; then sudo apt-get install -y g++-4.8; fi
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 
 install:
-  - sudo apt-get install -y 
   - sudo apt-get install -y libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
-  - sudo apt-get install -y doxygen
-  - sudo apt-get install -y libboost1.55-all-dev
   - sudo apt-get install -y libopencv3-dev
 
 before_script:
+
+  # Install boost
+  - cd $TRAVIS_BUILD_DIR
+  - wget http://sourceforge.net/projects/boost/files/latest/download?source=files -O tarboost
+  - tar -xf tarboost
+  - cd ./boost*
+  - ./bootstrap.sh
+  - ./b2 --with-program_options --with-system --with-thread --with-filesystem
+  - cd ..
+  - sudo mv boost* /opt
 
   # Configure build 
   - cd $TRAVIS_BUILD_DIR
   - mkdir release
   - cd release
-  - cmake -DCMAKE_BUILD_TYPE=DEBUG ..
+  - cmake -DCMAKE_BUILD_TYPE=Release -DBOOST_ROOT=/opt/boost_1_59_0 ..
 
 script: make && make test

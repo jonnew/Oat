@@ -63,9 +63,8 @@ message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
 message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")
 message (STATUS "  Build documentation: ${BUILD_DOCS}")
 
-# Boost
-# TODO: What is the oldest version of boost I can use?
-find_package (Boost 1.53.0 REQUIRED system thread program_options filesystem)
+# Boost, minimum version 1.56 for type_index.hpp
+find_package (Boost 1.56.0 REQUIRED system thread program_options filesystem)
 include_directories (${Boost_INCLUDE_DIRS})
 link_directories (${Boost_LIBRARY_DIR})
 
