@@ -19,7 +19,6 @@
 
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
-#include "/home/jon/Public/Oat/debug/catch/src/catch/include/catch.hpp"
 
 #include <future>
 #include <thread>

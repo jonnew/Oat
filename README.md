@@ -8,6 +8,8 @@ processing chains. Oat is primarily used for real-time animal position tracking
 in the context of experimental neuroscience, but can be used in any
 circumstance that requires real-time object tracking.
 
+[![Build Status](https://travis-ci.org/jonnew/Oat.svg?branch=shmem-refactor)](https://travis-ci.org/jonnew/Oat)
+
 __Contributors__
 
 - jonnew [http://www.mit.edu/~jpnewman/](http://www.mit.edu/~jpnewman/)
