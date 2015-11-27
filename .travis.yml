@@ -33,9 +33,12 @@ before_script:
   - sudo mv boost* /opt
 
   # Configure build
+  # Debug build includes throw expressions required to pass tests but opimized
+  # out of release build. I don't use asserts because they dont allow shmem
+  # cleanup.
   - cd $TRAVIS_BUILD_DIR
-  - mkdir release
-  - cd release
-  - cmake -DCMAKE_BUILD_TYPE=Release -DBOOST_ROOT=/opt/boost_1_59_0 ..
+  - mkdir debug 
+  - cd debug
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DBOOST_ROOT=/opt/boost_1_59_0 ..
 
-script: make
+script: make && make test
