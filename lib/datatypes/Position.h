@@ -54,7 +54,7 @@ public:
         return *this;
     }
 
-    // sample_ only settable via incrementation
+    // sample_ should generally be set via incrementation
     void incrementSampleCount() { ++sample_; }
 
     // Accessors
@@ -62,6 +62,7 @@ public:
     void set_unit_of_length(DistanceUnit value) { unit_of_length_ = value; }
     double sample_period_sec(void) const { return sample_period_sec_; }
     void set_sample_period_sec(double value) { sample_period_sec_ = value; }
+    void set_sample(int64_t value) {sample_ = value; }
     uint64_t sample() const { return sample_; }
     char * label() {return label_; }
 

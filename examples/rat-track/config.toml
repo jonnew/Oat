@@ -7,7 +7,7 @@ mask = "./mask.png"
 [hsv]
 erode = 4                               # Pixels                        
 dilate = 13                             # Pixels
-tune = true                             # Provide sliders for tuning hsv thresholds
+tune = false                             # Provide sliders for tuning hsv thresholds
 min_area = 0                            # Pixels^2, minimum object area 
 max_area = 5000                         # Pixels^2, maximum object areajjh
 h_thresholds = {min = 000, max = 256}   # Hue pass band

@@ -148,7 +148,10 @@ SCENARIO ("A Source<T> can only connect to a node bound by a Sink<T>.", "[Source
 
         WHEN ("The source attempts to connect()") {
             THEN ("The source shall throw.") {
-                REQUIRE_THROWS( source.touch(node_addr); );
+                REQUIRE_THROWS(
+                    source.touch(node_addr);
+                    source.connect();
+                );
             }
         }
     }

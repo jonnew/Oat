@@ -40,10 +40,10 @@ PositionDetector::PositionDetector(const std::string &frame_source_address,
 
 void PositionDetector::connectToNode() {
 
-    // Establish our a slot in the node 
+    // Establish our a slot in the node
     frame_source_.touch(frame_source_address_);
 
-    // Wait for sychronous start with sink when it binds the node
+    // Wait for synchronous start with sink when it binds the node
     frame_source_.connect();
 
     // Bind to sink node and create a shared position
@@ -69,7 +69,9 @@ bool PositionDetector::process() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Mess with internal frame
+    // Propagate sample info and detect position
+    internal_position_.set_sample(internal_frame_.sample_count());
+    internal_position_.set_sample_period_sec(internal_frame_.sample_period_sec());
     detectPosition(internal_frame_, internal_position_);
 
     // START CRITICAL SECTION //

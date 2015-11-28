@@ -41,4 +41,4 @@ before_script:
   - cd debug
   - cmake -DCMAKE_BUILD_TYPE=Debug -DBOOST_ROOT=/opt/boost_1_59_0 ..
 
-script: make 
+script: make && make test

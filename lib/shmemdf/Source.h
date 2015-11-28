@@ -104,11 +104,11 @@ inline SourceBase<T>::~SourceBase() {
     // If we have touched the node, or there was a node type mismatch, we must
     // release our slot
     if (state_ >= SourceState::TOUCHED || state_ == SourceState::ERR_TYPEMIS)
-        node_->releaseSlot(slot_index_); 
+        node_->releaseSlot(slot_index_);
 
     // If the client reference count is 0 and there is no server
     // attached to the node, deallocate the shmem
-    if (node_-> source_ref_count() == 0 &&
+    if ( (node_ != nullptr && node_-> source_ref_count() == 0) &&
         node_->sink_state() != NodeState::SINK_BOUND) {
 
         bool shmem_freed = false;
@@ -152,7 +152,7 @@ inline void SourceBase<T>::touch(const std::string &address) {
         state_ = SourceState::ERR_NODEFULL;
         return;
     }
-   
+
     // We have touched the node and must sychronize with its sink
     state_ = SourceState::TOUCHED;
 }
