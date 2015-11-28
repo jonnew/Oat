@@ -27,28 +27,18 @@ SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
     GIVEN ("A fresh Node") {
 
         oat::Node node;
-        REQUIRE(node.source_ref_count() == 0);
-        REQUIRE(node.sink_state() == oat::NodeState::UNDEFINED);
-
-        WHEN ("Node::NUM_SLOTS sources are added") {
-
-            THEN ("The Node shall not throw until the 11th") {
-                REQUIRE_NOTHROW(
-                for (size_t i = 0; i < oat::Node::NUM_SLOTS; i++) {
-                    node.acquireSlot();
-                }
-                );
-            }
-        }
+        REQUIRE (node.source_ref_count() == 0);
+        REQUIRE (node.sink_state() == oat::NodeState::UNDEFINED);
 
         WHEN ("Node::NUM_SLOTS+1 sources are added") {
 
-            THEN ("The Node shall throw") {
-                REQUIRE_THROWS(
+            THEN ("The Node shall return normal exit codes until the 11th") {
                 for (size_t i = 0; i <= oat::Node::NUM_SLOTS; i++) {
-                    node.acquireSlot();
+                    if (i < oat::Node::NUM_SLOTS)
+                        REQUIRE (node.acquireSlot(i) == 0);
+                    else
+                        REQUIRE (node.acquireSlot(i) < 0);
                 }
-                );
             }
         }
 
@@ -65,14 +55,15 @@ SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
 
             THEN ("The Node shall throw") {
                 REQUIRE_THROWS(
-                boost::interprocess::interprocess_semaphore &s = node.read_barrier(-1);
+                    boost::interprocess::interprocess_semaphore &s = node.read_barrier(-1);
                 );
             }
         }
 
         WHEN ("a single source is added") {
 
-            size_t idx = node.acquireSlot();
+            size_t idx;
+            node.acquireSlot(idx);
 
             THEN ("reading a greater indexed read-barrier shall throw") {
                 REQUIRE_THROWS(

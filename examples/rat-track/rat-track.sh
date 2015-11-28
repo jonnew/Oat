@@ -19,11 +19,11 @@ case "$1" in
 		sleep 0.1
 		oat posidet hsv bac det -c config.toml -k hsv &
 		sleep 0.1
-		oat framefilt mog roi bac &
+		oat framefilt mog raw bac &
+		#sleep 0.1
+		#oat framefilt mask raw roi -c config.toml -k mask &
 		sleep 0.1
-		oat framefilt mask raw roi -c config.toml -k mask &
-		sleep 0.1
-		oat frameserve file raw -f ./rat.avi -c config.toml -k video  
+		oat frameserve wcam raw #file raw -f ./rat.avi -c config.toml -k video  
 		;;
 
 	clean)

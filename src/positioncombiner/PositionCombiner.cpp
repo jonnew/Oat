@@ -51,13 +51,13 @@ PositionCombiner::PositionCombiner(
 
 void PositionCombiner::connectToNodes() {
 
-    // Connect to position source nodes and verify connections
-    //std::vector<std::future<void>> connection_futures;
+    // Establish our slot in each node 
     for (auto &pos : position_sources_)
-        pos.second->connect(pos.first);
+        pos.second->touch(pos.first);
 
+    // Wait for sychronous start with sink when it binds the node
     for (auto &pos : position_sources_)
-        pos.second->verify();
+        pos.second->connect();
 
     // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);

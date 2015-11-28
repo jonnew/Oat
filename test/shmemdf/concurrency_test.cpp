@@ -87,7 +87,9 @@ SCENARIO ("A Sink and Source bound to a common Nodes must respect "
 
             // Source connects and then attempts to enter critical section on a
             // separate thread
-            auto fut = std::async(std::launch::async, [&source]{ source.connect(node_addr); source.wait(); });
+            source.touch(node_addr); 
+            source.connect(); 
+            auto fut = std::async(std::launch::async, [&source]{ source.wait(); });
 
             THEN ("The source shall block until the sink post()'s") {
 
@@ -117,7 +119,8 @@ SCENARIO ("A Sink and Source bound to a common Nodes must respect "
             sink.wait();
 
             // Source connects and then wait()s on a separate thread
-            source.connect(node_addr);
+            source.touch(node_addr); 
+            source.connect(); 
             auto fut = std::async(std::launch::async, [&source]{ source.wait(); });
 
             THEN ("The source shall block until the sink post()'s") {
@@ -143,7 +146,8 @@ SCENARIO ("A Sink and Source bound to a common Nodes must respect "
 
             // Sink binds and source connects to "test"
             sink.bind(node_addr);
-            source.connect(node_addr);
+            source.touch(node_addr);
+            source.connect();
 
             // Sink tries to post without waiting first (bad lock order)
             REQUIRE_THROWS(sink.post());
@@ -190,7 +194,8 @@ SCENARIO ("A Sink and Source bound to a common Nodes must respect "
                 // A second sink is generated, and attempts to enter
                 // the critical section on different thread
                 oat::Source<int> source1;
-                source1.connect(node_addr);
+                source1.touch(node_addr); 
+                source1.connect(); 
                 auto fut = std::async(std::launch::async, [&source1]{ source1.wait(); });
 
                 // Check to see that the second source has not entered critical section
@@ -242,10 +247,12 @@ SCENARIO ("The order of connecting and binding is irrelevant. "
               "3. The sink bind()'s") {
 
             // Source0 tries to connect and enter critical section
-            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(node_addr); s0.wait(); });
+            s0.touch(node_addr); 
+            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(); s0.wait(); });
 
             // Source1 tries to connect and enter critical section
-            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(node_addr); s1.wait(); });
+            s1.touch(node_addr); 
+            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(); s1.wait(); });
 
             THEN ("The sources shall block until the sink enters/exits the critical section.") {
 
@@ -300,10 +307,12 @@ SCENARIO ("The order of connecting and binding is irrelevant. "
             sink.bind(node_addr);
 
             // Source0 tries to connect and enter critical section
-            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(node_addr); s0.wait(); });
+            s0.touch(node_addr);
+            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(); s0.wait(); });
 
             // Source1 tries to connect and enter critical section
-            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(node_addr); s1.wait(); });
+            s1.touch(node_addr);
+            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(); s1.wait(); });
 
             THEN ("The sources shall block until the sink enters/exits the critical section.") {
 
@@ -354,13 +363,15 @@ SCENARIO ("The order of connecting and binding is irrelevant. "
               "5. The second source tries to enter the critical section.") {
 
             // Source0 tries to connect and wait
-            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(node_addr); s0.wait(); });
+            s0.touch(node_addr);
+            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(); s0.wait(); });
 
             // Sink binds
             sink.bind(node_addr);
 
             // Source1 tries to connect and wait
-            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(node_addr); s1.wait(); });
+            s1.touch(node_addr);
+            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(); s1.wait(); });
 
             THEN ("The sources shall block until the sink enters/exits the critical section.") {
 
@@ -420,8 +431,10 @@ SCENARIO ("Sources attaching or detaching during source or sink wait() periods "
               "3. The sink enters the critical section") {
 
             sink.bind(node_addr);
-            s0.connect(node_addr);
-            s1->connect(node_addr);
+            s0.touch(node_addr);
+            s0.connect();
+            s1->touch(node_addr);
+            s1->connect();
 
             sink.wait();
 
@@ -470,8 +483,13 @@ SCENARIO ("Sources attaching or detaching during source or sink wait() periods "
             /* Start Critical */
             REQUIRE_NOTHROW( sink.wait());
 
-            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(node_addr); s0.wait(); });
-            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(node_addr); s1.wait(); });
+            // Source0 tries to connect and enter critical section
+            s0.touch(node_addr); 
+            auto s0_fut = std::async(std::launch::async, [&s0]{ s0.connect(); s0.wait(); });
+
+            // Source1 tries to connect and enter critical section
+            s1.touch(node_addr); 
+            auto s1_fut = std::async(std::launch::async, [&s1]{ s1.connect(); s1.wait(); });
 
             THEN ("The source shall block until the sink enters/exits the "
                   "critical section") {

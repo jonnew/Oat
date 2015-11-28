@@ -95,17 +95,16 @@ public:
     // SOURCE slots
     static constexpr size_t NUM_SLOTS {10};
 
-    size_t acquireSlot() {
+    int acquireSlot(size_t &index) {
 
         mutex_.wait();
 
         if (source_slots_.all()) {
             mutex_.post();
-            throw std::runtime_error("Maximum of " + std::to_string(NUM_SLOTS)
-                    + " SOURCEs can be bound to a node.");
+            return -1;
         }
 
-        size_t index = 0;
+        index = 0;
         while (source_slots_[index])
             ++index;
 
@@ -114,20 +113,20 @@ public:
 
         mutex_.post();
 
-        return index;
+        return 0;
     }
 
-    size_t releaseSlot(size_t index) {
+    int releaseSlot(size_t index) {
 
         if (index >= source_slots_.size())
-            throw std::runtime_error("Index out of bounds.");
+            return -1;
 
         mutex_.wait();
         source_slots_[index] = false;
         source_ref_count_ = source_slots_.count();
         mutex_.post();
 
-        return source_ref_count_;
+        return 0;
     }
 
     size_t source_ref_count(void) const { return source_ref_count_; }

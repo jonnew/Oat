@@ -36,9 +36,11 @@ PositionSocket::PositionSocket(const std::string &position_source_address) :
 
 void PositionSocket::connectToNode() {
 
-    // Connect to source node and retrieve cv::Mat parameters
-    position_source_.connect(position_source_address_);
-    position_source_.verify();
+    // Establish our a slot in the node 
+    position_source_.touch(position_source_address_);
+
+    // Wait for sychronous start with sink when it binds the node
+    position_source_.connect();
 }
 
 bool PositionSocket::process() {

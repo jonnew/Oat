@@ -42,32 +42,55 @@ SCENARIO ("Up to 10 sources can connect a single Node.", "[Source]") {
 
             THEN ("The first 10 connections will succeed") {
                 REQUIRE_NOTHROW(
-                    s0.connect(node_addr);
-                    s1.connect(node_addr);
-                    s2.connect(node_addr);
-                    s3.connect(node_addr);
-                    s4.connect(node_addr);
-                    s5.connect(node_addr);
-                    s6.connect(node_addr);
-                    s7.connect(node_addr);
-                    s8.connect(node_addr);
-                    s9.connect(node_addr);
+                    s0.touch(node_addr);
+                    s1.touch(node_addr);
+                    s2.touch(node_addr);
+                    s3.touch(node_addr);
+                    s4.touch(node_addr);
+                    s5.touch(node_addr);
+                    s6.touch(node_addr);
+                    s7.touch(node_addr);
+                    s8.touch(node_addr);
+                    s9.touch(node_addr);
+
+                    s0.connect();
+                    s1.connect();
+                    s2.connect();
+                    s3.connect();
+                    s4.connect();
+                    s5.connect();
+                    s6.connect();
+                    s7.connect();
+                    s8.connect();
+                    s9.connect();
                 );
             }
 
             AND_THEN ("The oat::Node:NUM_SLOTS+1 connection shall throw") {
                 REQUIRE_THROWS(
-                    s0.connect(node_addr);
-                    s1.connect(node_addr);
-                    s2.connect(node_addr);
-                    s3.connect(node_addr);
-                    s4.connect(node_addr);
-                    s5.connect(node_addr);
-                    s6.connect(node_addr);
-                    s7.connect(node_addr);
-                    s8.connect(node_addr);
-                    s9.connect(node_addr);
-                    s10.connect(node_addr);
+                    s0.touch(node_addr);
+                    s1.touch(node_addr);
+                    s2.touch(node_addr);
+                    s3.touch(node_addr);
+                    s4.touch(node_addr);
+                    s5.touch(node_addr);
+                    s6.touch(node_addr);
+                    s7.touch(node_addr);
+                    s8.touch(node_addr);
+                    s9.touch(node_addr);
+                    s10.touch(node_addr);
+
+                    s0.connect();
+                    s1.connect();
+                    s2.connect();
+                    s3.connect();
+                    s4.connect();
+                    s5.connect();
+                    s6.connect();
+                    s7.connect();
+                    s8.connect();
+                    s9.connect();
+                    s10.connect();
                 );
             }
         }
@@ -104,8 +127,11 @@ SCENARIO ("Sources cannot connect() to the same node more than once.", "[Source]
 
         WHEN ("The source connects 2x to the same node") {
             THEN ("The source shall throw on the second connection.") {
-                REQUIRE_NOTHROW( source.connect(node_addr) );
-                REQUIRE_THROWS( source.connect(node_addr) );
+                REQUIRE_NOTHROW( source.touch(node_addr) );
+                REQUIRE_NOTHROW( source.connect() );
+
+                REQUIRE_THROWS( source.touch(node_addr) );
+                REQUIRE_THROWS( source.connect() );
             }
         }
 }
@@ -122,7 +148,7 @@ SCENARIO ("A Source<T> can only connect to a node bound by a Sink<T>.", "[Source
 
         WHEN ("The source attempts to connect()") {
             THEN ("The source shall throw.") {
-                REQUIRE_THROWS( source.connect(node_addr); );
+                REQUIRE_THROWS( source.touch(node_addr); );
             }
         }
     }
@@ -149,7 +175,8 @@ SCENARIO ("Connected sources can retrieve shared objects to mutate them.", "[Sou
         WHEN ("The source calls retrieve() after connecting") {
 
             INFO ("The source connects to the node");
-            source.connect(node_addr);
+            source.touch(node_addr);
+            source.connect();
 
             THEN ("The source returns a pointer to mutate the int across source and sink") {
 

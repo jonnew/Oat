@@ -21,9 +21,10 @@
 #define	OAT_SOURCE_H
 
 #include <thread>
-#include <future>
+#include <exception>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
 
@@ -35,6 +36,30 @@
 
 namespace oat {
 
+enum class SourceState : std::int16_t
+{
+    ERR_NODEFULL    = -2,
+    ERR_TYPEMIS     = -1,
+    VIRGIN          = 0,
+    TOUCHED         = 1,
+    CONNECTED       = 2,
+};
+
+//inline std::ostream& operator<< (std::ostream & os, SourceState state) {
+//
+//    switch (state)  {
+//        case SourceState::ERR_NODEFULL: return os << "ERR_NODEFULL";
+//        case SourceState::ERR_TYPEMIS : return os << "ERR_TYPEMISMATCH";
+//        case SourceState::ERR_GENERAL : return os << "ERR_GENERAL";
+//        case SourceState::VIRGIN : return os << "VIRGIN";
+//        case SourceState::TOUCHED : return os << "TOUCHED";
+//        case SourceState::FOUND : return os << "FOUND";
+//        case SourceState::CONNECTED : return os << "CONNECTED";
+//    }
+//
+//    return os << static_cast<std::uint16_t>(state);
+//}
+
 template<typename T>
 class SourceBase  {
 public:
@@ -42,8 +67,8 @@ public:
     virtual ~SourceBase();
 
     // Node connection
-    void connect(const std::string &address);
-    bool verify(void);
+    void touch(const std::string &address);
+    virtual void connect(void);
 
     // Sychronization
     NodeState wait();
@@ -55,20 +80,16 @@ public:
 
 protected:
 
-    virtual void touch();
-
     shmem_t node_shmem_, obj_shmem_;
     T * sh_object_ {nullptr};
     Node * node_ {nullptr};
-    std::string node_address_, obj_address_;
+    std::string address_, node_address_, obj_address_;
     size_t slot_index_;
-    bool bound_ {false};
+    std::atomic<SourceState> state_ {SourceState::VIRGIN};
+    bool touched_ {false};
     bool connected_ {false};
     bool did_wait_need_post_ {false};
 
-private:
-
-    std::future<void> touch_future_;
 };
 
 template<typename T>
@@ -80,46 +101,39 @@ inline SourceBase<T>::SourceBase()
 template<typename T>
 inline SourceBase<T>::~SourceBase() {
 
+    // If we have touched the node, or there was a node type mismatch, we must
+    // release our slot
+    if (state_ >= SourceState::TOUCHED || state_ == SourceState::ERR_TYPEMIS)
+        node_->releaseSlot(slot_index_); 
+
     // If the client reference count is 0 and there is no server
     // attached to the node, deallocate the shmem
-    if (bound_ &&
-        node_->releaseSlot(slot_index_) == 0 &&
-        node_->sink_state() != NodeState::SINK_BOUND &&
-        bip::shared_memory_object::remove(node_address_.c_str()) &&
-        bip::shared_memory_object::remove(obj_address_.c_str())) {
+    if (node_-> source_ref_count() == 0 &&
+        node_->sink_state() != NodeState::SINK_BOUND) {
+
+        bool shmem_freed = false;
+        shmem_freed |= bip::shared_memory_object::remove(node_address_.c_str());
+        shmem_freed |= bip::shared_memory_object::remove(obj_address_.c_str());
 
 #ifndef NDEBUG
-        std::cout << "Shared memory at \'" + node_address_ +
-                "\' and \'" + obj_address_ + "\' was deallocated.\n";
+        if (shmem_freed)
+            std::cout << "Shared memory at \'" + address_ + "\' was deallocated.\n";
 #endif
     }
 }
 
 template<typename T>
-inline void SourceBase<T>::connect(const std::string &address) {
+inline void SourceBase<T>::touch(const std::string &address) {
 
-    // Addresses for this block of shared memory
-    node_address_ = address + "_node";
-    obj_address_ = address + "_obj";
-
-    // Connect to position source nodes in parallel because connection
-    // order cannot matter
-    touch_future_ = std::async(std::launch::async, [this]{ this->touch(); } );
-}
-
-template<typename T>
-inline bool SourceBase<T>::verify() {
-
-    touch_future_.wait();
-    return connected_;
-}
-
-template<typename T>
-inline void SourceBase<T>::touch() {
-
-    if (connected_ || bound_)
+    // Make sure we did not connect already
+    if (state_ != SourceState::VIRGIN)
         throw std::runtime_error("A source can only connect a "
                                  "single time to a single node.");
+
+    // Addresses for this block of shared memory
+    address_ = address;
+    node_address_ = address + "_node";
+    obj_address_ = address + "_obj";
 
     // Define shared memory
     // Extra 1024 bytes are used to hold managed shared mem helper objects
@@ -134,8 +148,22 @@ inline void SourceBase<T>::touch() {
     node_ = node_shmem_.find_or_construct<Node>(typeid(Node).name())();
 
     // Let the node know this source is attached and retrieve *this's index
-    slot_index_ = node_->acquireSlot();
-    bound_ = true;
+    if (node_->acquireSlot(slot_index_) < 0) {
+        state_ = SourceState::ERR_NODEFULL;
+        return;
+    }
+   
+    // We have touched the node and must sychronize with its sink
+    state_ = SourceState::TOUCHED;
+}
+
+template<typename T>
+inline void SourceBase<T>::connect() {
+
+    // Make sure we did not connect already
+    if (state_ != SourceState::TOUCHED)
+        throw std::runtime_error("A source can only connect() after it has "
+                                 "touch()ed a node.");
 
     // Wait for the SINK to bind and construct the shared object
     if (node_->sink_state() != NodeState::SINK_BOUND) {
@@ -155,20 +183,21 @@ inline void SourceBase<T>::touch() {
     sh_object_ = temp.first;
 
     // Only occurs when the name of the shared object does not match typeid(T).name()
-    if (sh_object_ == nullptr)
-        throw std::runtime_error("A Source<T> can only connect to a node bound by a Sink<T>.");
+    if (sh_object_ == nullptr) {
+        state_ = SourceState::ERR_TYPEMIS;
+        throw std::runtime_error("Type mismatch: Source<T> can only connect to Node<T>.");
+    }
 
-    connected_ = true;
+    state_ = SourceState::CONNECTED;
 }
-
 
 template<typename T>
 inline NodeState SourceBase<T>::wait() {
 
 #ifndef NDEBUG
     // Don't use Asserts because it does not clean shmem
-    if(!bound_)
-        throw std::runtime_error("Source must be bound before calling wait()");
+    if(state_ < SourceState::TOUCHED)
+        throw std::runtime_error("Source must have touched node before calling wait()");
     if (did_wait_need_post_)
         throw std::runtime_error("wait() called when post() was required.");
 #endif
@@ -197,9 +226,7 @@ inline void SourceBase<T>::post() {
 
 #ifndef NDEBUG
     // Don't use Asserts because it does not clean shmem
-    if(!bound_)
-        throw std::runtime_error("source must be bound before calling post()");
-    if(!connected_)
+    if(state_ < SourceState::CONNECTED)
         throw std::runtime_error("source must be connected before calling post()");
     if (!did_wait_need_post_)
         throw std::runtime_error("post() called when wait() was required.");
@@ -218,6 +245,7 @@ class Source : public SourceBase<T> {
 
     using SourceBase<T>::sh_object_;
     using SourceBase<T>::connected_;
+    using SourceBase<T>::state_;
 
 public:
     T * retrieve();
@@ -229,7 +257,7 @@ inline T * Source<T>::retrieve() {
 
 #ifndef NDEBUG
     // Don't use Asserts because it does not clean shmem
-    if (!connected_)
+    if(state_ < SourceState::CONNECTED)
         throw (std::runtime_error("Source must be connected before shared object is retrieved."));
 #endif
 
@@ -241,7 +269,7 @@ inline T  Source<T>::clone() const {
 
 #ifndef NDEBUG
     // Don't use Asserts because it does not clean shmem
-    if (!connected_)
+    if(state_ < SourceState::CONNECTED)
         throw (std::runtime_error("Source must be connected before shared object is cloned."));
 #endif
 
@@ -262,7 +290,7 @@ public:
         size_t bytes {0};
     };
 
-    void touch() override;
+    void connect() override;
 
     oat::Frame retrieve() const { return frame_; }
     oat::Frame clone() const { return frame_.clone(); }
@@ -274,24 +302,12 @@ private :
     ConnectionParameters parameters_;
 };
 
-inline void Source<SharedFrameHeader>::touch() {
+inline void Source<SharedFrameHeader>::connect() {
 
-    if (connected_ || bound_)
-        throw std::runtime_error("A source can only connect a "
-                                 "single time to a single node.");
-
-    // Define shared memory
-    node_shmem_ = bip::managed_shared_memory(
-            bip::open_or_create,
-            node_address_.c_str(),
-            1024 + sizeof(Node));
-
-    // Facilitates synchronized access to shmem
-    node_ = node_shmem_.find_or_construct<Node>(typeid(Node).name())();
-
-    // Let the acquire a source slot and get our index
-    slot_index_ = node_->acquireSlot();
-    bound_ = true;
+    // Make sure we did not connect already
+    if (state_ != SourceState::TOUCHED)
+        throw std::runtime_error("A source can only connect() after it has "
+                                 "touch()ed a node.");
 
     // Wait for the SINK to bind the node and provide matrix
     // header info.
@@ -313,6 +329,12 @@ inline void Source<SharedFrameHeader>::touch() {
             obj_shmem_.find<SharedFrameHeader>(typeid(SharedFrameHeader).name());
     sh_object_ = temp.first;
 
+    // Only occurs when the name of the shared object does not match typeid(T).name()
+    if (sh_object_ == nullptr) {
+        state_ = SourceState::ERR_TYPEMIS;
+        throw std::runtime_error("Type mismatch: Source<T> can only connect to Node<T>.");
+    }
+
     // Generate frame header using info in shmem segment
     frame_ = oat::Frame(sh_object_->rows(),
                         sh_object_->cols(),
@@ -326,9 +348,9 @@ inline void Source<SharedFrameHeader>::touch() {
     parameters_.type = sh_object_->type();
     parameters_.bytes = frame_.total() * frame_.elemSize();
 
-    connected_ = true;
+    state_ = SourceState::CONNECTED;
 }
 
 } // namespace oat
 
-#endif	/* OAT_SOURCE_H */
+#endif

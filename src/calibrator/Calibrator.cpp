@@ -38,8 +38,11 @@ Calibrator::Calibrator(const std::string &frame_source_address) :
 
 void Calibrator::connectToNode() {
 
-    frame_source_.connect(frame_source_address_);
-    frame_source_.verify();
+    // Establish our a slot in the node 
+    frame_source_.touch(frame_source_address_);
+
+    // Wait for sychronous start with sink when it binds the node
+    frame_source_.connect();
 }
 
 bool Calibrator::process(void) {
