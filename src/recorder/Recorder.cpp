@@ -221,6 +221,13 @@ void Recorder::connectToNodes() {
     // Connect to position source nodes
     for (auto &ps : position_sources_)
         ps.second->connect(ps.first);
+
+    // Verify connections
+    for (auto &fs: frame_sources_)
+        fs.second->verify();
+
+    for (auto &ps : position_sources_)
+        ps.second->verify();
 }
 
 bool Recorder::writeStreams() {

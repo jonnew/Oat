@@ -66,12 +66,19 @@ void Decorator::connectToNodes() {
 
     // Connect to source node and retrieve cv::Mat parameters
     frame_source_.connect(frame_source_address_);
+    frame_source_.verify();
+
+    // Get frame meta data to format sink
     oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
             frame_source_.parameters();
 
     // Connect to position source nodes
     for (auto &pos : position_sources_)
         std::get<2>(pos)->connect(std::get<0>(pos));
+
+    // Verify connections to position source nodes
+    for (auto &pos : position_sources_)
+        std::get<2>(pos)->verify();
 
     // Bind to sink sink node and create a shared cv::Mat
     frame_sink_.bind(frame_sink_address_, param.bytes);

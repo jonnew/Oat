@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <thread>
+#include <future>
 
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
@@ -47,18 +49,15 @@ PositionCombiner::PositionCombiner(
     }
 }
 
-PositionCombiner::~PositionCombiner() {
-
-//    // Delete the memory pointed to by `new oat::Source<oat::Position2D>()`
-//    for (auto &pos : position_sources_)
-//        delete pos.second;
-}
-
 void PositionCombiner::connectToNodes() {
 
-    // Connect to position source nodes
+    // Connect to position source nodes and verify connections
+    //std::vector<std::future<void>> connection_futures;
     for (auto &pos : position_sources_)
         pos.second->connect(pos.first);
+
+    for (auto &pos : position_sources_)
+        pos.second->verify();
 
     // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);

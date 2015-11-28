@@ -42,6 +42,7 @@ void PositionDetector::connectToNode() {
 
     // Connect to source node and retrieve cv::Mat parameters
     frame_source_.connect(frame_source_address_);
+    frame_source_.verify();
 
     // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);

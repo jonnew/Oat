@@ -41,6 +41,9 @@ void FrameFilter::connectToNode() {
 
     // Connect to source node and retrieve cv::Mat parameters
     frame_source_.connect(frame_source_address_);
+    frame_source_.verify();
+
+    // Get frame meta data to format sink
     oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
             frame_source_.parameters();
 

@@ -36,6 +36,7 @@ void PositionFilter::connectToNode() {
 
     // Connect to source node
     position_source_.connect(position_source_address_);
+    position_source_.verify();
 
     // Bind to sink sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);

@@ -67,6 +67,7 @@ Viewer::Viewer(const std::string& frame_source_address,
 void Viewer::connectToNode() {
 
     frame_source_.connect(frame_source_address_);
+    frame_source_.verify();
 }
 
 bool Viewer::showImage() {

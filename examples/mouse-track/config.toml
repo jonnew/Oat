@@ -7,7 +7,7 @@ mask = "./mask.png"
 [hsv_green]
 erode = 1                               # Pixels                        
 dilate = 7                              # Pixels
-tune = false                             # Provide sliders for tuning hsv thresholds
+tune = false                            # Provide sliders for tuning hsv thresholds
 h_thresholds = {min = 030, max = 080}   # Hue pass band
 s_thresholds = {min = 140, max = 250}   # Saturation pass band 
 v_thresholds = {min = 000, max = 070}   # Value pass band
@@ -15,18 +15,17 @@ v_thresholds = {min = 000, max = 070}   # Value pass band
 [hsv_blue]
 erode = 1                               # Pixels                        
 dilate = 8                              # Pixels
-tune = false                             # Provide sliders for tuning hsv thresholds
+tune = false                            # Provide sliders for tuning hsv thresholds
 h_thresholds = {min = 060, max = 130}   # Hue pass band
 s_thresholds = {min = 111, max = 256}   # Saturation pass band 
 v_thresholds = {min = 087, max = 256}   # Value pass band
 
 [kalman]
 dt = 0.03333333                         # Real-world sample period, seconds 
-not_found_timeout = 10.0                # Seconds 
+timeout = 10.0                          # Seconds 
 sigma_accel = 1000.0                    # Pixels/sec^2 
 sigma_noise = 7.0                    	# Noise measurement (pixels)    
-tune = true                             # Use the GUI to tweak parameters
+tune = false                            # Use the GUI to tweak parameters
 
 [combine]
-generate-heading = true
-heading-anchor = 0
+heading_anchor = 0

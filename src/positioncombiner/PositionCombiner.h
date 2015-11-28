@@ -53,8 +53,6 @@ public:
     PositionCombiner(const std::vector<std::string> &position_source_addresses,
                      const std::string &position_sink_address);
 
-    virtual ~PositionCombiner();
-
     /**
      * Position combiner SOURCEs must be able to connect to a NODEs from
      * which to receive positions and a SINK to send combined positions.

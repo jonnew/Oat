@@ -38,6 +38,7 @@ void PositionSocket::connectToNode() {
 
     // Connect to source node and retrieve cv::Mat parameters
     position_source_.connect(position_source_address_);
+    position_source_.verify();
 }
 
 bool PositionSocket::process() {

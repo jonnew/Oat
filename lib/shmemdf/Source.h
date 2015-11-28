@@ -20,6 +20,8 @@
 #ifndef OAT_SOURCE_H
 #define	OAT_SOURCE_H
 
+#include <thread>
+#include <future>
 #include <iostream>
 #include <string>
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -39,7 +41,11 @@ public:
     SourceBase();
     virtual ~SourceBase();
 
-    virtual void connect(const std::string &address);
+    // Node connection
+    void connect(const std::string &address);
+    bool verify(void);
+
+    // Sychronization
     NodeState wait();
     void post();
 
@@ -49,6 +55,8 @@ public:
 
 protected:
 
+    virtual void touch();
+
     shmem_t node_shmem_, obj_shmem_;
     T * sh_object_ {nullptr};
     Node * node_ {nullptr};
@@ -57,6 +65,10 @@ protected:
     bool bound_ {false};
     bool connected_ {false};
     bool did_wait_need_post_ {false};
+
+private:
+
+    std::future<void> touch_future_;
 };
 
 template<typename T>
@@ -86,13 +98,28 @@ inline SourceBase<T>::~SourceBase() {
 template<typename T>
 inline void SourceBase<T>::connect(const std::string &address) {
 
-    if (connected_ || bound_)
-        throw std::runtime_error("A source can only connect a "
-                                 "single time to a single node.");
-
     // Addresses for this block of shared memory
     node_address_ = address + "_node";
     obj_address_ = address + "_obj";
+
+    // Connect to position source nodes in parallel because connection
+    // order cannot matter
+    touch_future_ = std::async(std::launch::async, [this]{ this->touch(); } );
+}
+
+template<typename T>
+inline bool SourceBase<T>::verify() {
+
+    touch_future_.wait();
+    return connected_;
+}
+
+template<typename T>
+inline void SourceBase<T>::touch() {
+
+    if (connected_ || bound_)
+        throw std::runtime_error("A source can only connect a "
+                                 "single time to a single node.");
 
     // Define shared memory
     // Extra 1024 bytes are used to hold managed shared mem helper objects
@@ -235,7 +262,7 @@ public:
         size_t bytes {0};
     };
 
-    void connect(const std::string &address) override;
+    void touch() override;
 
     oat::Frame retrieve() const { return frame_; }
     oat::Frame clone() const { return frame_.clone(); }
@@ -247,15 +274,11 @@ private :
     ConnectionParameters parameters_;
 };
 
-inline void Source<SharedFrameHeader>::connect(const std::string &address) {
+inline void Source<SharedFrameHeader>::touch() {
 
     if (connected_ || bound_)
         throw std::runtime_error("A source can only connect a "
                                  "single time to a single node.");
-
-    // Addresses for this block of shared memory
-    node_address_ = address + "_node";
-    obj_address_ = address + "_obj";
 
     // Define shared memory
     node_shmem_ = bip::managed_shared_memory(

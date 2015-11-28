@@ -1,5 +1,5 @@
 [video]
-frame_rate = 100.0                       # Hz 
+frame_rate = 1000.0                       # Hz 
 
 [mask]
 mask = "./mask.png"

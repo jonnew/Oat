@@ -3,9 +3,9 @@
 case "$1" in
 
 	run)
-		oat record -i final -f ./ -n result -F 30 &
-		sleep 0.1
-		oat record -p pix wld -f ./ -n result &
+		#oat record -i final -f ./ -n result -F 30 &
+		#sleep 0.1
+		#oat record -p pix wld -f ./ -n result &
 		sleep 0.1
 		oat posifilt homography posi wld -c config.toml -k homography &
 		sleep 0.1
