@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if (!variable_map.count("config-file") && type.compare("homography") == 0) {
+        if (!variable_map.count("config") && type.compare("homography") == 0) {
             printUsage(visible_options);
             std::cerr << oat::Error("When TYPE=homography, a configuration file must be specified"
                                     " to provide homography matrix.\n");

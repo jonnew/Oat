@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Record video two test two color tracking on maze.
+# Record video to test two color tracking on maze.
 # JPN and AC
 # 2015-06
 # MWL@MIT

@@ -18,58 +18,59 @@ __Contributors__
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-  - [Manual](#manual)
+- [Manual](#manual)
     - [Frame Server](#frame-server)
-      - [Signature](#signature)
-      - [Usage](#usage)
-      - [Configuration File Options](#configuration-file-options)
-      - [Examples](#examples)
+        - [Signature](#signature)
+        - [Usage](#usage)
+        - [Configuration File Options](#configuration-file-options)
+        - [Examples](#examples)
     - [Frame Filter](#frame-filter)
-      - [Signature](#signature-1)
-      - [Usage](#usage-1)
-      - [Configuration File Options](#configuration-file-options-1)
-      - [Examples](#examples-1)
+        - [Signature](#signature-1)
+        - [Usage](#usage-1)
+        - [Configuration File Options](#configuration-file-options-1)
+        - [Examples](#examples-1)
     - [Frame Viewer](#frame-viewer)
-      - [Signature](#signature-2)
-      - [Usage](#usage-2)
-      - [Example](#example)
+        - [Signature](#signature-2)
+        - [Usage](#usage-2)
+        - [Example](#example)
     - [Position Detector](#position-detector)
-      - [Signature](#signature-3)
-      - [Usage](#usage-3)
-      - [Configuration File Options](#configuration-file-options-2)
-      - [Example](#example-1)
+        - [Signature](#signature-3)
+        - [Usage](#usage-3)
+        - [Configuration File Options](#configuration-file-options-2)
+        - [Example](#example-1)
     - [Position Filter](#position-filter)
-      - [Signature](#signature-4)
-      - [Usage](#usage-4)
-      - [Configuration File Options](#configuration-file-options-3)
-      - [Example](#example-2)
+        - [Signature](#signature-4)
+        - [Usage](#usage-4)
+        - [Configuration File Options](#configuration-file-options-3)
+        - [Example](#example-2)
     - [Position Combiner](#position-combiner)
-      - [Signature](#signature-5)
-      - [Usage](#usage-5)
-      - [Configuration File Options](#configuration-file-options-4)
-      - [Example](#example-3)
+        - [Signature](#signature-5)
+        - [Usage](#usage-5)
+        - [Configuration File Options](#configuration-file-options-4)
+        - [Example](#example-3)
     - [Frame Decorator](#frame-decorator)
-      - [Signature](#signature-6)
-      - [Usage](#usage-6)
-      - [Example](#example-4)
+        - [Signature](#signature-6)
+        - [Usage](#usage-6)
+        - [Example](#example-4)
     - [Recorder](#recorder)
-      - [Signature](#signature-7)
-      - [Usage](#usage-7)
-      - [Example](#example-5)
+        - [Signature](#signature-7)
+        - [Usage](#usage-7)
+        - [Example](#example-5)
     - [Position Network Socket](#position-network-socket)
-      - [Signature](#signature-8)
-      - [Usage](#usage-8)
-      - [Example](#example-6)
+        - [Signature](#signature-8)
+        - [Usage](#usage-8)
+        - [Example](#example-6)
 - [Installation](#installation)
-  - [Dependencies](#dependencies)
-    - [Flycapture SDK](#flycapture-sdk)
-    - [Boost](#boost)
-    - [OpenCV](#opencv)
-    - [RapidJSON, cpptoml, and Catch](#rapidjson-cpptoml-and-catch)
-    - [Setting up a Point-grey PGE camera in Linux](#setting-up-a-point-grey-pge-camera-in-linux)
-      - [Camera IP Address Configuration](#camera-ip-address-configuration)
-      - [Point Greg GigE Host Adapter Card Configuration](#point-greg-gige-host-adapter-card-configuration)
-      - [Multiple Cameras](#multiple-cameras)
+    - [Dependencies](#dependencies)
+        - [Flycapture SDK](#flycapture-sdk)
+        - [Boost](#boost)
+        - [OpenCV](#opencv)
+        - [RapidJSON, cpptoml, and Catch](#rapidjson-cpptoml-and-catch)
+        - [Setting up a Point-grey PGE camera in Linux](#setting-up-a-point-grey-pge-camera-in-linux)
+            - [Camera IP Address Configuration](#camera-ip-address-configuration)
+            - [Point Greg GigE Host Adapter Card Configuration](#point-greg-gige-host-adapter-card-configuration)
+            - [Multiple Cameras](#multiple-cameras)
+            - [Example](#example-7)
 - [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -116,7 +117,7 @@ This script has the following graphical representation:
 ```
 frameserve --> framefilt --> posidet --> decorate ---> view
            \                           /         \
-             -------------------------            ---> record
+               -------------------------              ---> record
 ```
 
 Generally, an Oat component is called in the following pattern:
@@ -1048,9 +1049,9 @@ camera with your computer.
   section.
     - Assuming you used the camera IP configuration specified above, your host
       adapter card should be assigned the following private IPv4 configuration:
-        - POE gigabit card IP: 192.168.0.100
-        - Subnet mask: 255.255.255.0
-        - DNS server IP: 192.168.0.1
+          - POE gigabit card IP: 192.168.0.100
+          - Subnet mask: 255.255.255.0
+          - DNS server IP: 192.168.0.1
 - Next, you must enable jumbo frames on the network interface. Assuming that
   the camera is using `eth2`, then entering
 
@@ -1075,13 +1076,67 @@ camera with your computer.
   repeat the above configuration steps for a second camera/host adapter card
   using the following settings:
     - Camera Configuration:
-        - Camera IP: 192.168.__1__.1
-        - Subnet mask: 255.255.255.0
-        - Default gateway: 192.168.__1__.64
+          - Camera IP: 192.168.__1__.1
+          - Subnet mask: 255.255.255.0
+          - Default gateway: 192.168.__1__.64
     - Host adapter configuration:
-        - POE gigabit card IP: 192.168.__1__.100
-        - Subnet mask: 255.255.255.0
-        - DNS server IP: 192.168.__1__.1
+          - POE gigabit card IP: 192.168.__1__.100
+          - Subnet mask: 255.255.255.0
+          - DNS server IP: 192.168.__1__.1
+
+#### Example
+Below is an example network adapter and camera configuration for a two-camera
+imaging system provided by [Point Grey](http://www.ptgrey.com/). It consists of
+two Blackfly GigE cameras (Point Grey part number: BFLY-PGE-09S2C) and a single
+dual-port POE GigE adapter card (Point Grey part number: GIGE-PCIE2-2P02).
+
+##### Camera 0
+
+- Adapter physical connection (looking at back of computer)
+```
+RJ45 ------------
+          |      |
+    L [  [ ]    [x]  ] R
+```
+
+- Adapter Settings
+    - Model:         Intel 82574L Gigabit Network Connection
+    - MAC:           00:B0:9D:DB:D9:63
+    - MTU:           9000
+    - DHCP:          Disabled
+    - IP:            192.168.0.100
+    - Subnet mask:   255.255.255.0
+- Camera Settings
+    - Model:         Blackfly BFLY-PGE-09S2C
+    - Serial No.:    14395177
+    - IP:            192.168.0.1 (Static)
+    - Subnet mask:   255.255.255.0
+    - Default GW:    0.0.0.0
+    - Persistent IP: Yes
+
+##### Camera 1
+
+- Adapter physical connection (looking at back of computer)
+```
+RJ45 ------------
+          |      |
+    L [  [x]    [ ]  ] R
+```
+
+- Adapter Settings
+    - Model:         Intel 82574L Gigabit Network Connection
+    - MAC:           00:B0:9D:DB:A7:29
+    - MTU:           9000
+    - DHCP:          Disabled
+    - IP:            192.168.1.100
+    - Subnet mask:   255.255.255.0
+- Camera Settings
+    - Model:         Blackfly BFLY-PGE-09S2C
+
+    - IP:            192.168.1.1 (Static)
+    - Subnet mask:   255.255.255.0
+    - Default GW:    0.0.0.0
+    - Persistent IP: Yes
 
 \newpage
 
@@ -1090,13 +1145,13 @@ camera with your computer.
   positional information
     - ~~Strongly prefer to consume JSON over something opaque and untyped~~
     - ~~UDP~~
-        - ~~Client version (sends data without request)~~
-        - ~~Server version (pipeline is heldup by client position requests)~~
+          - ~~Client version (sends data without request)~~
+          - ~~Server version (pipeline is heldup by client position requests)~~
     - TCP/IP
-        - Client version (sends data without request)
-        - Server version (pipeline is heldup by client position requests)
+          - Client version (sends data without request)
+          - Server version (pipeline is heldup by client position requests)
     - Broadcast
-        - Client version (sends data without request)
+          - Client version (sends data without request)
     - Move to ZMQ sockets?
 - [ ] Build improvements
     - ~~Global build script to make all of the programs in the project~~
@@ -1107,34 +1162,34 @@ camera with your computer.
     - Detect if OpenCV was compiled with OpenGL or CUDA and automatically set
       `-DOAT_USE_OPENGL` and `-DOAT_USE_CUDA` accordingly
     - ~~Put boost in a more standard location~~
-        - EDIT: compiles with v1.54, which is provided in package manager.
+          - EDIT: compiles with v1.54, which is provided in package manager.
     - ~~Clang build?~~
     - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Unit and stress testing
     - Unit tests for `libshmemdf`
-        - ~~Nominal data types, `T`~~
-        - Specializations for `SharedCVMat`
+          - ~~Nominal data types, `T`~~
+          - Specializations for `SharedCVMat`
     - Stress tests for data processing chains
-        - I need to come up with a series of scripts that configure and run
+          - I need to come up with a series of scripts that configure and run
           components in odd and intensive, but legal, ways to ensure sample
           sychronization is maintianed, graceful exits, etc
 - [ ] Frame and position server sample synchronization
     - [ ] Dealing with dropped frames
-        - Right now, I poll the camera for frames. This is fine for a file, but
+          - Right now, I poll the camera for frames. This is fine for a file, but
           not necessarily for a physical camera whose acquisitions is governed
           by an external, asynchronous clock
-        - Instead of polling, I need an event driven frame server. In the case
+          - Instead of polling, I need an event driven frame server. In the case
           of a dropped frame, the server __must__ increment the sample number,
           even if it does not serve the frame, to prevent offsets from
           occurring.
-        - EDIT: `libshmemdf` and `oat::Frame` allow the sample number to be
+          - EDIT: `libshmemdf` and `oat::Frame` allow the sample number to be
           incremented and travel with the frame, even if the frame is dropped.
           This means that samples should be able to maintain accuracy even when
           frames are discarded due to buffer overflow
     - [ ] Pull-based synchronization with remote client.
-        - By virtue of the sychronization architecture I'm using to coordinate
+          - By virtue of the sychronization architecture I'm using to coordinate
           samples between SOURCE and SINK components, I get both push and pull
           based processing chain updates for free. This means if I use
           `oat-posisock` in server mode, and it blocks until a remote client
@@ -1145,7 +1200,7 @@ camera with your computer.
           their internal buffers at a rate driven by their internal clock
           regardless of remote requests for data processing chain updates. If
           remote sychronization is required, this is undesirable.
-        - Ideally, the sychronization and buffering architecture of `pure
+          - Ideally, the sychronization and buffering architecture of `pure
           SOURCE` components should be dependent on some globally enfornced
           sychronization strategy. This might be accomplished via the creation
           of a master, read only clock, existing in shmem, that dictates
@@ -1170,7 +1225,7 @@ camera with your computer.
     - Additionally, it needs to be optimized for performance. Are their
       unnessesary copies of images being made during conversion from PG Image
       to cv::Mat? Can I employ some move casts to help?
-        - EDIT: shmemdf takes care of this.
+          - EDIT: shmemdf takes care of this.
     - There are a couple examples of GigE interfaces in OpenCV targeting other
       3rd party APIs: `modules/videoio/src/cap_giganetix.cpp` and
       `opencv/modules/videoio/src/cap_pvapi.cpp`. I don't know that these are

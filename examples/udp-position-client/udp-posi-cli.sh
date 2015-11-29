@@ -6,12 +6,10 @@ case "$1" in
 
 	run)
 
-		sleep 0.5
-        oat posisock udp pos -h 10.121.43.222 -p 5555 &
+        oat posisock udp pos -h 10.121.43.222 -p 5555       &
 
-		sleep 0.5
+		sleep 1
         oat positest rand2D pos -r 100
-
 		;;
 
 	clean)

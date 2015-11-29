@@ -3,27 +3,19 @@
 case "$1" in
 
 	run)
-		#oat record -i final -f ./ -n result -F 30 &
-		#sleep 0.1
-		#oat record -p pix wld -f ./ -n result &
-		sleep 0.1
-		oat posifilt homography posi wld -c config.toml -k homography &
-		sleep 0.1
-		oat view final &
-		sleep 0.1
-		oat decorate raw final -p pix -SsR &
-		sleep 0.1
-		oat posifilt region posi pix -c config.toml -k region &
-		sleep 0.1
-		oat posifilt kalman det posi -c config.toml -k kalman &
-		sleep 0.1
-		oat posidet hsv bac det -c config.toml -k hsv &
-		sleep 0.1
-		oat framefilt mog raw bac &
-		#sleep 0.1
-		#oat framefilt mask raw roi -c config.toml -k mask &
-		sleep 0.1
-		oat frameserve wcam raw #file raw -f ./rat.avi -c config.toml -k video  
+		#oat record -i final -f ./ -n result -F 30                  &
+		#oat record -p pix wld -f ./ -n result                      &
+		oat posifilt homography posi wld -c config.toml homography  &
+		oat view final                                              &
+		oat decorate raw final -p pix -SsR                          &
+		oat posifilt region posi pix -c config.toml region          &
+		oat posifilt kalman det posi -c config.toml kalman          &
+		oat posidet hsv bac det -c config.toml hsv                  &
+		oat framefilt mog raw bac                                   &
+		#oat framefilt mask raw roi -c config.toml mask             &
+
+		sleep 1
+		oat frameserve wcam raw #file raw -f ./rat.avi -c config.toml video  
 		;;
 
 	clean)
