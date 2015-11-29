@@ -1191,10 +1191,6 @@ camera with your computer.
     - Size of position markers, sample numbers, etc do not change with image
       resolution
     - How are multi-region tags displayed using the -R option?
-- [ ] For config file specification, there should be a single command line
-  option with two values (file, key) instead of a single option for each.
-    - See [this SO post](http://stackoverflow.com/questions/8175723/vector-arguments-in-boost-program-options)
-      for how.
 - [ ] Something is wrong with sample synchronization
     - When working with Jennie's data, we found that position samples were
       being recorded multiple times - they had the same sample number and

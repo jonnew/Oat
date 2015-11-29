@@ -1,5 +1,5 @@
 #!/bin/bash          
 
-oat frameserve gige raw &
-
-oat calibrate camera raw -c config.toml -k gige
+oat calibrate camera raw &
+sleep 0.1
+oat frameserve gige raw -c config.toml gige
