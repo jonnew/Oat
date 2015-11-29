@@ -114,10 +114,11 @@ oat record -i dec -p pos -f ./
 ```
 
 This script has the following graphical representation:
+
 ```
 frameserve --> framefilt --> posidet --> decorate ---> view
            \                           /         \
-               -------------------------              ---> record
+             -------------------------             --> record
 ```
 
 Generally, an Oat component is called in the following pattern:
@@ -169,6 +170,7 @@ parameters, examples, and configuration options are provided for each Oat
 component.
 
 \newpage
+
 ### Frame Server
 `oat-frameserve` - Serves video streams to shared memory from physical devices
 (e.g. webcam or GIGE camera) or from file.
@@ -194,8 +196,7 @@ INFO:
   -v [ --version ]          Print version information.
 
 CONFIGURATION:
-  -c [ --config-file ] arg  Configuration file.
-  -k [ --config-key ] arg   Configuration key.
+  -c [ --config ] arg       Configuration file/key pair.
   -f [ --video-file ] arg   Path to video file if 'file' is selected as the
                             server TYPE.
 ```
@@ -252,11 +253,11 @@ oat frameserve wcam wraw
 
 # Stream to the 'graw' stream from a point-grey GIGE camera
 # using the gige_config tag from the config.toml file
-oat frameserve gige graw -c config.toml -k gige_config
+oat frameserve gige graw -c config.toml gige_config
 
 # Serve to the 'fraw' stream from a previously recorded file
 # using the file_config tag from the config.toml file
-oat frameserve file fraw -f ./video.mpg -c config.toml -k file_config
+oat frameserve file fraw -f ./video.mpg -c config.toml file_config
 ```
 
 \newpage
@@ -292,8 +293,7 @@ INFO:
   -v [ --version ]          Print version information.
 
 CONFIGURATION:
-  -c [ --config-file ] arg  Configuration file.
-  -k [ --config-key ] arg   Configuration key.
+  -c [ --config ] arg       Configuration file/key pair.
   -m [ --invert-mask ]      If using TYPE=mask, invert the mask before applying
 ```
 
@@ -329,7 +329,7 @@ oat framefilt bsub raw sub
 # Receive frames from 'raw' stream
 # Apply a mask specified in a configuration file
 # Publish result to 'roi' stream
-oat framefilt mask raw roi -c config.toml -k mask-config
+oat framefilt mask raw roi -c config.toml mask-config
 ```
 
 \newpage
@@ -407,8 +407,7 @@ INFO:
   -v [ --version ]          Print version information.
 
 CONFIGURATION:
-  -c [ --config-file ] arg  Configuration file.
-  -k [ --config-key ] arg   Configuration key.
+  -c [ --config ] arg       Configuration file/key pair.
 ```
 
 #### Configuration File Options
@@ -434,7 +433,7 @@ __TYPE = `diff`__
 # Use color-based object detection on the 'raw' frame stream
 # publish the result to the 'cpos' position stream
 # Use detector settings supplied by the hsv_config key in config.toml
-oat posidet hsv raw cpos -c config.toml -k hsv_config
+oat posidet hsv raw cpos -c config.toml hsv_config
 
 # Use motion-based object detection on the 'raw' frame stream
 # publish the result to the 'mpos' position stream
@@ -474,8 +473,7 @@ INFO:
   -v [ --version ]          Print version information.
 
 CONFIGURATION:
-  -c [ --config-file ] arg  Configuration file.
-  -k [ --config-key ] arg   Configuration key.
+  -c [ --config ] arg       Configuration file/key pair.
 ```
 
 #### Configuration File Options
@@ -528,7 +526,7 @@ R0 = [[654.00, 380.00],
 # Perform Kalman filtering on object position from the 'pos' position stream
 # publish the result to the 'kpos' position stream
 # Use detector settings supplied by the kalman_config key in config.toml
-oat posifilt kalman pos kfilt -c config.toml -k kalman_config
+oat posifilt kalman pos kfilt -c config.toml kalman_config
 ```
 
 \newpage
@@ -562,8 +560,7 @@ INFO:
   -v [ --version ]          Print version information.
 
 CONFIGURATION:
-  -c [ --config-file ] arg  Configuration file.
-  -k [ --config-key ] arg   Configuration key.
+  -c [ --config ] arg       Configuration file/key pair.
 ```
 
 #### Configuration File Options
@@ -728,7 +725,6 @@ CONFIGURATION:
 ```
 
 #### Example
-
 ```bash
 # Save positional stream 'pos' to current directory
 oat record -p pos
@@ -777,8 +773,7 @@ CONFIGURATION:
   --server                  Server-side socket sychronization. Position data
                             packets are sent whenever requestedby a remote
                             client. TODO: explain request protocol...
-  -c [ --config-file ] arg  Configuration file.
-  -k [ --config-key ] arg   Configuration key.
+  -c [ --config ] arg       Configuration file/key pair.
 
 ```
 
@@ -788,7 +783,7 @@ TODO
 ```
 
 \newpage
-# Installation
+## Installation
 First, ensure that you have installed all dependencies required for the
 components and build configuration you are interested in in using. For more
 information on dependencies, see the [dependencies](#dependencies) section
@@ -830,8 +825,8 @@ This makes Oat commands available within your user profile:
 eval "$(path/to/Oat/oat/bin/oat init -)"
 ```
 
-## Dependencies
-### Flycapture SDK
+### Dependencies
+#### Flycapture SDK
 The FlyCapture SDK is used to communicate with Point Grey digital cameras. It
 is not required to compile any Oat components.  However, the Flycapture SDK is
 required if a Point Grey camera is to be to be used with the `oat-frameserve`
@@ -859,7 +854,7 @@ cd flycapture
 sudo ./install_flycapture
 ```
 
-### Boost
+#### Boost
 The [Boost libraries](http://www.boost.org/) are required to compile all Oat
 components. You will need to install versions >= 1.56. To
 install Boost, use APT or equivalent,
@@ -882,7 +877,7 @@ cd ..
 sudo mv boost* /opt
 ```
 
-### OpenCV
+#### OpenCV
 [opencv](http://opencv.org/) is required to compile the following oat components:
 
 - `oat-frameserve`
@@ -958,7 +953,6 @@ me:
 To compile OpenCV with CUDA support, add the `-DWITH_CUDA=ON` flag in the cmake
 command below.
 
-[__WIP__]
 __Note__: GUI functionality is enhanced in OpenCV is compiled with Qt support.
 You can build OpenCV with Qt by first installing the [Qt
 SDK](http://download.qt.io/official_releases/online_installers/qt-unified-linux-x64-online.run)
@@ -978,7 +972,7 @@ Finally, to compile and install OpenCV:
 # Install OpenCV's dependencies
 sudo apt-get install build-essential # Compiler
 sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev# Required
-sudo apt-get install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev # Optional
+sudo apt-get install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
 sudo apt-get install # ffmpeg support [TODO]
 sudo apt-get install # OpenGL support [TODO]
 sudo ldconfig -v
@@ -1001,7 +995,7 @@ make
 sudo make install
 ```
 
-### RapidJSON, cpptoml, and Catch
+#### RapidJSON, cpptoml, and Catch
 These libraries are installed automatically by cmake during the build process.
 
 [RapidJSON](https://github.com/miloyip/rapidjson) is required by the following
@@ -1023,12 +1017,12 @@ Oat components:
 [Catch](https://github.com/philsquared/Catch) is required to make and run tests
 using `make test`
 
-###  Setting up a Point-grey PGE camera in Linux
+##  Setting up a Point-grey PGE camera in Linux
 `oat-frameserve` supports using Point Grey GIGE cameras to collect frames. I
 found the setup process to be straightforward and robust, but only after
 cobbling together the following notes.
 
-#### Camera IP Address Configuration
+### Camera IP Address Configuration
 First, assign your camera a static IP address. The easiest way to do this is to
 use a Windows machine to run the Point Grey 'GigE Configurator'. If someone
 knows a way to do this without Windows, please tell me. An example IP
@@ -1038,7 +1032,7 @@ Configuration might be:
 - Subnet mask: 255.255.255.0
 - Default gateway: 192.168.0.64
 
-#### Point Greg GigE Host Adapter Card Configuration
+### Point Greg GigE Host Adapter Card Configuration
 Using network manager or something similar, you must configure the IPv4
 configuration of the GigE host adapter card you are using to interface the
 camera with your computer.
@@ -1070,7 +1064,7 @@ camera with your computer.
         net.core.rmem_max=1048576
         net.core.rmem_default=1048576
 
-#### Multiple Cameras
+### Multiple Cameras
 - If you have two or more cameras/host adapter cards,  they can be configured
   as above but _must exist on a separate subnets_. For instance, we could
   repeat the above configuration steps for a second camera/host adapter card
@@ -1084,13 +1078,13 @@ camera with your computer.
           - Subnet mask: 255.255.255.0
           - DNS server IP: 192.168.__1__.1
 
-#### Example
+### Example
 Below is an example network adapter and camera configuration for a two-camera
 imaging system provided by [Point Grey](http://www.ptgrey.com/). It consists of
 two Blackfly GigE cameras (Point Grey part number: BFLY-PGE-09S2C) and a single
 dual-port POE GigE adapter card (Point Grey part number: GIGE-PCIE2-2P02).
 
-##### Camera 0
+#### Camera 0
 
 - Adapter physical connection (looking at back of computer)
 ```
@@ -1114,7 +1108,7 @@ RJ45 ------------
     - Default GW:    0.0.0.0
     - Persistent IP: Yes
 
-##### Camera 1
+#### Camera 1
 
 - Adapter physical connection (looking at back of computer)
 ```
@@ -1140,7 +1134,7 @@ RJ45 ------------
 
 \newpage
 
-# TODO
+## TODO
 - [ ] Networked communication with remote endpoints that use extracted
   positional information
     - ~~Strongly prefer to consume JSON over something opaque and untyped~~
