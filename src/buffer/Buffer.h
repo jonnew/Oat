@@ -33,7 +33,7 @@
 namespace oat {
 
 /**
- * Generic token buffer.
+ * Abstract Buffer.
  */
 class Buffer {
 
@@ -122,14 +122,12 @@ void showBufferState(const T& buffer, size_t buffer_size) {
     for (int i = 0; i < remaining; ++i) {
         std::cout << " ";
     }
-    
+
     std::cout << "] "
               << std::to_string(buffer.read_available())
-              <<  "/" 
+              <<  "/"
               << std::to_string(buffer_size)
-              << "\r";
-
-    std::cout.flush();
+              << "\n";
 }
 #endif
 

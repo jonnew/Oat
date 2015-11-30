@@ -100,7 +100,9 @@ void FrameBuffer::pop() {
             sink_.wait();
 
             // TODO: use specialized spsc allocator for popping somehow?
-            buffer_.pop(shared_frame_);
+            buffer_.consume_one(
+                [this](oat::Frame frame){ frame.copyTo(shared_frame_); }
+            );
 
             // Tell sources there is new data
             sink_.post();

@@ -35,7 +35,7 @@ TokenBuffer<T>::TokenBuffer(const std::string &source_address,
 template <typename T>
 void TokenBuffer<T>::connectToNode() {
 
-    // Establish our a slot in the node 
+    // Establish our a slot in the node
     source_.touch(source_address_);
 
     // Wait for sychronous start with sink when it binds the node
@@ -67,7 +67,7 @@ bool TokenBuffer<T>::push() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Notify comsumer thread that it can proceed 
+    // Notify comsumer thread that it can proceed
     cv_.notify_one();
 
 #ifndef NDEBUG
@@ -85,7 +85,7 @@ void TokenBuffer<T>::pop() {
 
         // Proceed only if buffer_ has data
         std::unique_lock<std::mutex> lk(cv_m_);
-        if  (cv_.wait_for(lk, msec(10)) == std::cv_status::timeout) 
+        if  (cv_.wait_for(lk, msec(10)) == std::cv_status::timeout)
         {
             continue;
         }

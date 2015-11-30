@@ -48,9 +48,11 @@ HSVDetector::HSVDetector(const std::string &frame_source_address,
 void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
 
     // Transform frame to HSV
+    // (Extremely expensive operation)
     cv::cvtColor(frame, frame, cv::COLOR_BGR2HSV);
 
     // Threshold HSV channels
+    // (Very expensive operation)
     cv::inRange(frame,
                 cv::Scalar(h_min_, s_min_, v_min_),
                 cv::Scalar(h_max_, s_max_, v_max_),

@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   oat framefilt main.cpp
+//* File:   oat buffer main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -38,6 +38,8 @@ namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
+
+using Pos2DBuffer = oat::TokenBuffer<oat::Position2D>;
 
 void printUsage(po::options_description options){
     std::cout << "Usage: buffer [INFO]\n"
@@ -188,7 +190,7 @@ int main(int argc, char *argv[]) {
         }
         case 'b':
         {
-            buffer = std::make_shared<oat::TokenBuffer<oat::Position2D>>(source, sink);
+            buffer = std::make_shared<Pos2DBuffer>(source, sink);
             break;
         }
         default:
