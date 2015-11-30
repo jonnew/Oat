@@ -117,6 +117,7 @@ add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positiongenerator)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/recorder)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/positionsocket)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/calibrator)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/buffer)
 
 # All executables should be installed in Oat/oat/libexec
 set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "Default install path" FORCE)

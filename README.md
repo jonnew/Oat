@@ -1158,7 +1158,6 @@ RJ45 ------------
     - ~~Put boost in a more standard location~~
           - EDIT: compiles with v1.54, which is provided in package manager.
     - ~~Clang build?~~
-    - Windows build?
 - [ ] Travis CI
     - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Unit and stress testing
@@ -1170,50 +1169,24 @@ RJ45 ------------
           components in odd and intensive, but legal, ways to ensure sample
           sychronization is maintianed, graceful exits, etc
 - [ ] Frame and position server sample synchronization
-    - [ ] Dealing with dropped frames
-          - Right now, I poll the camera for frames. This is fine for a file, but
-          not necessarily for a physical camera whose acquisitions is governed
-          by an external, asynchronous clock
-          - Instead of polling, I need an event driven frame server. In the case
-          of a dropped frame, the server __must__ increment the sample number,
-          even if it does not serve the frame, to prevent offsets from
-          occurring.
-          - EDIT: `libshmemdf` and `oat::Frame` allow the sample number to be
-          incremented and travel with the frame, even if the frame is dropped.
-          This means that samples should be able to maintain accuracy even when
-          frames are discarded due to buffer overflow
     - [ ] Pull-based synchronization with remote client.
-          - By virtue of the sychronization architecture I'm using to coordinate
-          samples between SOURCE and SINK components, I get both push and pull
-          based processing chain updates for free. This means if I use
-          `oat-posisock` in server mode, and it blocks until a remote client
-          requests a position, then the data processing chain update will be
-          sychronized to these remote requestions. The exception are `pure
-          SOURCE` components, which have internal ring-buffers
-          (`oat-frameserve` and `oat-positest`). These components will fill
-          their internal buffers at a rate driven by their internal clock
-          regardless of remote requests for data processing chain updates. If
-          remote sychronization is required, this is undesirable.
-          - Ideally, the sychronization and buffering architecture of `pure
-          SOURCE` components should be dependent on some globally enfornced
-          sychronization strategy. This might be accomplished via the creation
-          of a master, read only clock, existing in shmem, that dictates
-          sychronization strategy and keeps time. Instead of each `pure SOURCE`
-          keeping its own, asychronous clock (e.g. if two cameras are started
-          at different times, they can have different absolute sample numbers
-          at the same real-world time), this central clock would be in charge.
-          This would obviate all issues I'm having with sample number
-          propogation through multi-SOURCE components.
-     - In anycase, the `pure SOURCE` components, esspecially `oat-frameserve`,
-       are by far the most primative components in the project at this point
-       and need refactoring to deal with these two issues in a reasonable way.
-- [ ] In line with the comments above about central clock management, it might
-  also be better to have a central anonymous shared memory management. Instead
-  of creating a named shared block that can potentially be stranded in the case
-  of a program crash, a central program to manage all the shared blocks and the
-  clock could be smarter about shmem allocation/freeing.
-     - There could be, for instance, a directed adjacentcy list to describe a
-       data processing graph stored in shmem.
+          - By virtue of the sychronization architecture I'm using to
+            coordinate samples between SOURCE and SINK components, I get both
+            push and pull based processing chain updates for free. This means
+            if I use `oat-posisock` in server mode, and it blocks until a
+            remote client requests a position, then the data processing chain
+            update will be sychronized to these remote requestions. The
+            exception are `pure SINK` components, which can be driven by an
+            external clock. Namely, hardware devices: `oat-frameserve gige`,
+            `oat-frameserve wcam`, etc. When these components are driven by an
+            external clock, they will publish at a rate driven by the clock
+            regardless of remote requests for data processing chain updates. If
+            remote sychronization is required, this is undesirable.
+          - One thing that could be done is to implement buffer components that
+            provide FIFOs that can follow `pure SINKs`. However, this should
+            only deal with 'hickups' in data processing. There is no free
+            lunch: if consumers cannot keep up with producers on average, then
+            consumers need to speed up or producers need to slow down.
 - [ ] GigE interface cleanup
     - The PGGigeCam class is a big mess. It has has tons of code redundancy.
     - Additionally, it needs to be optimized for performance. Are their

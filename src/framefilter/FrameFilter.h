@@ -94,7 +94,6 @@ private:
 
     // Frame source
     const std::string frame_source_address_;
-    oat::NodeState node_state_;
     oat::Source<oat::SharedFrameHeader> frame_source_;
 
     // Frame sink
