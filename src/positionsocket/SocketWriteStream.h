@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef SOCKETWRITESTREAM_H
-#define	SOCKETWRITESTREAM_H
+#ifndef RAPIDJSON_SOCKETWRITESTREAM_H
+#define	RAPIDJSON_SOCKETWRITESTREAM_H
 
 #include <cstdio>
 #include <boost/asio/ip/udp.hpp>
@@ -42,8 +42,8 @@ public:
     , endpoint_(endpoint)
     , buffer_(buffer)
     , bufferEnd_(buffer + bufferSize)
-    , current_(buffer_) {
-
+    , current_(buffer_) 
+    {
         RAPIDJSON_ASSERT(socket_ != nullptr);
     }
 
@@ -75,16 +75,6 @@ public:
 
             socket_->send_to(boost::asio::buffer(buffer_,
                         static_cast<size_t>(current_ - buffer_)), endpoint_);
-
-            // Async version. I think this could be troublesome if, for instance,
-            // it is re-called before the async operation completes.
-            //socket_->async_send_to(
-            //        boost::asio::buffer(buffer_, static_cast<size_t>(current_ - buffer_)),
-            //        endpoint_,
-            //        // TODO: Should this handler do something
-            //        //       Am I gaining anything from the async-ness here?
-            //        [](boost::system::error_code /*ec*/, std::size_t /*bytes_sent*/){ });
-
             current_ = buffer_;
         }
     }

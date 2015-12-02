@@ -60,6 +60,10 @@ __Contributors__
         - [Signature](#signature-8)
         - [Usage](#usage-8)
         - [Example](#example-6)
+    - [Buffer](#buffer)
+        - [Signature](#signature-9)
+        - [Usage](#usage-9)
+        - [Examples](#examples-7)
 - [Installation](#installation)
     - [Dependencies](#dependencies)
         - [Flycapture SDK](#flycapture-sdk)
@@ -78,17 +82,19 @@ __Contributors__
 \newpage
 ## Manual
 Oat components are a set of programs that communicate through shared memory to
-capture, process, perform object detection within, and record video streams.
-Oat components act on two basic data types: `frames` and `positions`.
+capture, process, and record video streams.  Oat components act on two basic
+data types: `frames` and `positions`.
 
 * `frame` - Video frame.
 * `position` - 2D position.
 
-Oat components are be chained together to realize custom data processing
-pipelines, with individual components executing largely in parallel. Processing
-pipelines can be split and merged while maintaining thread-safety and sample
-synchronization.  For example, a script to detect the position of a single
-object in pre-recorded video file might look like this:
+Oat components can be chained together to realize custom dataflow networks,
+which operate on instance of the above datatypes, called `tokens`.  The code
+has been optimized to reduce token copying and times spent in critical
+sections which allows individual components executing largely in parallel.
+Processing pipelines can be split and merged while maintaining thread-safety
+and sample synchronization.  For example, a script to detect the position of a
+single object in pre-recorded video file might look like this:
 
 ```bash
 # Serve frames from a video file to the 'raw' stream
@@ -96,7 +102,7 @@ oat frameserve file raw -f ./video.mpg &
 
 # Perform background subtraction on the 'raw' stream
 # Serve the result to the 'filt' stream
-oat framefilt bsub raw filt &
+oat framefilt mog raw filt &
 
 # Perform color-based object position detection on the 'filt' stream
 # Serve the object positionto the 'pos' stream
@@ -777,9 +783,84 @@ CONFIGURATION:
 
 ```
 
+\newpage
+### Buffer
+`oat-buffer` - A first in, first out (FIFO) token buffer that can be use to
+decouple asynchronous portions of a data processing network. An example of this
+is the case when a precise external clock is used to govern image acquisition
+via a physical trigger line. In this case, 'hickups' in the data processing
+network following the camera should not cause the camera to skip frames. Of
+course, there is no free lunch: if the processing pipline cannot keep up with
+the external clock on average, then the buffer will eventually fill and
+overflow. 
+
+#### Signatures
+    position --> oat-buffer --> position
+
+    frame --> oat-buffer --> frame
+
+#### Usage
+```
+Usage: buffer [INFO]
+   or: buffer TYPE SOURCE SINK [CONFIGURATION]
+Place tokens from SOURCE into a FIFO. Publish tokens in FIFO to SINK.
+
+TYPE
+  frame: Frame buffer
+  pos2D: 2D Position buffer
+
+SOURCE:
+  User-supplied name of the memory segment to receive tokens from (e.g. input).
+
+SINK:
+  User-supplied name of the memory segment to publish tokens to (e.g. output).
+
+OPTIONS:
+
+INFO:
+  --help                 Produce help message.
+  -v [ --version ]       Print version information.
+```
+
 #### Example
 ```bash
-TODO
+# Acquire frames on a gige camera driven by an exnternal trigger
+oat frameserve gige raw -c config.toml gige-trig
+
+# Buffer the frames separate asychronous sections of the processing network
+oat buffer frame raw buff
+
+# Filter the buffered frames and save
+oat framefilt mog buff filt
+oat record -f ~/Desktop/ -p buff filt
+```
+
+In the above example, one must be careful to fully separate the network across
+the buffer boundary in order for it to provide any functionality. For instance,
+if we changed the record command to the following
+```bash
+oat record -f ~/Desktop/ -p raw filt
+```
+Then the buffer would do nothing since the raw token stream must be synchronous
+with the recorder, which bypasses the buffer. In this case, the buffer is just
+wasting CPU cycles. Here is a graphical representation of the first
+configuration where the `oat-buffer` is used properly. The synchronization
+boundary is shown using vertical lines.
+
+```
+               |
+frameserve --> buffer --> framefilt --> record
+               |    \                  /     
+               |     ------------------     
+```
+
+In the second configuration, the connection from frameserve to record breaks
+the synchronization boundary.
+```
+               |
+frameserve --> buffer --> framefilt --> record
+          \    |                      /     
+           ----|----------------------     
 ```
 
 \newpage
