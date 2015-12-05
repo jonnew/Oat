@@ -66,7 +66,6 @@ void Saver::visit(CameraCalibrator* cc) {
     auto temp = static_cast<int64_t>(cc->model());
     auto model = cpptoml::make_value<int64_t>(std::move(temp));
 
-
     // Construct TOML array from camera matrix and distortion coefficients
     auto _cam = cc->camera_matrix(); // Have to make copy or iterator does not work
     auto cam = cpptoml::make_array();
@@ -79,10 +78,14 @@ void Saver::visit(CameraCalibrator* cc) {
     for (it = _dc.begin<double>(), end = _dc.end<double>(); it != end; it++)
         dc->get().push_back(cpptoml::make_value<double>(*it));
 
-    // Insert camera matrix and distortion coeffs into TOML table
-    calibration->insert(entry_key_ + "-model", model);
-    calibration->insert(entry_key_ + "-camera-matrix", cam);
-    calibration->insert(entry_key_ + "-distortion-coeffs", dc);
+    // Insert camera matrix and distortion coeffs into sub table
+    auto camera = cpptoml::make_table();
+    camera->insert("camera-model", model);
+    camera->insert("camera-matrix", cam);
+    camera->insert("distortion-coeffs", dc);
+
+    // Place camera table into main calibration file
+    calibration->insert(entry_key_, camera);
 
      // Save the file
     saveCalibrationTable(*calibration, calibration_file_);
@@ -113,7 +116,11 @@ void Saver::visit(HomographyGenerator* hg) {
         arr->get().push_back(cpptoml::make_value<double>(*it));
 
     // Insert the array into the calibration table
-    calibration->insert(entry_key_, arr);
+    auto homography = cpptoml::make_table();
+    homography->insert(entry_key_, arr);
+
+    // Place camera table into main calibration file
+    calibration->insert(entry_key_, homography);
 
     // Save the file
     saveCalibrationTable(*calibration, calibration_file_);

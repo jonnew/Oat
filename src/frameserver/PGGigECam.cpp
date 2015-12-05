@@ -756,23 +756,23 @@ int PGGigECam::setupTrigger() {
 //
 //}
 
-
+// TODO: implement onboard buffer and perform retry a RetrieveBuffer
+// A single time if a torn image is detected.
 void PGGigECam::grabImage() {
 
-    // Get the image
+#ifndef NDEBUG
     if (!aquisition_started) {
         throw (std::runtime_error("Cannot grab image because acquisition has not been started.\n"));
     }
+#endif
 
     pg::Error error = camera.RetrieveBuffer(&raw_image);
     if (error == pg::PGRERROR_IMAGE_CONSISTENCY_ERROR) {
         std::cerr << oat::Error("WARNING: torn image detected.\n");
-
-        // TODO: implement onboard buffer and perform retry a RetrieveBuffer
-        // A single time if a torn image is detected.
     } else if (error != pg::PGRERROR_OK) {
         printError(error);
-        std::cerr << oat::Error("WARNING: capture error.\n");
+        std::cerr << oat::Error("WARNING: Point Grey capture errored with code " 
+                                + std.to_string(error) + "\n");
     }
 }
 
@@ -780,7 +780,7 @@ void PGGigECam::grabImage() {
 void PGGigECam::connectToNode() {
 
     // TODO: Instead of grabbing and image, can I get this info from the
-    // Acquisition settings?? I'm worried that I will be off by a sample this way
+    // acquisition settings?? I'm worried that I will be off by a sample this way
     grabImage();
 
     pg::Image temp;
@@ -796,7 +796,7 @@ void PGGigECam::connectToNode() {
 
     shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
 
-    // Use the current_frame_.data, which points to a block of shared memory
+    // Use the shared_frame_.data, which points to a block of shared memory
     // as rbg_image's data buffer. When changes are made to rgb_image, this is
     // automatically propagated into shmem and 'convered' into a cv::Mat (although
     // this 'coversion' is simply filling in appropriate header info, which was accomplished
@@ -928,7 +928,6 @@ int PGGigECam::printCameraInfo(void) {
     std::cout << "Subnet mask: " << subnetMask.str() << "\n";
     std::cout << "Default gateway: " << defaultGateway.str() << "\n\n";
 
-
     return 0;
 }
 
@@ -972,7 +971,6 @@ void PGGigECam::fireSoftwareTrigger() {
         }
 
     } else {
-
         std::cout << "Cannot firing software trigger because software trigger has not been configured.\n";
     }
 }

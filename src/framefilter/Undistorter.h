@@ -44,15 +44,21 @@ public:
                 const std::string &frame_sink_address);
 
     void configure(const std::string &config_file,
-                   const std::string &config_key) override { };
-
-    void loadCalibration(const std::string& calibration_file);
+                   const std::string &config_key) override; 
 
     // Accessors
     void set_camera_matrix(const cv::Matx33d& value) { camera_matrix_ = value; }
     void set_distortion_coefficients(const cv::Mat& value) { distortion_coefficients_ = value.clone(); }
 
 private:
+
+    // Camera model to use for calibration
+    enum class CameraModel
+    {
+        NA      = -1,  //!< Not applicable
+        PINHOLE =  0,  //!< Pinhole camera model
+        FISHEYE =  1   //!< Fisheye lens model
+    };
 
     /**
      * Apply undistortion filter.
@@ -61,11 +67,9 @@ private:
      */
     void filter(cv::Mat& frame) override;
 
-    cv::Mat temp_matrix_;
-    bool calibration_valid_ {false};
+    CameraModel camera_model_ {CameraModel::NA};
     cv::Matx33d camera_matrix_  {cv::Matx33d::eye()};
-    cv::Mat distortion_coefficients_ {cv::Mat::zeros(8, 1, CV_64F)};
-
+    cv::Mat distortion_coefficients_;
 };
 
 }      /* namespace oat */

@@ -35,6 +35,7 @@
 #include "BackgroundSubtractor.h"
 #include "BackgroundSubtractorMOG.h"
 #include "FrameMasker.h"
+#include "Undistorter.h"
 
 namespace po = boost::program_options;
 
@@ -49,7 +50,8 @@ void printUsage(po::options_description options){
               << "TYPE\n"
               << "  bsub: Background subtraction\n"
               << "  mask: Binary mask\n"
-              << "   mog: Mixture of Gaussians background segmentation.\n\n"
+              << "  mog: Mixture of Gaussians background segmentation.\n\n"
+              << "  undistort: Mixture of Gaussians background segmentation.\n\n"
               << "SOURCE:\n"
               << "  User-supplied name of the memory segment to receive frames "
               << "from (e.g. raw).\n\n"
@@ -99,6 +101,7 @@ int main(int argc, char *argv[]) {
     type_hash["bsub"] = 'a';
     type_hash["mask"] = 'b';
     type_hash["mog"] = 'c';
+    type_hash["undistort"] = 'd';
 
     try {
 
@@ -224,6 +227,15 @@ int main(int argc, char *argv[]) {
         case 'c':
         {
             filter = std::make_shared<oat::BackgroundSubtractorMOG>(source, sink);
+            break;
+        }
+        case 'd':
+        {
+            filter = std::make_shared<oat::Undistorter>(source, sink);
+            if (!config_used)
+                 std::cerr << oat::whoWarn(filter->name(),
+                         "No undistortion configuration was provided."
+                         " This filter does nothing but waste CPU cycles.\n");
             break;
         }
         default:

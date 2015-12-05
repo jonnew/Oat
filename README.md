@@ -1239,8 +1239,6 @@ RJ45 ------------
     - ~~Put boost in a more standard location~~
           - EDIT: compiles with v1.54, which is provided in package manager.
     - ~~Clang build?~~
-- [ ] Travis CI
-    - Get it building using the improvements to CMake stated in last TODO item
 - [ ] Unit and stress testing
     - Unit tests for `libshmemdf`
           - ~~Nominal data types, `T`~~
@@ -1294,16 +1292,16 @@ RJ45 ------------
     - Size of position markers, sample numbers, etc do not change with image
       resolution
     - How are multi-region tags displayed using the -R option?
-- [ ] Something is wrong with sample synchronization
+- [x] Something is wrong with sample synchronization
     - When working with Jennie's data, we found that position samples were
       being recorded multiple times - they had the same sample number and
       position info. Seems to be very intermittent, but points to a serious
       issue with sample synchronization. It seems likely this occurring in the
       recorder component due to its mulitthreaded implementation.
-    - With `libshmemdf`, sample numbers now travel with samples. I need to use
-      this to implement `asserts` in each component that (1) check that samples
-      increase monotonically (buffer overflows means that samples can be
-      skipped, so uniary incrementation is not a given) and (2) that
+    - EDIT: With `libshmemdf`, sample numbers now travel with samples. I need
+      to use this to implement `asserts` in each component that (1) check that
+      samples increase monotonically (buffer overflows means that samples can
+      be skipped, so uniary incrementation is not a given) and (2) that
       multisource components are dealing with sychonized sample numbers when
       pull-based sychornization strategy is enforced (no external clock driving
       acqusition, so no chance for buffer overrun).

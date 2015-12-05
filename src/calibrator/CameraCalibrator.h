@@ -70,7 +70,7 @@ public:
      * @param config_file configuration file path
      * @param config_key configuration key
      */
-    void configure(const std::string &config_file, 
+    void configure(const std::string &config_file,
                    const std::string &config_key) override;
 
     // Accept visitors
@@ -102,14 +102,13 @@ private:
     };
 
     Mode mode_ {Mode::NORMAL};
-    
+
     // For writing mode on frames
     std::map<Mode, std::string> mode_msg_hash_;
 
     // Is camera calibration well-defined?
-    bool calibration_valid_;
     CameraModel calibration_model_ {CameraModel::NA};
-    //int calibration_flags_;
+    bool calibration_valid_;
     cv::Mat camera_matrix_, distortion_coefficients_;
     double rms_error_;
 
@@ -141,10 +140,10 @@ private:
     void printDataPoints(void);
     void clearDataPoints(void);
     void printCalibrationResults(std::ostream& out);
-    void generateCalibrationParameters(void); //TODO: computationally intense, do on a separate thread
+    void generateCalibrationParameters(void);
     int selectCameraModel(void);
     cv::Mat drawCorners(cv::Mat& frame, bool invert_colors);
-    
+
     template<typename M>
     bool requireMode(M m) {
 

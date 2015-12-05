@@ -42,8 +42,8 @@
 namespace oat {
 
 CameraCalibrator::CameraCalibrator(
-        const std::string& frame_source_name,
-        const CameraModel& model,
+        const std::string &frame_source_name,
+        const CameraModel &model,
         cv::Size& chessboard_size,
         double square_size_meters) :
   Calibrator(frame_source_name)
@@ -90,7 +90,8 @@ CameraCalibrator::CameraCalibrator(
    // }
 }
 
-void CameraCalibrator::configure(const std::string& config_file, const std::string& config_key) {
+void CameraCalibrator::configure(const std::string &config_file, 
+                                 const std::string &config_key) {
 
     // TODO: Provide list of image paths to perform calibraiton directly from file.
 
@@ -192,7 +193,7 @@ void CameraCalibrator::calibrate(cv::Mat& frame) {
         }
         case 's': // Save homography info
         {
-            Saver saver("calibration", calibration_save_path_);
+            Saver saver("camera-calibration", calibration_save_path_);
             accept(&saver);
             break;
         }

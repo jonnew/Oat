@@ -21,8 +21,6 @@
 #define	OAT_FORWARDSDECL_H
 
 #include <boost/interprocess/interprocess_fwd.hpp>
-
-//TODO: Required not sure why
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 namespace oat {
