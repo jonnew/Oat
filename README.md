@@ -61,9 +61,15 @@ __Contributors__
         - [Usage](#usage-8)
         - [Example](#example-6)
     - [Buffer](#buffer)
-        - [Signature](#signature-9)
+        - [Signatures](#signatures)
         - [Usage](#usage-9)
-        - [Examples](#examples-7)
+        - [Example](#example-7)
+    - [Calibrate](#calibrate)
+        - [Signature](#signature-9)
+        - [Usage](#usage-10)
+    - [Clean](#clean)
+        - [Usage](#usage-11)
+        - [Example](#example-8)
 - [Installation](#installation)
     - [Dependencies](#dependencies)
         - [Flycapture SDK](#flycapture-sdk)
@@ -731,6 +737,7 @@ CONFIGURATION:
 ```
 
 #### Example
+
 ```bash
 # Save positional stream 'pos' to current directory
 oat record -p pos
@@ -746,8 +753,8 @@ oat record -p pos1 pos2 -d -f ~/Desktop
 oat record -i raw
 
 # Save frame stream 'raw' and positional stream 'pos' to Desktop
-# directory and prepend the timestamp and 'my_data' to each filename
-oat record -i raw -p pos -d -f ~/Desktop -n my_data
+# directory and prepend the timestamp and the word 'test' to each filename
+oat record -i raw -p pos -d -f ~/Desktop -n test
 ```
 
 \newpage
@@ -781,6 +788,13 @@ CONFIGURATION:
                             client. TODO: explain request protocol...
   -c [ --config ] arg       Configuration file/key pair.
 
+```
+
+#### Example
+```bash
+# Stream positions from the 'pos' stream to port 5555 at 18.72.0.3 in 
+# client mode
+oat posisock pos -h 18.72.0.3 -p 5555
 ```
 
 \newpage
@@ -861,6 +875,103 @@ the synchronization boundary.
 frameserve --> buffer --> framefilt --> record
           \    |                      /     
            ----|----------------------     
+```
+
+\newpage
+### Calibrate
+`oat-calibrate` - Interactive program used to generate calibration parameters
+for an imaging system that can be used to parameterize `oat-framefilt` and
+`oat-posifilt`. Detailed usage instructions are displayed upon program startup.
+
+#### Signature
+
+    frame --> oat-calibrate
+
+#### Usage
+```
+Usage: calibrate [INFO]
+   or: calibrate SOURCE [CONFIGURATION]
+Generate camera calibration and homography transform for a frame SOURCE.
+
+TYPE
+  camera: Generate calibration parameters (camera matrix and distortion coefficients).
+  homography: Generate homography transform between pixels and world units.
+
+SOURCE:
+  User-supplied name of the memory segment to receive frames from (e.g. raw).
+
+OPTIONS:
+
+INFO:
+  --help                          Produce help message.
+  -v [ --version ]                Print version information.
+
+CONFIGURATION:
+  -n [ --calibration-name ] arg   The key name for the calibration that will be
+                                  inserted into the calibration file.
+                                  
+  -f [ --calibration-path ] arg   The base calibration file location. If not is
+                                  specified,defaults to './calibration.toml'. 
+                                  If a folder is specified, defaults to 
+                                  '<folder>/calibration.toml
+                                  
+  --homography-method arg         Homography estimation method.
+                                  
+                                  Values:
+                                    robust (default): RANSAC-based robust 
+                                  estimation method (automatic outlier 
+                                  rejection).
+                                    regular: Best-fit using all data points.
+                                    exact: Compute the homography that fits 
+                                  four points. Useful when frames contain know 
+                                  fiducial marks.
+                                  
+  --camera-model arg              Model used for camera calibration.
+                                  
+                                  Values:
+                                    pinhole (default): Pinhole camera model.
+                                    fisheye: Fisheye camera model (ultra 
+                                  wide-angle lens with pronounced radial 
+                                  distortion.
+                                  
+  -h [ --chessboard-height ] arg  The number of vertical black squares in the 
+                                  chessboard used for calibration.
+                                  
+  -w [ --chessboard-width ] arg   The number of horizontal black squares in the
+                                  chessboard used for calibration.
+                                  
+  -W [ --square-width ] arg       The length/width of a single chessboard 
+                                  square in meters.
+                                  
+  -c [ --config ] arg             Configuration file/key pair.
+```
+
+\newpage
+### Clean
+`oat-clean` - Programmer's utility for cleaning shared memory segments after
+following abnormal component termination. Not required unless a program
+terminates without cleaning up shared memory. If you are using this for things
+other than development, then please submit a bug report.
+
+#### Usage
+```
+Usage: clean [INFO]
+   or: clean NAMES [CONFIGURATION]
+Remove the named shared memory segments specified by NAMES.
+
+INFO:
+  --help                Produce help message.
+  -v [ --version ]      Print version information.
+  -q [ --quiet ]        Quiet mode. Prevent output text.
+  -l [ --legacy ]       Legacy mode. Append  "_sh_mem" to input NAMES before 
+                        removing.
+```
+
+#### Example
+```bash
+# Remove raw and filt blocks from shared memory after abnormal terminatiot of
+# some components that created them
+oat clean raw filt
 ```
 
 \newpage

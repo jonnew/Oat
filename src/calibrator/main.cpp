@@ -132,10 +132,12 @@ int main(int argc, char *argv[]) {
         po::options_description config("CONFIGURATION");
         config.add_options()
                 ("calibration-name,n", po::value<std::string>(&cal_name),
-                "The key name for the calibration that will be inserted into "
-                " he calibration file.\n")
+                "The key name for the calibration entry that will be inserted "
+                "into the calibration file.\n")
                 ("calibration-path,f", po::value<std::string>(&save_path),
-                "The base configuration file location.\n")
+                "The calibration file location. If not is specified,"
+                "defaults to './calibration.toml'. If a folder is specified, "
+                "defaults to '<folder>/calibration.toml\n")
                 ("homography-method", po::value<std::string>(&homography_method),
                 "Homography estimation method.\n\n"
                 "Values:\n"
