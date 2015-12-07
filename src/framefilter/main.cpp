@@ -45,13 +45,13 @@ volatile sig_atomic_t source_eof = 0;
 void printUsage(po::options_description options){
     std::cout << "Usage: framefilt [INFO]\n"
               << "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
-              << "Filter frames from SOURCE and published filtered frames "
+              << "Filter frames from SOURCE and published filtered frames "\s
               << "to SINK.\n\n"
               << "TYPE\n"
               << "  bsub: Background subtraction\n"
               << "  mask: Binary mask\n"
-              << "  mog: Mixture of Gaussians background segmentation.\n\n"
-              << "  undistort: Mixture of Gaussians background segmentation.\n\n"
+              << "  mog: Mixture of Gaussians background segmentation.\n"
+              << "  undistort: Compensate for lens distortion using distortion model.\n\n"
               << "SOURCE:\n"
               << "  User-supplied name of the memory segment to receive frames "
               << "from (e.g. raw).\n\n"
@@ -123,7 +123,9 @@ int main(int argc, char *argv[]) {
                 "Type of frame filter to use.\n\n"
                 "Values:\n"
                 "  bsub: Background subtractor.\n"
-                "  mask: Binary mask.")
+                "  mask: Binary mask.\n"
+                "  mog: Mixture of Gaussians background segmentation.\n"
+                "  undistort: Compensate for lens distortion using distortion model.\n")
                 ("source", po::value<std::string>(&source),
                 "The name of the SOURCE that supplies images on which to perform background subtraction."
                 "The server must be of type SMServer<SharedCVMatHeader>\n")
