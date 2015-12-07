@@ -44,10 +44,13 @@
 
 namespace oat {
 
-HomographyGenerator::HomographyGenerator(const std::string& frame_source_name, const EstimationMethod method) :
-  Calibrator(frame_source_name)
+HomographyGenerator::HomographyGenerator(const std::string &frame_source_name,
+                                         const std::string &calibration_key,
+                                         const EstimationMethod method) :
+  Calibrator(frame_source_name, calibration_key)
 , homography_valid_(false)
-, method_(method) {
+, method_(method)
+{
 
     // if (interactive_) { // TODO: Generalize to accept points from a file without interactive session
 
@@ -147,7 +150,7 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
         }
         case 's': // Persist homography to file
         {
-            Saver saver("homography", calibration_save_path_);
+            Saver saver(calibration_key_, calibration_save_path_);
             accept(&saver);
             break;
         }

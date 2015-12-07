@@ -28,9 +28,10 @@ namespace bfs = boost::filesystem;
 
 namespace oat {
 
-
-Calibrator::Calibrator(const std::string &frame_source_address) :
-  name_("calibrate[" + frame_source_address + "]")
+Calibrator::Calibrator(const std::string &frame_source_address,
+                       const std::string &calibration_key) :
+  calibration_key_(calibration_key)
+, name_("calibrate[" + frame_source_address + "]")
 , frame_source_address_(frame_source_address)
 {
     // Nothing
@@ -38,7 +39,7 @@ Calibrator::Calibrator(const std::string &frame_source_address) :
 
 void Calibrator::connectToNode() {
 
-    // Establish our a slot in the node 
+    // Establish our a slot in the node
     frame_source_.touch(frame_source_address_);
 
     // Wait for sychronous start with sink when it binds the node

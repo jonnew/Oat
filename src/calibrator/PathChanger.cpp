@@ -2,7 +2,7 @@
 //* File:   PathChanger.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
 //* This is free software: you can redistribute it and/or modify
@@ -31,9 +31,8 @@
 namespace oat {
 
 void PathChanger::visit(CameraCalibrator* cc) {
-    
-    std::cout << "Type the path to save camera calibration information and press <enter>: ";
 
+    std::cout << "Type the path to save camera calibration information and press <enter>: ";
     try {
         setNewPath(cc);
     } catch (const std::runtime_error& ex) {
@@ -41,13 +40,21 @@ void PathChanger::visit(CameraCalibrator* cc) {
         return;
     }
 
+    std::cout << "Type the key name of this calibration entry and press <enter>: ";
+    try {
+        setNewKey(cc);
+    } catch (const std::runtime_error& ex) {
+        std::cerr << oat::Error(ex.what()) << "\n";
+        return;
+    }
+
+
     std::cout << "Camera calibration save file set to " + cc->calibration_save_path() + "\n";
 }
 
 void PathChanger::visit(HomographyGenerator* hg) {
 
     std::cout << "Type the path to save homography information and press <enter>: ";
-
     try {
         setNewPath(hg);
     } catch (const std::runtime_error& ex) {
@@ -55,6 +62,13 @@ void PathChanger::visit(HomographyGenerator* hg) {
         return;
     }
 
+    std::cout << "Type the key name of this homography entry and press <enter>: ";
+    try {
+        setNewKey(hg);
+    } catch (const std::runtime_error& ex) {
+        std::cerr << oat::Error(ex.what()) << "\n";
+        return;
+    }
     std::cout << "Homography save file set to " + hg->calibration_save_path() + "\n";
 }
 
@@ -81,6 +95,22 @@ void PathChanger::setNewPath(Calibrator* cal) {
     } else {
         throw std::runtime_error("Could not parse path.");
     }
+}
+
+void PathChanger::setNewKey(Calibrator* cal) {
+
+    std::string new_key;
+
+    if (!std::getline(std::cin, new_key)) {
+
+        // Flush cin in case the uer just inserted crap
+        oat::ignoreLine(std::cin);
+
+        throw(std::runtime_error("Invalid input."));
+    }
+
+    cal->set_calibration_key(new_key);
+
 }
 
 } /* namespace oat */

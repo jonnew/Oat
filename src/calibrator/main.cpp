@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
     // Switches and options
     std::string type;
     std::string source;
+    std::string cal_name;
     std::string save_path;
     std::string homography_method {"robust"};
     std::string camera_model {"pinhole"};
@@ -130,10 +131,11 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
+                ("calibration-name,n", po::value<std::string>(&cal_name),
+                "The key name for the calibration that will be inserted into "
+                " he calibration file.\n")
                 ("calibration-path,f", po::value<std::string>(&save_path),
-                "The base configuration file location.\n"
-                "The timestamp of the calibration will be prepended to th name."
-                "If not provided, the calibration info will be printed to STDOUT.")
+                "The base configuration file location.\n")
                 ("homography-method", po::value<std::string>(&homography_method),
                 "Homography estimation method.\n\n"
                 "Values:\n"
@@ -214,6 +216,27 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
+        if (!variable_map.count("calibration-name")) {
+            switch (type_hash[type]) {
+                case 'a':
+                {
+                    cal_name = "camera-calibration";
+                    break;
+                }
+                case 'b':
+                {
+                    cal_name = "homography";
+                    break;
+                }
+                default:
+                {
+                    printUsage(visible_options);
+                    std::cerr << oat::Error("Invalid TYPE specified.\n");
+                    return -1;
+                }
+            }
+        }
+
         if (!variable_map.count("calibration-path")) {
             save_path = bfs::current_path().string();
         }
@@ -262,13 +285,13 @@ int main(int argc, char *argv[]) {
         {
             auto chessboard_size = cv::Size(chessboard_height, chessboard_width);
             auto model =camera_model_hash.at(camera_model);
-            calibrator = std::make_shared<oat::CameraCalibrator>(source, model, chessboard_size, square_length);
+            calibrator = std::make_shared<oat::CameraCalibrator>(source, cal_name, model, chessboard_size, square_length);
             break;
         }
         case 'b':
         {
             auto meth = homo_meth_hash.at(homography_method);
-            calibrator = std::make_shared<oat::HomographyGenerator>(source, meth);
+            calibrator = std::make_shared<oat::HomographyGenerator>(source, cal_name, meth);
             break;
         }
         default:

@@ -37,7 +37,7 @@ Undistorter::Undistorter(const std::string& source_name, const std::string& sink
     // Nothing
 }
 
-void Undistorter::configure(const std::string &config_file, 
+void Undistorter::configure(const std::string &config_file,
                             const std::string &config_key) {
 
     // Available options
@@ -59,27 +59,25 @@ void Undistorter::configure(const std::string &config_file,
         oat::config::checkKeys(options, this_config);
 
         int64_t val;
-        if (oat::config::getValue(this_config, 
-                                  "camera-model", 
-                                  val, 
+        if (oat::config::getValue(this_config,
+                                  "camera-model",
+                                  val,
                                   static_cast<int64_t>(CameraModel::PINHOLE),
                                   static_cast<int64_t>(CameraModel::FISHEYE))) {
 
-            camera_model_ = static_cast<CameraModel>(val);    
+            camera_model_ = static_cast<CameraModel>(val);
         }
-       
+
 
         oat::config::Array dc_array;
         if (oat::config::getArray(this_config, "distortion-coeffs", dc_array, true)) {
-       
+
             auto dc_vec = dc_array->array_of<double>();
-    
-            std::vector<double> temp;
+
+            distortion_coefficients_.clear();
             for (auto &dc : dc_vec) {
-                temp.push_back(dc.get()->get()); 
+                distortion_coefficients_.push_back(dc.get()->get());
             }
-            
-            distortion_coefficients_ = cv::Mat(temp);
         }
 
         // Camera Matrix
@@ -106,21 +104,24 @@ void Undistorter::configure(const std::string &config_file,
 
 void Undistorter::filter(cv::Mat& frame) {
 
-    cv::Mat temp;
-    frame.copyTo(temp);
+    cv::Mat temp = frame.clone();
 
     switch (camera_model_) {
         case CameraModel::PINHOLE :
         {
             cv::undistort(temp, frame, camera_matrix_, distortion_coefficients_);
+            break;
         }
         case CameraModel::FISHEYE :
         {
-            cv::fisheye::undistortImage(temp, frame, camera_matrix_, distortion_coefficients_);
+            cv::fisheye::undistortImage(temp, frame, camera_matrix_,
+                    distortion_coefficients_, cv::Matx33d::eye());
+            break;
         }
         default :
         {
-            std::runtime_error("Invalid camera model selection.\n");
+            throw std::runtime_error("Invalid camera model selection.\n");
+            break;
         }
     }
 }

@@ -39,7 +39,7 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
 
 void FrameFilter::connectToNode() {
 
-    // Establish our a slot in the node 
+    // Establish our a slot in the node
     frame_source_.touch(frame_source_address_);
 
     // Wait for sychronous start with sink when it binds the node
@@ -49,7 +49,7 @@ void FrameFilter::connectToNode() {
     oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
             frame_source_.parameters();
 
-    // Bind to sink sink node and create a shared cv::Mat
+    // Bind to sink node and create a shared cv::Mat
     frame_sink_.bind(frame_sink_address_, param.bytes);
     shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
 }

@@ -48,6 +48,7 @@ public:
 private:
 
     void setNewPath(Calibrator* cal);
+    void setNewKey(Calibrator* cal);
 };
 
 }      /* namespace oat */

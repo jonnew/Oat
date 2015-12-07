@@ -60,9 +60,10 @@ public:
      * @param frame_source_name imaging setup frame source name
      * @param model Camera model used to generate camera matrix and distortion coefficients.
      */
-    CameraCalibrator(const std::string& frame_source_name,
-                     const CameraModel& model,
-                     cv::Size& chessboard_size,
+    CameraCalibrator(const std::string &frame_source_name,
+                     const std::string &calibration_key,
+                     const CameraModel &model,
+                     cv::Size &chessboard_size,
                      double square_size_meters);
 
     /**

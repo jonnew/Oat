@@ -44,7 +44,7 @@ public:
                 const std::string &frame_sink_address);
 
     void configure(const std::string &config_file,
-                   const std::string &config_key) override; 
+                   const std::string &config_key) override;
 
     // Accessors
     void set_camera_matrix(const cv::Matx33d& value) { camera_matrix_ = value; }
@@ -53,6 +53,7 @@ public:
 private:
 
     // Camera model to use for calibration
+    // TODO: Declared/defined in oat-calibrate as well. Common header?
     enum class CameraModel
     {
         NA      = -1,  //!< Not applicable
@@ -67,9 +68,9 @@ private:
      */
     void filter(cv::Mat& frame) override;
 
-    CameraModel camera_model_ {CameraModel::NA};
+    CameraModel camera_model_ {CameraModel::PINHOLE};
     cv::Matx33d camera_matrix_  {cv::Matx33d::eye()};
-    cv::Mat distortion_coefficients_;
+    std::vector<double> distortion_coefficients_ {0,0,0,0,0,0,0,0};
 };
 
 }      /* namespace oat */

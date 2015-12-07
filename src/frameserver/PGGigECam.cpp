@@ -771,8 +771,8 @@ void PGGigECam::grabImage() {
         std::cerr << oat::Error("WARNING: torn image detected.\n");
     } else if (error != pg::PGRERROR_OK) {
         printError(error);
-        std::cerr << oat::Error("WARNING: Point Grey capture errored with code " 
-                                + std.to_string(error) + "\n");
+        std::cerr << oat::Error("WARNING: Point Grey capture errored with type "
+                                + std::to_string(error.GetType()) + "\n");
     }
 }
 

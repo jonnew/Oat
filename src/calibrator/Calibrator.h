@@ -47,7 +47,8 @@ public:
      * All concrete calibrator types implement this ABC.
      * @param frame_source_address Frame SOURCE address
      */
-    Calibrator(const std::string &frame_source_address);
+    Calibrator(const std::string &frame_source_address,
+               const std::string &calibration_key);
 
     virtual ~Calibrator() {};
 
@@ -89,6 +90,8 @@ public:
         return calibration_save_path_;
     }
 
+    void set_calibration_key(const std::string& value) {calibration_key_ = value; }
+
 protected:
 
     /** Perform calibration routine.
@@ -96,6 +99,7 @@ protected:
      */
     virtual void calibrate(cv::Mat& frame) = 0;
 
+    std::string calibration_key_;       //!< Key name of calibration table entry
     std::string calibration_save_path_; //!< Calibration parameter save path
 
 private:

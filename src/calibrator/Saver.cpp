@@ -117,7 +117,7 @@ void Saver::visit(HomographyGenerator* hg) {
 
     // Insert the array into the calibration table
     auto homography = cpptoml::make_table();
-    homography->insert(entry_key_, arr);
+    homography->insert("homography", arr);
 
     // Place camera table into main calibration file
     calibration->insert(entry_key_, homography);
