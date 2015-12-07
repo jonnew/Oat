@@ -45,7 +45,7 @@ volatile sig_atomic_t source_eof = 0;
 void printUsage(po::options_description options){
     std::cout << "Usage: framefilt [INFO]\n"
               << "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
-              << "Filter frames from SOURCE and published filtered frames "\s
+              << "Filter frames from SOURCE and published filtered frames "
               << "to SINK.\n\n"
               << "TYPE\n"
               << "  bsub: Background subtraction\n"
