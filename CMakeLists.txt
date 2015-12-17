@@ -44,23 +44,24 @@ else()
     message (FATAL_ERROR "Set and acceptable build type using -DCMAKE_BUILD_TYPE=<debug or release>")
 endif()
 
+# Static linking only
+#SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+#SET(BUILD_SHARED_LIBRARIES OFF)
+#SET(CMAKE_EXE_LINKER_FLAGS "-static")
+
 # Configure a header file to pass CMake settings to source code containing
 # build options and version info
 configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
 include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 
 # Add preprocessor definition to compile with OpenGL support
-option (OAT_USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
-option (OAT_USE_OPENGL "Use OpenGL functionality in OpenCV" OFF)
-option (OAT_USE_CUDA "Use CUDA GPU functionality in OpenCV" OFF)
+option (USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
 
 # Show options summary
 message (STATUS "Oat version: ${VERSION_LIST}")
 message (STATUS "Compilation options:" )
 message (STATUS "  Build type: ${LOWERCASE_CMAKE_BUILD_TYPE}")
-message (STATUS "  Compile with Point Grey Support: ${OAT_USE_FLYCAP}")
-message (STATUS "  Compile with CUDA Support: ${OAT_USE_CUDA}")
-message (STATUS "  Compile with OpenGL Support: ${OAT_USE_OPENGL}")
+message (STATUS "  Compile with Point Grey Support: ${USE_FLYCAP}")
 message (STATUS "  Build documentation: ${BUILD_DOCS}")
 
 # Boost, minimum version 1.56 for type_index.hpp
@@ -76,10 +77,18 @@ else (OpenCV_FOUND)
     message (FATAL_ERROR "OpenCV not found")
 endif ()
 
+if (OpenCV_CUDA_VERSION)
+    message (STATUS "   OpenCV has CUDA support.")
+    set (OAT_USE_CUDA ON)
+else ()
+    message (STATUS "   CUDA support not enabled.")
+    set (OAT_USE_CUDA OFF)
+endif ()
+
 # Flycapture
-if (${OAT_USE_FLYCAP})
+if (${USE_FLYCAP})
     # Required for point-grey cameras
-    # TODO: super fragile. Need to provide a user flag to specify flycapture dir
+    # TODO: Need to provide a user flag to specify flycapture dir
     include_directories ("/usr/include/flycapture")
     find_library(FLYCAPTURE2 flycapture)
 

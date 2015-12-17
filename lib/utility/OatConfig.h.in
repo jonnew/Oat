@@ -20,6 +20,5 @@
 #define Oat_VERSION_MAJOR "@GIT_BRANCH@"
 #define Oat_VERSION_MINOR "@GIT_COMMIT_HASH@"
 
-#cmakedefine OAT_USE_FLYCAP
-#cmakedefine OAT_USE_OPENGL
-#cmakedefine OAT_USE_CUDA
+// Use Point Grey's Fly Capture API
+#cmakedefine USE_FLYCAP

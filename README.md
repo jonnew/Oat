@@ -1015,9 +1015,8 @@ can be built using `make [component-name]`, e.g. `make oat-view`. Available
 cmake options and their default values are:
 
 ```
--DOAT_USE_FLYCAP=Off // Compile with support for Point Grey Cameras
--DOAT_USE_OPENGL=Off // Compile with support for OpenGL rendering
--DOAT_USE_CUDA=Off   // Compile with NVIDIA GPU accerated processing
+-DUSE_FLYCAP=Off // Compile with support for Point Grey Cameras
+-DBUILD_DOCS=Off     // Generate Doxygen documentation 
 ```
 
 If you had to install Boost from source, you must let cmake know where it is
@@ -1124,13 +1123,18 @@ TODO
 __Note__: To increase Oat's video visualization performance using `oat view`,
 you can build OpenCV with OpenGL and/or OpenCL support. Both will open up
 significant processing bandwidth to other Oat components and make for faster
-processing pipelines. To compile OpenCV with OpenGL and OpenCL support, add the
-`-DWITH_OPENGL=ON` and the `-DWITH_OPENCL=ON` flags to the cmake command below.
-OpenCV will be build with OpenGL and OpenCL support if `OpenGL support: YES`
-and `Use OpenCL: YES` appear in the cmake output text. If OpenCV is compiled
-with OpenCL support, the performance benefits will be automatic. For OpenGL,
-you need to set a flag when building Oat to see the performance gains. See the
-[Installation](#installation) section for details.
+processing pipelines. To compile OpenCV with OpenGL and OpenCL support, first
+install dependencies: 
+
+```
+sudo apt-get install libgtkglext1 libgtkglext1-dev
+```
+
+Then, add the `-DWITH_OPENGL=ON` and the `-DWITH_OPENCL=ON` flags to the cmake
+command below.  OpenCV will be build with OpenGL and OpenCL support if `OpenGL
+support: YES` and `Use OpenCL: YES` appear in the cmake output text. If OpenCV
+is compiled with OpenCL and OpenGL support, the performance benefits will be
+automatic, no compiler options need to be set for Oat.
 
 __Note__: If you have [NVIDIA GPU that supports
 CUDA](https://developer.nvidia.com/cuda-gpus), you can build OpenCV with CUDA
@@ -1161,8 +1165,8 @@ me:
   run the affected command as [root one
   time](https://devtalk.nvidia.com/default/topic/699610/linux/334-21-driver-returns-999-on-cuinit-cuda-/).
 
-To compile OpenCV with CUDA support, add the `-DWITH_CUDA=ON` flag in the cmake
-command below.
+If OpenCV is compiled with CUDA suport, the CUDA-enabled portions of the Oat
+codebase will be enabled automatically. No compile flags are required.
 
 __Note__: GUI functionality is enhanced in OpenCV is compiled with Qt support.
 You can build OpenCV with Qt by first installing the [Qt
@@ -1175,7 +1179,8 @@ sudo apt-get install libqt5opengl5 libqt5opengl5-dev
 ```
 
 The you can compile OpenCV using QT support by adding `-DWITH_QT=ON` flag to
-the cmake command below.
+the cmake command below. QT functionality will then be used by Oat
+automatically.
 
 Finally, to compile and install OpenCV:
 

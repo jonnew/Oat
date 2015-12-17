@@ -18,6 +18,7 @@
 //******************************************************************************
 
 #include <string>
+#include <opencv2/cvconfig.h>
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/shmemdf/Source.h"

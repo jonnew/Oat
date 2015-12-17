@@ -22,6 +22,7 @@
 #include <iostream>
 #include <string>
 #include <boost/filesystem.hpp>
+#include <opencv2/cvconfig.h>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -51,7 +52,7 @@ Viewer::Viewer(const std::string& frame_source_address,
     tick_ = Clock::now();
     tock_ = Clock::now();
 
-#ifdef OAT_USE_OPENGL
+#ifdef HAVE_OPENGL 
     try {
         cv::namedWindow(name_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
     } catch (cv::Exception& ex) {

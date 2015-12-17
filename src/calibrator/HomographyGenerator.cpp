@@ -27,6 +27,7 @@
 #include <fstream>
 
 #include <boost/io/ios_state.hpp>
+#include <opencv2/cvconfig.h>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -54,7 +55,7 @@ HomographyGenerator::HomographyGenerator(const std::string &frame_source_name,
 
     // if (interactive_) { // TODO: Generalize to accept points from a file without interactive session
 
-#ifdef OAT_USE_OPENGL
+#ifdef HAVE_OPENGL
         try {
             cv::namedWindow(name(), cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
         } catch (cv::Exception& ex) {

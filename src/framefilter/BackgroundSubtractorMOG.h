@@ -20,7 +20,10 @@
 #ifndef OAT_BACKGROUNDSUBTRACTORMOG_H
 #define	OAT_BACKGROUNDSUBTRACTORMOG_H
 
-#ifdef OAT_USE_CUDA
+
+#include <opencv2/cvconfig.h>
+
+#ifdef HAVE_CUDA
 #include <opencv2/cudabgsegm.hpp>
 #else
 #include <opencv2/video.hpp>
@@ -56,7 +59,7 @@ private:
      */
     void filter(cv::Mat& frame) override;
 
-#ifdef OAT_USE_CUDA
+#ifdef HAVE_CUDA
 
      /**
      * Configure the GPU to perform background subtraction.

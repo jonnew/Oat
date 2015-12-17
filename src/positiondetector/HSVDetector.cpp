@@ -210,7 +210,7 @@ void HSVDetector::tune(cv::Mat &frame, const oat::Position2D &position) {
 
 void HSVDetector::createTuningWindows() {
 
-#ifdef OAT_USE_OPENGL
+#ifdef HAVE_OPENGL
     try {
         cv::namedWindow(tuning_image_title_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
     } catch (cv::Exception& ex) {

@@ -33,7 +33,7 @@
 
 #include "FileReader.h"
 #include "WebCam.h"
-#ifdef OAT_USE_FLYCAP
+#ifdef USE_FLYCAP
     #include "PGGigECam.h"
 #endif
 
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
         case 'b':
         {
 
-#ifndef OAT_USE_FLYCAP
+#ifndef USE_FLYCAP
             std::cerr << oat::Error("Oat was not compiled with Point-Grey "
                     "flycapture support, so TYPE=gige is not available.\n");
             return -1;

@@ -115,4 +115,3 @@ void TokenBuffer<T>::pop() {
 template class oat::TokenBuffer<oat::Position2D>;
 
 } /* namespace oat */
-

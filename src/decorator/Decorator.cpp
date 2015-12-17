@@ -20,7 +20,6 @@
 #include <string>
 #include <tuple>
 #include <vector>
-#include <boost/interprocess/sync/sharable_lock.hpp>
 #include <opencv2/opencv.hpp>
 #include <ctime>
 #include <cmath>

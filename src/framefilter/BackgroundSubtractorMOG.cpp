@@ -22,10 +22,11 @@
 #include <stdexcept>
 #include <string>
 #include <iostream>
+#include <opencv2/cvconfig.h>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
-#ifdef OAT_USE_CUDA
+#ifdef HAVE_CUDA
 #include <opencv2/cudabgsegm.hpp>
 #include <opencv2/cudaarithm.hpp>
 #endif
@@ -43,7 +44,7 @@ BackgroundSubtractorMOG::BackgroundSubtractorMOG(
         const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address) {
 
-#ifdef OAT_USE_CUDA
+#ifdef HAVE_CUDA
     configureGPU(0);
     background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
 #else
@@ -70,7 +71,7 @@ void BackgroundSubtractorMOG::configure(const std::string &config_file, const st
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
 
-#ifdef OAT_USE_CUDA
+#ifdef HAVE_CUDA
         // GPU index
         int64_t index;
         if (oat::config::getValue(this_config, "gpu_index", index, 0)) {
@@ -86,7 +87,7 @@ void BackgroundSubtractorMOG::configure(const std::string &config_file, const st
     }
 }
 
-#ifdef OAT_USE_CUDA
+#ifdef HAVE_CUDA
 void BackgroundSubtractorMOG::configureGPU(int64_t index) {
 
     // Determine if a compatible device is available
@@ -111,7 +112,7 @@ void BackgroundSubtractorMOG::configureGPU(int64_t index) {
 
 void BackgroundSubtractorMOG::filter(cv::Mat &frame) {
 
-#ifdef OAT_USE_CUDA
+#ifdef HAVE_CUDA
     current_frame_.upload(frame);
     background_subtractor_->apply(current_frame_, background_mask_, learning_coeff_);
     cv::cuda::bitwise_not(background_mask_, background_mask_);

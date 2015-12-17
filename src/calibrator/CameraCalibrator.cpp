@@ -23,6 +23,7 @@
 #include <map>
 
 #include <boost/io/ios_state.hpp>
+#include <opencv2/cvconfig.h>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/utility.hpp>
@@ -74,7 +75,7 @@ CameraCalibrator::CameraCalibrator(const std::string &frame_source_name,
     mode_msg_hash_[Mode::DETECT] = "Detect";
     mode_msg_hash_[Mode::UNDISTORT] = "Undistort";
 
-#ifdef OAT_USE_OPENGL
+#ifdef HAVE_OPENGL 
         try {
             cv::namedWindow(name(), cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
         } catch (cv::Exception& ex) {
