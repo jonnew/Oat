@@ -39,6 +39,7 @@ before_script:
   - cd $TRAVIS_BUILD_DIR
   - mkdir debug 
   - cd debug
-  - cmake -DCMAKE_BUILD_TYPE=Debug -DBOOST_ROOT=/opt/boost_1_59_0 ..
+  - boost_dir=`ls /opt/ | grep boost`
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DBOOST_ROOT=$boost_dir ..
 
 script: make && make test
