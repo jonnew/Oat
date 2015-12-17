@@ -40,6 +40,6 @@ before_script:
   - mkdir debug 
   - cd debug
   - boost_dir=`ls /opt/ | grep boost`
-  - cmake -DCMAKE_BUILD_TYPE=Debug -DBOOST_ROOT=$boost_dir ..
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DBOOST_ROOT=/opt/$boost_dir ..
 
 script: make && make test
