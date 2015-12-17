@@ -54,7 +54,6 @@ private:
     int64_t max_index {0};
     size_t index_;
 
-    //cv::Size frame_size, frame_offset;
     int x_bin {1};
     int y_bin {1};
     float gain_dB {0};
@@ -111,9 +110,6 @@ private:
     int turnCameraOn(void);
     //TODO: int turnCameraOff(void);
     void grabImage(void);
-
-    // Convert flycap image to cv::Mat
-    cv::Mat imageToMat(void);
 
     // Diagnostics and meta
     int findNumCameras(void);

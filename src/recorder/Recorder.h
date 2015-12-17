@@ -162,6 +162,7 @@ private:
                           const oat::Frame &image);
 
     bool checkFile(std::string& file);
+    bool checkFilePermissions(std::string& file);
 
     void writeFramesToFileFromBuffer(uint32_t writer_idx);
     void writePositionsToFile(void);
