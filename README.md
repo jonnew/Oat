@@ -67,9 +67,12 @@ __Contributors__
     - [Calibrate](#calibrate)
         - [Signature](#signature-9)
         - [Usage](#usage-10)
-    - [Clean](#clean)
+    - [Kill](#kill)
         - [Usage](#usage-11)
         - [Example](#example-8)
+    - [Clean](#clean)
+        - [Usage](#usage-12)
+        - [Example](#example-9)
 - [Installation](#installation)
     - [Dependencies](#dependencies)
         - [Flycapture SDK](#flycapture-sdk)
@@ -916,6 +919,7 @@ frameserve --> buffer --> framefilt --> record
 ```
 
 \newpage
+
 ### Calibrate
 `oat-calibrate` - Interactive program used to generate calibration parameters
 for an imaging system that can be used to parameterize `oat-framefilt` and
@@ -985,6 +989,27 @@ CONFIGURATION:
 ```
 
 \newpage
+
+### Kill
+`oat-kill` - Issue SIGINT to all running Oat processes started by the calling
+user. A side effect of Oat's architecture is that components can become
+orphaned in certain circumstances: abnormal termination of attached sources or
+sinks, running pure sources in the background and forgetting about them, etc.
+This utility will gracefully interrupt all currently running oat components.
+
+#### Usage
+```
+Usage: kill
+```
+
+#### Example
+```bash
+# Interupt all currenly running oat components 
+oat kill
+```
+
+\newpage
+
 ### Clean
 `oat-clean` - Programmer's utility for cleaning shared memory segments after
 following abnormal component termination. Not required unless a program
@@ -1013,6 +1038,7 @@ oat clean raw filt
 ```
 
 \newpage
+
 ## Installation
 First, ensure that you have installed all dependencies required for the
 components and build configuration you are interested in in using. For more

@@ -21,10 +21,6 @@ case "$1" in
 		oat clean raw p1 pr1 final
 		;;
 
-    kill)
-        pkill -2 -f oat-*
-        ;;
-
 	*)
 		echo $"Usage: $0 {run|clean|kill}"
 		exit 1

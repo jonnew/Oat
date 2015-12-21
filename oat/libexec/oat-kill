@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -e
+
+pkill -2 -u $USER oat-
