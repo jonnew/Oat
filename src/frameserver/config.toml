@@ -3,7 +3,7 @@
 # To use them:
 #
 # ``` bash
-# oat frameserve TYPE SINK -c config.toml -k TYPE
+# oat frameserve TYPE SINK -c config.toml TYPE
 # ```
 
 [gige]
@@ -25,7 +25,7 @@ trigger_pin = 0                         # GPIO pin that trigger will be sent to
 calibration_file = "calibration.yml" 	# Camera matrix, distortion coefficients for lens correction
 
 [file]
-frame_rate = 100.0                       # Hz 
+frame_rate = 100.0                       # Hz
 roi = {x_offset = 125, y_offset = 30, width = 490, height = 420} # Region of interest (pixels)
 
 [wcam]

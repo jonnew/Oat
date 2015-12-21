@@ -3,7 +3,7 @@
 # To use them:
 #
 # ``` bash
-# ./framefilt TYPE SOURCE SINK -c config.toml -k TYPE
+# ./framefilt TYPE SOURCE SINK -c config.toml TYPE
 # ```
 
 [bsub]
@@ -16,3 +16,12 @@ mask = "mask.png"                   # Path to mask image
 learning_coeff = 0.0                # Learning coefficient to update model of image background
                                     # 0.0 - No update after initial model formation
                                     # 1.0 - Replace model on each new frame
+
+[undistort]  # NOTE: Use oat-calibrate to generate these parameters
+camera-model = 0                    # Camera model to use.
+                                    # 0 - Pinhole
+                                    # 1 - Fisheye
+distortion-coeffs = [-53.7430, 20443.3, 0.437918, -0.178999, 51.4270]
+camera-matrix = [7473.00, 0.00000, 408.433,
+                 0.00000, 8828.00, 260.437,
+                 0.00000, 0.00000, 1.00000]
