@@ -1424,7 +1424,7 @@ RJ45 ------------
 - [ ] Decorator is primitive
     - Size of position markers, sample numbers, etc do not change with image
       resolution
-    - How are multi-region tags displayed using the -R option?
+    - ~~How are multi-region tags displayed using the -R option?~~
 - [x] Something is wrong with sample synchronization
     - When working with Jennie's data, we found that position samples were
       being recorded multiple times - they had the same sample number and

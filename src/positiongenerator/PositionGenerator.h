@@ -111,6 +111,7 @@ private:
     // The test position SINK
     std::string position_sink_address_;
     oat::Sink<T> position_sink_;
+
 };
 
 // Explicit declaration

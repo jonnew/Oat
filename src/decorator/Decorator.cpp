@@ -17,6 +17,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
+#include <exception>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -50,7 +51,7 @@ Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
             position_sources_.push_back(t);
         }
     } else {
-        decorate_position = false;
+        decorate_position_ = false;
     }
 }
 
@@ -63,10 +64,10 @@ Decorator::~Decorator() {
 
 void Decorator::connectToNodes() {
 
-    // Establish our a slot in the node 
+    // Establish our a slot in the node
     frame_source_.touch(frame_source_address_);
 
-    // Wait for sychronous start with sink when it binds the node
+    // Wait for synchronous start with sink when it binds the node
     frame_source_.connect();
 
     // Get frame meta data to format sink
@@ -143,68 +144,116 @@ bool Decorator::decorateFrame() {
 
 void Decorator::drawSymbols() {
 
-    if (decorate_position) {
+    if (decorate_position_) {
         drawPosition();
         drawHeading();
         drawVelocity();
 
-        if (print_region)
+        if (print_region_)
             printRegion();
     }
 
-    if (print_timestamp)
+    if (print_timestamp_)
         printTimeStamp();
 
-    if (print_sample_number)
+    if (print_sample_number_)
         printSampleNumber();
 
-    if (encode_sample_number)
+    if (encode_sample_number_)
         encodeSampleNumber();
 }
 
 void Decorator::drawPosition() {
 
+    size_t i = 0;
     for (auto pos : position_sources_) {
         if (std::get<1>(pos).position_valid) {
-            cv::circle(internal_frame_, std::get<1>(pos).position, position_circle_radius, cv::Scalar(0, 0, 255), 2);
+
+            cv::circle(internal_frame_,
+                       std::get<1>(pos).position,
+                       position_circle_radius_,
+                       pos_colors_[i],
+                       line_thickness_);
         }
+
+        (i > position_sources_.size() - 1) ? i = 0 : i++;
     }
 }
 
 void Decorator::drawHeading() {
+
     for (auto pos : position_sources_) {
         if (std::get<1>(pos).position_valid && std::get<1>(pos).heading_valid) {
-            cv::Point2d start = std::get<1>(pos).position - (heading_line_length * std::get<1>(pos).heading);
-            cv::Point2d end = std::get<1>(pos).position + (heading_line_length * std::get<1>(pos).heading);
 
-            // Draw arrow
-            cv::line(internal_frame_, start, end, cv::Scalar(255, 0, 0), 2, 8);
-            double angle = std::atan2((double) start.y - end.y, (double) start.x - end.x);
-            start.x = end.x + heading_arrow_length * std::cos(angle + PI / 4);
-            start.y = end.y + heading_arrow_length * std::sin(angle + PI / 4);
-            cv::line(internal_frame_, start, end, cv::Scalar(255, 0, 0), 2, 8);
-            start.x = end.x + heading_arrow_length * std::cos(angle - PI / 4);
-            start.y = end.y + heading_arrow_length * std::sin(angle - PI / 4);
-            cv::line(internal_frame_, start, end, cv::Scalar(255, 0, 0), 2, 8);
+            cv::Point2d start = std::get<1>(pos).position - (heading_line_length_ * std::get<1>(pos).heading);
+            cv::Point2d end = std::get<1>(pos).position + (heading_line_length_ * std::get<1>(pos).heading);
+
+            // Draw heading line
+            cv::line(internal_frame_, start, end, font_color_, 1, 8);
+
+//            double angle = std::atan2((double) start.y - end.y, (double) start.x - end.x);
+//            start.x = end.x + heading_arrow_length_ * std::cos(angle + PI / 4);
+//            start.y = end.y + heading_arrow_length_ * std::sin(angle + PI / 4);
+//            cv::line(internal_frame_, start, end, font_color_, 1, 8);
+//            start.x = end.x + heading_arrow_length_ * std::cos(angle - PI / 4);
+//            start.y = end.y + heading_arrow_length_ * std::sin(angle - PI / 4);
+//            cv::line(internal_frame_, start, end, font_color_, 1, 8);
         }
     }
 }
 
 void Decorator::drawVelocity() {
+
+     size_t i = 0;
     for (auto pos : position_sources_) {
+
         if (std::get<1>(pos).velocity_valid && std::get<1>(pos).position_valid) {
-            cv::Point2d end = std::get<1>(pos).position + (velocity_scale_factor * std::get<1>(pos).velocity);
-            cv::line(internal_frame_, std::get<1>(pos).position, end, cv::Scalar(0, 255, 0), 2, 8);
+            cv::Point2d end = std::get<1>(pos).position + (velocity_scale_factor_ * std::get<1>(pos).velocity);
+            cv::line(internal_frame_,
+                     std::get<1>(pos).position,
+                     end,
+                     pos_colors_[i],
+                     line_thickness_);
         }
+
+        (i > position_sources_.size() - 1) ? i = 0 : i++;
     }
 }
 
 void Decorator::printRegion() {
+
+    // Create display string
+    std::string reg_text ;
+
+    if (position_sources_.size() == 1)
+        reg_text = "Region:";
+    else
+        reg_text = "Regions:";
+
+    // Calculate text origin based upon message size
+    int baseline = 0;
+    cv::Size reg_text_size =
+            cv::getTextSize(reg_text, font_type_, font_scale_, font_thickness_, &baseline);
+
+    cv::Point text_origin(10, reg_text_size.height);
+    cv::putText(internal_frame_, reg_text, text_origin, font_thickness_, font_scale_, font_color_);
+
+    // Add ID: region information
+    size_t i = 0;
     for (auto pos : position_sources_) {
-        if (std::get<1>(pos).region_valid) {
-            cv::Point text_origin(internal_frame_.cols - 100, 20);
-            cv::putText(internal_frame_, "Region: " + std::string(std::get<1>(pos).region), text_origin, 1, font_scale, font_color);
-        }
+        if (std::get<1>(pos).region_valid)
+            reg_text = std::get<0>(pos) + ": " + std::string(std::get<1>(pos).region);
+        else
+            reg_text = std::get<0>(pos) + ": ?";
+
+        text_origin.y += reg_text_size.height + 2;
+        cv::putText(internal_frame_,
+                    reg_text, text_origin,
+                    font_thickness_,
+                    font_scale_,
+                    pos_colors_[i]);
+
+        (i > position_sources_.size() - 1) ? i = 0 : i++;
     }
 }
 
@@ -220,7 +269,7 @@ void Decorator::printTimeStamp() {
     std::strftime(buffer, 80, "%c", time_info);
 
     cv::Point text_origin(internal_frame_.cols - 230, internal_frame_.rows - 10);
-    cv::putText(internal_frame_, std::string(buffer), text_origin, 1, font_scale, font_color);
+    cv::putText(internal_frame_, std::string(buffer), text_origin, 1, font_scale_, font_color_);
 }
 
 void Decorator::printSampleNumber() {
@@ -230,8 +279,8 @@ void Decorator::printSampleNumber() {
                 std::to_string(internal_frame_.sample_count()),
                 text_origin,
                 1,
-                font_scale,
-                font_color);
+                font_scale_,
+                font_color_);
 }
 
 /**
@@ -241,24 +290,28 @@ void Decorator::encodeSampleNumber() {
 
     uint64_t sample_count = internal_frame_.sample_count();
 
-    int column = 0;
+    int column = internal_frame_.cols - 64 * encode_bit_size_;
+
+    if (column < 0)
+        throw std::runtime_error("Binary counter bar is too large for frame.");
+
     for (int shift = 0; shift < 64; shift++) {
 
-        cv::Mat sub_square = internal_frame_.colRange(column, column + encode_bit_size).rowRange(0, encode_bit_size);
+        cv::Mat sub_square = internal_frame_.colRange(column, column + encode_bit_size_).rowRange(0, encode_bit_size_);
 
         if (sample_count & 0x1) {
 
-            cv::Mat true_mat(encode_bit_size, encode_bit_size, internal_frame_.type(), CV_RGB(255, 255, 255));
+            cv::Mat true_mat(encode_bit_size_, encode_bit_size_, internal_frame_.type(), CV_RGB(255, 255, 255));
             true_mat.copyTo(sub_square);
 
         } else {
 
-            cv::Mat false_mat = cv::Mat::zeros(encode_bit_size, encode_bit_size, internal_frame_.type());
+            cv::Mat false_mat = cv::Mat::zeros(encode_bit_size_, encode_bit_size_, internal_frame_.type());
             false_mat.copyTo(sub_square);
         }
 
         sample_count >>= 1;
-        column += encode_bit_size;
+        column += encode_bit_size_;
     }
 }
 

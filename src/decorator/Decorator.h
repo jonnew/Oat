@@ -72,10 +72,10 @@ public:
     bool decorateFrame(void);
 
     //Accessors
-    void set_print_region(bool value) { print_region = value; }
-    void set_print_timestamp(bool value) { print_timestamp = value; }
-    void set_print_sample_number(bool value) { print_sample_number = value; }
-    void set_encode_sample_number(bool value) { encode_sample_number = value; }
+    void set_print_region(bool value) { print_region_ = value; }
+    void set_print_timestamp(bool value) { print_timestamp_ = value; }
+    void set_print_sample_number(bool value) { print_sample_number_ = value; }
+    void set_encode_sample_number(bool value) { encode_sample_number_ = value; }
     std::string name(void) const { return name_; }
 
 private:
@@ -100,18 +100,29 @@ private:
 
     // Drawing constants
     // TODO: These may need to become a bit more sophisticated or user defined
-    bool decorate_position {true};
-    bool print_region {false};
-    bool print_timestamp {false};
-    bool print_sample_number {false};
-    bool encode_sample_number {false};
-    const float position_circle_radius {5.0};
-    const float heading_line_length {20.0};
-    const float heading_arrow_length {5};
-    const float velocity_scale_factor {0.1};
-    const double font_scale {1.0};
-    const cv::Scalar font_color {0, 255, 0};
-    const int encode_bit_size {5};
+    bool decorate_position_ {true};
+    bool print_region_ {false};
+    bool print_timestamp_ {false};
+    bool print_sample_number_ {false};
+    bool encode_sample_number_ {false};
+    const float position_circle_radius_ {8.0};
+    const float heading_line_length_ {4.0};
+    //const float heading_arrow_length_ {4.0};
+    const float velocity_scale_factor_ {0.1};
+    const double font_scale_ {1.0};
+    const int font_thickness_ {1};
+    const int line_thickness_ {2};
+    const cv::Scalar font_color_ {213, 232, 238};
+    const int font_type_ {cv::FONT_HERSHEY_SIMPLEX};
+    const int encode_bit_size_ {5};
+    const cv::Scalar pos_colors_[8] = {{  0, 137, 181},
+                                       {152, 161,  42},
+                                       { 22,  75, 203},
+                                       {  0, 153, 133},
+                                       { 47,  50, 220},
+                                       {130,  54, 211},
+                                       {196, 113, 108},
+                                       {210, 139,  38}};
 
     // TODO: Look at these glorious type signatures
     void drawPosition(void);

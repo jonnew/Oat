@@ -2,16 +2,16 @@
 set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create a SOURCE variable containing all required .cpp files:
-if (${OAT_USE_FLYCAP})
+if (${USE_FLYCAP})
     set (oat-frameserve_SOURCE
          PGGigECam.cpp
          WebCam.cpp
          FileReader.cpp)
-else (${OAT_USE_FLYCAP})
+else (${USE_FLYCAP})
     set (oat-frameserve_SOURCE
          WebCam.cpp
          FileReader.cpp)
-endif (${OAT_USE_FLYCAP})
+endif (${USE_FLYCAP})
 
 # Targets
 add_executable (oat-frameserve ${oat-frameserve_SOURCE} main.cpp)

@@ -21,6 +21,7 @@
 #define	OAT_RANDOMACCEL2D_H
 
 #include <chrono>
+#include <random>
 #include <string>
 #include <opencv2/core/mat.hpp>
 
@@ -53,14 +54,15 @@ public:
 private:
 
     // Random number generator
-    std::default_random_engine accel_generator_;
-    std::normal_distribution<double> accel_distribution_ {0.0, 5.0};
+    std::default_random_engine accel_generator_ {std::random_device{}()};
+    std::normal_distribution<double> accel_distribution_ {0.0, 100.0};
 
     // Simulated position
-    cv::Matx41d state_ {0.0, 0.0, 0.0, 0.0};
+    cv::Matx41d state_ {0.0, 0.0, 0.0, 0.0}; // Should be center of bounding region
     cv::Matx21d accel_vec_;
 
     // STM and input matrix
+    cv::Rect_<double> room_ {0, 0, 728, 728}; //!< "Room" circular boundaries in which simulated particle resides.
     cv::Matx44d state_transition_mat_;
     cv::Matx<double, 4, 2> input_mat_;
 

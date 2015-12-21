@@ -100,6 +100,22 @@ void RandomAccel2D::simulateMotion() {
 
     // Apply acceleration and transition matrix to the simulated position
     state_ = state_transition_mat_ * state_ + input_mat_ * accel_vec_;
+
+    // Apply circular boundary (not technically correct since positive test
+    // condition should result in state_(0) = 2*room_.x + room_.width - state_(0),
+    // but takes care of endless oscillation that would result if
+    // |state_(0) - room_.x | > room.width.
+    if (state_(0) < room_.x)
+        state_(0) = room_.x + room_.width;
+
+    if (state_(0) > room_.x + room_.width)
+        state_(0) = room_.x;
+
+    if (state_(2) < room_.y)
+        state_(2) = room_.y + room_.height;
+
+    if (state_(2) > room_.y + room_.height)
+        state_(2) = room_.y;
 }
 
 void RandomAccel2D::createStaticMatracies() {
