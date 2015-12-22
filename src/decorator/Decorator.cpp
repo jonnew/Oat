@@ -145,6 +145,8 @@ bool Decorator::decorateFrame() {
 void Decorator::drawSymbols() {
 
     if (decorate_position_) {
+
+        // Non-optional drawing
         drawPosition();
         drawHeading();
         drawVelocity();
@@ -185,19 +187,13 @@ void Decorator::drawHeading() {
     for (auto pos : position_sources_) {
         if (std::get<1>(pos).position_valid && std::get<1>(pos).heading_valid) {
 
-            cv::Point2d start = std::get<1>(pos).position - (heading_line_length_ * std::get<1>(pos).heading);
-            cv::Point2d end = std::get<1>(pos).position + (heading_line_length_ * std::get<1>(pos).heading);
+            cv::Point2d start =
+                    std::get<1>(pos).position - (heading_line_length_ * std::get<1>(pos).heading);
+            cv::Point2d end =
+                    std::get<1>(pos).position + (heading_line_length_ * std::get<1>(pos).heading);
 
             // Draw heading line
-            cv::line(internal_frame_, start, end, font_color_, 1, 8);
-
-//            double angle = std::atan2((double) start.y - end.y, (double) start.x - end.x);
-//            start.x = end.x + heading_arrow_length_ * std::cos(angle + PI / 4);
-//            start.y = end.y + heading_arrow_length_ * std::sin(angle + PI / 4);
-//            cv::line(internal_frame_, start, end, font_color_, 1, 8);
-//            start.x = end.x + heading_arrow_length_ * std::cos(angle - PI / 4);
-//            start.y = end.y + heading_arrow_length_ * std::sin(angle - PI / 4);
-//            cv::line(internal_frame_, start, end, font_color_, 1, 8);
+            cv::line(internal_frame_, start, end, font_color_, line_thickness_);
         }
     }
 }

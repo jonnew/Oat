@@ -129,7 +129,7 @@ oat frameserve file raw -f ./video.mpg &
 
 # Perform background subtraction on the 'raw' stream
 # Serve the result to the 'filt' stream
-# If an appropriately configured GPU is available, this process will 
+# If an appropriately configured GPU is available, this process will
 # use it
 oat framefilt mog raw filt &
 
@@ -1006,7 +1006,7 @@ Usage: kill
 
 #### Example
 ```bash
-# Interupt all currenly running oat components 
+# Interupt all currenly running oat components
 oat kill
 ```
 
@@ -1454,6 +1454,27 @@ RJ45 ------------
     - Size of position markers, sample numbers, etc do not change with image
       resolution
     - ~~How are multi-region tags displayed using the -R option?~~
+- [ ] Position type generalization
+    - It might be a good idea to generalize the concept of a position to a
+      multi-positional element
+    - For things like the decorator, position combiner, and potentially
+      detector, this could increase performance and decrease user script
+      complexity if multiple targets common detection features needed to be
+      tracked at once.
+    - Down side is that it potentially increases code complexity and would
+      require a significant refactor.
+    - Additionally, position detection might no longer be stateless. E.g. think
+      of the case when two detected objects cross paths. In order to ID the
+      objects correctly in subsequent detections, the path of the objects would
+      need to be taken into account (and there is not guarantee this result
+      will be correct...). A potential work around is to have IDed 'position
+      groups' with annoymous position members. This would get us back to
+      stateless detection. However, it would make the concept of position
+      combining hard to define (although that is even true now is just a design
+      choice, really).
+- Colors
+    - Should visual ID information (e.g. color) be integrated into the
+      `position` type?
 - [x] Something is wrong with sample synchronization
     - When working with Jennie's data, we found that position samples were
       being recorded multiple times - they had the same sample number and

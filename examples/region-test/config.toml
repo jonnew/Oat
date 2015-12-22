@@ -1,14 +1,11 @@
 [video]
 frame_rate = 30.0                       # Hz
 
-[p1]
-dt = 0.01
+[combiner]
+heading_anchor = 0
 
-[p2]
-dt = 0.005
-
-[p3]
-dt = 0.004
+[pgen]
+dt = 0.001
 
 [region]
 UL = [[000.00,000.00],

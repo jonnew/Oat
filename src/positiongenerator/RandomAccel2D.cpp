@@ -44,7 +44,7 @@ void RandomAccel2D::configure(const std::string &config_file,
                               const std::string &config_key) {
 
     // Available options
-    std::vector<std::string> options {"dt"};
+    std::vector<std::string> options {"dt", "room"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -65,10 +65,21 @@ void RandomAccel2D::configure(const std::string &config_file,
              generateSamplePeriod(1.0/dt);
         }
 
+        // Camera Matrix
+        oat::config::Array room_array;
+        if (oat::config::getArray(this_config, "room", room_array, 4, true)) {
+
+            auto room_vec = room_array->array_of<double>();
+
+            room_.x      = room_vec[0]->get();
+            room_.y      = room_vec[1]->get();
+            room_.width  = room_vec[2]->get();
+            room_.height = room_vec[3]->get();
+        }
+
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
-
 }
 
 void RandomAccel2D::generatePosition(oat::Position2D &position) {

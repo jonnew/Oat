@@ -106,7 +106,7 @@ private:
     bool print_sample_number_ {false};
     bool encode_sample_number_ {false};
     const float position_circle_radius_ {8.0};
-    const float heading_line_length_ {4.0};
+    const float heading_line_length_ {8.0};
     //const float heading_arrow_length_ {4.0};
     const float velocity_scale_factor_ {0.1};
     const double font_scale_ {1.0};
@@ -118,7 +118,7 @@ private:
     const cv::Scalar pos_colors_[8] = {{  0, 137, 181},
                                        {152, 161,  42},
                                        { 22,  75, 203},
-                                       {  0, 153, 133},
+                                       {192, 249, 61},
                                        { 47,  50, 220},
                                        {130,  54, 211},
                                        {196, 113, 108},

@@ -3,15 +3,15 @@
 # To use them:
 #
 # ``` bash
-# oat posifilt TYPE SINK -c config.toml -k TYPE
+# oat posifilt TYPE SINK -c config.toml TYPE
 # ```
 
 [kalman]
-dt = 0.02			# Sample period, seconds (Should be automatically provided)
-timeout = 2.0                   # Seconds to perform position estimation detection with lack of position measure
-sigma_accel = 200.0 		# Position units/s^2 (e.g. Pixels/s^2)
-sigma_noise = 10.0		# Noise measurement (position units)
-tune = true                     # Use the GUI to tweak parameters
+dt = 0.02		# Sample period, seconds (Should be automatically provided)
+timeout = 2.0           # Seconds to perform position estimation detection with lack of position measure
+sigma_accel = 200.0 	# Position units/s^2 (e.g. Pixels/s^2)
+sigma_noise = 10.0	# Noise measurement (position units)
+tune = true             # Use the GUI to tweak parameters
 
 [homography]
 # Homography matrix for 2D position
@@ -19,7 +19,11 @@ homography =  [ 4.4708341438051686e+00, 1.1030803466026207e-01, -1.6637627408844
 		1.6538020239166329e-01, -4.8791297859318021e+00, 1.6150394484415021e+03,
 		0.00000000000000000000, 0.00000000000000000000, 1.000000000000000000000]
 
-[region]
+
+[region]    # Each user-named matrix specifies the veriticies of a polygon
+            # which define a region on the frame stream. You can name these
+            # Whatever you want (99 character limit).
+
 CN = [[336.00, 272.50],
       [290.00, 310.00],
       [289.00, 369.50],
