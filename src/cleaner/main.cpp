@@ -25,6 +25,8 @@
 #include <boost/program_options.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
+#include "../../lib/utility/IOFormat.h"
+
 namespace po = boost::program_options;
 namespace bip = boost::interprocess;
 
