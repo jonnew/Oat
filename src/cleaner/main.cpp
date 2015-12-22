@@ -28,10 +28,10 @@
 namespace po = boost::program_options;
 namespace bip = boost::interprocess;
 
-void printUsage(po::options_description options){
+void printUsage(po::options_description options) {
     std::cout << "Usage: clean [INFO]\n"
               << "   or: clean NAMES [CONFIGURATION]\n"
-              << "Remove the named shared memory segments specified by NAMES.\n\n"
+              << "Deallocate the named shared memory segments specified by NAMES.\n\n"
               << options << "\n";
 }
 
@@ -110,10 +110,11 @@ int main(int argc, char *argv[]) {
         names = variable_map["names"].as< std::vector<std::string> >();
 
     } catch (std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        std::cerr << oat::Error(e.what()) << "\n";
+        return -1;
     } catch (...) {
-        std::cerr << "Exception of unknown type! " << std::endl;
+        std::cerr << oat::Error("Exception of unknown type.\n");
+        return -1;
     }
 
     for (auto &name : names) {
@@ -130,7 +131,7 @@ int main(int argc, char *argv[]) {
                 && !quiet)
                 std::cout << "success.\n";
             else if (!quiet)
-                std::cout << "not found. are you sure this block exists?.\n";
+                std::cout << "not found. Are you sure this block exists?.\n";
 
         } else {
 
@@ -148,7 +149,7 @@ int main(int argc, char *argv[]) {
             if (success && !quiet)
                 std::cout << "success.\n";
             if (!success && !quiet)
-                std::cout << "not found. are you sure this block exists?.\n";
+                std::cout << "not found. Are you sure this block exists?.\n";
         }
     }
 

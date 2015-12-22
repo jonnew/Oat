@@ -91,12 +91,14 @@ __Contributors__
 \newpage
 ## Manual
 ### Introduction
-Oat's design is greatly influenced by the [UNIX
-philosophy](https://en.wikipedia.org/wiki/Unix_philosophy). Oat consists of a
-set of small, composable programs (called **components**) Components are equipped
-with standard interfaces that permit communication through shared memory to
-capture, process, and record video streams.  Currently, Oat components act on
-two basic data types: `frames` and `positions`.
+Oat's design is influenced by the [UNIX
+philosophy](https://en.wikipedia.org/wiki/Unix_philosophy), [suckless
+tools](http://suckless.org/philosophy), and
+[MEABench](http://www.danielwagenaar.net/res/software/meabench/). Oat consists
+of a set of small, composable programs (called **components**) Components are
+equipped with standard interfaces that permit communication through shared
+memory to capture, process, and record video streams.  Currently, Oat
+components act on two basic data types: `frames` and `positions`.
 
 * `frame` - Video frame.
 * `position` - 2D position.
@@ -1416,9 +1418,9 @@ RJ45 ------------
     - Stress tests for data processing chains
         - I need to come up with a series of scripts that configure and run
           components in odd and intensive, but legal, ways to ensure sample
-          sychronization is maintianed, graceful exits, etc
+          sychronization is maintained, graceful exits, etc
 - [x] Pull-based synchronization with remote client.
-    - By virtue of the sychronization architecture I'm using to
+    - By virtue of the synchronization architecture I'm using to
       coordinate samples between SOURCE and SINK components, I get both
       push and pull based processing chain updates for free. This means
       if I use `oat-posisock` in server mode, and it blocks until a
