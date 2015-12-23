@@ -17,6 +17,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
+#include <cmath>
 #include <exception>
 #include <string>
 #include <tuple>
@@ -85,6 +86,12 @@ void Decorator::connectToNodes() {
     // Bind to sink sink node and create a shared cv::Mat
     frame_sink_.bind(frame_sink_address_, param.bytes);
     shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
+
+    // Set drawing parameters based on frame dimensions
+    size_t min_size = (param.rows < param.cols) ? param.rows : param.cols;
+    position_circle_radius_ =  std::ceil(static_cast<float>(min_size)/100.0);
+    heading_line_length_ =  std::ceil(static_cast<float>(min_size)/100.0);
+    encode_bit_size_  =  std::ceil(param.cols / 3 / sizeof(internal_frame_.sample_count()) / 8);
 }
 
 bool Decorator::decorateFrame() {

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-pkill -2 -u $USER oat-
+# Defaults to SIGINT, but can use any standard termination signal. See man
+# kill.
+LEVEL=${1:--2}
+pkill $LEVEL -u $USER oat-

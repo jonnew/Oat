@@ -779,11 +779,16 @@ void PGGigECam::grabImage() {
 
 void PGGigECam::connectToNode() {
 
-    // TODO: Instead of grabbing and image, can I get this info from the
-    // acquisition settings?? I'm worried that I will be off by a sample this way
-    grabImage();
+    pg::GigEImageSettings imageSettings;
 
-    pg::Image temp;
+    pg::Error error = camera.GetGigEImageSettings(&imageSettings);
+    if (error != pg::PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
+
+    pg::Image temp(imageSettings.height,
+                   imageSettings.width,
+                   pg::PIXEL_FORMAT_BGR);
 
     raw_image.Convert(pg::PIXEL_FORMAT_BGR, &temp);
 

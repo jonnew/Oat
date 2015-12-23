@@ -1440,6 +1440,9 @@ RJ45 ------------
     - EDIT: `oat-buffer` takes care of this.
 - [ ] GigE interface cleanup
     - The PGGigeCam class is a big mess. It has has tons of code redundancy.
+    - `oat frameserve gige` can wait indefinitely if the cameras use an
+      external trigger and that trigger source stops before the process is
+      interrupted. Need a timed wait there.
     - ~~Additionally, it needs to be optimized for performance. Are their
       unnessesary copies of images being made during conversion from PG Image
       to cv::Mat? Can I employ some move casts to help?~~
@@ -1450,10 +1453,6 @@ RJ45 ------------
       great pieces of code, but I should at least use them for inspiration.
     - `oat-frameserve gige` lacks the ability to set FPS in free running
       (non-triggered mode)
-- [ ] Decorator is primitive
-    - Size of position markers, sample numbers, etc do not change with image
-      resolution
-    - ~~How are multi-region tags displayed using the -R option?~~
 - [ ] Position type generalization
     - It might be a good idea to generalize the concept of a position to a
       multi-positional element

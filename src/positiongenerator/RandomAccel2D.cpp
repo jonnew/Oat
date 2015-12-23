@@ -67,7 +67,7 @@ void RandomAccel2D::configure(const std::string &config_file,
 
         // Camera Matrix
         oat::config::Array room_array;
-        if (oat::config::getArray(this_config, "room", room_array, 4, true)) {
+        if (oat::config::getArray(this_config, "room", room_array, 4, false)) {
 
             auto room_vec = room_array->array_of<double>();
 
