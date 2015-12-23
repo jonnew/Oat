@@ -1443,6 +1443,8 @@ RJ45 ------------
     - `oat frameserve gige` can wait indefinitely if the cameras use an
       external trigger and that trigger source stops before the process is
       interrupted. Need a timed wait there.
+    - Should I be using the generic [GenICam API](https://en.wikipedia.org/wiki/GenICam) 
+      instead of PG's non-standard API? e.g. [Aravis](https://github.com/GNOME/aravis).
     - ~~Additionally, it needs to be optimized for performance. Are their
       unnessesary copies of images being made during conversion from PG Image
       to cv::Mat? Can I employ some move casts to help?~~

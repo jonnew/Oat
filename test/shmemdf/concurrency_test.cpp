@@ -20,9 +20,9 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
+#include <chrono>
 #include <future>
 #include <thread>
-#include <chrono>
 
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
