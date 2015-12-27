@@ -801,11 +801,11 @@ void PGGigECam::connectToNode() {
 
     shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
 
-    // Use the shared_frame_.data, which points to a block of shared memory
-    // as rbg_image's data buffer. When changes are made to rgb_image, this is
-    // automatically propagated into shmem and 'convered' into a cv::Mat (although
-    // this 'coversion' is simply filling in appropriate header info, which was accomplished
-    // in the called to frame_sink_.retrieve())
+    // Use the shared_frame_.data, which points to a block of shared memory as
+    // rbg_image's data buffer. When changes are made to rgb_image, this is
+    // automatically propagated into shmem and 'convered' into a cv::Mat
+    // (although this 'coversion' is simply filling in appropriate header info,
+    // which was accomplished in the called to frame_sink_.retrieve())
     rgb_image = std::make_unique<pg::Image>
             (rows, cols, stride, shared_frame_.data, bytes, pg::PIXEL_FORMAT_BGR);
 }
@@ -817,7 +817,7 @@ bool PGGigECam::serveFrame() {
     // START CRITICAL SECTION //
     ////////////////////////////
 
-    // Wait for sources to read //
+    // Wait for sources to read
     frame_sink_.wait();
 
     raw_image.Convert(pg::PIXEL_FORMAT_BGR, rgb_image.get());
@@ -826,10 +826,10 @@ bool PGGigECam::serveFrame() {
     // Tell sources there is new data
     frame_sink_.post();
 
-    return false;
-
     ////////////////////////////
     //  END CRITICAL SECTION  //
+
+    return false;
 }
 
 int PGGigECam::findNumCameras(void) {

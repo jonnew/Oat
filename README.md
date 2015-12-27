@@ -458,13 +458,15 @@ INFO:
   -v [ --version ]          Print version information.
 
 CONFIGURATION:
+  --tune                    Use GUI to tune detection parameters at the cost of 
+                            performance.
   -c [ --config ] arg       Configuration file/key pair.
 ```
 
 #### Configuration File Options
 __TYPE = `hsv`__
 
-- __`tune`__=`bool` Provide sliders for tuning hsv parameters
+- __`tune`__=`bool` Provide GUI sliders for tuning hsv parameters
 - __`erode`__=`+int` Candidate object erosion kernel size (pixels)
 - __`dilate`__=`+int` Candidate object dilation kernel size (pixels)
 - __`min_area`__=`+double` Minimum object area (pixels<sup>2</sup>)
@@ -475,7 +477,7 @@ __TYPE = `hsv`__
 
 __TYPE = `diff`__
 
-- __`tune`__=`bool` Provide sliders for tuning diff parameters
+- __`tune`__=`bool` Provide GUI sliders for tuning diff parameters
 - __`blur`__=`+int` Blurring kernel size (normalized box filter; pixels)
 - __`diff_threshold`__=`+int` Intensity difference threshold
 

@@ -4,11 +4,13 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 # Create a SOURCE variable containing all required .cpp files:
 if (${USE_FLYCAP})
     set (oat-frameserve_SOURCE
+         TestFrame.cpp
          PGGigECam.cpp
          WebCam.cpp
          FileReader.cpp)
 else (${USE_FLYCAP})
     set (oat-frameserve_SOURCE
+         TestFrame.cpp
          WebCam.cpp
          FileReader.cpp)
 endif (${USE_FLYCAP})

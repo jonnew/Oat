@@ -31,6 +31,7 @@
 
 #include "../../lib/utility/IOFormat.h"
 
+#include "TestFrame.h"
 #include "FileReader.h"
 #include "WebCam.h"
 #ifdef USE_FLYCAP
@@ -49,7 +50,8 @@ void printUsage(po::options_description options) {
               << "TYPE:\n"
               << "  wcam: Onboard or USB webcam.\n"
               << "  gige: Point Grey GigE camera.\n"
-              << "  file: Video from file (*.mpg, *.avi, etc.).\n\n"
+              << "  file: Video from file (*.mpg, *.avi, etc.).\n"
+              << "  test: Write-free static image server for performance testing.\n\n"
               << "SINK:\n"
               << "  User-supplied name of the memory segment to publish frames "
               << "to (e.g. raw).\n\n"
@@ -86,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     std::string sink;
     std::string type;
-    std::string video_file;
+    std::string file_path;
     double frames_per_second = 30;
     size_t index = 0;
     std::vector<std::string> config_fk;
@@ -97,6 +99,7 @@ int main(int argc, char *argv[]) {
     type_hash["wcam"] = 'a';
     type_hash["gige"] = 'b';
     type_hash["file"] = 'c';
+    type_hash["test"] = 'd';
 
     try {
 
@@ -110,8 +113,9 @@ int main(int argc, char *argv[]) {
         config.add_options()
                 ("index,i", po::value<size_t>(&index),
                 "Index of camera to capture images from.")
-                ("video-file,f", po::value<std::string>(&video_file),
-                "Path to video file if \'file\' is selected as the server TYPE.")
+                ("file,f", po::value<std::string>(&file_path),
+                "Path to video file if \'file\' is selected as the server TYPE. "
+                "Path to image file if \'test\' is selected as the server TYPE.")
                 ("fps,r", po::value<double>(&frames_per_second),
                 "Frames per second. Overriden by information in configuration file if provided.")
                 ("config,c", po::value<std::vector<std::string> >()->multitoken(),
@@ -184,9 +188,10 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (type.compare("file") == 0 && !variable_map.count("video-file")) {
+        if ((type.compare("file") == 0 || type.compare("test") == 0 )
+            && !variable_map.count("file")) {
             printUsage(visible_options);
-            std::cout << oat::Error("When TYPE=file, a video-file path must be specified. Exiting.\n");
+            std::cout << oat::Error("When TYPE=file or test, a file path must be specified. Exiting.\n");
             return -1;
         }
 
@@ -221,7 +226,12 @@ int main(int argc, char *argv[]) {
         }
         case 'c':
         {
-            server = std::make_shared<oat::FileReader>(sink, video_file, frames_per_second);
+            server = std::make_shared<oat::FileReader>(sink, file_path, frames_per_second);
+            break;
+        }
+        case 'd':
+        {
+            server = std::make_shared<oat::TestFrame>(sink, file_path);
             break;
         }
         default:
@@ -234,6 +244,9 @@ int main(int argc, char *argv[]) {
 
     // The business
     try {
+        
+        // TODO: For most of the server types, these methods don't do much or
+        // nothing. Should they really be part of the FrameServer interface?
         if (config_used)
             server->configure(config_fk[0], config_fk[1]);
         else
@@ -242,9 +255,9 @@ int main(int argc, char *argv[]) {
 
         // Tell user
         std::cout << oat::whoMessage(server->name(),
-                "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(server->name(),
-                "Press CTRL+C to exit.\n");
+                  "Steaming to sink " + oat::sinkText(sink) + ".\n")
+                  << oat::whoMessage(server->name(),
+                  "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
         run(server);

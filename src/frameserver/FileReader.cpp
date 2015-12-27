@@ -31,21 +31,23 @@
 namespace oat {
 
 FileReader::FileReader(const std::string &image_sink_address,
-        const std::string &file_name_in,
-        const double frames_per_second) :
+                       const std::string &file_name,
+                       const double frames_per_second) :
   FrameServer(image_sink_address)
-, file_name_(file_name_in)
-, file_reader_(file_name_in)
+, file_name_(file_name)
+, file_reader_(file_name)
 , frame_rate_in_hz_(frames_per_second)
 {
 
     // Default config
-    configure();
+    calculateFramePeriod();
     tick_ = clock_.now();
 }
 
 void FileReader::connectToNode() {
 
+    // TODO: bind without using example frame from video stream. See PGGigECam.cpp
+    // for example
     cv::Mat example_frame;
     file_reader_ >> example_frame;
 
@@ -93,11 +95,10 @@ bool FileReader::serveFrame() {
     return frame_empty_;
 }
 
-void FileReader::configure() {
-    calculateFramePeriod();
-}
+void FileReader::configure() { }
 
-void FileReader::configure(const std::string& config_file, const std::string& config_key) {
+void FileReader::configure(const std::string& config_file, 
+                           const std::string& config_key) {
 
     // Available options
     std::vector<std::string> options {"frame_rate", "roi"};

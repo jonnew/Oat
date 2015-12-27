@@ -80,6 +80,7 @@ bool WebCam::serveFrame() {
 }
 
 void WebCam::configure() { }
+
 void WebCam::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
