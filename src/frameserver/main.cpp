@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
                 ("index,i", po::value<size_t>(&index),
                 "Index of camera to capture images from.")
                 ("file,f", po::value<std::string>(&file_path),
-                "Path to video file if \'file\' is selected as the server TYPE. "
+                "Path to video file if \'file\' is selected as the server TYPE.\n"
                 "Path to image file if \'test\' is selected as the server TYPE.")
                 ("fps,r", po::value<double>(&frames_per_second),
                 "Frames per second. Overriden by information in configuration file if provided.")

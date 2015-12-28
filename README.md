@@ -218,23 +218,32 @@ component.
 ```
 Usage: frameserve [INFO]
    or: frameserve TYPE SINK [CONFIGURATION]
+Serve image stream to a frame SINK
 
-SINK
-  User-supplied name of the memory segment to publish frames to (e.g. raw).
-
-TYPE
+TYPE:
   wcam: Onboard or USB webcam.
   gige: Point Grey GigE camera.
-  file: Stream video from file.
+  file: Video from file (*.mpg, *.avi, etc.).
+  test: Write-free static image server for performance testing.
+
+SINK:
+  User-supplied name of the memory segment to publish frames to (e.g. raw).
+
+OPTIONAL ARGUMENTS:
 
 INFO:
-  --help                    Produce help message.
-  -v [ --version ]          Print version information.
+  --help                 Produce help message.
+  -v [ --version ]       Print version information.
 
 CONFIGURATION:
-  -c [ --config ] arg       Configuration file/key pair.
-  -f [ --video-file ] arg   Path to video file if 'file' is selected as the
-                            server TYPE.
+  -i [ --index ] arg     Index of camera to capture images from.
+  -f [ --file ] arg      Path to video file if 'file' is selected as the server
+                         TYPE.
+                         Path to image file if 'test' is selected as the server
+                         TYPE.
+  -r [ --fps ] arg       Frames per second. Overriden by information in 
+                         configuration file if provided.
+  -c [ --config ] arg    Configuration file/key pair.
 ```
 
 #### Configuration File Options
