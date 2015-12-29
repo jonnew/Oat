@@ -104,6 +104,9 @@ public:
      */
     std::string name(void) { return name_; }
 
+    // Accessors
+    void set_record_on(const bool value) { record_on_ = value; } 
+
 private:
 
     // Name of this recorder
@@ -115,9 +118,12 @@ private:
     const bool append_date_;
     const bool allow_overwrite_;
 
-    // File writer in running state (i.e. all threads should remain responsive for
-    // new data coming down the pipeline)
-    std::atomic<bool> running {true};
+    // Recorder in running state (i.e. all threads should remain responsive
+    // for new data coming down the pipeline)
+    std::atomic<bool> running_ {true};
+
+    // Recording gate can be toggled on and off interactively 
+    std::atomic<bool> record_on_ {true};
 
     // Video files
     const int frames_per_second_;
@@ -126,7 +132,7 @@ private:
                < cv::VideoWriter > > video_writers_;
 
     // Position file
-    FILE * position_fp {nullptr};
+    FILE * position_fp_ {nullptr};
     char position_write_buffer[POSITION_WRITE_BUFFER_SIZE];
     std::unique_ptr<rapidjson::FileWriteStream> file_stream_;
     rapidjson::PrettyWriter<rapidjson::FileWriteStream> json_writer_ {*file_stream_};

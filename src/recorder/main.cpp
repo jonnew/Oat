@@ -94,63 +94,6 @@ void run(std::shared_ptr<oat::Recorder>& recorder) {
     }
 }
 
-// TODO: Not that I care right now, but I note that this is POSIX specific
-// and would need some preprocessors stuff for other platforms
-int interact(pthread_t process_thread) {
-
-    // Command map
-    std::unordered_map<std::string, char> cmd_map;
-    cmd_map["exit"] = 'e';
-    cmd_map["help"] = 's';
-    cmd_map["start"] = 's';
-    cmd_map["stop"] = 'S';
-    cmd_map["new"] = 'n';
-    cmd_map["move"] = 'm';
-
-    // User control loop
-    std::string cmd;
-
-    while (!quit) {
-
-        std::cout << ">>> ";
-        std::getline(std::cin, cmd);
-        //if (!(std::cin >> cmd))
-        //    oat::ignoreLine(std::cin);
-
-        switch (cmd_map[cmd]) {
-            case 's' :
-            {
-                // Toggle record on/off
-                recording_on = true;
-                std::cout << "Recording ON.\n";
-                break;
-            }
-            case 'S' :
-            {
-                // Toggle record on/off
-                recording_on = false;
-                std::cout << "Recording OFF.\n";
-                break;
-            }
-            case 'e' :
-            {
-                quit = 1;
-                pthread_kill(process_thread, SIGINT);
-                break;
-            }
-            default :
-            {
-                // Flush cin in case the uer just inserted crap
-                //oat::ignoreLine(std::cin);
-                std::cerr << "Invalid command \'" << cmd << "\'\n";
-                break;
-            }
-        }
-    }
-
-    return 0;
-}
-
 int main(int argc, char *argv[]) {
 
     std::signal(SIGINT, sigHandler);
@@ -330,7 +273,7 @@ int main(int argc, char *argv[]) {
             std::thread process(run, std::ref(recorder));
 
             // Start the recorder
-            interact(process.native_handle());
+            //interact(process.native_handle());
 
             // Join recorder and UI threads
             process.join();

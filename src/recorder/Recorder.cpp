@@ -111,12 +111,12 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
             checkFile(posi_fid);
         }
 
-        position_fp = fopen(posi_fid.c_str(), "wb");
-        if (position_fp == nullptr)
+        position_fp_ = fopen(posi_fid.c_str(), "wb");
+        if (position_fp_ == nullptr)
             throw (std::runtime_error("Error: unable to open " + posi_fid +
                    " for writing.\n"));
 
-        file_stream_.reset(new rapidjson::FileWriteStream(position_fp,
+        file_stream_.reset(new rapidjson::FileWriteStream(position_fp_,
                 position_write_buffer, sizeof(position_write_buffer)));
         json_writer_.Reset(*file_stream_);
 
@@ -205,7 +205,7 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
 Recorder::~Recorder() {
 
     // Set running to false to trigger thread join
-    running = false;
+    running_ = false;
     for (auto &value : frame_write_condition_variables_)
         value->notify_one();
 
@@ -214,7 +214,7 @@ Recorder::~Recorder() {
         value->join();
 
     // Flush the position writer
-    if (position_fp != nullptr) {
+    if (position_fp_ != nullptr) {
         json_writer_.EndArray();
         json_writer_.EndObject();
         file_stream_->Flush();
@@ -258,6 +258,7 @@ bool Recorder::writeStreams() {
         //  END CRITICAL SECTION  //
 
         // Notify a writer thread that there is new data in the queue
+        // if (record_on_)
         frame_write_condition_variables_[i]->notify_one();
     }
 
@@ -278,6 +279,7 @@ bool Recorder::writeStreams() {
 
     // Push frames to buffers
     // Write the frames to file
+    //if (record_on_}
     writePositionsToFile();
 
     return sources_eof;
@@ -286,7 +288,7 @@ bool Recorder::writeStreams() {
 void Recorder::writeFramesToFileFromBuffer(uint32_t writer_idx) {
 
     cv::Mat m;
-    while (running) {
+    while (running_) {
 
         std::unique_lock<std::mutex> lk(*frame_write_mutexes_[writer_idx]);
         frame_write_condition_variables_[writer_idx]->wait_for(lk, std::chrono::milliseconds(10));
@@ -295,8 +297,8 @@ void Recorder::writeFramesToFileFromBuffer(uint32_t writer_idx) {
 
             if (!video_writers_[writer_idx]->isOpened()) {
                 initializeWriter(*video_writers_[writer_idx],
-                        video_file_names_.at(writer_idx),
-                        m);
+                                 video_file_names_.at(writer_idx),
+                                 m);
             }
 
             video_writers_[writer_idx]->write(m);
@@ -306,7 +308,7 @@ void Recorder::writeFramesToFileFromBuffer(uint32_t writer_idx) {
 
 void Recorder::writePositionsToFile() {
 
-    if (position_fp) {
+    if (position_fp_) {
 
         json_writer_.StartObject();
 
