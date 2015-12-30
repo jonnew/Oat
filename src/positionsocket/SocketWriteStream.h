@@ -35,14 +35,13 @@ template <class S, class E> // Socket, Endpoint
 class SocketWriteStream {
 
 public:
-    using Ch = char;
 
-    SocketWriteStream(S* socket, const E& endpoint, char* buffer, size_t bufferSize) :
+    SocketWriteStream(S *socket, const E &endpoint, char *buffer, size_t bufferSize) :
       socket_(socket)
     , endpoint_(endpoint)
     , buffer_(buffer)
     , bufferEnd_(buffer + bufferSize)
-    , current_(buffer_) 
+    , current_(buffer_)
     {
         RAPIDJSON_ASSERT(socket_ != nullptr);
     }
@@ -55,7 +54,7 @@ public:
     }
 
     void PutN(char c, size_t n) {
-        size_t avail = static_cast<size_t>(bufferEnd_ - current_);
+        auto avail = static_cast<size_t>(bufferEnd_ - current_);
         while (n > avail) {
             std::memset(current_, c, avail);
             current_ += avail;
@@ -92,11 +91,11 @@ public:
 
 private:
 
-    S* socket_;
+    S * socket_;
     const E endpoint_;
-    char* buffer_;
-    char* bufferEnd_;
-    char* current_;
+    char * buffer_;
+    char * bufferEnd_;
+    char * current_;
 };
 
 // Specialized versions of PutN() with memset() for better performance.

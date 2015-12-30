@@ -32,8 +32,23 @@ before_script:
   - cd ..
   - sudo mv boost* /opt
 
+  # Get zeromq
+  - cd $TRAVIS_BUILD_DIR
+  - wget http://download.zeromq.org/zeromq-4.1.4.tar.gz -O tarzmq
+  - tar -xf tarzmq
+  - cd ./zeromq*
+  - ./configure
+  - make 
+  - sudo make install
+  - sudo ldconfig 
+
+  # Get zeromq cpp bindings
+  - cd $TRAVIS_BUILD_DIR
+  - wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp
+  - sudo mv zmq.hpp /usr/local/include/
+
   # Configure build
-  # Debug build includes throw expressions required to pass tests but opimized
+  # Debug build includes throw expressions required to pass tests but optimized
   # out of release build. I don't use asserts because they dont allow shmem
   # cleanup.
   - cd $TRAVIS_BUILD_DIR

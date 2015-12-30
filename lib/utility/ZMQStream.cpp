@@ -17,8 +17,9 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
-#include <cstring.h>
-#include <iostream>
+#include <algorithm>
+#include <cstring>
+#include <iosfwd>
 #include <zmq.h>
 
 #include "ZMQStream.h"
@@ -26,45 +27,27 @@
 namespace oat {
 
 zmq_istream::zmq_istream(const std::string &endpoint) :
-  socket_(context_, ZMQ_SUB)
-, index(buffer_.size())
+  context_(new zmq::context_t(1))
+, socket_(new zmq::socket_t(*context_, ZMQ_SUB))
+, index_(buffer_.size())
 {
-
-    socket_.connect(endpoint.c_str());
-    socket_.setsocketopt(ZMQ_SUBSCRIBE, "", 0);
+    socket_->connect(endpoint.c_str());
+    socket_->setsockopt(ZMQ_SUBSCRIBE, "", 0);
 }
 
-std::streamsize zmq_stream::read(char *s, std::streamsize n) {
+std::streamsize zmq_istream::read(char *s, std::streamsize n) {
 
     zmq::message_t message;
 
-    if (socket.recv(&message)) {
+    if (socket_->recv(&message)) {
 
-        if (index_ != buffer_.size()) {
-
-            auto size = std::min(buffer_.size() - index_, static_cast<buffer_size_t>(n));
-            memcpy(s, &buffer_[index_], size);
-            index_ += size;
-            return size;
-
-        } else if (message.size() < static_cast<buffer_size_t>(n)) {
-
-            memcpy(s, (const char *)message.data(), message.size());
-            return message.size();
-
-        } else {
-
-            memcpy(s, (const char *)message.data(), n);
-            buffer_.resize(message.size() - n); // TODO do not resize if smaller ( for performance )
-            memcpy(&buffer_[0], (const char *)message.data(), buffer_.size());
-            index_ = 0;
-            return n;
-        }
+        std::streamsize actual_n = std::min(n, static_cast<std::streamsize>(message.size()));
+        memcpy(s, static_cast<char *>(message.data()), actual_n);
+        return actual_n;
 
     } else {
 
-        // EOF
-        return -1;
+        return -1; //EOF
     }
 }
 

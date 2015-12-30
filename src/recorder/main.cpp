@@ -27,11 +27,14 @@
 #include <memory>
 #include <unordered_map>
 #include <string>
+#include <boost/iostreams/stream.hpp>
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/ZMQStream.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/IOUtility.h"
 
+#include "RecordControl.h"
 #include "Recorder.h"
 
 namespace po = boost::program_options;
@@ -41,7 +44,12 @@ volatile sig_atomic_t source_eof = 0;
 
 // Interactive commands
 bool recording_on = true;
-bool interactive = false;
+enum class ControlMode : int16_t
+{
+    NONE = 0,
+    LOCAL = 1,
+    RPC = 2,
+} control_mode;
 
 void printUsage(std::ostream& out, po::options_description options) {
     out << "Usage: record [INFO]\n"
@@ -50,28 +58,11 @@ void printUsage(std::ostream& out, po::options_description options) {
         << options << "\n";
 }
 
-// TODO: Fix
-void printInteractiveUsage(std::ostream& out) {
-
-    out << "COMMANDS\n"
-        << "CMD         FUNCTION\n"
-        << " help       Print this information.\n"
-        << " start      Start recording. This will append and file if it\n"
-        << "            already exists.\n"
-        << " pause      Pause recording. This will pause\n"
-        << "            recording and will not start a new file.\n"
-        << " new        Start new file. Start time will be used to create\n"
-        << "            unique file name.\n"
-        << " rename     Specify a new file location. User will be prompted\n"
-        << "            to select a new save location.\n"
-        << " exit       Exit the program.\n";
-}
-
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int) {
 
-    // Interactive mode requires user to type "exit"
-    if (!interactive)
+    // Interactive/RPC modes require "exit" command
+    if (control_mode == ControlMode::NONE)
         quit = 1;
 }
 
@@ -100,6 +91,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::string> frame_sources;
     std::vector<std::string> position_sources;
+    std::string rpc_endpoint;
     std::string file_name;
     std::string save_path;
     bool allow_overwrite = false;
@@ -127,7 +119,9 @@ int main(int argc, char *argv[]) {
                 "a numerical index being added to the file path.")
                 ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
                 "The names of the POSITION SOURCES that supply object positions to be recorded.")
-                ("interactive,i", "Start recorder with interactive controls enabled.")
+                ("interactive", "Start recorder with interactive controls enabled.")
+                ("rpc-endpoint", po::value<std::string>(&rpc_endpoint),
+                 "Yield interactive control of the recorder to a remote source.")
                 ("frame-sources,s", po::value< std::vector<std::string> >()->multitoken(),
                 "The names of the FRAME SOURCES that supply images to save to video.")
                 ("frames-per-second,F", po::value<int>(&fps),
@@ -178,8 +172,15 @@ int main(int argc, char *argv[]) {
             std::cerr << oat::Warn("Warning: No base filename was provided.\n");
         }
 
-        if (variable_map.count("interactive")) {
-            interactive = true;
+        if (variable_map.count("interactive") && variable_map.count("rpc-endpoint")) {
+            std::cerr << oat::Error("Recorder cannot be controlled both interactively and from a remote endpoint.\n");
+            return -1;
+        } else if (variable_map.count("interactive")) {
+            control_mode = ControlMode::LOCAL;
+        } else if (variable_map.count("rpc-endpoint")) {
+            control_mode = ControlMode::RPC;
+        } else {
+            control_mode = ControlMode::NONE;
         }
 
         if (!variable_map.count("frames-per-second") && variable_map.count("frame-sources")) {
@@ -267,21 +268,50 @@ int main(int argc, char *argv[]) {
     // The business
     try {
 
-        if (interactive) {
+        switch (control_mode)
+        {
+            case ControlMode::NONE :
+            {
+                // Start the recorder w/o controls
+                run(recorder);
 
-            // Launch async IO thread
-            std::thread process(run, std::ref(recorder));
+                break;
+            }
+            case ControlMode::LOCAL :
+            {
+                // Start recording in background
+                std::thread process(run, std::ref(recorder));
 
-            // Start the recorder
-            //interact(process.native_handle());
+                // Interact using stdin
+                oat::printInteractiveUsage(std::cout);
+                oat::controlRecorder(std::cin, *recorder);
 
-            // Join recorder and UI threads
-            process.join();
+                quit = 1;
+                pthread_kill(process.native_handle(), SIGINT);
 
-        } else {
+                // Join recorder and UI threads
+                process.join();
 
-            // Start the recorder
-            run(recorder);
+                break;
+            }
+            case ControlMode::RPC :
+            {
+                // Start recording in background
+                std::thread process(run, std::ref(recorder));
+
+                // Interact using stdin
+                oat::printRemoteUsage(std::cout);
+                boost::iostreams::stream<oat::zmq_istream> in(rpc_endpoint);
+                oat::controlRecorder(in, *recorder, true);
+
+                quit = 1;
+                pthread_kill(process.native_handle(), SIGINT);
+
+                // Join recorder and UI threads
+                process.join();
+
+                break;
+            }
         }
 
         // Tell user

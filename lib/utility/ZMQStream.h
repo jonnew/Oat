@@ -22,13 +22,14 @@
 
 #include <iosfwd>
 #include <boost/iostreams/concepts.hpp>
+#include <memory>
 #include <zmq.hpp>
 
 namespace oat {
 
 namespace io = boost::iostreams;
 
-class zmq_istream : io::source {
+class zmq_istream : public io::source {
 
     using buffer_t = std::vector<char>;
     using buffer_size_t = buffer_t::size_type;
@@ -36,38 +37,16 @@ class zmq_istream : io::source {
 public:
 
     zmq_istream(const std::string &endpoint);
-
     std::streamsize read(char *s, std::streamsize n);
+    zmq::socket_t & socket() { return *socket_; }
 
 private:
 
-    zmq::context_t context_;
-    zmq::socket_t socket_;
-
-    //std::shared_ptr<zmq::context_t> context_;
-    //std::shared_ptr<zmq::socket_t> socket_;
+    // Need these since zmq contexts and sockets are not copy-constructable
+    std::shared_ptr<zmq::context_t> context_;
+    std::shared_ptr<zmq::socket_t> socket_;
     buffer_t buffer_;
     buffer_size_t index_;
-};
-
-class zmq_ostream: io::sink {
-
-public:
-
-    zmq_ostream(const std::string &endpoint);
-
-    std::streamsize read(char *s, std::streamsize n);
-
-private:
-
-    zmq::context_t context_;
-    zmq::socket_t socket_;
-
-    //std::shared_ptr<zmq::context_t> context_;
-    //std::shared_ptr<zmq::socket_t> socket_;
-    std::vector<char> buffer_;
-    std::vector::size_type index_;
-
 };
 
 }      /* namespace oat */

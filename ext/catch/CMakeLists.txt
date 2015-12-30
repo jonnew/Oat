@@ -11,11 +11,10 @@ ExternalProject_Add(
   UPDATE_COMMAND ${GIT_EXECUTABLE} pull
   CONFIGURE_COMMAND ""
   INSTALL_COMMAND ""
-  CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
   LOG_DOWNLOAD ON
 )
 
 # Specify include dir
 ExternalProject_Get_Property(catch source_dir)
-set(CATCH_INCLUDE_DIR ${source_dir}/include CACHE INTERNAL "Path to include forlder for Catch")
+set(CATCH_INCLUDE_DIR ${source_dir}/include CACHE INTERNAL "Path to include folder for Catch")

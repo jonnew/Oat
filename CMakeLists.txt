@@ -44,11 +44,6 @@ else()
     message (FATAL_ERROR "Set and acceptable build type using -DCMAKE_BUILD_TYPE=<debug or release>")
 endif()
 
-# Static linking only
-#SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-#SET(BUILD_SHARED_LIBRARIES OFF)
-#SET(CMAKE_EXE_LINKER_FLAGS "-static")
-
 # Configure a header file to pass CMake settings to source code containing
 # build options and version info
 configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
@@ -85,6 +80,13 @@ else ()
     set (OAT_USE_CUDA OFF)
 endif ()
 
+find_library (ZMQ_LIB libzmq)
+#if ()
+#    message (STATUS "Found OpenCV")
+#else (OpenCV_FOUND)
+#    message (FATAL_ERROR "OpenCV not found")
+#endif ()
+
 # Flycapture
 if (${USE_FLYCAP})
     # Required for point-grey cameras
@@ -110,8 +112,13 @@ include_directories (${CPPTOML_INCLUDE_DIR})
 add_subdirectory (${EXT_PROJECTS_DIR}/rapidjson)
 include_directories (${RAPIDJSON_INCLUDE_DIR})
 
-# Include shmemdp
+# Include zeromq
+add_subdirectory (${EXT_PROJECTS_DIR}/zmq)
+#include_directories (${ZMQ_INCLUDE_DIR})
+
+# Include local libs
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/utility)
 
 # Oat components
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/cleaner)
