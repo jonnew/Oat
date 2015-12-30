@@ -37,7 +37,7 @@ before_script:
   - wget http://download.zeromq.org/zeromq-4.1.4.tar.gz -O tarzmq
   - tar -xf tarzmq
   - cd ./zeromq*
-  - ./configure
+  - ./configure --without-libsodium
   - make 
   - sudo make install
   - sudo ldconfig 
