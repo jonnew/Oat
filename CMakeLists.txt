@@ -112,10 +112,6 @@ include_directories (${CPPTOML_INCLUDE_DIR})
 add_subdirectory (${EXT_PROJECTS_DIR}/rapidjson)
 include_directories (${RAPIDJSON_INCLUDE_DIR})
 
-# Include zeromq
-add_subdirectory (${EXT_PROJECTS_DIR}/zmq)
-#include_directories (${ZMQ_INCLUDE_DIR})
-
 # Include local libs
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/utility)
