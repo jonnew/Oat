@@ -50,6 +50,13 @@ class SharedFrameHeader;
  * Position and frame recorder.
  */
 class Recorder {
+
+    // The control recorder routine needs access to 
+    // Recorder's privates
+    friend int controlRecorder(std::istream &in, 
+                               oat::Recorder &recorder, 
+                               bool print_cmd);
+
 public:
 
     using PositionSource = std::pair < std::string, std::unique_ptr
@@ -105,6 +112,7 @@ public:
     std::string name(void) { return name_; }
 
     // Accessors
+    bool record_on(void) const { return record_on_; } 
     void set_record_on(const bool value) { record_on_ = value; } 
 
 private:
@@ -122,7 +130,8 @@ private:
     // for new data coming down the pipeline)
     std::atomic<bool> running_ {true};
 
-    // Recording gate can be toggled on and off interactively 
+    // Recording gate can be toggled on and off interactively from other
+    // threads and processes
     std::atomic<bool> record_on_ {true};
 
     // Video files
@@ -159,9 +168,9 @@ private:
     // SOURCES EOF flag
     bool sources_eof {false};
 
-    void openFiles(const std::vector<std::string>& save_path,
-                   const bool& save_positions,
-                   const bool& save_images);
+    void createFiles(const std::vector<std::string> &save_path,
+                     const bool prepend_date,
+                     const bool interate_file_number);
 
     void initializeWriter(cv::VideoWriter& writer,
                           const std::string &file_name,

@@ -30,7 +30,7 @@
 
 namespace oat {
 
-void PathChanger::visit(CameraCalibrator* cc) {
+void PathChanger::visit(CameraCalibrator *cc) {
 
     std::cout << "Type the path to save camera calibration information and press <enter>: ";
     try {
@@ -52,7 +52,7 @@ void PathChanger::visit(CameraCalibrator* cc) {
     std::cout << "Camera calibration save file set to " + cc->calibration_save_path() + "\n";
 }
 
-void PathChanger::visit(HomographyGenerator* hg) {
+void PathChanger::visit(HomographyGenerator *hg) {
 
     std::cout << "Type the path to save homography information and press <enter>: ";
     try {

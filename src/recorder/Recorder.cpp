@@ -54,17 +54,14 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
 , file_name_(file_name)
 , append_date_(prepend_date)
 , allow_overwrite_(overwrite)
-, frames_per_second_(frames_per_second)
+, frames_per_second_(frames_per_second) // TODO: This should be deduced from sources
 , sources_eof(false) {
 
     // First check that the save_path is valid
     bfs::path path(save_path.c_str());
-    if (!bfs::exists(path) || !bfs::is_directory(path)) {
-        std::cout << "Warning: requested recording path, " + save_path + ", "
-                  << "does not exist, or is not a valid directory.\n"
-                  << "attempting to use the current directory instead.\n";
-        save_path = bfs::current_path().c_str();
-    }
+    if (!bfs::exists(path) || !bfs::is_directory(path)) 
+        throw std::runtime_error("Requested recording path, " 
+                + save_path + ", does not exist or is not a valid directory.\n");
 
     // Start recorder name construction
     name_ = "recorder[" ;
@@ -107,9 +104,8 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
 
         posi_fid = posi_fid + ".json";
 
-        if (!allow_overwrite_) {
+        if (!allow_overwrite_)
             checkFile(posi_fid);
-        }
 
         position_fp_ = fopen(posi_fid.c_str(), "wb");
         if (position_fp_ == nullptr)

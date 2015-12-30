@@ -23,16 +23,18 @@
 
 namespace oat {
 
-int controlRecorder(std::istream &in, oat::Recorder &recorder, bool print_cmd) {
+int controlRecorder(std::istream &in, 
+                    oat::Recorder &recorder, 
+                    bool print_cmd) {
 
     // Command map
     std::unordered_map<std::string, char> cmd_map;
     cmd_map["exit"] = 'e';
-    cmd_map["help"] = 's';
+    cmd_map["help"] = 'h';
     cmd_map["start"] = 's';
     cmd_map["stop"] = 'S';
     cmd_map["new"] = 'n';
-    cmd_map["move"] = 'm';
+    cmd_map["rename"] = 'r';
 
     // User control loop
     std::string cmd;
@@ -48,6 +50,16 @@ int controlRecorder(std::istream &in, oat::Recorder &recorder, bool print_cmd) {
             std::cout << cmd << "\n";
 
         switch (cmd_map[cmd]) {
+            case 'e' :
+            {
+                quit = true;
+                break;
+            }
+            case 'h' :
+            {
+                printInteractiveUsage(std::cout);
+                break;
+            }
             case 's' :
             {
                 recorder.set_record_on(true);
@@ -60,9 +72,17 @@ int controlRecorder(std::istream &in, oat::Recorder &recorder, bool print_cmd) {
                 std::cout << "Recording OFF.\n";
                 break;
             }
-            case 'e' :
+            case 'n' :
             {
-                quit = true;
+                if (recorder.record_on()) 
+                    std::cerr << "Recording must be paused to create new file.\n";
+                else
+                    //recorder.createFile();
+                break;
+            }
+            case 'r' :
+            {
+                std::cerr << "\'" << cmd << "\' is not implemented.\n";
                 break;
             }
             default :
