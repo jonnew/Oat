@@ -51,10 +51,10 @@ class SharedFrameHeader;
  */
 class Recorder {
 
-    // The control recorder routine needs access to 
+    // The control recorder routine needs access to
     // Recorder's privates
-    friend int controlRecorder(std::istream &in, 
-                               oat::Recorder &recorder, 
+    friend int controlRecorder(std::istream &in,
+                               oat::Recorder &recorder,
                                bool print_cmd);
 
 public:
@@ -85,13 +85,25 @@ public:
      */
     Recorder(const std::vector<std::string> &position_source_addresses,
              const std::vector<std::string> &frame_source_addresses,
-             std::string save_path = ".",
-             std::string file_name = "",
-             const bool prepend_date = false,
-             const int frames_per_second = 30,
-             const bool overwrite = false);
+             //std::string save_path = ".",
+             //std::string file_name = "",
+             //const bool prepend_date = false,
+             const int frames_per_second = 30);
+             //const bool overwrite = false);
 
     ~Recorder();
+
+    /**
+     * Create and initialize recording file(s). Must be called before writeStreams.
+     *
+     * @param save_directory Requested save directory
+     * @param base_file_name Requested base file name. Extension should be included.
+     * @param prepend_timestamp Should a timestamp be prepended to the file name?
+     */
+    void initializeRecording(const std::string &save_directory=".",
+                             const std::string &file_name = "",
+                             const bool prepend_timestamp = false,
+                             const bool allow_overwrite = false);
 
     /**
      * Recorder SOURCEs must be able to connect to a NODEs from
@@ -112,8 +124,8 @@ public:
     std::string name(void) { return name_; }
 
     // Accessors
-    bool record_on(void) const { return record_on_; } 
-    void set_record_on(const bool value) { record_on_ = value; } 
+    bool record_on(void) const { return record_on_; }
+    void set_record_on(const bool value) { record_on_ = value; }
 
 private:
 
@@ -121,10 +133,10 @@ private:
     std::string name_;
 
     // General file name formatting
-    std::string save_path_;
-    std::string file_name_;
-    const bool append_date_;
-    const bool allow_overwrite_;
+    //std::string save_path_;
+    //std::string file_name_;
+    //const bool prepent_timestamp_;
+    //const bool allow_overwrite_;
 
     // Recorder in running state (i.e. all threads should remain responsive
     // for new data coming down the pipeline)
@@ -168,16 +180,9 @@ private:
     // SOURCES EOF flag
     bool sources_eof {false};
 
-    void createFiles(const std::vector<std::string> &save_path,
-                     const bool prepend_date,
-                     const bool interate_file_number);
-
-    void initializeWriter(cv::VideoWriter& writer,
-                          const std::string &file_name,
-                          const oat::Frame &image);
-
-    bool checkFile(std::string& file);
-    bool checkFilePermissions(std::string& file);
+    void initializeVideoWriter(cv::VideoWriter& writer,
+                               const std::string &file_name,
+                               const oat::Frame &image);
 
     void writeFramesToFileFromBuffer(uint32_t writer_idx);
     void writePositionsToFile(void);

@@ -23,8 +23,8 @@
 
 namespace oat {
 
-int controlRecorder(std::istream &in, 
-                    oat::Recorder &recorder, 
+int controlRecorder(std::istream &in,
+                    oat::Recorder &recorder,
                     bool print_cmd) {
 
     // Command map
@@ -72,19 +72,19 @@ int controlRecorder(std::istream &in,
                 std::cout << "Recording OFF.\n";
                 break;
             }
-            case 'n' :
-            {
-                if (recorder.record_on()) 
-                    std::cerr << "Recording must be paused to create new file.\n";
-                else
-                    //recorder.createFile();
-                break;
-            }
-            case 'r' :
-            {
-                std::cerr << "\'" << cmd << "\' is not implemented.\n";
-                break;
-            }
+//            case 'n' :
+//            {
+//                if (recorder.record_on())
+//                    std::cerr << "Recording must be paused to create new file.\n";
+//                else
+//                    //recorder.createFile();
+//                break;
+//            }
+//            case 'r' :
+//            {
+//                std::cerr << "\'" << cmd << "\' is not implemented.\n";
+//                break;
+//            }
             default :
             {
                 std::cerr << "Invalid command \'" << cmd << "\'\n";
@@ -105,10 +105,10 @@ void printInteractiveUsage(std::ostream &out) {
         << "            already exists.\n"
         << " pause      Pause recording. This will pause\n"
         << "            recording and will not start a new file.\n"
-        << " new        Start new file. Start time will be used to create\n"
-        << "            unique file name.\n"
-        << " rename     Specify a new file location. User will be prompted\n"
-        << "            to select a new save location.\n"
+        //<< " new        Start new file. Start time will be used to create\n"
+        //<< "            unique file name.\n"
+        //<< " rename     Specify a new file location. User will be prompted\n"
+        //<< "            to select a new save location.\n"
         << " exit       Exit the program.\n";
 }
 

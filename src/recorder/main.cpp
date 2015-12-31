@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     std::string save_path;
     bool allow_overwrite = false;
     int fps = 30; //TODO: This should be sent with the frames
-    bool append_date = false;
+    bool prepend_timestamp = false;
 
     try {
 
@@ -213,13 +213,11 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (variable_map.count("date")) {
-            append_date = true;
-        }
+        if (variable_map.count("date"))
+            prepend_timestamp = true;
 
-        if (variable_map.count("allow-overwrite")) {
+        if (variable_map.count("allow-overwrite"))
             allow_overwrite = true;
-        }
 
 
     } catch (std::exception& e) {
@@ -231,13 +229,10 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    auto recorder = std::make_shared<oat::Recorder>(position_sources,
-                                                    frame_sources,
-                                                    save_path,
-                                                    file_name,
-                                                    append_date,
-                                                    fps,
-                                                    allow_overwrite);
+    auto recorder = std::make_shared<oat::Recorder>(position_sources, frame_sources, fps);
+
+    // Initialize recording
+    recorder->initializeRecording(save_path, file_name, prepend_timestamp, allow_overwrite);
 
     // Tell user
     if (!frame_sources.empty()) {
