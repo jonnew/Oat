@@ -61,7 +61,7 @@ void FileReader::connectToNode() {
     file_reader_.set(CV_CAP_PROP_POS_AVI_RATIO, 0);
 
     // Put the sample rate in the shared frame
-    shared_frame_.set_sample_period_sec(frame_period_in_sec_.count());
+    shared_frame_.sample().set_period_sec(frame_period_in_sec_.count());
 }
 
 bool FileReader::serveFrame() {
@@ -74,7 +74,7 @@ bool FileReader::serveFrame() {
 
     // Acquire frame and increment sample count
     file_reader_ >> shared_frame_;
-    shared_frame_.incrementSampleCount();
+    shared_frame_.sample().incrementCount();
 
     // Crop if necessary
     if (use_roi_)

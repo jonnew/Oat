@@ -26,6 +26,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
 
+#include "../datatypes/Sample.h"
 #include "../datatypes/Frame.h"
 
 #include "ForwardsDecl.h"
@@ -274,7 +275,7 @@ inline oat::Frame Sink<SharedFrameHeader>::retrieve(const size_t rows, const siz
         throw (std::runtime_error("SINK must be bound before shared cvMat is retrieved."));
 
     // Allocate memory for sample number
-    void * sample = obj_shmem_.allocate(sizeof(oat::Frame::Sample));
+    void * sample = obj_shmem_.allocate(sizeof(oat::Sample));
     handle_t sample_handle = obj_shmem_.get_handle_from_address(sample);
 
     // Allocate memory for the shared object's data

@@ -26,11 +26,10 @@ namespace oat {
 
 template<typename T>
 PositionGenerator<T>::PositionGenerator(const std::string &position_sink_address,
-                                     const double samples_per_second) :
-  name_("testpos[*->" + position_sink_address + "]")
+                                        const double samples_per_second) :
+  name_("posigen[*->" + position_sink_address + "]")
 , position_sink_address_(position_sink_address)
 {
-
   generateSamplePeriod(samples_per_second);
   tick = clock.now();
 }
@@ -50,7 +49,7 @@ bool PositionGenerator<T>::process() {
     generatePosition(internal_position_);
 
     // This is pure SINK, so it increments the sample count
-    internal_position_.incrementSampleCount();
+    internal_position_.sample().incrementCount();
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -77,7 +76,7 @@ void PositionGenerator<T>::generateSamplePeriod(const double samples_per_second)
 
     // Automatic conversion
     sample_period_in_sec_ = period;
-    internal_position_.set_sample_period_sec(period.count());
+    internal_position_.sample().set_period_sec(period.count());
 }
 
 // Explicit declaration to get around link errors due to this being in its own

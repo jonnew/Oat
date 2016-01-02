@@ -325,7 +325,7 @@ inline void Source<SharedFrameHeader>::connect() {
     // Find an existing shared object constructed by the SINK
     obj_shmem_ =
             bip::managed_shared_memory(bip::open_only, obj_address_.c_str());
-    std::pair<SharedFrameHeader *,std::size_t> temp =
+    std::pair<SharedFrameHeader *, std::size_t> temp =
             obj_shmem_.find<SharedFrameHeader>(typeid(SharedFrameHeader).name());
     sh_object_ = temp.first;
 
@@ -351,6 +351,5 @@ inline void Source<SharedFrameHeader>::connect() {
     state_ = SourceState::CONNECTED;
 }
 
-} // namespace oat
-
-#endif
+}      /* namespace oat */
+#endif /* OAT_SOURCE_H */

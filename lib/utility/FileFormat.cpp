@@ -30,7 +30,8 @@ namespace bfs = boost::filesystem;
 int createSavePath(std::string &save_path_result,
                    const std::string &save_directory,
                    const std::string &base_file_name,
-                   const bool prepend_timestamp,
+                   const std::string &prepend_str, 
+                   const bool use_prepend_str,
                    const bool allow_overwrite) {
 
     // First check that the save_directory is valid
@@ -44,8 +45,8 @@ int createSavePath(std::string &save_path_result,
 
     // Now that the directory has been confirmed, created file name
     // Create a single position file
-    if (prepend_timestamp)
-        save_path_result = save_directory + "/" + createTimeStamp() + base_file_name;
+    if (use_prepend_str)
+        save_path_result = save_directory + "/" + prepend_str + base_file_name;
     else
         save_path_result = save_directory + "/" + base_file_name;
 

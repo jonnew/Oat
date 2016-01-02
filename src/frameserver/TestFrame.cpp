@@ -64,7 +64,7 @@ bool TestFrame::serveFrame() {
     frame_sink_.wait();
 
     // Increment sample count
-    shared_frame_.incrementSampleCount();
+    shared_frame_.sample().incrementCount();
 
     // Tell sources there is new data
     frame_sink_.post();

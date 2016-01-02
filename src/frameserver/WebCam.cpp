@@ -50,7 +50,7 @@ void WebCam::connectToNode() {
     shared_frame_ = frame_sink_.retrieve(
             example_frame.rows, example_frame.cols, example_frame.type());
 
-    shared_frame_.set_sample_period_sec(cv_camera_->get(CV_CAP_PROP_FPS));
+    shared_frame_.sample().set_rate_hz(cv_camera_->get(CV_CAP_PROP_FPS));
 }
 
 bool WebCam::serveFrame() {
@@ -62,7 +62,7 @@ bool WebCam::serveFrame() {
     frame_sink_.wait();
 
     *cv_camera_ >> shared_frame_;
-    shared_frame_.incrementSampleCount();
+    shared_frame_.sample().incrementCount();
 
     // Crop if necessary
     if (use_roi_)

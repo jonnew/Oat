@@ -42,6 +42,12 @@ namespace po = boost::program_options;
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
+// Needed by both threads
+std::string file_name;
+std::string save_path;
+bool allow_overwrite = false;
+bool prepend_timestamp = false;
+
 // Interactive commands
 bool recording_on = true;
 enum class ControlMode : int16_t
@@ -72,6 +78,12 @@ void run(std::shared_ptr<oat::Recorder>& recorder) {
 
         recorder->connectToNodes();
 
+        // Initialize recording
+        recorder->initializeRecording(save_path,
+                                      file_name,
+                                      prepend_timestamp,
+                                      allow_overwrite);
+
         while (!quit && !source_eof) {
             source_eof = recorder->writeStreams();
         }
@@ -92,11 +104,6 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> frame_sources;
     std::vector<std::string> position_sources;
     std::string rpc_endpoint;
-    std::string file_name;
-    std::string save_path;
-    bool allow_overwrite = false;
-    int fps = 30; //TODO: This should be sent with the frames
-    bool prepend_timestamp = false;
 
     try {
 
@@ -124,9 +131,6 @@ int main(int argc, char *argv[]) {
                  "Yield interactive control of the recorder to a remote source.")
                 ("frame-sources,s", po::value< std::vector<std::string> >()->multitoken(),
                 "The names of the FRAME SOURCES that supply images to save to video.")
-                ("frames-per-second,F", po::value<int>(&fps),
-                "The frame rate of the recorded video. This determines playback speed of the recording. "
-                "It does not affect online processing in any way.\n")
                 ;
 
         po::options_description all_options("OPTIONS");
@@ -183,11 +187,6 @@ int main(int argc, char *argv[]) {
             control_mode = ControlMode::NONE;
         }
 
-        if (!variable_map.count("frames-per-second") && variable_map.count("frame-sources")) {
-            fps = 30;
-            std::cerr << oat::Warn("Warning: Video playback speed set to 30 FPS.\n");
-        }
-
         // May contain imagesource and sink information!]
         if (variable_map.count("position-sources")) {
             position_sources = variable_map["position-sources"].as< std::vector<std::string> >();
@@ -229,10 +228,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    auto recorder = std::make_shared<oat::Recorder>(position_sources, frame_sources, fps);
-
-    // Initialize recording
-    recorder->initializeRecording(save_path, file_name, prepend_timestamp, allow_overwrite);
+    auto recorder = std::make_shared<oat::Recorder>(position_sources, frame_sources);
 
     // Tell user
     if (!frame_sources.empty()) {
@@ -274,6 +270,9 @@ int main(int argc, char *argv[]) {
             }
             case ControlMode::LOCAL :
             {
+                // For interactive control, recorder must be started by user
+                recorder->set_record_on(false);
+
                 // Start recording in background
                 std::thread process(run, std::ref(recorder));
 
@@ -291,6 +290,9 @@ int main(int argc, char *argv[]) {
             }
             case ControlMode::RPC :
             {
+                // For interactive control, recorder must be started by user
+                recorder->set_record_on(false);
+
                 // Start recording in background
                 std::thread process(run, std::ref(recorder));
 

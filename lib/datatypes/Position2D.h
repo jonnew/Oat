@@ -61,7 +61,7 @@ public:
 
         // Sample number
         writer.String("samp");
-        writer.Int(sample_);
+        writer.Int(sample_.count());
 
         // Coordinate system
         writer.String("unit");

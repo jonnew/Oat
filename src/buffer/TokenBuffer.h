@@ -54,10 +54,10 @@ public:
      */
     void connectToNode(void) override;
 
-    ///**
-    // * Obtain new token from SOURCE and push onto FIFO.
-    // * @return SOURCE end-of-stream signal. If true, this component should exit.
-    // */
+    /**
+     * Obtain new token from SOURCE and push onto FIFO.
+     * @return SOURCE end-of-stream signal. If true, this component should exit.
+     */
     bool push(void) override;
 
 private:

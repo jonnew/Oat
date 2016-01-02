@@ -30,7 +30,8 @@ namespace oat {
  * @param save_path_result Formated and verified save path
  * @param save_directory Requested save directory
  * @param base_file_name Requested base file name. Extension should be included.
- * @param prepend_timestamp Should a timestamp be prepended to the file name?
+ * @param timestamp String to be prepended to the base file name. For example, a timestamp created with oat::createTimeStamp.
+ * @param use_prepend_str Should the prepend_str be used?
  * @param allow_overwrite In case of conflict, should file be overwritten?
  * @return Errorcode: -1 : Unspecified failure
  *                     0 : Success
@@ -41,8 +42,9 @@ namespace oat {
 int createSavePath(std::string &save_path_result,
                    const std::string &save_directory,
                    const std::string &base_file_name,
-                   const bool prepend_timestamp,
-                   const bool allow_overwrite);
+                   const std::string &prepend_str = "", 
+                   const bool use_prepend_str = false,
+                   const bool allow_overwrite = false);
 
 /**
  * Generate a current timestamp formated as Y-M-D-H-M-S.

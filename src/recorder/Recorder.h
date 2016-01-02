@@ -77,19 +77,9 @@ public:
      * Position and frame recorder.
      * @param position_source_addresses Addresses specifying position SOURCES to record
      * @param frame_source_addresses Addresses specifying frame SOURCES to record
-     * @param save_path Directory to which files will be written
-     * @param file_name Base file name
-     * @param append_date Should the date be prepended to the file name
-     * @param frames_per_second Frame rate if video is recorded
-     * @param overwrite Should a file with the same name be overwritten
      */
     Recorder(const std::vector<std::string> &position_source_addresses,
-             const std::vector<std::string> &frame_source_addresses,
-             //std::string save_path = ".",
-             //std::string file_name = "",
-             //const bool prepend_date = false,
-             const int frames_per_second = 30);
-             //const bool overwrite = false);
+             const std::vector<std::string> &frame_source_addresses);
 
     ~Recorder();
 
@@ -132,12 +122,6 @@ private:
     // Name of this recorder
     std::string name_;
 
-    // General file name formatting
-    //std::string save_path_;
-    //std::string file_name_;
-    //const bool prepent_timestamp_;
-    //const bool allow_overwrite_;
-
     // Recorder in running state (i.e. all threads should remain responsive
     // for new data coming down the pipeline)
     std::atomic<bool> running_ {true};
@@ -146,8 +130,12 @@ private:
     // threads and processes
     std::atomic<bool> record_on_ {true};
 
+    // Sample rate of this recorder
+    // The true sample rate is enforced by the slowest SOURCE since all SOURCEs
+    // are sychronized. User will be warned if SOURCE sample rates differ.
+    double sample_rate_hz_ {0.0};
+
     // Video files
-    const int frames_per_second_;
     std::vector< std::string > video_file_names_;
     std::vector< std::unique_ptr
                < cv::VideoWriter > > video_writers_;

@@ -70,8 +70,7 @@ bool PositionDetector::process() {
     //  END CRITICAL SECTION  //
 
     // Propagate sample info and detect position
-    internal_position_.set_sample(internal_frame_.sample_count());
-    internal_position_.set_sample_period_sec(internal_frame_.sample_period_sec());
+    internal_position_.sample() = internal_frame_.sample_copy();
     detectPosition(internal_frame_, internal_position_);
 
     // START CRITICAL SECTION //

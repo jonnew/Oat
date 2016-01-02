@@ -20,6 +20,9 @@
 #ifndef OAT_POSITION_H
 #define	OAT_POSITION_H
 
+
+#include "Sample.h"
+
 namespace oat {
 
 /**
@@ -34,7 +37,9 @@ enum class DistanceUnit
 class Position {
 
 public:
-    Position(const std::string &label) {
+
+    Position(const std::string &label) 
+    {
         strncpy(label_, label.c_str(), sizeof(label_));
         label_[sizeof(label_) - 1] = 0;
     }
@@ -44,34 +49,29 @@ public:
     Position & operator = (const Position &p) {
 
         // Check for self assignment
-        if(this == &p)
+        if (this == &p)
             return *this;
 
         // Copy all except label_
         unit_of_length_ = p.unit_of_length_;
         sample_ = p.sample_;
-        sample_period_sec_ = p.sample_period_sec_;
+        //sample_period_sec_ = p.sample_period_sec_;
         return *this;
     }
 
-    // sample_ should generally be set via incrementation
-    void incrementSampleCount() { ++sample_; }
+    // Expose sample information
+    oat::Sample & sample() { return sample_; };
 
     // Accessors
     DistanceUnit unit_of_length(void) const { return unit_of_length_; }
     void set_unit_of_length(DistanceUnit value) { unit_of_length_ = value; }
-    double sample_period_sec(void) const { return sample_period_sec_; }
-    void set_sample_period_sec(double value) { sample_period_sec_ = value; }
-    void set_sample(int64_t value) {sample_ = value; }
-    uint64_t sample() const { return sample_; }
     char * label() {return label_; }
 
 protected:
 
     char label_[100]; //!< Position label (e.g. "anterior")
     DistanceUnit unit_of_length_ {DistanceUnit::PIXELS};
-    uint64_t sample_ {0};
-    double sample_period_sec_ {0.0};
+    oat::Sample sample_;
 };
 
 }      /* namespace oat */

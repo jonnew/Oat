@@ -1484,9 +1484,14 @@ RJ45 ------------
       stateless detection. However, it would make the concept of position
       combining hard to define (although that is even true now is just a design
       choice, really).
-- Colors
+- [ ] Colors
     - Should visual ID information (e.g. color) be integrated into the
       `position` type?
+    - All this output color formatting might be very stupid because it screws
+      up log files when stdout or stderr are piped to file.
+- [ ] It would be good to warn people if the inputs to a multisource component
+  have different sample rates because the output rate will be enforced by the
+  slowest source. Added a TODO on this.
 - [x] Something is wrong with sample synchronization
     - When working with Jennie's data, we found that position samples were
       being recorded multiple times - they had the same sample number and

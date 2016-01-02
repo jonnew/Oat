@@ -91,7 +91,8 @@ void Decorator::connectToNodes() {
     size_t min_size = (param.rows < param.cols) ? param.rows : param.cols;
     position_circle_radius_ =  std::ceil(static_cast<float>(min_size)/100.0);
     heading_line_length_ =  std::ceil(static_cast<float>(min_size)/100.0);
-    encode_bit_size_  =  std::ceil(param.cols / 3 / sizeof(internal_frame_.sample_count()) / 8);
+    encode_bit_size_  =  
+        std::ceil(param.cols / 3 / sizeof(internal_frame_.sample().count()) / 8);
 }
 
 bool Decorator::decorateFrame() {
@@ -279,7 +280,7 @@ void Decorator::printSampleNumber() {
 
     cv::Point text_origin(10, internal_frame_.rows - 10);
     cv::putText(internal_frame_,
-                std::to_string(internal_frame_.sample_count()),
+                std::to_string(internal_frame_.sample().count()),
                 text_origin,
                 1,
                 font_scale_,
@@ -291,7 +292,7 @@ void Decorator::printSampleNumber() {
  */
 void Decorator::encodeSampleNumber() {
 
-    uint64_t sample_count = internal_frame_.sample_count();
+    uint64_t sample_count = internal_frame_.sample().count();
 
     int column = internal_frame_.cols - 64 * encode_bit_size_;
 

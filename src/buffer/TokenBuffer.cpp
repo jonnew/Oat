@@ -86,9 +86,7 @@ void TokenBuffer<T>::pop() {
         // Proceed only if buffer_ has data
         std::unique_lock<std::mutex> lk(cv_m_);
         if  (cv_.wait_for(lk, msec(10)) == std::cv_status::timeout)
-        {
             continue;
-        }
 
         // Publish objects when they are requested until the buffer
         // is empty
