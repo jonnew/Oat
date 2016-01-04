@@ -11,10 +11,8 @@ set (oat-record_SOURCE
 add_executable (oat-record ${oat-record_SOURCE})
 target_link_libraries (oat-record
                        oatutility
-                       ${OpenCV_LIBS}
-                       ${Boost_LIBRARIES}
-                       ${Thread_LIBS}
-                       zmq)
+                       zmq
+                       ${OatCommon_LIBS})
 
 # Installation
 install (TARGETS oat-record DESTINATION ../../oat/libexec COMPONENT oat-processors)

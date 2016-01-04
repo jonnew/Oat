@@ -17,11 +17,7 @@ endif (${USE_FLYCAP})
 
 # Targets
 add_executable (oat-frameserve ${oat-frameserve_SOURCE} main.cpp)
-target_link_libraries (oat-frameserve 
-                       ${OpenCV_LIBS} 
-                       ${FLYCAPTURE2} 
-                       ${Boost_LIBRARIES} 
-                       ${Thread_LIBS})
+target_link_libraries (oat-frameserve ${OatCommon_LIBS} ${FLYCAPTURE2})
 
 # Installation
 install (TARGETS oat-frameserve DESTINATION ../../oat/libexec COMPONENT oat-processors)

@@ -12,10 +12,7 @@ set (oat-framefilt_SOURCE
 
 # Target
 add_executable (oat-framefilt ${oat-framefilt_SOURCE})
-target_link_libraries (oat-framefilt
-                       ${OpenCV_LIBS}
-                       ${Boost_LIBRARIES}
-                       ${Thread_LIBS})
+target_link_libraries (oat-framefilt ${OatCommon_LIBS})
 
 # Installation
 install (TARGETS oat-framefilt DESTINATION ../../oat/libexec COMPONENT oat-processors)

@@ -11,10 +11,7 @@ set (oat-posidet_SOURCE
 
 # Target
 add_executable (oat-posidet ${oat-posidet_SOURCE})
-target_link_libraries (oat-posidet
-                       ${OpenCV_LIBS}
-                       ${Boost_LIBRARIES}
-                       ${Thread_LIBS})
+target_link_libraries (oat-posidet ${OatCommon_LIBS})
 
 # Installation
 install (TARGETS oat-posidet DESTINATION ../../oat/libexec COMPONENT oat-processors)

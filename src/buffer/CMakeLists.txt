@@ -9,10 +9,7 @@ set (oat-buffer_SOURCE
 
 # Target
 add_executable (oat-buffer ${oat-buffer_SOURCE})
-target_link_libraries (oat-buffer
-                       ${OpenCV_LIBS}
-                       ${Boost_LIBRARIES}
-                       ${Thread_LIBS})
+target_link_libraries (oat-buffer ${OatCommon_LIBS})
 
 # Installation
 install (TARGETS oat-buffer DESTINATION ../../oat/libexec COMPONENT oat-processors)
