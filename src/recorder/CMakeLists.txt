@@ -13,6 +13,7 @@ target_link_libraries (oat-record
                        oatutility
                        ${OpenCV_LIBS}
                        ${Boost_LIBRARIES}
+                       ${Thread_LIBS}
                        zmq)
 
 # Installation
