@@ -1198,19 +1198,19 @@ __Note__: If you have [NVIDIA GPU that supports
 CUDA](https://developer.nvidia.com/cuda-gpus), you can build OpenCV with CUDA
 support to enable GPU accelerated video processing.  To do this, will first
 need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit).
-Be sure to read the [installation
-instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/index.html)
-since it is a multistep process. Here are some additional hints that worked for
-me:
 
-- I have found that its quite difficult to get NVIDIA drivers new enough to
-  support CUDA Toolkit 7.5 to work on my system. If you have this problem, use
-  version 7.0.
+- Be sure to __carefully__ read the [installation
+  instructions](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/index.html)
+  since it is a multistep process. Here are some additional hints that worked
+  for me:
 - I have found that installing the toolkit via 'runfile' to be the most
   painless. To do this you will need to switch your system to text mode using
-  <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F1</kbd>, and killing the X-server
+  <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F1</kbd>, and killing the X-server
   via `sudo service lightdm stop` (or equivalent), and running the runfile with
   root privileges.
+- I have had the most success on systems that do not use GNOME or other fancy
+  desktop environments. The install on [lubunut](http://lubuntu.net/), which
+  uses LXDE as its desktop environment, was especially smooth.
 - Do __not__ install the nvidia drivers along with the CUDA toolkit
   installation. I found that (using ubuntu 14.04) this causes all sorts of
   issues with X, cinnamon, etc, to the point where I could not even boot my
@@ -1268,6 +1268,15 @@ cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
 make
 sudo make install
 ```
+
+#### ZeroMQ
+[ZeroMQ](zeromq.org) is required by the following
+Oat components:
+
+- `oat-record`
+- `oat-posisock`
+
+TODO
 
 #### RapidJSON, cpptoml, and Catch
 These libraries are installed automatically by cmake during the build process.
