@@ -49,15 +49,26 @@ endif()
 configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
 include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 
-# Add preprocessor definition to compile with OpenGL support
+# Build options 
 option (USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
+option (BUILD_TESTS "Build and run tests." ON)
 
 # Show options summary
 message (STATUS "Oat version: ${VERSION_LIST}")
 message (STATUS "Compilation options:" )
 message (STATUS "  Build type: ${LOWERCASE_CMAKE_BUILD_TYPE}")
 message (STATUS "  Compile with Point Grey Support: ${USE_FLYCAP}")
+message (STATUS "  Build tests: ${BUILD_TESTS}")
 message (STATUS "  Build documentation: ${BUILD_DOCS}")
+
+# Threads
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+if (UNIX_AND_NOT_APPLE)
+    set (Thread_LIBS Threads::Threads rt)
+else ()
+    set (Thread_LIBS Threads::Threads rt)
+endif ()
 
 # Boost, minimum version 1.56 for type_index.hpp
 find_package (Boost 1.56.0 REQUIRED system thread program_options filesystem)
@@ -68,7 +79,7 @@ link_directories (${Boost_LIBRARY_DIR})
 find_package (OpenCV REQUIRED)
 if (OpenCV_FOUND)
     message (STATUS "Found OpenCV")
-else (OpenCV_FOUND)
+else ()
     message (FATAL_ERROR "OpenCV not found")
 endif ()
 
@@ -80,7 +91,7 @@ else ()
     set (OAT_USE_CUDA OFF)
 endif ()
 
-find_library (ZMQ_LIB libzmq)
+#find_library (ZMQ_LIB libzmq)
 #if ()
 #    message (STATUS "Found OpenCV")
 #else (OpenCV_FOUND)
@@ -116,6 +127,9 @@ include_directories (${RAPIDJSON_INCLUDE_DIR})
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/utility)
 
+# Common libraries for all Oat components
+set (OatCommon_LIBS ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Thread_LIBS})
+
 # Oat components
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/cleaner)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/decorator)
@@ -134,20 +148,24 @@ add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/buffer)
 # All executables should be installed in Oat/oat/libexec
 set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "Default install path" FORCE)
 
-# Catch (and enables unit testing)
-add_subdirectory(${EXT_PROJECTS_DIR}/catch)
-enable_testing(true)
+# Testin
+if (${BUILD_TESTS})
+    # Catch (and enables unit testing)
+    add_subdirectory(${EXT_PROJECTS_DIR}/catch)
+    enable_testing(true)
 
-set(TESTING_INCLUDES ${CATCH_INCLUDE_DIR} )
-function(add_oat_test name libs)
-  include_directories(${TESTING_INCLUDES})
-  add_executable(${name}_test ${name}_test.cpp)
-  target_link_libraries (${name}_test ${libs})
-  add_test(${name}_test ${name}_test)
-endfunction()
+    set(TESTING_INCLUDES ${CATCH_INCLUDE_DIR} )
+    function(add_oat_test name libs)
+        include_directories(${TESTING_INCLUDES})
+        add_executable(${name}_test ${name}_test.cpp)
+        target_link_libraries (${name}_test ${libs})
+        add_test(${name}_test ${name}_test)
+    endfunction()
 
-# Tests
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
+    # Tests
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
+
+endif()
 
 # API documentation
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
