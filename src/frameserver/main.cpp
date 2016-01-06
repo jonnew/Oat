@@ -211,7 +211,6 @@ int main(int argc, char *argv[]) {
             server = std::make_shared<oat::WebCam>(sink);
             break;
         }
-
         case 'b':
         {
 
@@ -220,13 +219,15 @@ int main(int argc, char *argv[]) {
                     "flycapture support, so TYPE=gige is not available.\n");
             return -1;
 #else
-            server = std::make_shared<oat::PGGigECam>(sink, index);
+            server = 
+                std::make_shared<oat::PGGigECam>(sink, index, frames_per_second);
 #endif
             break;
         }
         case 'c':
         {
-            server = std::make_shared<oat::FileReader>(sink, file_path, frames_per_second);
+            server = 
+                std::make_shared<oat::FileReader>(sink, file_path, frames_per_second);
             break;
         }
         case 'd':

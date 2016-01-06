@@ -39,9 +39,12 @@
 
 namespace oat {
 
-PGGigECam::PGGigECam(const std::string &frame_sink_address, const size_t index) :
+PGGigECam::PGGigECam(const std::string &frame_sink_address, 
+                     const size_t index
+                     const double fps) :
   FrameServer(frame_sink_address)
 , index_(index)
+, frames_per_second(fps)
 {
     // Find the number of cameras on the bus
     findNumCameras();

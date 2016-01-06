@@ -105,6 +105,12 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
 
 Recorder::~Recorder() {
 
+    // NOTE: The cv::VideoWriter class has internal buffering. Its flushes its
+    // buffer on destruction. Because VideoWriter's are accessed via
+    // std::unique_ptr, this will happen automatically. However -- don't try to
+    // look at a video before the recorder destructs because it will be
+    // incomplete! Same with the position file.
+    
     // Set running to false to trigger thread join
     running_ = false;
     for (auto &value : frame_write_condition_variables_)
@@ -166,6 +172,10 @@ void Recorder::connectToNodes() {
 
     sample_rate_hz_ = 1.0 / ts;
 
+#ifndef NDEBUG
+    std::cout << "Recording sample rate: " << sample_rate_hz_;
+#endif
+
     if (!ts_consistent) {
         std::cerr << oat::Warn(
                      "Warning: Sample rates of SOURCEs are inconsistent.\n"
@@ -189,16 +199,16 @@ bool Recorder::writeStreams() {
         if (record_on_) {
             if (!frame_write_buffers_[i]->push(frame_sources_[i].second->clone())) {
                 throw (std::runtime_error("Frame buffer overrun. Decrease the frame "
-                                      "rate or get a faster hard-disk."));
+                                          "rate or get a faster hard-disk."));
             }
         }
+
+        // Notify a writer thread that there might be new data in the queue
+        frame_write_condition_variables_[i]->notify_one();
 
         frame_sources_[i].second->post();
         ////////////////////////////
         //  END CRITICAL SECTION  //
-
-        // Notify a writer thread that there is new data in the queue
-        frame_write_condition_variables_[i]->notify_one();
     }
 
     // Read positions

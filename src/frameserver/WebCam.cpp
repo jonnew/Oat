@@ -50,6 +50,7 @@ void WebCam::connectToNode() {
     shared_frame_ = frame_sink_.retrieve(
             example_frame.rows, example_frame.cols, example_frame.type());
 
+    // TODO: this does not appear to be very accurate/work
     shared_frame_.sample().set_rate_hz(cv_camera_->get(CV_CAP_PROP_FPS));
 }
 

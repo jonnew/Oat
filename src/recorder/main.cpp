@@ -66,10 +66,7 @@ void printUsage(std::ostream& out, po::options_description options) {
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int) {
-
-    // Interactive/RPC modes require "exit" command
-    if (control_mode == ControlMode::NONE)
-        quit = 1;
+    quit = 1;
 }
 
 // Processing loop
@@ -99,7 +96,6 @@ void run(std::shared_ptr<oat::Recorder>& recorder) {
 
 int main(int argc, char *argv[]) {
 
-    std::signal(SIGINT, sigHandler);
 
     std::vector<std::string> frame_sources;
     std::vector<std::string> position_sources;
@@ -186,6 +182,13 @@ int main(int argc, char *argv[]) {
         } else {
             control_mode = ControlMode::NONE;
         }
+
+        // Only install SIGINT if we are not using Interactive/RPC modes which
+        // require "exit" command
+        if (control_mode == ControlMode::NONE)
+            std::signal(SIGINT, sigHandler);
+        else
+            std::signal(SIGINT, SIG_IGN);
 
         // May contain imagesource and sink information!]
         if (variable_map.count("position-sources")) {
@@ -280,7 +283,8 @@ int main(int argc, char *argv[]) {
                 oat::printInteractiveUsage(std::cout);
                 oat::controlRecorder(std::cin, *recorder);
 
-                quit = 1;
+                // Reinstall SIGINT handler and trigger on both threads
+                std::signal(SIGINT, sigHandler);
                 pthread_kill(process.native_handle(), SIGINT);
 
                 // Join recorder and UI threads
@@ -301,7 +305,8 @@ int main(int argc, char *argv[]) {
                 boost::iostreams::stream<oat::zmq_istream> in(rpc_endpoint);
                 oat::controlRecorder(in, *recorder, true);
 
-                quit = 1;
+                // Reinstall SIGINT handler and trigger on both threads
+                std::signal(SIGINT, sigHandler);
                 pthread_kill(process.native_handle(), SIGINT);
 
                 // Join recorder and UI threads

@@ -38,12 +38,11 @@ int controlRecorder(std::istream &in,
 
     // User control loop
     std::string cmd;
-
     bool quit = false;
 
     while (!quit) {
 
-        std::cout << ">>> ";
+        std::cout << ">>> " << std::flush;
         std::getline(in, cmd);
 
         if (print_cmd)
@@ -87,7 +86,7 @@ int controlRecorder(std::istream &in,
 //            }
             default :
             {
-                std::cerr << "Invalid command \'" << cmd << "\'\n";
+                std::cout << "Invalid command \'" << cmd << "\'\n";
                 break;
             }
         }
@@ -103,7 +102,7 @@ void printInteractiveUsage(std::ostream &out) {
         << " help       Print this information.\n"
         << " start      Start recording. This will append and file if it\n"
         << "            already exists.\n"
-        << " pause      Pause recording. This will pause\n"
+        << " stop       Pause recording. This will pause\n"
         << "            recording and will not start a new file.\n"
         //<< " new        Start new file. Start time will be used to create\n"
         //<< "            unique file name.\n"
