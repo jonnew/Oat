@@ -27,6 +27,7 @@
 #include <memory>
 #include <unordered_map>
 #include <string>
+#include <zmq.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/program_options.hpp>
 
@@ -69,8 +70,20 @@ void sigHandler(int) {
     quit = 1;
 }
 
+// Cleanup procedure for interactive sessions
+void cleanup(std::thread &proc_thread) {
+
+    // Reinstall SIGINT handler and trigger it on both threads
+    std::signal(SIGINT, sigHandler);
+    pthread_kill(proc_thread.native_handle(), SIGINT);
+
+    // Join recorder and UI threads
+    proc_thread.join();
+}
+
 // Processing loop
 void run(std::shared_ptr<oat::Recorder>& recorder) {
+
     try {
 
         recorder->connectToNodes();
@@ -96,6 +109,7 @@ void run(std::shared_ptr<oat::Recorder>& recorder) {
 
 int main(int argc, char *argv[]) {
 
+    std::signal(SIGINT, sigHandler);
 
     std::vector<std::string> frame_sources;
     std::vector<std::string> position_sources;
@@ -183,11 +197,9 @@ int main(int argc, char *argv[]) {
             control_mode = ControlMode::NONE;
         }
 
-        // Only install SIGINT if we are not using Interactive/RPC modes which
+        // Uninstall SIGINT handler if we are using Interactive/RPC modes which
         // require "exit" command
-        if (control_mode == ControlMode::NONE)
-            std::signal(SIGINT, sigHandler);
-        else
+        if (control_mode != ControlMode::NONE)
             std::signal(SIGINT, SIG_IGN);
 
         // May contain imagesource and sink information!]
@@ -283,12 +295,8 @@ int main(int argc, char *argv[]) {
                 oat::printInteractiveUsage(std::cout);
                 oat::controlRecorder(std::cin, *recorder);
 
-                // Reinstall SIGINT handler and trigger on both threads
-                std::signal(SIGINT, sigHandler);
-                pthread_kill(process.native_handle(), SIGINT);
-
-                // Join recorder and UI threads
-                process.join();
+                // Interupt and join threads
+                cleanup(process);
 
                 break;
             }
@@ -300,21 +308,24 @@ int main(int argc, char *argv[]) {
                 // Start recording in background
                 std::thread process(run, std::ref(recorder));
 
-                // Interact using stdin
+                // Interact using zmqsocket
                 oat::printRemoteUsage(std::cout);
-                boost::iostreams::stream<oat::zmq_istream> in(rpc_endpoint);
-                oat::controlRecorder(in, *recorder, true);
+                try {
+                    boost::iostreams::stream<oat::zmq_istream> in(rpc_endpoint);
+                    oat::controlRecorder(in, *recorder);
+                } catch (const zmq::error_t &ex) {
+                    std::cerr << oat::whoError(recorder->name(), "zeromq error: " 
+                            + std::string(ex.what())) << "\n";
+                    cleanup(process);
+                    return -1;
+                }
 
-                // Reinstall SIGINT handler and trigger on both threads
-                std::signal(SIGINT, sigHandler);
-                pthread_kill(process.native_handle(), SIGINT);
-
-                // Join recorder and UI threads
-                process.join();
+                // Interupt and join threads
+                cleanup(process);
 
                 break;
             }
-        }
+         }
 
         // Tell user
         std::cout << oat::whoMessage(recorder->name(), "Exiting.\n");

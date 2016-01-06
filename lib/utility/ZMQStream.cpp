@@ -20,15 +20,15 @@
 #include <algorithm>
 #include <cstring>
 #include <iosfwd>
-#include <zmq.h>
+#include <zmq.hpp>
 
 #include "ZMQStream.h"
 
 namespace oat {
 
 zmq_istream::zmq_istream(const std::string &endpoint) :
-  context_(new zmq::context_t(1))
-, socket_(new zmq::socket_t(*context_, ZMQ_SUB))
+  context_(std::make_shared<zmq::context_t>(1))
+, socket_(std::make_shared<zmq::socket_t>(*context_, ZMQ_SUB))
 , index_(buffer_.size())
 {
     socket_->connect(endpoint.c_str());

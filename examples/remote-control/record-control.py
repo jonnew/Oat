@@ -132,7 +132,7 @@ class RemoteControl(tk.Frame):
         b_start.grid(row=i, column=0, padx=10, pady=10, sticky=tk.W)
         b_stop.grid(row=i, column=1, padx=10, pady=10, sticky=tk.W)
         b_new.grid(row=i, column=2, padx=10, pady=10, sticky=tk.W)
-        b_exit.grid(row=i, column=3, padx=10, pady=10, sticky=tk.W)
+        b_exit.grid(row=i, column=4, padx=10, pady=10, sticky=tk.W)
 
     def startRecording(self):
         for i, conn in enumerate(self.connections):
