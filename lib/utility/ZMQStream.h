@@ -29,26 +29,61 @@ namespace oat {
 
 namespace io = boost::iostreams;
 
+using p_zmq_context = std::shared_ptr<zmq::context_t>;
+using p_zmq_socket = std::shared_ptr<zmq::socket_t>;
+
 class zmq_istream : public io::source {
 
-    using buffer_t = std::vector<char>;
-    using buffer_size_t = buffer_t::size_type;
+    //using buffer_t = std::vector<char>;
+    //using buffer_size_t = buffer_t::size_type;
 
 public:
 
-    zmq_istream(const std::string &endpoint);
+    /**
+     * ZMQ input stream.
+     *
+     * @param context zeromq context that facilitates this stream
+     * @parame socket zeromq socket to receive messages from
+     */
+    zmq_istream(const p_zmq_context context,
+                const p_zmq_socket socket);
+
     std::streamsize read(char *s, std::streamsize n);
     zmq::socket_t & socket() { return *socket_; }
 
 private:
 
     // Need these since zmq contexts and sockets are not copy-constructable
-    std::shared_ptr<zmq::context_t> context_;
-    std::shared_ptr<zmq::socket_t> socket_;
-    buffer_t buffer_;
-    buffer_size_t index_;
+    const p_zmq_context context_;
+    const p_zmq_socket socket_;
+
+    // TODO: Needed for long messages, but not implemented right now
+    //buffer_t buffer_;
+    //buffer_size_t index_;
 };
 
+class zmq_ostream : public io::sink {
+
+public:
+
+    /**
+     * ZMQ output stream.
+     *
+     * @param context zeromq context that facilitates this stream
+     * @parame socket zeromq socket to psuh messages to
+     */
+    zmq_ostream(const p_zmq_context context,
+                const p_zmq_socket socket);
+
+    std::streamsize write(const char *s, std::streamsize n);
+    zmq::socket_t & socket() { return *socket_; }
+
+private:
+
+    // Need these since zmq contexts and sockets are not copy-constructable
+    const p_zmq_context context_;
+    const p_zmq_socket socket_;
+};
 }      /* namespace oat */
 #endif /* OAT_ZMQSTREAM_H */
 

@@ -36,7 +36,7 @@ class PGGigECam : public FrameServer {
 
 public:
     PGGigECam(const std::string &frame_sink_address, 
-              const size_t index
+              const size_t index,
               const double fps);
 
     // Use a configuration file to specify parameters

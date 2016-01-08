@@ -49,6 +49,10 @@ std::string save_path;
 bool allow_overwrite = false;
 bool prepend_timestamp = false;
 
+// ZMQ stream
+using zmq_istream_t = boost::iostreams::stream<oat::zmq_istream>;
+using zmq_ostream_t = boost::iostreams::stream<oat::zmq_ostream>;
+
 // Interactive commands
 bool recording_on = true;
 enum class ControlMode : int16_t
@@ -293,7 +297,7 @@ int main(int argc, char *argv[]) {
 
                 // Interact using stdin
                 oat::printInteractiveUsage(std::cout);
-                oat::controlRecorder(std::cin, *recorder);
+                oat::controlRecorder(std::cin, std::cout, *recorder, true);
 
                 // Interupt and join threads
                 cleanup(process);
@@ -308,13 +312,16 @@ int main(int argc, char *argv[]) {
                 // Start recording in background
                 std::thread process(run, std::ref(recorder));
 
-                // Interact using zmqsocket
-                oat::printRemoteUsage(std::cout);
                 try {
-                    boost::iostreams::stream<oat::zmq_istream> in(rpc_endpoint);
-                    oat::controlRecorder(in, *recorder);
+                    auto ctx = std::make_shared<zmq::context_t>(1);
+                    auto sock = std::make_shared<zmq::socket_t>(*ctx, ZMQ_REP);
+                    sock->bind(rpc_endpoint);
+                    zmq_istream_t in(ctx, sock);
+                    zmq_ostream_t out(ctx, sock);
+                    oat::printRemoteUsage(std::cout);
+                    oat::controlRecorder(in, out, *recorder, false);
                 } catch (const zmq::error_t &ex) {
-                    std::cerr << oat::whoError(recorder->name(), "zeromq error: " 
+                    std::cerr << oat::whoError(recorder->name(), "zeromq error: "
                             + std::string(ex.what())) << "\n";
                     cleanup(process);
                     return -1;
@@ -325,7 +332,7 @@ int main(int argc, char *argv[]) {
 
                 break;
             }
-         }
+        }
 
         // Tell user
         std::cout << oat::whoMessage(recorder->name(), "Exiting.\n");

@@ -26,7 +26,10 @@
 
 namespace oat {
 
-    int controlRecorder(std::istream &in, oat::Recorder &recorder, bool print_cmd=false);
+    int controlRecorder(std::istream &in, 
+                        std::ostream &out, 
+                        oat::Recorder &recorder, 
+                        bool pretty_cmd=false);
 
     void printInteractiveUsage(std::ostream &out);
     void printRemoteUsage(std::ostream &out);

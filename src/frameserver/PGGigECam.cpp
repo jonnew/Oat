@@ -40,7 +40,7 @@
 namespace oat {
 
 PGGigECam::PGGigECam(const std::string &frame_sink_address, 
-                     const size_t index
+                     const size_t index,
                      const double fps) :
   FrameServer(frame_sink_address)
 , index_(index)
@@ -804,8 +804,8 @@ void PGGigECam::connectToNode() {
 
     shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
 
-    // TODO: set sample rate
-    
+    shared_frame_.sample().set_rate_hz(frames_per_second);
+
     // Use the shared_frame_.data, which points to a block of shared memory as
     // rbg_image's data buffer. When changes are made to rgb_image, this is
     // automatically propagated into shmem and 'convered' into a cv::Mat

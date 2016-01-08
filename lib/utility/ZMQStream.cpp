@@ -26,13 +26,13 @@
 
 namespace oat {
 
-zmq_istream::zmq_istream(const std::string &endpoint) :
-  context_(std::make_shared<zmq::context_t>(1))
-, socket_(std::make_shared<zmq::socket_t>(*context_, ZMQ_SUB))
-, index_(buffer_.size())
+zmq_istream::zmq_istream(const p_zmq_context context,
+                         const p_zmq_socket socket) :
+  context_(context)
+, socket_(socket)
+//, index_(buffer_.size())
 {
-    socket_->connect(endpoint.c_str());
-    socket_->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+    // Nothing
 }
 
 std::streamsize zmq_istream::read(char *s, std::streamsize n) {
@@ -40,8 +40,9 @@ std::streamsize zmq_istream::read(char *s, std::streamsize n) {
     zmq::message_t message;
 
     if (socket_->recv(&message)) {
-
-        std::streamsize actual_n = std::min(n, static_cast<std::streamsize>(message.size()));
+        
+        std::streamsize actual_n = 
+            std::min(n, static_cast<std::streamsize>(message.size()));
         memcpy(s, static_cast<char *>(message.data()), actual_n);
         return actual_n;
 
@@ -51,5 +52,18 @@ std::streamsize zmq_istream::read(char *s, std::streamsize n) {
     }
 }
 
-} /* namespace oat */
+zmq_ostream::zmq_ostream(const p_zmq_context context,
+                         const p_zmq_socket socket) :
+  context_(context)
+, socket_(socket)
+{
+    // Nothing
+}
 
+std::streamsize zmq_ostream::write(const char *s, std::streamsize n) {
+
+    zmq::message_t message(n);
+    memcpy(static_cast<void *>(message.data()), s, n);
+    return socket_->send(message) ? n : -1;
+}
+} /* namespace oat */

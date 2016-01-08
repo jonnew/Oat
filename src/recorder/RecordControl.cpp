@@ -24,8 +24,9 @@
 namespace oat {
 
 int controlRecorder(std::istream &in,
+                    std::ostream &out,
                     oat::Recorder &recorder,
-                    bool print_cmd) {
+                    bool pretty_cmd) {
 
     // Command map
     std::unordered_map<std::string, char> cmd_map;
@@ -41,34 +42,37 @@ int controlRecorder(std::istream &in,
     bool quit = false;
 
     while (!quit) {
+        
+        if (pretty_cmd)
+            out << ">>> " << std::flush;
 
-        std::cout << ">>> " << std::flush;
         std::getline(in, cmd);
-
-        if (print_cmd)
-            std::cout << cmd << "\n";
 
         switch (cmd_map[cmd]) {
             case 'e' :
             {
                 quit = true;
+                out << "Received exit signal.";
+                out << std::endl;
                 break;
             }
             case 'h' :
             {
-                printInteractiveUsage(std::cout);
+                printInteractiveUsage(out);
+                out << std::endl;
                 break;
             }
             case 's' :
             {
                 recorder.set_record_on(true);
-                std::cout << "Recording ON.\n";
+                out << "Recording ON." << std::endl;
+                out.flush();
                 break;
             }
             case 'S' :
             {
                 recorder.set_record_on(false);
-                std::cout << "Recording OFF.\n";
+                out << "Recording OFF." << std::endl;
                 break;
             }
 //            case 'n' :
@@ -86,7 +90,9 @@ int controlRecorder(std::istream &in,
 //            }
             default :
             {
-                std::cout << "Invalid command \'" << cmd << "\'\n";
+                in.clear();
+                in.ignore(std::numeric_limits<std::streamsize>::max());
+                out << "Invalid command \'" << cmd << "\'" << std::endl;
                 break;
             }
         }
