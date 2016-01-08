@@ -1,5 +1,11 @@
 cmake_minimum_required (VERSION 2.8)
 
+# Project data
+project (Oat C CXX)
+
+# Internal version list
+set (VERSION_LIST "${GIT_BRANCH}.${GIT_COMMIT_HASH}")
+
 # Generate Oat version number: Major.Branch.Commit
 find_package (Git REQUIRED)
 
@@ -18,9 +24,6 @@ execute_process (
   OUTPUT_VARIABLE GIT_COMMIT_HASH
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-
-# Internal version list
-set (VERSION_LIST "${GIT_BRANCH}.${GIT_COMMIT_HASH}")
 
 # Set compiler options
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -63,12 +66,10 @@ message (STATUS "  Build documentation: ${BUILD_DOCS}")
 
 # Threads
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-if (UNIX_AND_NOT_APPLE)
-    set (Thread_LIBS Threads::Threads rt)
-else ()
-    set (Thread_LIBS Threads::Threads rt)
-endif ()
+find_package (Threads REQUIRED)
+if(CMAKE_THREAD_LIBS_INIT)
+    set (Thread_LIBS ${CMAKE_THREAD_LIBS_INIT} rt)
+endif()
 
 # Boost, minimum version 1.56 for type_index.hpp
 find_package (Boost 1.56.0 REQUIRED system thread program_options filesystem)
