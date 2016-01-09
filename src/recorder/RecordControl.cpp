@@ -33,7 +33,7 @@ int controlRecorder(std::istream &in,
     cmd_map["exit"] = 'e';
     cmd_map["help"] = 'h';
     cmd_map["start"] = 's';
-    cmd_map["stop"] = 'S';
+    cmd_map["pause"] = 'p';
     cmd_map["new"] = 'n';
     cmd_map["rename"] = 'r';
 
@@ -65,14 +65,14 @@ int controlRecorder(std::istream &in,
             case 's' :
             {
                 recorder.set_record_on(true);
-                out << "Recording ON." << std::endl;
+                out << "Recording STARTED." << std::endl;
                 out.flush();
                 break;
             }
-            case 'S' :
+            case 'p' :
             {
                 recorder.set_record_on(false);
-                out << "Recording OFF." << std::endl;
+                out << "Recording PAUSED." << std::endl;
                 break;
             }
 //            case 'n' :
@@ -108,8 +108,8 @@ void printInteractiveUsage(std::ostream &out) {
         << " help       Print this information.\n"
         << " start      Start recording. This will append and file if it\n"
         << "            already exists.\n"
-        << " stop       Pause recording. This will pause\n"
-        << "            recording and will not start a new file.\n"
+        << " pause      Pause recording. This will pause the recording\n"
+        << "            and without creating a new file.\n"
         //<< " new        Start new file. Start time will be used to create\n"
         //<< "            unique file name.\n"
         //<< " rename     Specify a new file location. User will be prompted\n"

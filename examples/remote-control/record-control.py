@@ -59,8 +59,8 @@ class Device(object):
 # Hard-coded devices along with appropriate commands. Add more or remove the ones you don't want
 DEVICES = [
     Device("Open Ephys", "tcp://localhost:5556", "", "StartRecord", "StopRecord", "NewFile",""),
-    Device("Oat", "tcp://localhost:5557", "help\n", "start\n", "stop\n", "new\n", "exit\n"),
-    Device("Maze", "tcp://localhost:5558", "help\n", "start\n", "stop\n", "new\n", "exit\n")
+    Device("Oat", "tcp://localhost:5557", "help\n", "start\n", "pause\n", "new\n", "exit\n"),
+    Device("Maze", "tcp://localhost:5558", "help", "pause", "stop", "new", "exit")
 ]
 
 
@@ -206,7 +206,9 @@ class RemoteControl(tk.Frame):
                 conn.device.sendStop()
 
     def makeNewFile(self):
-        print ("New file")
+        for i, conn in enumerate(self.connections):
+            if conn.device.is_connected:
+                conn.device.makeNewFile()
 
     def exitAll(self):
         for i, conn in enumerate(self.connections):

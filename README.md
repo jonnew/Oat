@@ -1315,7 +1315,7 @@ Configuration might be:
 - Subnet mask: 255.255.255.0
 - Default gateway: 192.168.0.64
 
-### Point Greg GigE Host Adapter Card Configuration
+### Point Grey GigE Host Adapter Card Configuration
 Using network manager or something similar, you must configure the IPv4
 configuration of the GigE host adapter card you are using to interface the
 camera with your computer.
@@ -1409,7 +1409,7 @@ RJ45 ------------
     - Subnet mask:   255.255.255.0
 - Camera Settings
     - Model:         Blackfly BFLY-PGE-09S2C
-
+    - Serial No.:    
     - IP:            192.168.1.1 (Static)
     - Subnet mask:   255.255.255.0
     - Default GW:    0.0.0.0
