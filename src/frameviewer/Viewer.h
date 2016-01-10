@@ -44,12 +44,11 @@ public:
     /**
      * View a frame stream on the monitor.
      */
-    Viewer(const std::string &frame_source_name,
-           const std::string &save_path);
+    Viewer(const std::string &frame_source_name);
 
     void connectToNode(void);
     bool showImage(void);
-    void generateSnapshotPath(void);
+    void storeSnapshotPath(const std::string &snapshot_path);
 
     // Accessors
     inline std::string name() const { return name_; }
@@ -75,8 +74,8 @@ private:
     Clock::time_point tick_, tock_;
 
     // Used to request a snapshot of the current image, saved to disk
-    std::string snapshot_path_;
-    std::string file_name_;
+    std::string snapshot_folder_;
+    std::string snapshot_base_file_;
     std::vector<int> compression_params_;
 
 

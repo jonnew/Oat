@@ -155,12 +155,12 @@ int main(int argc, char *argv[]) {
 
     // Create component
     std::shared_ptr<oat::Viewer> viewer =
-            std::make_shared<oat::Viewer>(source, snapshot_path);
+            std::make_shared<oat::Viewer>(source);
 
     try {
 
         // Create a path to save snapshots
-        viewer->generateSnapshotPath();
+        viewer->storeSnapshotPath(snapshot_path);
 
         // Tell user
         std::cout << oat::whoMessage(viewer->name(),

@@ -322,17 +322,17 @@ void Recorder::initializeRecording(const std::string &save_directory,
         }
 
         // Create a single position file
-        int err;
         std::string posi_fid;
         std::string base_fid = file_name.empty() ? position_sources_[0].first : file_name;
         base_fid += ".json";
 
-        if ((err = oat::createSavePath(posi_fid,
-                                       save_directory,
-                                       base_fid,
-                                       timestamp + "_",
-                                       prepend_timestamp,
-                                       allow_overwrite))) {
+        int err = oat::createSavePath(posi_fid,
+                                      save_directory,
+                                      base_fid,
+                                      timestamp + "_",
+                                      prepend_timestamp,
+                                      allow_overwrite);
+        if (err) {
             throw std::runtime_error("Recording file initialization exited "
                                      "with error " + std::to_string(err));
         }
@@ -380,17 +380,17 @@ void Recorder::initializeRecording(const std::string &save_directory,
 
             // Generate file name for this video
             // Create a single position file
-            int err;
             std::string frame_fid;
             std::string base_fid = file_name.empty() ? s.first : file_name;
             base_fid += ".avi";
 
-            if ((err = oat::createSavePath(frame_fid,
-                                           save_directory,
-                                           base_fid,
-                                           timestamp + "_",
-                                           prepend_timestamp,
-                                           allow_overwrite))) {
+            int err = oat::createSavePath(frame_fid,
+                                          save_directory,
+                                          base_fid,
+                                          timestamp + "_",
+                                          prepend_timestamp,
+                                          allow_overwrite);
+            if (err) {
                 throw std::runtime_error("Recording file initialization exited "
                                          "with error " + std::to_string(err));
             }

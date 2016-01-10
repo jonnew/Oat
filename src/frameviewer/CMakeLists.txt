@@ -6,7 +6,9 @@ set (oat-view_SOURCE Viewer.cpp main.cpp)
 
 # Target
 add_executable (oat-view ${oat-view_SOURCE})
-target_link_libraries (oat-view ${OatCommon_LIBS})
+target_link_libraries (oat-view
+                       oatutility
+                       ${OatCommon_LIBS})
 
 # Installation
 install (TARGETS oat-view DESTINATION ../../oat/libexec COMPONENT oat-processors)

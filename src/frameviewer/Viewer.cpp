@@ -27,6 +27,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/FileFormat.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/SharedFrameHeader.h"
 
@@ -41,18 +42,20 @@ using namespace boost::interprocess;
 constexpr Viewer::Milliseconds Viewer::MIN_UPDATE_PERIOD_MS;
 constexpr int Viewer::COMPRESSION_LEVEL;
 
-Viewer::Viewer(const std::string& frame_source_address,
-               const std::string& snapshot_path) :
+Viewer::Viewer(const std::string& frame_source_address) :
   name_("viewer[" + frame_source_address + "]")
 , frame_source_address_(frame_source_address)
-, snapshot_path_(snapshot_path)
 {
 
     // Initialize GUI update timers
     tick_ = Clock::now();
     tock_ = Clock::now();
 
-#ifdef HAVE_OPENGL 
+    // Snapshot encoding
+    compression_params_.push_back(CV_IMWRITE_PNG_COMPRESSION);
+    compression_params_.push_back(COMPRESSION_LEVEL);
+
+#ifdef HAVE_OPENGL
     try {
         cv::namedWindow(name_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
     } catch (cv::Exception& ex) {
@@ -67,7 +70,7 @@ Viewer::Viewer(const std::string& frame_source_address,
 
 void Viewer::connectToNode() {
 
-    // Establish our a slot in the node 
+    // Establish our a slot in the node
     frame_source_.touch(frame_source_address_);
 
     // Wait for sychronous start with sink when it binds the node
@@ -116,60 +119,44 @@ bool Viewer::showImage() {
     return false;
 }
 
-void Viewer::generateSnapshotPath() {
+void Viewer::storeSnapshotPath(const std::string &snapshot_path) {
 
-    // Snapshot file saving
+    bfs::path path(snapshot_path.c_str());
+
     // Check that the snapshot save folder is valid
-    bfs::path path(snapshot_path_.c_str());
     if (!bfs::exists(path.parent_path())) {
-        throw (std::runtime_error ("Requested snapshot save path, " +
-               snapshot_path_ + ", does not exist.\n"));
+        throw (std::runtime_error ("Requested snapshot save directory "
+                                   "does not exist.\n"));
     }
 
-    file_name_ = path.stem().string();
-    if (file_name_.empty())
-        file_name_ = frame_source_address_;
+    // Get folder from path
+    snapshot_folder_ = path.parent_path().string();
 
-    // Snapshot encoding
-    compression_params_.push_back(CV_IMWRITE_PNG_COMPRESSION);
-    compression_params_.push_back(COMPRESSION_LEVEL);
+    // Generate base file name
+    snapshot_base_file_ = path.stem().string();
+    if (snapshot_base_file_.empty() || snapshot_base_file_ == ".")
+        snapshot_base_file_ = frame_source_address_;
+
 }
 
 std::string Viewer::makeFileName() {
 
-    // Create file name
-    std::time_t raw_time;
-    struct tm * time_info;
-    char buffer[100];
-    std::time(&raw_time);
-    time_info = std::localtime(&raw_time);
-    std::strftime(buffer, 80, "%F-%H-%M-%S", time_info);
-    std::string date_now = std::string(buffer);
+    // Generate current snapshot save path
+    std::string fid;
+    std::string timestamp = oat::createTimeStamp();
 
-    // Generate file name for this snapshop
-    std::string folder = bfs::path(snapshot_path_.c_str()).parent_path().string();
-    std::string frame_fid = folder + "/" + date_now + "_" + file_name_ + ".png";
+    int err = oat::createSavePath(fid,
+                                 snapshot_folder_,
+                                 snapshot_base_file_ + ".png",
+                                 timestamp + "_" ,
+                                 true);
 
-    // Check for existence
-    int i = 0;
-    std::string file = frame_fid;
-
-    while (bfs::exists(file.c_str())) {
-
-        ++i;
-        bfs::path path(frame_fid.c_str());
-        bfs::path folder = path.parent_path();
-        bfs::path stem = path.stem();
-        bfs::path extension = path.extension();
-
-        std::string append = "_" + std::to_string(i);
-        stem += append.c_str();
-
-        // Recreate file name
-        file = folder.string() + "/" + stem.string() + "." + extension.string();
+    if (err) {
+        std::cerr << oat::Error("Snapshop file creation exited "
+                                "with error " + std::to_string(err) + "\n");
     }
 
-    return file;
+    return fid;
 }
 
 } /* namespace oat */

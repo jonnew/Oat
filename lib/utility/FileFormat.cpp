@@ -53,7 +53,7 @@ int createSavePath(std::string &save_path_result,
     if (!allow_overwrite)
        ensureUniquePath(save_path_result);
 
-    if (!checkWritePermission(base_file_name))
+    if (!checkWritePermission(save_path_result))
         return 2;
 
     return 0;
@@ -80,7 +80,6 @@ bool ensureUniquePath(std::string& file) {
 
     int i = 0;
     std::string original_file = file;
-    bool file_exists = false;
 
     while (bfs::exists(file.c_str())) {
 
@@ -94,18 +93,12 @@ bool ensureUniquePath(std::string& file) {
         stem += append.c_str();
 
         // Recreate file name
-        file = std::string(parent_path.generic_string()) +
-                "/" +
+        file = std::string(parent_path.generic_string()) + "/" +
                std::string(stem.generic_string()) +
                std::string(extension.generic_string());
-
     }
 
-    if (i != 0) {
-        file_exists = true;
-    }
-
-    return file_exists;
+    return (i != 0) ? true : false; 
 }
 
 bool checkWritePermission(const std::string &file_path) {
