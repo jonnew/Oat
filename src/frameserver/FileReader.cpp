@@ -76,11 +76,12 @@ bool FileReader::serveFrame() {
     file_reader_ >> shared_frame_;
     shared_frame_.sample().incrementCount();
 
-    // Crop if necessary
-    if (use_roi_)
-        shared_frame_ = shared_frame_(region_of_interest_);
-
     frame_empty_ = shared_frame_.empty();
+
+    // Crop if necessary
+    // TODO: Not functional...
+    if (use_roi_ && !frame_empty_)
+        shared_frame_ = shared_frame_(region_of_interest_);
 
     // Tell sources there is new data
     frame_sink_.post();
@@ -97,7 +98,7 @@ bool FileReader::serveFrame() {
 
 void FileReader::configure() { }
 
-void FileReader::configure(const std::string& config_file, 
+void FileReader::configure(const std::string& config_file,
                            const std::string& config_key) {
 
     // Available options

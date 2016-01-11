@@ -126,7 +126,7 @@ bool getValue(const Table table,
         if (table->get(key)->is_value()) {
 
             // Get value, check type
-            auto val = *table->get_as<T>(key);
+            auto val = *(table->get_as<T>(key));
             if (val < lower) {
                  throw (std::runtime_error("Configuration key '" + key +
                          "' specifies a value that is out of bounds.\n"));
@@ -149,10 +149,11 @@ bool getValue(const Table table,
 // Single bounded value type sanitization
 template <typename T>
 bool getValue(const Table table,
-        const std::string& key,
-        T& value, const T lower,
-        const T upper,
-        bool required = false) {
+              const std::string& key,
+              T& value, 
+              const T lower,
+              const T upper,
+              bool required = false) {
 
     // If the key is in the table,
     if (table->contains(key)) {
@@ -161,7 +162,7 @@ bool getValue(const Table table,
         if (table->get(key)->is_value()) {
 
             // Get value, check type
-            auto val = *table->get_as<T>(key);
+            auto val = *(table->get_as<T>(key));
             if (val < lower || val > upper) {
                 throw (std::runtime_error("Configuration key '" + key +
                         "' specifies a value that is out of bounds.\n"));
@@ -175,7 +176,8 @@ bool getValue(const Table table,
                     +  type_id_with_cvr<T>().pretty_name() +  ".\n"));
         }
     } else if (required) {
-         throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
+         throw (std::runtime_error("Required configuration value '" 
+                                    + key + "' was not specified.\n"));
     } else {
         return false;
     }

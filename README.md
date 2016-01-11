@@ -1493,6 +1493,7 @@ RJ45 ------------
       stateless detection. However, it would make the concept of position
       combining hard to define (although that is even true now is just a design
       choice, really).
+- [ ] Neither wcam or file ROI are functional. 
 - [ ] Colors
     - Should visual ID information (e.g. color) be integrated into the
       `position` type?

@@ -34,12 +34,13 @@ namespace oat {
 WebCam::WebCam(const std::string &frame_sink_name) :
   FrameServer(frame_sink_name)
 , index_(0)
-, cv_camera_(std::make_unique<cv::VideoCapture>(index_))
 {
     // Nothing
 }
 
 void WebCam::connectToNode() {
+
+    cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
 
     cv::Mat example_frame;
     *cv_camera_ >> example_frame;
@@ -65,11 +66,12 @@ bool WebCam::serveFrame() {
     *cv_camera_ >> shared_frame_;
     shared_frame_.sample().incrementCount();
 
-    // Crop if necessary
-    if (use_roi_)
-        shared_frame_ = shared_frame_(region_of_interest_);
-
     frame_empty_ = shared_frame_.empty();
+
+    // Crop if necessary
+    // TODO: Not functional...
+    if (use_roi_ && !frame_empty_)
+        shared_frame_ = shared_frame_(region_of_interest_);
 
     // Tell sources there is new data
     frame_sink_.post();
@@ -85,7 +87,7 @@ void WebCam::configure() { }
 void WebCam::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {"index"};
+    std::vector<std::string> options {"index", "roi"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -102,7 +104,7 @@ void WebCam::configure(const std::string& config_file, const std::string& config
 
         // Set the camera index
         oat::config::getValue(this_config, "index", index_, MIN_INDEX);
-        cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
+        //cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
 
         // Set the ROI
         oat::config::Table roi;
