@@ -90,7 +90,7 @@ __Contributors__
 
 \newpage
 ## Manual
-### Introduction
+## Introduction
 Oat's design is influenced by the [UNIX
 philosophy](https://en.wikipedia.org/wiki/Unix_philosophy), [suckless
 tools](http://suckless.org/philosophy), and
@@ -279,6 +279,8 @@ __TYPE = `gige`__
       trigger mode.
 - __`trigger_pin`__=`+int` Hardware pin number on Point-grey camera that
   trigger is sent to.
+- __`strobe_pin`__=`+int` Hardware pin number on Point-grey camera that
+  a gate signal for the camera shutter is copied  to.
 
 __TYPE = `file`__
 
@@ -1346,6 +1348,10 @@ camera with your computer.
 
         net.core.rmem_max=1048576
         net.core.rmem_default=1048576
+  
+  These settings can then be reloaded after reboot using
+       
+        sudo sysctl -p
 
 ### Multiple Cameras
 - If you have two or more cameras/host adapter cards,  they can be configured

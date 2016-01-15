@@ -35,11 +35,11 @@
 #include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
-#include "stdafx.h"
+//#include "stdafx.h"
 
 namespace oat {
 
-PGGigECam::PGGigECam(const std::string &frame_sink_address, 
+PGGigECam::PGGigECam(const std::string &frame_sink_address,
                      const size_t index,
                      const double fps) :
   FrameServer(frame_sink_address)
@@ -90,6 +90,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
                                       "trigger_rising",
                                       "trigger_mode",
                                       "trigger_pin",
+                                      "strobe_pin",
                                       "calibration_file" };
 
     // This will throw cpptoml::parse_exception if a file
@@ -219,9 +220,27 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
             else
                 use_software_trigger = false;
 
-            if (!oat::config::getValue(this_config, "trigger_source", trigger_source_pin))
+            if (!oat::config::getValue(this_config, 
+                                       "trigger_source", 
+                                        trigger_source_pin, 
+                                        (int64_t)0, 
+                                        (int64_t)1)) {
                 trigger_source_pin = 0;
+            }
         }
+
+        if (!oat::config::getValue(this_config, 
+                                   "strobe_pin", 
+                                    strobe_output_pin, 
+                                    (int64_t)0,
+                                    (int64_t)1)) {
+
+            strobe_output_pin = trigger_pin % 2;
+        }
+        
+
+        if (trigger_source_pin = strobe_pin)
+            throw runtime_error("Stobe pin must be different from trigger pin.")
 
         setupTrigger();
 
@@ -236,7 +255,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
 //            }
 //        }
 //
-//        setupCameraFrameBuffer();
+        setupCameraFrameBuffer();
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -306,7 +325,7 @@ int PGGigECam::setupStreamChannels() {
         // TODO: Make a more reasoned choice for these parameters based on the
         // number of cameras on the system...
         streamChannel.packetSize = 9000;
-        streamChannel.interPacketDelay = 1000;
+        streamChannel.interPacketDelay = 250;
 
         error = camera.SetGigEStreamChannelInfo(i, &streamChannel);
         if (error != pg::PGRERROR_OK) {
@@ -701,6 +720,15 @@ int PGGigECam::setupTrigger() {
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
+
+    // Use GPIO1 as strobe to indicate shutter open/close
+    pg::StrobeControl strobe;
+    strobe.source = strobe_output_pin;
+    strobe.onOff = true;
+    strobe.polarity = 1;
+    strobe.delay = 0.0f;
+    strobe.duration = 0.0f
+    cam.SetStrobe(&mStrobe);
 
     // Setup frame buffering
     pg::FC2Config flyCapConfig;

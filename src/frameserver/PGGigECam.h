@@ -72,6 +72,7 @@ private:
     double frames_per_second {30.0};
     bool use_camera_frame_buffer {false};
     unsigned int number_transmit_retries {0};
+    int64_t strobe_output_pin {1};
 
     // GigE Camera interface
     pg::GigECamera camera;
