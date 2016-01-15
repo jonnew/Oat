@@ -60,7 +60,7 @@ void PGGigECam::configure() {
     turnCameraOn();
     setupStreamChannels();
     setupFrameRate(frames_per_second, true);
-    setupExposure(true);
+    //setupExposure(true);
     setupShutter(true);
     setupGain(true);
     setupWhiteBalance(false);
@@ -79,7 +79,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
     // Available options
     std::vector<std::string> options {"index",
                                       "fps",
-                                      "exposure",
+                                      //"exposure",
                                       "shutter",
                                       "gain",
                                       "white_bal",
@@ -126,15 +126,15 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
             setupFrameRate(frames_per_second, true);
 
         // Set the exposure
-        {
-            double val;
-            if (oat::config::getValue(this_config, "exposure", val)) {
-                exposure_EV = val;
-                setupExposure(false);
-            } else {
-                setupExposure(true);
-            }
-        }
+//        {
+//            double val;
+//            if (oat::config::getValue(this_config, "exposure", val)) {
+//                exposure_EV = val;
+//                setupExposure(false);
+//            } else {
+//                setupExposure(true);
+//            }
+//        }
 
         // Set the shutter time
         {
@@ -235,12 +235,12 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
                                     (int64_t)0,
                                     (int64_t)1)) {
 
-            strobe_output_pin = trigger_pin % 2;
+            strobe_output_pin = trigger_source_pin % 2;
         }
         
 
-        if (trigger_source_pin = strobe_pin)
-            throw runtime_error("Stobe pin must be different from trigger pin.")
+        if (trigger_source_pin == strobe_output_pin)
+            throw std::runtime_error("Stobe pin must be different from trigger pin.");
 
         setupTrigger();
 
@@ -721,19 +721,24 @@ int PGGigECam::setupTrigger() {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    // Use GPIO1 as strobe to indicate shutter open/close
+    // Use GPIO as strobe to indicate shutter open/close
     pg::StrobeControl strobe;
     strobe.source = strobe_output_pin;
     strobe.onOff = true;
-    strobe.polarity = 1;
+    strobe.polarity = 0;
     strobe.delay = 0.0f;
-    strobe.duration = 0.0f
-    cam.SetStrobe(&mStrobe);
+    strobe.duration = 0.0f;
+
+    error = camera.SetStrobe(&strobe);
+    if (error != pg::PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
 
     // Setup frame buffering
     pg::FC2Config flyCapConfig;
     error = camera.GetConfiguration(&flyCapConfig);
-    flyCapConfig.grabMode = pg::DROP_FRAMES; // TODO: buffering??
+    flyCapConfig.grabTimeout = 10; 
+    flyCapConfig.grabMode = pg::BUFFER_FRAMES; // TODO: buffering??
     flyCapConfig.highPerformanceRetrieveBuffer = true;
     flyCapConfig.numBuffers = 10;
 
@@ -797,7 +802,11 @@ void PGGigECam::grabImage() {
     }
 #endif
 
-    pg::Error error = camera.RetrieveBuffer(&raw_image);
+    pg::Error error;
+    do {
+        error = camera.RetrieveBuffer(&raw_image);
+    } while  (error == pg::PGRERROR_TIMEOUT); // TODO: && !quit
+    
     if (error == pg::PGRERROR_IMAGE_CONSISTENCY_ERROR) {
         std::cerr << oat::Error("WARNING: torn image detected.\n");
     } else if (error != pg::PGRERROR_OK) {

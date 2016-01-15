@@ -130,7 +130,7 @@ inline void SinkBase<T>::post() {
 
 #ifndef NDEBUG
     // Flush to keep things in order
-    std::cout << address_ << " write number: " << node_->write_number() << std::endl;
+    std::cout << address_ << " completed write number: " << node_->write_number() - 1 << std::endl;
 #endif
 }
 
