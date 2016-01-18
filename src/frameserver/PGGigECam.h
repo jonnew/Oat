@@ -70,12 +70,17 @@ private:
     int64_t white_bal_red {0};
     int64_t white_bal_blue {0};
     double frames_per_second {30.0};
+    double frame_period;
     bool use_camera_frame_buffer {false};
     unsigned int number_transmit_retries {0};
     int64_t strobe_output_pin {1};
 
     // GigE Camera interface
     pg::GigECamera camera;
+
+    // Time between consecutive frames to make sure we are getting them in
+    // accordance with our sample clock
+    oat::Sample::Time tick_, tock_;
 
     // Camera and control state info
     pg::CameraInfo camera_info;
@@ -108,11 +113,12 @@ private:
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
     //int setupImageBinning(int xBinFactor, int yBinFactor);
     int setupTrigger(void);
+    int setupEmbeddedImageData(void); // TODO: Needed? It seems like each pg::Image has a timestamp anyway
 
     // Physical camera control
     int turnCameraOn(void);
     //TODO: int turnCameraOff(void);
-    void grabImage(void);
+    int grabImage(void);
 
     // Diagnostics and meta
     int findNumCameras(void);
