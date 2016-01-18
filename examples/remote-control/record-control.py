@@ -60,9 +60,8 @@ class Device(object):
 DEVICES = [
     Device("Open Ephys", "tcp://localhost:5556", "", "StartRecord", "StopRecord", "NewFile",""),
     Device("Oat", "tcp://localhost:5557", "help\n", "start\n", "pause\n", "new\n", "exit\n"),
-    Device("Maze", "tcp://localhost:5558", "help", "pause", "stop", "new", "exit")
+    Device("Maze", "tcp://localhost:5558", "help", "start", "pause", "new", "exit")
 ]
-
 
 # Generic remote connction for interacting with a single device
 class RemoteConnection(tk.Frame):
