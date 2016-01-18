@@ -45,6 +45,7 @@ PGGigECam::PGGigECam(const std::string &frame_sink_address,
   FrameServer(frame_sink_address)
 , index_(index)
 , frames_per_second(fps)
+, frame_period(1.0/fps)
 {
     // Find the number of cameras on the bus
     findNumCameras();
@@ -66,7 +67,8 @@ void PGGigECam::configure() {
     setupWhiteBalance(false);
     setupDefaultImageFormat();
     setupTrigger();
-    setupCameraFrameBuffer();
+    //setupCameraFrameBuffer();
+    setupEmbeddedImageData();
 }
 
 /**
@@ -235,12 +237,12 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
                                     (int64_t)0,
                                     (int64_t)1)) {
 
-            strobe_output_pin = trigger_pin % 2;
+            strobe_output_pin = trigger_source_pin % 2;
         }
         
 
-        if (trigger_source_pin = strobe_pin)
-            throw runtime_error("Stobe pin must be different from trigger pin.")
+        if (trigger_source_pin == strobe_output_pin)
+            throw std::runtime_error("Stobe pin must be different from trigger pin.");
 
         setupTrigger();
 
@@ -255,7 +257,10 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
 //            }
 //        }
 //
-        setupCameraFrameBuffer();
+        //setupCameraFrameBuffer();
+
+        
+        setupEmbeddedImageData();
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -576,15 +581,15 @@ int PGGigECam::setupImageFormat() {
 
     if (region_of_interest_.x > image_settings_info.maxWidth ||
             region_of_interest_.y > image_settings_info.maxHeight) {
-        throw (std::runtime_error("ROI pixel offsets are larger than the CCD array. Exiting.\n"));
+        throw (std::runtime_error("ROI pixel offsets are larger than the sensor array. Exiting.\n"));
     }
 
     if ((region_of_interest_.width + region_of_interest_.x) > image_settings_info.maxWidth) {
-        throw (std::runtime_error("Current X-axis ROI settings are off the CCD array\n"));
+        throw (std::runtime_error("Current X-axis ROI settings are off the sensor array\n"));
     }
 
     if ((region_of_interest_.height + region_of_interest_.y) > image_settings_info.maxHeight) {
-        throw (std::runtime_error("Current Y-axis ROI settings are off the CCD array\n"));
+        throw (std::runtime_error("Current Y-axis ROI settings are off the sensor array\n"));
     }
 
     pg::GigEImageSettings imageSettings;
@@ -721,14 +726,18 @@ int PGGigECam::setupTrigger() {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    // Use GPIO1 as strobe to indicate shutter open/close
+    // Use GPIO as strobe to indicate shutter open/close
     pg::StrobeControl strobe;
     strobe.source = strobe_output_pin;
     strobe.onOff = true;
     strobe.polarity = 1;
     strobe.delay = 0.0f;
-    strobe.duration = 0.0f
-    cam.SetStrobe(&mStrobe);
+    strobe.duration = 0.0f;
+
+    error = camera.SetStrobe(&strobe);
+    if (error != pg::PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
 
     // Setup frame buffering
     pg::FC2Config flyCapConfig;
@@ -778,6 +787,25 @@ int PGGigECam::setupTrigger() {
     return 0;
 }
 
+int PGGigECam::setupEmbeddedImageData() {
+
+    pg::EmbeddedImageInfo embeddedInfo;
+    pg::Error error = camera.GetEmbeddedImageInfo(&embeddedInfo);
+    if (error != pg::PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
+  
+    // For now, only inlcude timestamp
+    embeddedInfo.timestamp.onOff = true;
+
+    error = camera.SetEmbeddedImageInfo(&embeddedInfo);
+    if (error != pg::PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
+
+    return 0;
+}
+
 // TODO: event driven acquisition.
 //void PGGigECam::onGrabbedImage(Image* pImage, const void* pCallbackData) {
 //
@@ -789,7 +817,7 @@ int PGGigECam::setupTrigger() {
 
 // TODO: implement onboard buffer and perform retry a RetrieveBuffer
 // A single time if a torn image is detected.
-void PGGigECam::grabImage() {
+int PGGigECam::grabImage() {
 
 #ifndef NDEBUG
     if (!aquisition_started) {
@@ -805,6 +833,22 @@ void PGGigECam::grabImage() {
         std::cerr << oat::Error("WARNING: Point Grey capture errored with type "
                                 + std::to_string(error.GetType()) + "\n");
     }
+
+    // Get the embedded timestamp of the must current frame
+    const pg::TimeStamp ts = raw_image.GetTimeStamp();
+
+    // Convert to chrono::time_point
+    tock_ = tick_;
+    tick_ = oat::Sample::Clock::from_time_t(static_cast<time_t>(ts.seconds));
+    tick_ += oat::Sample::Microseconds(ts.microSeconds);
+  
+    // Calculate the delay since the last frame was aquired. 
+    double delay = std::chrono::duration_cast<oat::Sample::Seconds>(tick_ - tock_).count();
+
+    // Return the number of skipped frames. This should be 0, but PG cameras
+    // reject triggers on some occations and we need to fill in the blanks to
+    // prevent offsets...
+    return static_cast<int>(std::round(frame_period - delay));
 }
 
 
@@ -845,22 +889,25 @@ void PGGigECam::connectToNode() {
 
 bool PGGigECam::serveFrame() {
 
-    grabImage();
+    int retransmits = grabImage();
 
-    // START CRITICAL SECTION //
-    ////////////////////////////
+    for (int i = 0; i <= retransmits; i++) {
 
-    // Wait for sources to read
-    frame_sink_.wait();
+        // START CRITICAL SECTION //
+        ////////////////////////////
 
-    raw_image.Convert(pg::PIXEL_FORMAT_BGR, rgb_image.get());
-    shared_frame_.sample().incrementCount();
+        // Wait for sources to read
+        frame_sink_.wait();
 
-    // Tell sources there is new data
-    frame_sink_.post();
+        raw_image.Convert(pg::PIXEL_FORMAT_BGR, rgb_image.get());
+        shared_frame_.sample().incrementCount(tick_);
 
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
+        // Tell sources there is new data
+        frame_sink_.post();
+
+        ////////////////////////////
+        //  END CRITICAL SECTION  //
+    }
 
     return false;
 }
