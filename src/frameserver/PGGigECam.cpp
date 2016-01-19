@@ -68,7 +68,6 @@ void PGGigECam::configure() {
     setupTrigger();
     //setupCameraFrameBuffer();
     setupEmbeddedImageData();
-    getStartTime();
 }
 
 /**
@@ -222,24 +221,24 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
             else
                 use_software_trigger = false;
 
-            if (!oat::config::getValue(this_config, 
-                                       "trigger_source", 
-                                        trigger_source_pin, 
-                                        (int64_t)0, 
+            if (!oat::config::getValue(this_config,
+                                       "trigger_source",
+                                        trigger_source_pin,
+                                        (int64_t)0,
                                         (int64_t)1)) {
                 trigger_source_pin = 0;
             }
         }
 
-        if (!oat::config::getValue(this_config, 
-                                   "strobe_pin", 
-                                    strobe_output_pin, 
+        if (!oat::config::getValue(this_config,
+                                   "strobe_pin",
+                                    strobe_output_pin,
                                     (int64_t)0,
                                     (int64_t)1)) {
 
             strobe_output_pin = trigger_source_pin % 2;
         }
-        
+
 
         if (trigger_source_pin == strobe_output_pin)
             throw std::runtime_error("Stobe pin must be different from trigger pin.");
@@ -259,9 +258,8 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
 //
         setupCameraFrameBuffer();
 
-        
+
         setupEmbeddedImageData();
-        getStartTime();
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -743,7 +741,7 @@ int PGGigECam::setupTrigger() {
     // Setup frame buffering
     pg::FC2Config flyCapConfig;
     error = camera.GetConfiguration(&flyCapConfig);
-    flyCapConfig.grabTimeout = 10; 
+    flyCapConfig.grabTimeout = 10;
     flyCapConfig.grabMode = pg::BUFFER_FRAMES; // TODO: buffering??
     flyCapConfig.highPerformanceRetrieveBuffer = true;
     flyCapConfig.numBuffers = 10;
@@ -796,7 +794,7 @@ int PGGigECam::setupEmbeddedImageData() {
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
-  
+
     // For now, only inlcude timestamp
     embeddedInfo.timestamp.onOff = true;
 
@@ -805,12 +803,6 @@ int PGGigECam::setupEmbeddedImageData() {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    return 0;
-}
-
-int PGGigECam::getStartTime() {
-
-    frame_time_ = oat::Sample::Clock::now();
     return 0;
 }
 
@@ -837,7 +829,7 @@ int PGGigECam::grabImage() {
     do {
         error = camera.RetrieveBuffer(&raw_image);
     } while  (error == pg::PGRERROR_TIMEOUT); // TODO: && !quit
-    
+
     if (error == pg::PGRERROR_IMAGE_CONSISTENCY_ERROR) {
         std::cerr << oat::Error("WARNING: torn image detected.\n");
     } else if (error != pg::PGRERROR_OK) {
@@ -846,42 +838,51 @@ int PGGigECam::grabImage() {
                                 + std::to_string(error.GetType()) + "\n");
     }
 
+    // If this is the first frame, get a start time
+    if (first_frame_)
+        timestamp_ = oat::Sample::Clock::now();
+
     // Get the embedded timestamp of the must current frame
     const pg::TimeStamp ts = raw_image.GetTimeStamp();
-    
-    if (!ieee_1394_start_set) {
-        ieee_1394_start_cycle = ts.cycleSeconds * IEEE_1394_HZ + ts.cycleCount ;
-        ieee_1394_start_set = true;
+
+    if (!ieee_1394_start_set_) {
+        ieee_1394_start_cycle_ = ts.cycleSeconds * IEEE_1394_HZ + ts.cycleCount ;
+        ieee_1394_start_set_ = true;
     }
-    
-    uint64_t total_ieee_1394_cycles = 
+
+    uint64_t total_ieee_1394_cycles =
         uncycle1394Timestamp(ts.cycleSeconds, ts.cycleCount);
 
     // Convert to chrono::time_point
     tock_ = tick_;
     tick_ = oat::Sample::IEEE1394Tick(total_ieee_1394_cycles);
-  
-    // Calculate the delay since the last frame was acquired. 
-    double delay = (tick_ - tock_).count();
 
-    // Return the number of skipped frames. This should be 0, but PG cameras
-    // reject triggers on some occations and we need to fill in the blanks to
-    // prevent offsets...
-    return first_frame_ ? 0 : static_cast<int>(std::round(frames_per_second * delay  - 1.0));
+    // Calculate the delay since the last frame was acquired.
+    float delay = (tick_ - tock_).count();
+
+    if (first_frame_) {
+        first_frame_ = false;
+        return 0;
+    } else {
+        // Return the number of skipped frames. This should be 0, but PG cameras
+        // reject triggers on some occations and we need to fill in the blanks to
+        // prevent offsets...
+        return static_cast<int>(std::round(frames_per_second * delay  - 1.0));
+    }
 }
 
 
-uint64_t PGGigECam::uncycle1394Timestamp(int ieee_1394_sec, 
+uint64_t PGGigECam::uncycle1394Timestamp(int ieee_1394_sec,
                                          int ieee_1394_cycle) {
-    
+
     if (ieee_1394_sec - last_ieee_1394_sec_ < 0)
-        ieee_1394_cycle_index++;
-    
+        ieee_1394_cycle_index_++;
+
     last_ieee_1394_sec_ = ieee_1394_sec;
-    
-    return (uint64_t)(ieee_1394_cycle_index * 128 + ieee_1394_sec) * IEEE_1394_HZ 
-           + ieee_1394_cycle 
-           - ieee_1394_start_cycle;
+
+    return (uint64_t)(ieee_1394_cycle_index_ * 128 + ieee_1394_sec) * IEEE_1394_HZ
+           + ieee_1394_cycle
+           - ieee_1394_start_cycle_;
 }
 
 void PGGigECam::connectToNode() {
@@ -922,11 +923,16 @@ void PGGigECam::connectToNode() {
 bool PGGigECam::serveFrame() {
 
     int retransmits = grabImage();
-    
-    if (first_frame_)
-        first_frame_ = false;
-    
-    for (int i = 0; i <= retransmits; i++) {
+    int i = 0;
+
+#ifndef NDEBUG
+    if (retransmits != 0) {
+        oat::Warn("Frame re-transmission due to " +
+                   std::to_string(retransmits) + " skipped triggers.");
+    }
+#endif
+
+    do {
 
         // START CRITICAL SECTION //
         ////////////////////////////
@@ -935,14 +941,15 @@ bool PGGigECam::serveFrame() {
         frame_sink_.wait();
 
         raw_image.Convert(pg::PIXEL_FORMAT_BGR, rgb_image.get());
-        shared_frame_.sample().incrementCount(frame_time_ += tick_);
+        shared_frame_.sample().incrementCount(timestamp_ += tick_);
 
         // Tell sources there is new data
         frame_sink_.post();
 
         ////////////////////////////
         //  END CRITICAL SECTION  //
-    }
+
+    } while (i++ < retransmits);
 
     return false;
 }

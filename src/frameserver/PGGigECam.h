@@ -53,14 +53,13 @@ private:
 
     // Timing stuff
     static constexpr uint64_t IEEE_1394_HZ = {8000};
-    uint64_t ieee_1394_cycle_index {0};
-    uint64_t ieee_1394_start_cycle {0};
-    bool ieee_1394_start_set {false};
+    uint64_t ieee_1394_cycle_index_ {0};
+    uint64_t ieee_1394_start_cycle_ {0};
+    bool ieee_1394_start_set_ {false};
     int last_ieee_1394_sec_ {0};
     bool first_frame_ {true};
     
-    //using IEEE1394Tick = std::chrono::duration<double, std::ratio<1, 8000>>;
-    oat::Sample::Time frame_time_;
+    oat::Sample::Time timestamp_;
     oat::Sample::Second tick_, tock_;
     
     // GigE Camera configuration
@@ -83,7 +82,7 @@ private:
     int64_t white_bal_blue {0};
     double frames_per_second {30.0};
     bool use_camera_frame_buffer {false};
-    unsigned int number_transmit_retries {0};
+    //unsigned int number_transmit_retries {0};
     int64_t strobe_output_pin {1};
 
     // GigE Camera interface
@@ -123,7 +122,6 @@ private:
     int setupEmbeddedImageData(void); // TODO: Needed? It seems like each pg::Image has a timestamp anyway
 
     // IEEE 1394 ime stamp uncycling
-    int getStartTime(void);
     uint64_t uncycle1394Timestamp(int ieee_1394_sec, 
                                   int ieee_1394_cycle);
     
