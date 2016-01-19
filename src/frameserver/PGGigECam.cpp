@@ -91,6 +91,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
                                       "trigger_rising",
                                       "trigger_mode",
                                       "trigger_pin",
+                                      "enforce_fps",
                                       "strobe_pin",
                                       "calibration_file" };
 
@@ -126,7 +127,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         else
             setupFrameRate(frames_per_second, true);
 
-        // Set the exposure
+//        // Set the exposure
 //        {
 //            double val;
 //            if (oat::config::getValue(this_config, "exposure", val)) {
@@ -236,7 +237,10 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
                                     (int64_t)0,
                                     (int64_t)1)) {
 
-            strobe_output_pin = trigger_source_pin % 2;
+            if (trigger_source_pin) 
+                strobe_output_pin = 0;
+            else
+                strobe_output_pin = 1;
         }
 
 
@@ -256,9 +260,13 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
 //            }
 //        }
 //
-        setupCameraFrameBuffer();
+//        setupCameraFrameBuffer();
 
-
+        // Should the FPS setting be enforced by retransmitting frames in the
+        // case of dropped triggers
+        oat::config::getValue(this_config, "enforce_fps", enforce_fps_);
+            
+        // Embed timestamp with frames 
         setupEmbeddedImageData();
 
     } else {
@@ -729,7 +737,7 @@ int PGGigECam::setupTrigger() {
     pg::StrobeControl strobe;
     strobe.source = strobe_output_pin;
     strobe.onOff = true;
-    strobe.polarity = 0;
+    strobe.polarity = 1;
     strobe.delay = 0.0f;
     strobe.duration = 0.0f;
 
@@ -739,10 +747,13 @@ int PGGigECam::setupTrigger() {
     }
 
     // Setup frame buffering
+    // NOTE: For some reason grabMode = pg::BUFFER_FRAMES does not play nicely with
+    //       the time-stamp correction for dropped triggers. I have yet to understand
+    //       why.
     pg::FC2Config flyCapConfig;
     error = camera.GetConfiguration(&flyCapConfig);
     flyCapConfig.grabTimeout = 10;
-    flyCapConfig.grabMode = pg::BUFFER_FRAMES; // TODO: buffering??
+    flyCapConfig.grabMode = pg::DROP_FRAMES; 
     flyCapConfig.highPerformanceRetrieveBuffer = true;
     flyCapConfig.numBuffers = 10;
 
@@ -839,8 +850,10 @@ int PGGigECam::grabImage() {
     }
 
     // If this is the first frame, get a start time
-    if (first_frame_)
-        timestamp_ = oat::Sample::Clock::now();
+//    if (first_frame_)
+//        timestamp_ = std::chrono::duration_cast<oat::Sample::Milliseconds> (
+//                    oat::Sample::Clock::now().time_since_epoch().count()
+//                );
 
     // Get the embedded timestamp of the must current frame
     const pg::TimeStamp ts = raw_image.GetTimeStamp();
@@ -855,19 +868,21 @@ int PGGigECam::grabImage() {
 
     // Convert to chrono::time_point
     tock_ = tick_;
-    tick_ = oat::Sample::IEEE1394Tick(total_ieee_1394_cycles);
+    tick_ = std::chrono::duration_cast<oat::Sample::Microseconds> (
+                oat::Sample::IEEE1394Tick(total_ieee_1394_cycles)
+            );
 
     // Calculate the delay since the last frame was acquired.
-    float delay = (tick_ - tock_).count();
+    double delay = (double)((tick_ - tock_).count()) / 1.0e6;;
 
-    if (first_frame_) {
+    if (first_frame_ || !enforce_fps_) {
         first_frame_ = false;
         return 0;
     } else {
         // Return the number of skipped frames. This should be 0, but PG cameras
         // reject triggers on some occations and we need to fill in the blanks to
         // prevent offsets...
-        return static_cast<int>(std::round(frames_per_second * delay  - 1.0));
+        return (int)(std::round(frames_per_second * delay  - 1.0));
     }
 }
 
@@ -927,8 +942,9 @@ bool PGGigECam::serveFrame() {
 
 #ifndef NDEBUG
     if (retransmits != 0) {
-        oat::Warn("Frame re-transmission due to " +
-                   std::to_string(retransmits) + " skipped triggers.");
+        std::cerr << oat::Warn("Frame re-transmission due to " +
+                               std::to_string(retransmits) + 
+                               " skipped trigger(s).\n");
     }
 #endif
 
@@ -941,7 +957,7 @@ bool PGGigECam::serveFrame() {
         frame_sink_.wait();
 
         raw_image.Convert(pg::PIXEL_FORMAT_BGR, rgb_image.get());
-        shared_frame_.sample().incrementCount(timestamp_ += tick_);
+        shared_frame_.sample().incrementCount(tick_);
 
         // Tell sources there is new data
         frame_sink_.post();

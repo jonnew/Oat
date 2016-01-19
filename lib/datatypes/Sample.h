@@ -35,9 +35,9 @@ class Sample {
 
 public:
 
-    using Clock = std::chrono::system_clock;
-    using Second = std::chrono::duration<double>;
-    using Time = std::chrono::time_point<Clock, Second>;
+    //using Clock = std::chrono::system_clock;
+    using Microseconds = std::chrono::microseconds; //duration<int64_t, std::micro>;
+    //using Time = std::chrono::time_point<Clock, Milliseconds>;
     using IEEE1394Tick = std::chrono::duration<float, std::ratio<1,8000>>;
 
     Sample() 
@@ -59,12 +59,11 @@ public:
 
     // Only pure SINKs should increment the count, set the sample rates, periods, etc
     uint64_t incrementCount() { 
-        wall_time_ = Clock::now();
         return ++count_; 
     }
 
-    uint64_t incrementCount(const Time timestamp) { 
-        wall_time_ = timestamp; 
+    uint64_t incrementCount(const Microseconds usec) { 
+        microseconds_ = usec; 
         return ++count_; 
     }
 
@@ -79,15 +78,15 @@ public:
     }
 
     uint64_t count() const { return count_; }
-    Time wall_time() const { return wall_time_; }
+    Microseconds microseconds() const { return microseconds_; }
     double period_sec() const { return period_sec_; }
     double rate_hz() const { return 1.0 / period_sec_; }
     
 private:
 
     uint64_t count_ {0};
-    Clock wall_clock_;
-    Time wall_time_;
+    //Clock wall_clock_;
+    Microseconds microseconds_;
     double period_sec_ {-1.0};
     double rate_hz_ {-1.0};
 

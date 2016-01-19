@@ -21,8 +21,10 @@ trigger_rising = true			# Rising edge active if true. Falling edge active if fal
 trigger_mode = 14			#   14 = Overlapped Exposure/Readout Mode (see Camera manual)
 					#   7  = Software trigger
 trigger_pin = 0                         # GPIO pin that trigger will be sent to
-
-calibration_file = "calibration.yml" 	# Camera matrix, distortion coefficients for lens correction
+enforce_fps = false                     # Ensure that frames are produced at the fps setting by retransmitting frames 
+                                        # if the requested period is exceeded. This is needed in the case of an external
+                                        # trigger because PG cameras sometimes just ignore them. I have opened a support
+                                        # ticket on this, but PG has no solution yet.
 
 [file]
 frame_rate = 100.0                       # Hz

@@ -62,6 +62,9 @@ public:
         // Sample number
         writer.String("samp");
         writer.Int(sample_.count());
+        
+        writer.String("usec");
+        writer.Int64(sample_.microseconds().count());
 
         // Coordinate system
         writer.String("unit");

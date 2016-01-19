@@ -52,6 +52,7 @@ public:
 private:
 
     // Timing stuff
+    bool enforce_fps_;
     static constexpr uint64_t IEEE_1394_HZ = {8000};
     uint64_t ieee_1394_cycle_index_ {0};
     uint64_t ieee_1394_start_cycle_ {0};
@@ -59,8 +60,8 @@ private:
     int last_ieee_1394_sec_ {0};
     bool first_frame_ {true};
     
-    oat::Sample::Time timestamp_;
-    oat::Sample::Second tick_, tock_;
+    //oat::Sample::Time timestamp_;
+    oat::Sample::Microseconds tick_, tock_;
     
     // GigE Camera configuration
     unsigned int num_cameras;
