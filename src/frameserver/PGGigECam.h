@@ -26,6 +26,8 @@
 
 #include "FlyCapture2.h"
 
+#include "../../lib/datatypes/Sample.h"
+
 #include "FrameServer.h"
 
 namespace oat {
@@ -49,10 +51,20 @@ public:
 
 private:
 
-    unsigned int num_cameras;
-
+    // Timing stuff
+    static constexpr uint64_t IEEE_1394_HZ = {8000};
+    uint64_t ieee_1394_cycle_index {0};
+    uint64_t ieee_1394_start_cycle {0};
+    bool ieee_1394_start_set {false};
+    int last_ieee_1394_sec_ {0};
+    bool first_frame_ {true};
+    
+    //using IEEE1394Tick = std::chrono::duration<double, std::ratio<1, 8000>>;
+    oat::Sample::Time frame_time_;
+    oat::Sample::Second tick_, tock_;
+    
     // GigE Camera configuration
-    static constexpr int64_t min_index {0};
+    unsigned int num_cameras;
     int64_t max_index {0};
     size_t index_;
 
@@ -70,17 +82,12 @@ private:
     int64_t white_bal_red {0};
     int64_t white_bal_blue {0};
     double frames_per_second {30.0};
-    double frame_period;
     bool use_camera_frame_buffer {false};
     unsigned int number_transmit_retries {0};
     int64_t strobe_output_pin {1};
 
     // GigE Camera interface
     pg::GigECamera camera;
-
-    // Time between consecutive frames to make sure we are getting them in
-    // accordance with our sample clock
-    oat::Sample::Time tick_, tock_;
 
     // Camera and control state info
     pg::CameraInfo camera_info;
@@ -115,6 +122,11 @@ private:
     int setupTrigger(void);
     int setupEmbeddedImageData(void); // TODO: Needed? It seems like each pg::Image has a timestamp anyway
 
+    // IEEE 1394 ime stamp uncycling
+    int getStartTime(void);
+    uint64_t uncycle1394Timestamp(int ieee_1394_sec, 
+                                  int ieee_1394_cycle);
+    
     // Physical camera control
     int turnCameraOn(void);
     //TODO: int turnCameraOff(void);

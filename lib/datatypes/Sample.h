@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <ratio>
 
 #include <opencv2/core/mat.hpp>
 
@@ -35,9 +36,9 @@ class Sample {
 public:
 
     using Clock = std::chrono::system_clock;
-    using Time = std::chrono::time_point<Clock>;
-    using Microseconds = std::chrono::microseconds;
-    using Seconds = std::chrono::seconds;
+    using Second = std::chrono::duration<double>;
+    using Time = std::chrono::time_point<Clock, Second>;
+    using IEEE1394Tick = std::chrono::duration<float, std::ratio<1,8000>>;
 
     Sample() 
     {

@@ -45,7 +45,6 @@ PGGigECam::PGGigECam(const std::string &frame_sink_address,
   FrameServer(frame_sink_address)
 , index_(index)
 , frames_per_second(fps)
-, frame_period(1.0/fps)
 {
     // Find the number of cameras on the bus
     findNumCameras();
@@ -69,6 +68,7 @@ void PGGigECam::configure() {
     setupTrigger();
     //setupCameraFrameBuffer();
     setupEmbeddedImageData();
+    getStartTime();
 }
 
 /**
@@ -111,7 +111,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         // Camera index
         {
             int64_t val;
-            if (oat::config::getValue(this_config, "index", val, min_index, max_index)) {
+            if (oat::config::getValue(this_config, "index", val, (int64_t)0, max_index)) {
                 index_ = val;
             }
         }
@@ -257,10 +257,11 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
 //            }
 //        }
 //
-        //setupCameraFrameBuffer();
+        setupCameraFrameBuffer();
 
         
         setupEmbeddedImageData();
+        getStartTime();
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -807,6 +808,12 @@ int PGGigECam::setupEmbeddedImageData() {
     return 0;
 }
 
+int PGGigECam::getStartTime() {
+
+    frame_time_ = oat::Sample::Clock::now();
+    return 0;
+}
+
 // TODO: event driven acquisition.
 //void PGGigECam::onGrabbedImage(Image* pImage, const void* pCallbackData) {
 //
@@ -841,21 +848,41 @@ int PGGigECam::grabImage() {
 
     // Get the embedded timestamp of the must current frame
     const pg::TimeStamp ts = raw_image.GetTimeStamp();
+    
+    if (!ieee_1394_start_set) {
+        ieee_1394_start_cycle = ts.cycleSeconds * IEEE_1394_HZ + ts.cycleCount ;
+        ieee_1394_start_set = true;
+    }
+    
+    uint64_t total_ieee_1394_cycles = 
+        uncycle1394Timestamp(ts.cycleSeconds, ts.cycleCount);
 
     // Convert to chrono::time_point
     tock_ = tick_;
-    tick_ = oat::Sample::Clock::from_time_t(static_cast<time_t>(ts.seconds));
-    tick_ += oat::Sample::Microseconds(ts.microSeconds);
+    tick_ = oat::Sample::IEEE1394Tick(total_ieee_1394_cycles);
   
-    // Calculate the delay since the last frame was aquired. 
-    double delay = std::chrono::duration_cast<oat::Sample::Seconds>(tick_ - tock_).count();
+    // Calculate the delay since the last frame was acquired. 
+    double delay = (tick_ - tock_).count();
 
     // Return the number of skipped frames. This should be 0, but PG cameras
     // reject triggers on some occations and we need to fill in the blanks to
     // prevent offsets...
-    return static_cast<int>(std::round(frame_period - delay));
+    return first_frame_ ? 0 : static_cast<int>(std::round(frames_per_second * delay  - 1.0));
 }
 
+
+uint64_t PGGigECam::uncycle1394Timestamp(int ieee_1394_sec, 
+                                         int ieee_1394_cycle) {
+    
+    if (ieee_1394_sec - last_ieee_1394_sec_ < 0)
+        ieee_1394_cycle_index++;
+    
+    last_ieee_1394_sec_ = ieee_1394_sec;
+    
+    return (uint64_t)(ieee_1394_cycle_index * 128 + ieee_1394_sec) * IEEE_1394_HZ 
+           + ieee_1394_cycle 
+           - ieee_1394_start_cycle;
+}
 
 void PGGigECam::connectToNode() {
 
@@ -895,7 +922,10 @@ void PGGigECam::connectToNode() {
 bool PGGigECam::serveFrame() {
 
     int retransmits = grabImage();
-
+    
+    if (first_frame_)
+        first_frame_ = false;
+    
     for (int i = 0; i <= retransmits; i++) {
 
         // START CRITICAL SECTION //
@@ -905,7 +935,7 @@ bool PGGigECam::serveFrame() {
         frame_sink_.wait();
 
         raw_image.Convert(pg::PIXEL_FORMAT_BGR, rgb_image.get());
-        shared_frame_.sample().incrementCount(tick_);
+        shared_frame_.sample().incrementCount(frame_time_ += tick_);
 
         // Tell sources there is new data
         frame_sink_.post();
