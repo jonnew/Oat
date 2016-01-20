@@ -60,7 +60,6 @@ private:
     int last_ieee_1394_sec_ {0};
     bool first_frame_ {true};
     
-    //oat::Sample::Time timestamp_;
     oat::Sample::Microseconds tick_, tock_;
     
     // GigE Camera configuration

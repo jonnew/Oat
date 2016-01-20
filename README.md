@@ -281,6 +281,7 @@ __TYPE = `gige`__
   trigger is sent to.
 - __`strobe_pin`__=`+int` Hardware pin number on Point-grey camera that
   a gate signal for the camera shutter is copied  to.
+- __`enforce_fps`__=`bool`If true, ensures that frames are produced at the `fps` setting by retransmitting frames if the requested period is exceeded. This is sometimes needed in the case of an external trigger because PG cameras sometimes just ignore them. I have opened a support ticket on this, but PG has no solution yet.
 
 __TYPE = `file`__
 
