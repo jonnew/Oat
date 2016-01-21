@@ -27,6 +27,7 @@
 
 
 #include "PositionSocket.h"
+#include "PositionPublisher.h"
 #include "UDPPositionClient.h"
 #include "UDPPositionServer.h"
 
@@ -40,6 +41,8 @@ void printUsage(po::options_description options) {
               << "   or: posisock TYPE SOURCE [CONFIGURATION]\n"
               << "Send positions from SOURCE to a remote endpoint.\n\n"
               << "TYPE\n"
+              << "  pub: Asychronous position publisher.\n\n"
+              << "  rep: Sychronous position replier.\n\n"
               << "  udp: User datagram protocol.\n\n"
               << options << "\n";
 }
@@ -81,6 +84,8 @@ int main(int argc, char *argv[]) {
 
     std::unordered_map<std::string, char> type_hash;
     type_hash["udp"] = 'a';
+    type_hash["pub"] = 'b';
+    type_hash["rep"] = 'c';
 
     try {
 
@@ -92,7 +97,7 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
-                ("host,h", po::value<std::string>(&host), "Remote host to send positions to.")
+                ("host,e", po::value<std::string>(&host), "Endpoint to send positions to.")
                 ("port,p", po::value<unsigned short>(&port), "Port on which to send positions.")
                 ("server", "Server-side socket sychronization. "
                            "Position data packets are sent whenever requested "
@@ -186,6 +191,16 @@ int main(int argc, char *argv[]) {
                     socket = std::make_shared<oat::UDPPositionClient>(source, host, port);
                 break;
             }
+            case 'b':
+            {
+                socket = std::make_shared<oat::PositionPublisher>(source, host);
+                break;
+            }
+            //case 'c':
+            //{
+            //    socket = std::make_shared<oat::PositionReplier>(source, host);
+            //    break;
+            //}
             default:
             {
                 printUsage(visible_options);
@@ -200,6 +215,7 @@ int main(int argc, char *argv[]) {
                 << oat::whoMessage(socket->name(),
                 "Press CTRL+C to exit.\n");
 
+
         // Infinite loop until ctrl-c or server end-of-stream signal
         run(socket);
 
@@ -209,14 +225,19 @@ int main(int argc, char *argv[]) {
         // Exit
         return 0;
 
-    } catch (const std::runtime_error& ex) {
-        std::cerr << oat::whoError(socket->name(),ex.what())
-                  << "\n";
-    } catch (const cv::Exception& ex) {
-        std::cerr << oat::whoError(socket->name(), ex.what())
-                  << "\n";
+    // TODO: for some reason, socket->name() is uninitialize when we reach
+    // these catch statements, so this will segfault if we try to do
+    // oat::whoError(socket->name(), ...)
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::Error(ex.what()) << "\n";
+    } catch (const zmq::error_t &ex) {
+        std::cerr << oat::whoError("zeromq: ", ex.what()) << "\n";
+    } catch (const cv::Exception &ex) {
+        std::cerr << oat::Error(ex.what()) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::Error(ex.what()) << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(socket->name(), "Unknown exception.\n");
+        std::cerr << oat::Error("Unknown exception.\n");
     }
 
     // Exit failure

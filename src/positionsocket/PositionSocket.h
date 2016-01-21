@@ -21,6 +21,7 @@
 #define	OAT_POSITIONSERVER_H
 
 #include <string>
+#include <zmq.hpp>
 #include <boost/asio.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
@@ -67,9 +68,12 @@ protected:
     // IO service
     boost::asio::io_service io_service_;
 
+    // ZMQ context and socket
+    zmq::context_t context_ {1};
+
 private:
 
-    // Test position name
+    // Position Socket name
     const std::string name_;
 
     // The position SOURCE
