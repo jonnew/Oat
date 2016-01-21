@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   UDPClient.h
+//* File:   PositionReplier.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,15 +17,12 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OAT_UDPCLIENT_H
-#define	OAT_UDPCLIENT_H
+#ifndef OAT_POSITIONREPLIER_H
+#define OAT_POSITIONREPLIER_H
 
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/ip/udp.hpp>
+#include <string>
+#include <zmq.hpp>
 
-#include <rapidjson/rapidjson.h>
-
-#include "SocketWriteStream.h"
 #include "PositionSocket.h"
 
 namespace oat {
@@ -33,31 +30,19 @@ namespace oat {
 // Forward decl.
 class Position2D;
 
-class UDPPositionClient : public PositionSocket {
-
-    using UDPSocket = boost::asio::ip::udp::socket;
-    using UDPEndpoint = boost::asio::ip::udp::endpoint;
-    using UDPResolver = boost::asio::ip::udp::resolver;
-
+class PositionReplier : public PositionSocket {
 public:
-    // TODO: What if user requests port less than 1000 without sudo?
-    UDPPositionClient(const std::string& position_source_name,
-              const std::string& host,
-              const std::string& port);
+    PositionReplier(const std::string &position_source_address,
+                    const std::string &endpoint);
 
 private:
 
-    // Custom RapidJSON UDP stream
-    static const size_t MAX_LENGTH {65507}; // max udp buffer size
-    char buffer_[MAX_LENGTH]; // Buffer is flushed after each position read
-
-    UDPSocket socket_;
-    std::unique_ptr < rapidjson::SocketWriteStream
-                    < UDPSocket, UDPEndpoint > > udp_stream_;
+    // REP socket
+    zmq::socket_t replier_;
 
     void sendPosition(const oat::Position2D& position) override;
 };
 
 }      /* namespace oat */
-#endif /* OAT_UDPCLIENT_H */
+#endif /* OAT_POSITIONREPLIER_H */
 

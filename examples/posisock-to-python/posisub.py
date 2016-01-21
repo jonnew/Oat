@@ -1,7 +1,8 @@
 #!/bin/python
 
-# Example python script that will listen to oat posisock pub -e "tcp://*:5555"
-# and print received positions to command line
+# Example python script that will asynchronously listen to oat
+# posisock pub -e "tcp://*:5555" and print received positions to
+# command line
 
 import sys
 import zmq
@@ -21,8 +22,7 @@ if isinstance(pos_filter, bytes):
     pos_filter = pos_filter.decode('ascii')
 socket.setsockopt_string(zmq.SUBSCRIBE, pos_filter)
 
-# Process 5 updates
-total_temp = 0
+# Listen to positions forever
 while True:
-    string = socket.recv_string()
-    print string
+    position = socket.recv_string()
+    print position

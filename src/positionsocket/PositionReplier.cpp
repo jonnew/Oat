@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   PositionPublisher.cpp
+//* File:   PositionReplier.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -26,31 +26,37 @@
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 
-#include "PositionPublisher.h"
+#include "PositionReplier.h"
 
 namespace oat {
 
-PositionPublisher::PositionPublisher(const std::string &position_source_address,
-                                     const std::string &endpoint) :
+PositionReplier::PositionReplier(const std::string &position_source_address,
+                                 const std::string &endpoint) :
   PositionSocket(position_source_address)
-, publisher_(context_, ZMQ_PUB)
+, replier_(context_, ZMQ_REP) // TODO: ZMQ_DEALER for multiple clients?
 {
-    publisher_.bind(endpoint);
+    replier_.bind(endpoint);
 }
 
-void PositionPublisher::sendPosition(const oat::Position2D& position) {
-
+void PositionReplier::sendPosition(const oat::Position2D& position) {
+    
     // Serialize the current position
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     position.Serialize(writer);
+    
+    //  Wait for next request from client
+    // TODO: Use incoming string to decide which part of the position to send
+    zmq::message_t request;
+    replier_.recv (&request);
 
     // Publish update
     zmq::message_t zmsg(buffer.GetSize()); 
     memcpy((void *)zmsg.data(), buffer.GetString(), buffer.GetSize());
-    publisher_.send(zmsg);
+    replier_.send(zmsg);
     
     //std::cout << "Sending " << (char *)(zmsg.data()) << "\n"; 
 }
 
 } /* namespace oat */
+

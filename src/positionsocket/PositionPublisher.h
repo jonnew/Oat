@@ -20,11 +20,9 @@
 #ifndef OAT_POSITIONPUBLISHER_H
 #define	OAT_POSITIONPUBLISHER_H
 
-#include <rapidjson/rapidjson.h>
-#include <rapidjson/stringbuffer.h>
+#include <string>
 #include <zmq.hpp>
 
-#include "SocketWriteStream.h"
 #include "PositionSocket.h"
 
 namespace oat {
@@ -40,14 +38,8 @@ public:
 
 private:
 
-    // Custom RapidJSON UDP stream
-    static const size_t MAX_LENGTH {65507}; // max udp buffer size
-    char buffer_[MAX_LENGTH]; // Buffer is flushed after each position read
-
+    // PUB socket
     zmq::socket_t publisher_;
-
-    //std::unique_ptr < rapidjson::SocketWriteStream
-    //                < UDPSocket, UDPEndpoint > > udp_stream_;
 
     void sendPosition(const oat::Position2D& position) override;
 };

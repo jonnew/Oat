@@ -31,14 +31,14 @@ namespace oat {
 
 UDPPositionClient::UDPPositionClient(const std::string &position_source_address,
                                      const std::string& host,
-                                     const unsigned short port) :
+                                     const std::string& port) :
   PositionSocket(position_source_address)
 , socket_(io_service_, UDPEndpoint(boost::asio::ip::udp::v4(), 0)) {
 
     UDPResolver resolver(io_service_);
     UDPEndpoint endpoint = *resolver.resolve({boost::asio::ip::udp::v4(),
                                               host,
-                                              std::to_string(port)});
+                                              port});
 
     udp_stream_.reset(new rapidjson::SocketWriteStream<UDPSocket, UDPEndpoint>(
             &socket_, endpoint, buffer_, sizeof(buffer_)));

@@ -5,6 +5,7 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 set (oat-posisock_SOURCE
      PositionSocket.cpp
      PositionPublisher.cpp
+     PositionReplier.cpp
      UDPPositionClient.cpp
      UDPPositionServer.cpp
      main.cpp)
