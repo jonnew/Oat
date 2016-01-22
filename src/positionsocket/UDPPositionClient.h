@@ -41,14 +41,14 @@ class UDPPositionClient : public PositionSocket {
 
 public:
     // TODO: What if user requests port less than 1000 without sudo?
-    UDPPositionClient(const std::string& position_source_name,
-              const std::string& host,
-              const std::string& port);
+    UDPPositionClient(const std::string &position_source_name,
+              const std::string &host,
+              const std::string &port);
 
 private:
 
     // Custom RapidJSON UDP stream
-    static const size_t MAX_LENGTH {65507}; // max udp buffer size
+    static constexpr size_t MAX_LENGTH {65507}; // max udp buffer size
     char buffer_[MAX_LENGTH]; // Buffer is flushed after each position read
 
     UDPSocket socket_;
@@ -60,4 +60,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_UDPCLIENT_H */
-

@@ -27,12 +27,11 @@
 
 #include "../../lib/utility/IOFormat.h"
 
-
 #include "PositionSocket.h"
 #include "PositionPublisher.h"
 #include "PositionReplier.h"
 #include "UDPPositionClient.h"
-#include "UDPPositionServer.h"
+//#include "UDPPositionServer.h"
 
 namespace po = boost::program_options;
 
@@ -41,15 +40,28 @@ volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: posisock [INFO]\n"
-              << "   or: posisock TYPE SOURCE [CONFIGURATION]\n"
+              << "   or: posisock TYPE SOURCE ENDPOINT\n"
               << "Send positions from SOURCE to a remote endpoint.\n\n"
               << "TYPE\n"
               << "  pub: Asynchronous position publisher over ZMQ socket.\n"
-              << "       Spews positions without request. Can support many subscribers.\n"
+              << "       Publishes positions without request to potentially many\n"
+              << "       subscribers.\n"
               << "  rep: Synchronous position replier over ZMQ socket. \n"
-              << "       Sends positions in response to requests from a single endpoint.\n"
-              << "  udp: Asynchronous, client-side user datagram protocol over a\n"
-              << "       traditional BSD socket.\n\n"
+              << "       Sends positions in response to requests from a single\n"
+              << "       endpoint.Several transport/protocol options. The most\n"
+              << "       useful are tcp and interprocess (ipc).\n"
+              << "  udp: Asynchronous, client-side, unicast user datagram protocol\n"
+              << "       over a traditional BSD-style socket.\n\n"
+              << "ENDPOINT\n"
+              << "Endpoint to send positions to.\n"
+              << "  For pos and rep:\n"
+              << "       Specified as a ZMQ-style endpoint\n"
+              << "           <transport>://<host>:<port>\n"
+              << "       e.g. tcp://*:5555 or ipc://*:5556\n"
+              << "  For udp:\n"
+              << "       Specified as\n"
+              << "          <host> <port>\n"
+              << "       e.g. 10.0.0.1 5555.\n\n"
               << options << "\n";
 }
 
@@ -84,7 +96,6 @@ int main(int argc, char *argv[]) {
     std::string type;
     std::string source;
     std::vector<std::string> endpoint;
-//    unsigned short port;
 //    bool server_side = false;
     po::options_description visible_options("OPTIONS");
 
@@ -101,13 +112,8 @@ int main(int argc, char *argv[]) {
                 ("version,v", "Print version information.")
                 ;
 
-        po::options_description config("CONFIGURATION");
-        config.add_options()
-                ("endpoint,e", po::value<std::vector<std::string> >()->multitoken(), 
-                 "Endpoint to send positions to. For pos and rep types, this can be "
-                 "something like tcp://localhost:5555. For the udp type, this should "
-                 "be something like 127.0.0.1 5555.")
-//                ("port,p", po::value<unsigned short>(&port), "Port on which to send positions.")
+        //po::options_description config("CONFIGURATION");
+        //config.add_options()
 //                ("server", "Server-side socket sychronization. "
 //                           "Position data packets are sent whenever requested "
 //                           "by a remote client. TODO: explain request protocol...")
@@ -120,16 +126,19 @@ int main(int argc, char *argv[]) {
                 ("positionsource", po::value<std::string>(&source),
                 "The name of the server that supplies object position information."
                 "The server must be of type SMServer<Position>\n")
+                ("endpoint,e", po::value<std::vector<std::string> >()->multitoken(), 
+                 "Endpoint to send positions to.\n")
                 ;
 
         po::positional_options_description positional_options;
         positional_options.add("type", 1);
         positional_options.add("positionsource", 1);
+        positional_options.add("endpoint", -1);
 
-        visible_options.add(options).add(config);
+        visible_options.add(options);
 
         po::options_description all_options("ALL OPTIONS");
-        all_options.add(options).add(config).add(hidden);
+        all_options.add(options).add(hidden);
 
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
@@ -176,6 +185,10 @@ int main(int argc, char *argv[]) {
                 printUsage(visible_options);
                 std::cerr << oat::Error("Endpoint was incorrectly formatted.\n"); 
                 return -1;
+            } else if (endpoint.size() != 2 && type == "udp") {
+                printUsage(visible_options);
+                std::cerr << oat::Error("udp endpoint must be specified as <host> <port>.\n"); 
+                return -1;  
             }
         } else {
             printUsage(visible_options);
