@@ -7,28 +7,34 @@
 # ```
 
 [gige]
-index = 0				# Index of camera on the bus (there can be more than one)
-fps = 10.0                              # TODO: Frames per second
-exposure = 0.0				# Automatically adjust shutter and gain to achieve given exposure (EV)
-shutter = 3.0 				# Shutter time (ms; ignored if exposure on)
-gain = 0.0 				# Sensor gain(dB; ignored if exposure on)
-white_bal = {red = 500, blue = 800}	# White balance (0-1000; if note specified, defaults to "off")
-roi = {x_offset = 280, y_offset = 0, width = 728, height = 728} # Region of interest (pixels)
-#x_bin = 2                               # On-camera x-dimension pixel binning (pixels; if note specified, defaults to "off")
-#y_bin = 2                               # On-camera y-dimension pixel binning (pixels; if note specified, defaults to "off")
-trigger_on = false			# If false, free run at fps or maximum rate if that is not specified
-trigger_rising = true			# Rising edge active if true. Falling edge active if false.
-trigger_mode = 14			#   14 = Overlapped Exposure/Readout Mode (see Camera manual)
-					#   7  = Software trigger
-trigger_pin = 0                         # GPIO pin that trigger will be sent to
-enforce_fps = false                     # Ensure that frames are produced at the fps setting by retransmitting frames 
-                                        # if the requested period is exceeded. This is needed in the case of an external
-                                        # trigger because PG cameras sometimes just ignore them. I have opened a support
-                                        # ticket on this, but PG has no solution yet.
+index = 0               # Index of camera on the bus (there can be more than one)
+fps = 10.0              # TODO: Frames per second
+exposure = 0.0          # Automatically adjust shutter and gain to achieve given exposure (EV)
+shutter = 3.0           # Shutter time (ms; ignored if exposure on)
+gain = 0.0              # Sensor gain(dB; ignored if exposure on)
+white_bal = {red = 500, blue = 800} # White balance (0-1000; if note specified, defaults to "off")
+roi = {x_offset = 0, y_offset = 0, width = 100, height = 100} # Region of interest (pixels)
+x_bin = 2               # On-camera x-dimension pixel binning (pixels; if note specified, defaults to "off")
+y_bin = 2               # On-camera y-dimension pixel binning (pixels; if note specified, defaults to "off")
+trigger_on = false      # If false, free run at fps or maximum rate if that is not specified
+trigger_rising = true   # Rising edge active if true. Falling edge active if false.
+trigger_mode = 14       # FPGA implmented trigger mode
+                        #   14 = Overlapped Exposure/Readout Mode (see Camera manual)
+                        #   1  = Standard trigger
+                        #   7  = Software trigger
+trigger_pin = 0         # GPIO pin that trigger will be sent to
+enforce_fps = false     # Ensure that frames are produced at the fps setting by retransmitting frames 
+                        # if the requested period is exceeded. This is needed in the case of an external
+                        # trigger because PG cameras sometimes just ignore them. I have opened a support
+                        # ticket on this, but PG has no solution yet.
 
 [file]
-frame_rate = 100.0                       # Hz
-roi = {x_offset = 125, y_offset = 30, width = 490, height = 420} # Region of interest (pixels)
+frame_rate = 100.0      # Hz
+roi = {x_offset = 0, y_offset = 0, width = 100, height = 100} # Region of interest (pixels)
 
 [wcam]
-index = 0 				# Index of camera on the bus (there can be more than one)
+index = 0               # Index of camera on the bus (there can be more than one)
+roi = {x_offset = 0, y_offset = 0, width = 100, height = 100} # Region of interest (pixels)
+
+[test]
+# No options.

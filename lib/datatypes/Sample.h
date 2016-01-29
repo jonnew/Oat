@@ -85,7 +85,6 @@ public:
 private:
 
     uint64_t count_ {0};
-    //Clock wall_clock_;
     Microseconds microseconds_;
     double period_sec_ {-1.0};
     double rate_hz_ {-1.0};

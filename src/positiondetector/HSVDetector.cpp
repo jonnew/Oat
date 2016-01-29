@@ -78,7 +78,8 @@ void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
                  max_object_area_);
 
     // Use the GUI tuner if requested
-    tune(frame, position);
+    if (tuning_on_)
+        tune(frame, position);
 }
 
 void HSVDetector::configure(const std::string &config_file,

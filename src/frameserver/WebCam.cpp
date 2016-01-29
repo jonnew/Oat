@@ -45,6 +45,9 @@ void WebCam::connectToNode() {
     cv::Mat example_frame;
     *cv_camera_ >> example_frame;
 
+    if (use_roi_)
+        example_frame = example_frame(region_of_interest_);
+
     frame_sink_.bind(frame_sink_address_,
             example_frame.total() * example_frame.elemSize());
 
@@ -63,15 +66,22 @@ bool WebCam::serveFrame() {
     // Wait for sources to read
     frame_sink_.wait();
 
-    *cv_camera_ >> shared_frame_;
+    if (!use_roi_) {
+            
+        *cv_camera_ >> shared_frame_;
+        frame_empty_ = shared_frame_.empty();
+
+    } else {
+
+        oat::Frame to_crop;
+        *cv_camera_ >> to_crop;
+        if (!(frame_empty_ = to_crop.empty()))
+            to_crop = to_crop(region_of_interest_);
+        to_crop.copyTo(shared_frame_);
+    }
+
+    // Increment sample count
     shared_frame_.sample().incrementCount();
-
-    frame_empty_ = shared_frame_.empty();
-
-    // Crop if necessary
-    // TODO: Not functional...
-    if (use_roi_ && !frame_empty_)
-        shared_frame_ = shared_frame_(region_of_interest_);
 
     // Tell sources there is new data
     frame_sink_.post();
