@@ -1,14 +1,18 @@
 language: cpp
 
+compiler:
+  - clang
+  - gcc
+
 # This method for installing apt-based dependencies works in
 # container-based build (sudoless). Should use it if possible.
 addons:
   apt:
     sources:
-    - ubuntu-toolchain-r-test
+      - ubuntu-toolchain-r-test
     packages:
-    - gcc-4.8 # Get -std=c++11 support
-    - g++-4.8
+      - gcc-4.8 # Get -std=c++11 support
+      - g++-4.8
 
 before_install:
   - sudo add-apt-repository ppa:amarburg/opencv3 --yes
