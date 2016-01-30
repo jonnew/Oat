@@ -1097,6 +1097,26 @@ eval "$(path/to/Oat/oat/bin/oat init -)"
 ```
 
 ### Dependencies
+#### License compatibility
+
+Oat is licensed under the
+[GPLv3.0](http://choosealicense.com/licenses/gpl-3.0/). Its dependences' are
+licenses are shown below:
+
+- Flycapture SDK: NON-FREE specialized license (This is an optional package. If
+  you compile without Flycapture support, you can get around this. Also, see
+  the `GigE interface cleanup` entry in the TODO section for a potentially free
+  alternative.
+- OpenCV: BSD 
+- ZeroMQ: LGPLv3.0 
+- Boost: Boost software license
+- cpptoml: Some kind of Public Domain Dedication
+- RapidJSON: BSD
+- Catch: Boost software license
+
+These licenses do not violate the terms of Oat's license. If you feel otherwise
+please submit an bug report.
+
 #### Flycapture SDK
 The FlyCapture SDK is used to communicate with Point Grey digital cameras. It
 is not required to compile any Oat components.  However, the Flycapture SDK is
@@ -1500,7 +1520,6 @@ RJ45 ------------
       stateless detection. However, it would make the concept of position
       combining hard to define (although that is even true now is just a design
       choice, really).
-- [ ] Neither wcam or file ROI are functional. 
 - [ ] Colors
     - Should visual ID information (e.g. color) be integrated into the
       `position` type?
@@ -1508,7 +1527,7 @@ RJ45 ------------
       up log files when stdout or stderr are piped to file.
 - [ ] It would be good to warn people if the inputs to a multisource component
   have different sample rates because the output rate will be enforced by the
-  slowest source. Added a TODO on this.
+  slowest source.
 - [x] Something is wrong with sample synchronization
     - When working with Jennie's data, we found that position samples were
       being recorded multiple times - they had the same sample number and
