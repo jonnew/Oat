@@ -81,10 +81,10 @@ private:
     bool tuning_windows_created_ {false};
     const std::string tuning_image_title_;
     cv::Mat tune_frame_;
-    void createTuningWindows(void);
     int dummy0_ {0}, dummy1_ {10000};
 
     // Processing functions
+    void createTuningWindows(void);
     void tune(cv::Mat &frame, const oat::Position2D &position);
     void applyThreshold(cv::Mat &frame);
 };

@@ -73,7 +73,7 @@ public:
 
     // Accessors
     std::string name(void) const { return name_; }
-    virtual void set_tuning(bool value) { tuning_on_ = value; }
+    void tuning_on(const bool value)  { tuning_on_ = value; }
 
 protected:
 
@@ -83,12 +83,13 @@ protected:
      * @param position Detected object position.
      */
     virtual void detectPosition(cv::Mat &frame, oat::Position2D &position) = 0;
-
+    
     // Detector name
     const std::string name_;
 
     // Use GUI to tune detection parameters
     bool tuning_on_ {false};
+    bool tuning_windows_created_ {false};
 
 private:
 

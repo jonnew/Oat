@@ -37,6 +37,9 @@ public:
 
 private:
 
+    // ZMQ context
+    zmq::context_t context_ {1};
+
     // REP socket
     zmq::socket_t replier_;
 

@@ -7,7 +7,9 @@ set (oat-posisock_SOURCE
      PositionPublisher.cpp
      PositionReplier.cpp
      UDPPositionClient.cpp
-     UDPPositionServer.cpp
+     # TODO: There are minor but debilitating issues with this component that I
+     # dont have time to fix now
+     #UDPPositionServer.cpp 
      main.cpp)
 
 # Target

@@ -38,6 +38,9 @@ public:
 
 private:
 
+    // ZMQ context
+    zmq::context_t context_ {1};
+
     // PUB socket
     zmq::socket_t publisher_;
 

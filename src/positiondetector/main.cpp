@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
         if (config_used)
             detector->configure(config_fk[0], config_fk[1]);
 
-        detector->set_tuning(tuning_on);
+        detector->tuning_on(tuning_on);
 
         // Tell user
         std::cout << oat::whoMessage(detector->name(),

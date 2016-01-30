@@ -65,12 +65,6 @@ protected:
      */
     virtual void sendPosition(const oat::Position2D &position) = 0;
 
-    // IO service
-    boost::asio::io_service io_service_;
-
-    // ZMQ context and socket
-    zmq::context_t context_ {1};
-
 private:
 
     // Position Socket name

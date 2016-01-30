@@ -38,22 +38,25 @@ class UDPPositionClient : public PositionSocket {
     using UDPSocket = boost::asio::ip::udp::socket;
     using UDPEndpoint = boost::asio::ip::udp::endpoint;
     using UDPResolver = boost::asio::ip::udp::resolver;
+    using SocketWriter = rapidjson::SocketWriteStream<UDPSocket, UDPEndpoint>;
 
 public:
     // TODO: What if user requests port less than 1000 without sudo?
     UDPPositionClient(const std::string &position_source_name,
-              const std::string &host,
-              const std::string &port);
+                      const std::string &host,
+                      const std::string &port);
 
 private:
+
+    // IO service
+    boost::asio::io_service io_service_;
 
     // Custom RapidJSON UDP stream
     static constexpr size_t MAX_LENGTH {65507}; // max udp buffer size
     char buffer_[MAX_LENGTH]; // Buffer is flushed after each position read
 
     UDPSocket socket_;
-    std::unique_ptr < rapidjson::SocketWriteStream
-                    < UDPSocket, UDPEndpoint > > udp_stream_;
+    std::unique_ptr<SocketWriter> udp_stream_;
 
     void sendPosition(const oat::Position2D& position) override;
 };

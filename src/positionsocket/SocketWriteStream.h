@@ -36,7 +36,9 @@ class SocketWriteStream {
 
 public:
 
-    SocketWriteStream(S *socket, const E &endpoint, char *buffer, size_t bufferSize) :
+    typedef char Ch; // Required typedef to fulfill stream concept. DO NOT REMOVE.
+
+    SocketWriteStream(S *socket, const E &endpoint, Ch *buffer, size_t bufferSize) :
       socket_(socket)
     , endpoint_(endpoint)
     , buffer_(buffer)
@@ -46,14 +48,14 @@ public:
         RAPIDJSON_ASSERT(socket_ != nullptr);
     }
 
-    void Put(char c) {
+    void Put(Ch c) {
         if (current_ >= bufferEnd_)
             Flush();
 
         *current_++ = c;
     }
 
-    void PutN(char c, size_t n) {
+    void PutN(Ch c, size_t n) {
         auto avail = static_cast<size_t>(bufferEnd_ - current_);
         while (n > avail) {
             std::memset(current_, c, avail);
@@ -72,6 +74,7 @@ public:
     void Flush() {
         if (current_ != buffer_) {
 
+            // TODO: not generic, right?
             socket_->send_to(boost::asio::buffer(buffer_,
                         static_cast<size_t>(current_ - buffer_)), endpoint_);
             current_ = buffer_;
@@ -79,11 +82,11 @@ public:
     }
 
     // Not implemented
-    char Peek() const { RAPIDJSON_ASSERT(false); return 0; }
-    char Take() { RAPIDJSON_ASSERT(false); return 0; }
+    Ch Peek() const { RAPIDJSON_ASSERT(false); return 0; }
+    Ch Take() { RAPIDJSON_ASSERT(false); return 0; }
     size_t Tell() const { RAPIDJSON_ASSERT(false); return 0; }
-    char* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
-    size_t PutEnd(char*) { RAPIDJSON_ASSERT(false); return 0; }
+    Ch* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
+    size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
 
     // Prohibit copy constructor & assignment operator.
     SocketWriteStream(const SocketWriteStream&) = delete;
@@ -93,21 +96,22 @@ private:
 
     S * socket_;
     const E endpoint_;
-    char * buffer_;
-    char * bufferEnd_;
-    char * current_;
+    Ch * buffer_;
+    Ch * bufferEnd_;
+    Ch * current_;
 };
 
 // Specialized versions of PutN() with memset() for better performance.
 template <>
-inline void PutN(SocketWriteStream <
-        boost::asio::ip::udp::socket,
-        boost::asio::ip::udp::endpoint>& stream, char c, size_t n) {
+inline void PutN(
+        SocketWriteStream<boost::asio::ip::udp::socket, boost::asio::ip::udp::endpoint>& stream, 
+        SocketWriteStream<boost::asio::ip::udp::socket, boost::asio::ip::udp::endpoint>::Ch c,
+        size_t n
+        ) 
+{
     stream.PutN(c, n);
 }
 
 RAPIDJSON_NAMESPACE_END
 
 #endif	/* RJSOCKETWRITESTREAM_H */
-
-

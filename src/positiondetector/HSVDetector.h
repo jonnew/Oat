@@ -87,10 +87,9 @@ private:
     double max_object_area_ {std::numeric_limits<double>::max()};
 
     // Parameter tuning GUI functions and properties
-    bool tuning_windows_created_ {false};
     const std::string tuning_image_title_;
-    virtual void tune(cv::Mat &frame, const oat::Position2D &position);
-    virtual void createTuningWindows(void);
+    void tune(cv::Mat &frame, const oat::Position2D &position);
+    void createTuningWindows(void);
 
 };
 

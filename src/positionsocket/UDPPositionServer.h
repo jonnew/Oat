@@ -52,6 +52,9 @@ public:
 
 private:
 
+    // IO service
+    boost::asio::io_service io_service_;
+
     // RX/TX buffers
     static const size_t MAX_LENGTH {65507}; // max udp buffer size
     char tx_buffer_[MAX_LENGTH]; // Buffer is flushed after each position read

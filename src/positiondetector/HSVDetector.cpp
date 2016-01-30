@@ -68,7 +68,7 @@ void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
     // Threshold frame will be destroyed by the transform below, so we need to use
     // it to form the frame that will be shown in the tuning window here
     if (tuning_on_)
-         frame.setTo(0, threshold_frame_ == 0);
+        frame.setTo(0, threshold_frame_ == 0);
 
     // Find the largest contour in the threshold image
     siftContours(threshold_frame_,
@@ -160,9 +160,6 @@ void HSVDetector::configure(const std::string &config_file,
 
         // Tuning
         oat::config::getValue(this_config, "tune", tuning_on_);
-        if (tuning_on_) {
-            createTuningWindows();
-        }
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -171,42 +168,33 @@ void HSVDetector::configure(const std::string &config_file,
 
 void HSVDetector::tune(cv::Mat &frame, const oat::Position2D &position) {
 
-    if (tuning_on_) {
-        std::string msg = cv::format("Object not found");
+    if (!tuning_windows_created_)
+        createTuningWindows();
+    
+    std::string msg = cv::format("Object not found");
 
-        // Plot a circle representing found object
-        if (position.position_valid) {
-            auto radius = std::sqrt(object_area_ / PI);
-            cv::Point center;
-            center.x = position.position.x;
-            center.y = position.position.y;
-            cv::circle(frame, center, radius, cv::Scalar(0, 0, 255), 4);
-            msg = cv::format("(%d, %d) pixels",
-                    (int) position.position.x,
-                    (int) position.position.y);
-        }
-
-        int baseline = 0;
-        cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
-        cv::Point text_origin(
-                frame.cols - textSize.width - 10,
-                frame.rows - 2 * baseline - 10);
-
-        cv::putText(frame, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
-
-        if (!tuning_windows_created_)
-            createTuningWindows();
-
-        cv::imshow(tuning_image_title_, frame);
-        cv::waitKey(1);
-
-    } else if (!tuning_on_ && tuning_windows_created_) {
-
-        // TODO: Window will not actually close!!
-        // Destroy the tuning windows
-        cv::destroyWindow(tuning_image_title_);
-        tuning_windows_created_ = false;
+    // Plot a circle representing found object
+    if (position.position_valid) {
+        auto radius = std::sqrt(object_area_ / PI);
+        cv::Point center;
+        center.x = position.position.x;
+        center.y = position.position.y;
+        cv::circle(frame, center, radius, cv::Scalar(0, 0, 255), 4);
+        msg = cv::format("(%d, %d) pixels",
+                (int) position.position.x,
+                (int) position.position.y);
     }
+
+    int baseline = 0;
+    cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
+    cv::Point text_origin(
+            frame.cols - textSize.width - 10,
+            frame.rows - 2 * baseline - 10);
+
+    cv::putText(frame, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
+
+    cv::imshow(tuning_image_title_, frame);
+    cv::waitKey(1);
 }
 
 void HSVDetector::createTuningWindows() {
