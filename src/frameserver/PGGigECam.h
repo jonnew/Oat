@@ -37,7 +37,7 @@ namespace pg = FlyCapture2;
 class PGGigECam : public FrameServer {
 
 public:
-    PGGigECam(const std::string &frame_sink_address, 
+    PGGigECam(const std::string &frame_sink_address,
               const size_t index,
               const double fps);
 
@@ -59,75 +59,73 @@ private:
     bool ieee_1394_start_set_ {false};
     int last_ieee_1394_sec_ {0};
     bool first_frame_ {true};
-    
+
+    // Used to mark times between acquisitions
     oat::Sample::Microseconds tick_, tock_;
-    
+
     // GigE Camera configuration
-    unsigned int num_cameras;
-    int64_t max_index {0};
+    unsigned int num_cameras_;
+    int64_t max_index_ {0};
     size_t index_;
 
-    int x_bin {1};
-    int y_bin {1};
-    float gain_dB {0};
-    float shutter_ms {0};
-    float exposure_EV {0};
-    bool aquisition_started {false};
-    bool use_trigger {false};
-    bool use_software_trigger {false};
-    bool trigger_polarity {true};
-    int64_t trigger_mode {14};
-    int64_t trigger_source_pin {0};
-    int64_t white_bal_red {0};
-    int64_t white_bal_blue {0};
-    double frames_per_second {30.0};
-    bool use_camera_frame_buffer {false};
-    //unsigned int number_transmit_retries {0};
-    int64_t strobe_output_pin {1};
+    int x_bin_ {1};
+    int y_bin_ {1};
+    float gain_db_ {0};
+    float shutter_ms_ {0};
+    float exposure_EV_ {0};
+    bool acquisition_started_ {false};
+    bool use_trigger_ {false};
+    bool use_software_trigger_ {false};
+    bool trigger_polarity_ {true};
+    int64_t trigger_mode_ {14};
+    int64_t trigger_source_pin_ {0};
+    int64_t white_bal_red_ {0};
+    int64_t white_bal_blue_ {0};
+    double frames_per_second_ {30.0};
+    bool use_frame_buffer_ {false};
+    //unsigned int num_transmit_retries_ {0};
+    int64_t strobe_output_pin_ {1};
 
     // GigE Camera interface
-    pg::GigECamera camera;
-
-    // Camera and control state info
-    pg::CameraInfo camera_info;
-    pg::TriggerModeInfo trigger_mode_info;
-    pg::GigEImageSettingsInfo image_settings_info;
+    pg::GigECamera camera_;
 
     // The current, unbuffered frame in PG's format
-    pg::Image raw_image;
-    std::unique_ptr<pg::Image> rgb_image;
+    pg::Image raw_image_;
+    std::unique_ptr<pg::Image> rgb_image_;
 
     // For establishing connection
     int setCameraIndex(unsigned int requested_idx);
     int connectToCamera(void);
 
     // Acquisition options
+    // NOTE: These functions operate on member variables, and therefore the
+    // arguments are gratuitous. However, these functions are by definition
+    // not used in performance-critical sections of code, and I think decent
+    // type sigs are a good trade for the extra copy operations. 
     int setupStreamChannels(void);
     int setupFrameRate(double fps, bool is_auto);
     int setupShutter(float shutter_ms);
     int setupShutter(bool is_auto);
-    int setupGain(float gain_dB);
+    int setupGain(float gain_db);
     int setupGain(bool is_auto);
     int setupExposure(float exposure_EV);
     int setupExposure(bool is_auto);
     int setupWhiteBalance(int white_bal_red, int white_bal_blue);
     int setupWhiteBalance(bool is_on);
-    int setupPixelBinning(void);
+    int setupPixelBinning(int x_bin, int y_bin);
     int setupImageFormat(void);
     int setupDefaultImageFormat(void);
     int setupCameraFrameBuffer(void);
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
-    //int setupImageBinning(int xBinFactor, int yBinFactor);
     int setupTrigger(void);
-    int setupEmbeddedImageData(void); // TODO: Needed? It seems like each pg::Image has a timestamp anyway
+    int setupEmbeddedImageData(void);
 
-    // IEEE 1394 ime stamp uncycling
-    uint64_t uncycle1394Timestamp(int ieee_1394_sec, 
+    // IEEE 1394 shutter open timestamp uncycling
+    uint64_t uncycle1394Timestamp(int ieee_1394_sec,
                                   int ieee_1394_cycle);
-    
-    // Physical camera control
+
+    // Physical camera_ control
     int turnCameraOn(void);
-    //TODO: int turnCameraOff(void);
     int grabImage(void);
 
     // Diagnostics and meta

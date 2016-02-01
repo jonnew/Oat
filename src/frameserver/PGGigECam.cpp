@@ -19,23 +19,22 @@
 
 #include "PGGigECam.h"
 
-#include <string>
-#include <stdlib.h>
-#include <unistd.h> // TODO: Don't know how to include only if LINUX with cmake
-#include <stdint.h>
+#include <cassert>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
-#include <opencv2/opencv.hpp>
-
-#include "FlyCapture2.h"
+#include <stdint.h>
+#include <stdlib.h>
+#include <string>
+#include <unistd.h>
 
 #include <cpptoml.h>
+#include "FlyCapture2.h"
+#include <opencv2/opencv.hpp>
+
 #include "../../lib/utility/make_unique.h"
 #include "../../lib/utility/OatTOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
-
-//#include "stdafx.h"
 
 namespace oat {
 
@@ -44,14 +43,14 @@ PGGigECam::PGGigECam(const std::string &frame_sink_address,
                      const double fps) :
   FrameServer(frame_sink_address)
 , index_(index)
-, frames_per_second(fps)
+, frames_per_second_(fps)
 {
     // Find the number of cameras on the bus
     findNumCameras();
 }
 
 /**
- * Set default camera configuration
+ * Set default camera_ configuration
  */
 void PGGigECam::configure() {
 
@@ -59,7 +58,7 @@ void PGGigECam::configure() {
     connectToCamera();
     turnCameraOn();
     setupStreamChannels();
-    setupFrameRate(frames_per_second, true);
+    setupFrameRate(frames_per_second_, true);
     //setupExposure(true);
     setupShutter(true);
     setupGain(true);
@@ -78,28 +77,28 @@ void PGGigECam::configure() {
 void PGGigECam::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {"index",
-                                      "fps",
-                                      //"exposure",
-                                      "shutter",
-                                      "gain",
-                                      "white_bal",
-                                      "roi",
-                                      "x_bin",
-                                      "y_bin",
-                                      "trigger_on",
-                                      "trigger_rising",
-                                      "trigger_mode",
-                                      "trigger_pin",
-                                      "enforce_fps",
-                                      "strobe_pin",
-                                      "calibration_file" };
+    std::vector<std::string> options { "index",
+                                       "fps",
+                                       //"exposure",
+                                       "shutter",
+                                       "gain",
+                                       "white_bal",
+                                       "roi",
+                                       "x_bin_",
+                                       "y_bin_",
+                                       "trigger_on",
+                                       "trigger_rising",
+                                       "trigger_mode_",
+                                       "trigger_pin",
+                                       "enforce_fps",
+                                       "strobe_pin",
+                                       "calibration_file" };
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
     auto config = cpptoml::parse_file(config_file);
 
-    // See if a camera configuration was provided
+    // See if a camera_ configuration was provided
     if (config->contains(config_key)) {
 
         // Get this components configuration table
@@ -111,7 +110,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         // Camera index
         {
             int64_t val;
-            if (oat::config::getValue(this_config, "index", val, (int64_t)0, max_index)) {
+            if (oat::config::getValue(this_config, "index", val, (int64_t)0, max_index_)) {
                 index_ = val;
             }
         }
@@ -122,16 +121,16 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         setupStreamChannels();
 
         // Frame rate
-        if (oat::config::getValue(this_config, "fps", frames_per_second, 0.0))
-            setupFrameRate(frames_per_second, false);
+        if (oat::config::getValue(this_config, "fps", frames_per_second_, 0.0))
+            setupFrameRate(frames_per_second_, false);
         else
-            setupFrameRate(frames_per_second, true);
+            setupFrameRate(frames_per_second_, true);
 
 //        // Set the exposure
 //        {
 //            double val;
 //            if (oat::config::getValue(this_config, "exposure", val)) {
-//                exposure_EV = val;
+//                exposure_EV_ = val;
 //                setupExposure(false);
 //            } else {
 //                setupExposure(true);
@@ -143,7 +142,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
             double val;
             if (!this_config->contains("exposure") &&
                 oat::config::getValue(this_config, "shutter", val, 0.0, 1000.0)) {
-                shutter_ms = val;
+                shutter_ms_ = val;
                 setupShutter(false);
             } else {
                 setupShutter(true);
@@ -155,7 +154,7 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
             double val;
             if (!this_config->contains("exposure") &&
                 oat::config::getValue(this_config, "gain", val)) {
-                gain_dB = val;
+                gain_db_ = val;
                 setupGain(false);
             } else {
                 setupGain(true);
@@ -166,8 +165,8 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         {
             oat::config::Table wb;
             if (oat::config::getTable(this_config, "white_bal", wb)) {
-                oat::config::getValue(wb, "red", white_bal_red, (int64_t)0, (int64_t)1000, true);
-                oat::config::getValue(wb, "blue", white_bal_blue , (int64_t)0, (int64_t)1000, true);
+                oat::config::getValue(wb, "red", white_bal_red_, (int64_t)0, (int64_t)1000, true);
+                oat::config::getValue(wb, "blue", white_bal_blue_ , (int64_t)0, (int64_t)1000, true);
             } else {
                 setupWhiteBalance(false);
             }
@@ -176,16 +175,16 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         // Pixel binning
         {
             int64_t val;
-            if (oat::config::getValue(this_config, "x_bin", val, (int64_t)0, (int64_t)8)) {
-                x_bin = val;
+            if (oat::config::getValue(this_config, "x_bin_", val, (int64_t)0, (int64_t)8)) {
+                x_bin_ = val;
             }
 
-            if (oat::config::getValue(this_config, "y_bin", val, (int64_t)0, (int64_t)8)) {
-                y_bin = val;
+            if (oat::config::getValue(this_config, "y_bin_", val, (int64_t)0, (int64_t)8)) {
+                y_bin_ = val;
             }
         }
 
-        setupPixelBinning();
+        setupPixelBinning(x_bin_, y_bin_);
 
         // Set the ROI
         // TODO: Use the base class's included region_of_interest_ property instead of frame_offset
@@ -210,53 +209,53 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         }
 
         // Setup trigger
-        if (oat::config::getValue(this_config, "trigger_on", use_trigger)) {
+        if (oat::config::getValue(this_config, "trigger_on", use_trigger_)) {
 
-            oat::config::getValue(this_config, "trigger_rising", trigger_polarity);
+            oat::config::getValue(this_config, "trigger_rising", trigger_polarity_);
 
-            if (!oat::config::getValue(this_config, "trigger_mode", trigger_mode))
-                trigger_mode = 14;
+            if (!oat::config::getValue(this_config, "trigger_mode_", trigger_mode_))
+                trigger_mode_ = 14;
 
-            if (trigger_mode == 7)
-                use_software_trigger = true;
+            if (trigger_mode_ == 7)
+                use_software_trigger_ = true;
             else
-                use_software_trigger = false;
+                use_software_trigger_ = false;
 
             if (!oat::config::getValue(this_config,
                                        "trigger_source",
-                                        trigger_source_pin,
+                                        trigger_source_pin_,
                                         (int64_t)0,
                                         (int64_t)1)) {
-                trigger_source_pin = 0;
+                trigger_source_pin_ = 0;
             }
         }
 
         if (!oat::config::getValue(this_config,
                                    "strobe_pin",
-                                    strobe_output_pin,
+                                    strobe_output_pin_,
                                     (int64_t)0,
                                     (int64_t)1)) {
 
-            if (trigger_source_pin) 
-                strobe_output_pin = 0;
+            if (trigger_source_pin_)
+                strobe_output_pin_ = 0;
             else
-                strobe_output_pin = 1;
+                strobe_output_pin_ = 1;
         }
 
 
-        if (trigger_source_pin == strobe_output_pin)
+        if (trigger_source_pin_ == strobe_output_pin_)
             throw std::runtime_error("Stobe pin must be different from trigger pin.");
 
         setupTrigger();
 
 //        if (this_config->contains("retry")) {
 //
-//            number_transmit_retries = *this_config->get_as<int64_t>("retry");
+//            num_transmit_retries_ = *this_config->get_as<int64_t>("retry");
 //
-//            if (number_transmit_retries > 0) {
-//                use_camera_frame_buffer = true;
+//            if (num_transmit_retries_ > 0) {
+//                use_frame_buffer_ = true;
 //            } else {
-//                use_camera_frame_buffer = false;
+//                use_frame_buffer_ = false;
 //            }
 //        }
 //
@@ -265,8 +264,8 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         // Should the FPS setting be enforced by retransmitting frames in the
         // case of dropped triggers
         oat::config::getValue(this_config, "enforce_fps", enforce_fps_);
-            
-        // Embed timestamp with frames 
+
+        // Embed timestamp with frames
         setupEmbeddedImageData();
 
     } else {
@@ -280,10 +279,10 @@ int PGGigECam::setCameraIndex(unsigned int requested_idx) {
     // Print bus information and find the number of cameras on the bus
     printBusInfo();
 
-    if (num_cameras > requested_idx) {
+    if (num_cameras_ > requested_idx) {
         index_ = requested_idx;
     } else {
-        throw (std::runtime_error("Requested camera index " +
+        throw (std::runtime_error("Requested camera_ index " +
                 std::to_string(requested_idx) + " is out of range.\n"));
     }
 
@@ -292,7 +291,7 @@ int PGGigECam::setCameraIndex(unsigned int requested_idx) {
 
 int PGGigECam::connectToCamera(void) {
 
-    std::cout << "Connecting to camera: " << index_ << "\n";
+    std::cout << "Connecting to camera_: " << index_ << "\n";
 
     pg::BusManager busMgr;
     pg::PGRGuid guid;
@@ -301,13 +300,13 @@ int PGGigECam::connectToCamera(void) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    // Connect to a camera
-    error = camera.Connect(&guid);
+    // Connect to a camera_
+    error = camera_.Connect(&guid);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    // Print camera information
+    // Print camera_ information
     printCameraInfo();
 
     return 0;
@@ -316,14 +315,14 @@ int PGGigECam::connectToCamera(void) {
 int PGGigECam::setupStreamChannels() {
 
     unsigned int numStreamChannels = 0;
-    pg::Error error = camera.GetNumStreamChannels(&numStreamChannels);
+    pg::Error error = camera_.GetNumStreamChannels(&numStreamChannels);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
     for (unsigned int i = 0; i < numStreamChannels; i++) {
         pg::GigEStreamChannel streamChannel;
-        error = camera.GetGigEStreamChannelInfo(i, &streamChannel);
+        error = camera_.GetGigEStreamChannelInfo(i, &streamChannel);
         if (error != pg::PGRERROR_OK) {
             throw (std::runtime_error(error.GetDescription()));
         }
@@ -339,7 +338,7 @@ int PGGigECam::setupStreamChannels() {
         streamChannel.packetSize = 9000;
         streamChannel.interPacketDelay = 250;
 
-        error = camera.SetGigEStreamChannelInfo(i, &streamChannel);
+        error = camera_.SetGigEStreamChannelInfo(i, &streamChannel);
         if (error != pg::PGRERROR_OK) {
             throw (std::runtime_error(error.GetDescription()));
         }
@@ -357,7 +356,7 @@ int PGGigECam::setupFrameRate(double fps, bool is_auto) {
 
     pg::Property prop;
     prop.type = pg::FRAME_RATE;
-    pg::Error error = camera.GetProperty(&prop);
+    pg::Error error = camera_.GetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -371,7 +370,7 @@ int PGGigECam::setupFrameRate(double fps, bool is_auto) {
         std::cout << "Frame rate set to auto.\n";
     }
 
-    error = camera.SetProperty(&prop);
+    error = camera_.SetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -385,16 +384,16 @@ int PGGigECam::setupShutter(bool is_auto) {
 
     pg::Property prop;
     prop.type = pg::SHUTTER;
-    pg::Error error = camera.GetProperty(&prop);
+    pg::Error error = camera_.GetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
     prop.autoManualMode = is_auto;
     prop.absControl = true;
-    prop.absValue = shutter_ms;
+    prop.absValue = shutter_ms_;
 
-    error = camera.SetProperty(&prop);
+    error = camera_.SetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -402,7 +401,10 @@ int PGGigECam::setupShutter(bool is_auto) {
     if (is_auto) {
         std::cout << "Shutter set to auto.\n";
     } else {
-        std::cout << "Shutter time set to " << std::fixed << std::setprecision(2) << shutter_ms << " ms.\n";
+        std::cout << "Shutter time set to "
+                  << std::fixed
+                  << std::setprecision(2)
+                  << shutter_ms_ << " ms.\n";
     }
 
     return 0;
@@ -410,7 +412,7 @@ int PGGigECam::setupShutter(bool is_auto) {
 
 int PGGigECam::setupShutter(float shutter_ms_in) {
 
-    shutter_ms = shutter_ms_in;
+    shutter_ms_ = shutter_ms_in;
     setupShutter(false);
 
     return 0;
@@ -418,20 +420,20 @@ int PGGigECam::setupShutter(float shutter_ms_in) {
 
 int PGGigECam::setupGain(bool is_auto) {
 
-    std::cout << "Setting camera gain...\n";
+    std::cout << "Setting camera_ gain...\n";
 
     pg::Property prop;
     prop.type = pg::GAIN;
-    pg::Error error = camera.GetProperty(&prop);
+    pg::Error error = camera_.GetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
     prop.autoManualMode = is_auto;
     prop.absControl = true;
-    prop.absValue = gain_dB;
+    prop.absValue = gain_db_;
 
-    error = camera.SetProperty(&prop);
+    error = camera_.SetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -439,7 +441,7 @@ int PGGigECam::setupGain(bool is_auto) {
     if (is_auto) {
         std::cout << "Gain set to auto.\n";
     } else {
-        std::cout << "Gain set to " << std::fixed << std::setprecision(2) << gain_dB << " dB.\n";
+        std::cout << "Gain set to " << std::fixed << std::setprecision(2) << gain_db_ << " dB.\n";
     }
 
     return 0;
@@ -447,7 +449,7 @@ int PGGigECam::setupGain(bool is_auto) {
 
 int PGGigECam::setupGain(float gain_dB_in) {
 
-    gain_dB = gain_dB_in;
+    gain_db_ = gain_dB_in;
     setupGain(false);
 
     return 0;
@@ -461,7 +463,7 @@ int PGGigECam::setupExposure(bool is_auto) {
     setupGain(true);
     pg::Property prop;
     prop.type = pg::AUTO_EXPOSURE;
-    pg::Error error = camera.GetProperty(&prop);
+    pg::Error error = camera_.GetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -469,9 +471,9 @@ int PGGigECam::setupExposure(bool is_auto) {
     prop.onOff = true;
     prop.autoManualMode = is_auto;
     prop.absControl = true;
-    prop.absValue = exposure_EV;
+    prop.absValue = exposure_EV_;
 
-    error = camera.SetProperty(&prop);
+    error = camera_.SetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -479,7 +481,10 @@ int PGGigECam::setupExposure(bool is_auto) {
     if (is_auto) {
         std::cout << "Exposure set to auto.\n";
     } else {
-        std::cout << "Exposure set to " << std::fixed << std::setprecision(2) << exposure_EV << " EV.\n";
+        std::cout << "Exposure set to "
+                  << std::fixed
+                  << std::setprecision(2)
+                  << exposure_EV_ << " EV.\n";
     }
 
     return 0;
@@ -487,7 +492,7 @@ int PGGigECam::setupExposure(bool is_auto) {
 
 int PGGigECam::setupExposure(float exposure_EV_in) {
 
-    exposure_EV = exposure_EV_in;
+    exposure_EV_ = exposure_EV_in;
     setupExposure(false);
 
     return 0;
@@ -495,11 +500,11 @@ int PGGigECam::setupExposure(float exposure_EV_in) {
 
 int PGGigECam::setupWhiteBalance(bool is_on) {
 
-    std::cout << "Setting camera white balance...\n";
+    std::cout << "Setting camera_ white balance...\n";
 
     pg::Property prop;
     prop.type = pg::WHITE_BALANCE;
-    pg::Error error = camera.GetProperty(&prop);
+    pg::Error error = camera_.GetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -507,18 +512,24 @@ int PGGigECam::setupWhiteBalance(bool is_on) {
     prop.onOff = is_on;
     prop.autoManualMode = false;
     prop.absControl = false;
-    prop.valueA = white_bal_red;
-    prop.valueB = white_bal_blue;
+    prop.valueA = white_bal_red_;
+    prop.valueB = white_bal_blue_;
 
-    error = camera.SetProperty(&prop);
+    error = camera_.SetProperty(&prop);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
     if (is_on) {
         std::cout << "White balance set to: \n";
-        std::cout << "\tRed: " << std::fixed << std::setprecision(2) << white_bal_red << "\n";
-        std::cout << "\tBlue: " << std::fixed << std::setprecision(2) << white_bal_blue << "\n";
+        std::cout << "\tRed: "
+                  << std::fixed
+                  << std::setprecision(2)
+                  << white_bal_red_ << "\n";
+        std::cout << "\tBlue: "
+                  << std::fixed
+                  << std::setprecision(2)
+                  << white_bal_blue_ << "\n";
     } else {
         std::cout << "White balance turned off.\n";
     }
@@ -528,8 +539,8 @@ int PGGigECam::setupWhiteBalance(bool is_on) {
 
 int PGGigECam::setupWhiteBalance(int white_bal_red_in, int white_bal_blue_in) {
 
-    white_bal_red = white_bal_red_in;
-    white_bal_blue = white_bal_blue_in;
+    white_bal_red_ = white_bal_red_in;
+    white_bal_blue_ = white_bal_blue_in;
     setupWhiteBalance(true);
 
     return 0;
@@ -544,7 +555,8 @@ int PGGigECam::setupDefaultImageFormat() {
 
     std::cout << "Querying GigE image setting information...\n";
 
-    pg::Error error = camera.GetGigEImageSettingsInfo(&image_settings_info);
+    pg::GigEImageSettingsInfo image_settings_info;
+    pg::Error error = camera_.GetGigEImageSettingsInfo(&image_settings_info);
     if (error != pg::PGRERROR_OK) {
         printError(error);
         return -1;
@@ -564,7 +576,7 @@ int PGGigECam::setupDefaultImageFormat() {
 
     std::cout << "Setting GigE image settings...\n";
 
-    error = camera.SetGigEImageSettings(&imageSettings);
+    error = camera_.SetGigEImageSettings(&imageSettings);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -581,7 +593,8 @@ int PGGigECam::setupImageFormat() {
 
     std::cout << "Querying GigE image setting information...\n";
 
-    pg::Error error = camera.GetGigEImageSettingsInfo(&image_settings_info);
+    pg::GigEImageSettingsInfo image_settings_info;
+    pg::Error error = camera_.GetGigEImageSettingsInfo(&image_settings_info);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -608,7 +621,7 @@ int PGGigECam::setupImageFormat() {
 
     std::cout << "Setting GigE image settings...\n";
 
-    error = camera.SetGigEImageSettings(&imageSettings);
+    error = camera_.SetGigEImageSettings(&imageSettings);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -616,11 +629,11 @@ int PGGigECam::setupImageFormat() {
     return 0;
 }
 
-int PGGigECam::setupPixelBinning() {
+int PGGigECam::setupPixelBinning(int x_bin, int y_bin) {
 
     // On-board image binning
     pg::Error error;
-    error = camera.SetGigEImageBinningSettings(x_bin, y_bin);
+    error = camera_.SetGigEImageBinningSettings(x_bin, y_bin);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -631,28 +644,30 @@ int PGGigECam::setupPixelBinning() {
 int PGGigECam::setupCameraFrameBuffer() {
 
     // If requested
-    if (use_camera_frame_buffer) {
+    if (use_frame_buffer_) {
 
         unsigned int image_retransmit_reg;
         const unsigned int image_retransmit_addr = 0x634;
 
-        pg::Error error = camera.ReadRegister(image_retransmit_addr, &image_retransmit_reg);
+        pg::Error error = camera_.ReadRegister(image_retransmit_addr,
+                                              &image_retransmit_reg);
         if (error != pg::PGRERROR_OK) {
             throw (std::runtime_error(error.GetDescription()));
         }
 
-        std::cout << "Setting up camera frame buffering...\n";
+        std::cout << "Setting up camera_ frame buffering...\n";
         // Enable framebuffer
         image_retransmit_reg |= 1 << 0;
 
         // Direct image data through frame buffer
         image_retransmit_reg |= 1 << 1;
 
-        error = camera.WriteRegister(image_retransmit_addr, image_retransmit_reg);
+        error = camera_.WriteRegister(image_retransmit_addr, image_retransmit_reg);
         if (error != pg::PGRERROR_OK) {
-            std::cout << "Warning: camera frame buffering requested, but this camera does not support frame buffering.\n"
-                    << "Request ignored.\n";
-            use_camera_frame_buffer = false;
+            std::cout << "Warning: camera_ frame buffering requested, but this "
+                         "camera_ does not support frame buffering.\n"
+                      << "Request ignored.\n";
+            use_frame_buffer_ = false;
         }
     }
 
@@ -660,16 +675,16 @@ int PGGigECam::setupCameraFrameBuffer() {
 }
 
 /**
- * Once connected to the camera, issue power on command.
+ * Once connected to the camera_, issue power on command.
  *
  * @return 0 if successful.
  */
 int PGGigECam::turnCameraOn() {
 
-    // Power on the camera
+    // Power on the camera_
     const unsigned int k_cameraPower = 0x610;
     const unsigned int k_powerVal = 0x80000000;
-    pg::Error error = camera.WriteRegister(k_cameraPower, k_powerVal);
+    pg::Error error = camera_.WriteRegister(k_cameraPower, k_powerVal);
     if (error != pg::PGRERROR_OK && error != pg::PGRERROR_NOT_IMPLEMENTED){
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -678,16 +693,16 @@ int PGGigECam::turnCameraOn() {
     unsigned int regVal = 0;
     unsigned int retries = 10;
 
-    // Wait for camera to complete power-up
+    // Wait for camera_ to complete power-up
     do {
 #if defined(WIN32) || defined(WIN64)
         Sleep(millisecondsToSleep);
 #else
         usleep(millisecondsToSleep * 1000);
 #endif
-        error = camera.ReadRegister(k_cameraPower, &regVal);
+        error = camera_.ReadRegister(k_cameraPower, &regVal);
         if (error == pg::PGRERROR_TIMEOUT) {
-            // ignore timeout errors, camera may not be responding to
+            // ignore timeout errors, camera_ may not be responding to
             // register reads during power-up
         } else if (error != pg::PGRERROR_OK) {
             throw (std::runtime_error(error.GetDescription()));
@@ -707,7 +722,8 @@ int PGGigECam::turnCameraOn() {
 int PGGigECam::setupTrigger() {
 
     // Get current trigger settings
-    pg::Error error = camera.GetTriggerModeInfo(&trigger_mode_info);
+    pg::TriggerModeInfo trigger_mode_info;
+    pg::Error error = camera_.GetTriggerModeInfo(&trigger_mode_info);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -717,59 +733,59 @@ int PGGigECam::setupTrigger() {
     }
 
     pg::TriggerMode triggerMode;
-    error = camera.GetTriggerMode(&triggerMode);
+    error = camera_.GetTriggerMode(&triggerMode);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    triggerMode.onOff = use_trigger;
-    triggerMode.polarity = trigger_polarity;
-    triggerMode.mode = trigger_mode;
+    triggerMode.onOff = use_trigger_;
+    triggerMode.polarity = trigger_polarity_;
+    triggerMode.mode = trigger_mode_;
     triggerMode.parameter = 0;
-    triggerMode.source = trigger_source_pin;
+    triggerMode.source = trigger_source_pin_;
 
-    error = camera.SetTriggerMode(&triggerMode);
+    error = camera_.SetTriggerMode(&triggerMode);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
     // Use GPIO as strobe to indicate shutter open/close
     pg::StrobeControl strobe;
-    strobe.source = strobe_output_pin;
+    strobe.source = strobe_output_pin_;
     strobe.onOff = true;
     strobe.polarity = 1;
     strobe.delay = 0.0f;
     strobe.duration = 0.0f;
 
-    error = camera.SetStrobe(&strobe);
+    error = camera_.SetStrobe(&strobe);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
     // Setup frame buffering
-    // NOTE: For some reason grabMode = pg::BUFFER_FRAMES does not play nicely with
-    //       the time-stamp correction for dropped triggers. I have yet to understand
-    //       why.
+    // NOTE: For some reason grabMode = pg::BUFFER_FRAMES does not play nicely
+    // with the time-stamp correction for dropped triggers. I have yet to
+    // understand why.
     pg::FC2Config flyCapConfig;
-    error = camera.GetConfiguration(&flyCapConfig);
+    error = camera_.GetConfiguration(&flyCapConfig);
     flyCapConfig.grabTimeout = 10;
-    flyCapConfig.grabMode = pg::DROP_FRAMES; 
+    flyCapConfig.grabMode = pg::DROP_FRAMES;
     flyCapConfig.highPerformanceRetrieveBuffer = true;
     flyCapConfig.numBuffers = 10;
 
-    error = camera.SetConfiguration(&flyCapConfig);
+    error = camera_.SetConfiguration(&flyCapConfig);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    //TODO: Custom frame rate
-//    VideoMode videoMode;
-//    FrameRate frameRate;
-//    camera.GetVideoModeAndFrameRate ( &videoMode, &frameRate);
+    // TODO: Custom frame rate
+    // VideoMode videoMode;
+    // FrameRate frameRate;
+    // camera_.GetVideoModeAndFrameRate ( &videoMode, &frameRate);
 
     // TODO: This hangs...
-    //Poll to ensure camera is ready
-    //    if (use_trigger) { // If false, camera will free run
+    // Poll to ensure camera_ is ready
+    //    if (use_trigger_) { // If false, camera_ will free run
     //        bool retVal = pollForTriggerReady();
     //        if (!retVal) {
     //            std::cout << "\n";
@@ -779,18 +795,19 @@ int PGGigECam::setupTrigger() {
     //    }
 
     // Camera is ready, start capturing images
-    error = camera.StartCapture();
+    error = camera_.StartCapture();
     if (error == pg::PGRERROR_ISOCH_BANDWIDTH_EXCEEDED) {
-        throw (std::runtime_error("Interface bandwidth exceeded. Cannot start camera..\n"));
+        throw (std::runtime_error("Interface bandwidth exceeded. Cannot start camera_..\n"));
     } else if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    aquisition_started = true;
-    if (use_trigger && use_software_trigger) {
-        std::cout << "Trigger the camera by pressing Enter\n";
-    } else if (use_trigger) {
-        std::cout << "Trigger the camera by sending a trigger pulse to GPIO_" << triggerMode.source << "\n";
+    acquisition_started_ = true;
+    if (use_trigger_ && use_software_trigger_) {
+        std::cout << "Trigger the camera_ by pressing Enter\n";
+    } else if (use_trigger_) {
+        std::cout << "Trigger the camera_ by sending a trigger pulse to GPIO_"
+                  << triggerMode.source << "\n";
     } else {
         std::cout << "Camera by started in free running mode.\n";
     }
@@ -801,7 +818,7 @@ int PGGigECam::setupTrigger() {
 int PGGigECam::setupEmbeddedImageData() {
 
     pg::EmbeddedImageInfo embeddedInfo;
-    pg::Error error = camera.GetEmbeddedImageInfo(&embeddedInfo);
+    pg::Error error = camera_.GetEmbeddedImageInfo(&embeddedInfo);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -809,7 +826,7 @@ int PGGigECam::setupEmbeddedImageData() {
     // For now, only inlcude timestamp
     embeddedInfo.timestamp.onOff = true;
 
-    error = camera.SetEmbeddedImageInfo(&embeddedInfo);
+    error = camera_.SetEmbeddedImageInfo(&embeddedInfo);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -820,7 +837,7 @@ int PGGigECam::setupEmbeddedImageData() {
 // TODO: event driven acquisition.
 //void PGGigECam::onGrabbedImage(Image* pImage, const void* pCallbackData) {
 //
-//    &raw_image = pImage;
+//    &raw_image_ = pImage;
 //    current_frame = imageToMat();
 //    serveMat();
 //
@@ -828,35 +845,41 @@ int PGGigECam::setupEmbeddedImageData() {
 
 // TODO: implement onboard buffer and perform retry a RetrieveBuffer
 // A single time if a torn image is detected.
+/**
+ * Grab a frame from the camera_'s buffer.
+ *
+ * @return return code meaning:
+ *   -1 : Grab timeout occurred
+ *    0 : Successful grab
+ *  >=1 : A return code greater than or equal to 1 indicates only occurs if a
+ *        strict frame rate is enforced when using an external trigger. Because it is
+ *        possible for PG cameras to skip triggers, the function will check the time
+ *        between consecutive frames and indicate the estimated number of missed
+ *        frames, if any, using this code.
+ */
 int PGGigECam::grabImage() {
 
-#ifndef NDEBUG
-    if (!aquisition_started) {
-        throw (std::runtime_error("Cannot grab image because acquisition has not been started.\n"));
-    }
-#endif
+    assert (acquisition_started_ &&
+            "Cannot grab image because acquisition has not been started.");
 
     pg::Error error;
-    do {
-        error = camera.RetrieveBuffer(&raw_image);
-    } while  (error == pg::PGRERROR_TIMEOUT); // TODO: && !quit
+    error = camera_.RetrieveBuffer(&raw_image_);
 
-    if (error == pg::PGRERROR_IMAGE_CONSISTENCY_ERROR) {
+    if (error == pg::PGRERROR_TIMEOUT) {
+        return -1;
+    }
+#ifndef NDEBUG
+    else if (error == pg::PGRERROR_IMAGE_CONSISTENCY_ERROR) {
         std::cerr << oat::Error("WARNING: torn image detected.\n");
+#endif
     } else if (error != pg::PGRERROR_OK) {
         printError(error);
         std::cerr << oat::Error("WARNING: Point Grey capture errored with type "
                                 + std::to_string(error.GetType()) + "\n");
     }
 
-    // If this is the first frame, get a start time
-//    if (first_frame_)
-//        timestamp_ = std::chrono::duration_cast<oat::Sample::Milliseconds> (
-//                    oat::Sample::Clock::now().time_since_epoch().count()
-//                );
-
     // Get the embedded timestamp of the must current frame
-    const pg::TimeStamp ts = raw_image.GetTimeStamp();
+    const pg::TimeStamp ts = raw_image_.GetTimeStamp();
 
     if (!ieee_1394_start_set_) {
         ieee_1394_start_cycle_ = ts.cycleSeconds * IEEE_1394_HZ + ts.cycleCount ;
@@ -882,7 +905,7 @@ int PGGigECam::grabImage() {
         // Return the number of skipped frames. This should be 0, but PG cameras
         // reject triggers on some occations and we need to fill in the blanks to
         // prevent offsets...
-        return (int)(std::round(frames_per_second * delay  - 1.0));
+        return (int)(std::round(frames_per_second_ * delay  - 1.0));
     }
 }
 
@@ -904,7 +927,7 @@ void PGGigECam::connectToNode() {
 
     pg::GigEImageSettings imageSettings;
 
-    pg::Error error = camera.GetGigEImageSettings(&imageSettings);
+    pg::Error error = camera_.GetGigEImageSettings(&imageSettings);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
@@ -913,7 +936,7 @@ void PGGigECam::connectToNode() {
                    imageSettings.width,
                    pg::PIXEL_FORMAT_BGR);
 
-    raw_image.Convert(pg::PIXEL_FORMAT_BGR, &temp);
+    raw_image_.Convert(pg::PIXEL_FORMAT_BGR, &temp);
 
     size_t bytes = temp.GetDataSize();
     size_t rows = temp.GetRows();
@@ -923,31 +946,35 @@ void PGGigECam::connectToNode() {
     frame_sink_.bind(frame_sink_address_, bytes);
 
     shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
-
-    shared_frame_.sample().set_rate_hz(frames_per_second);
+    shared_frame_.sample().set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
-    // rbg_image's data buffer. When changes are made to rgb_image, this is
-    // automatically propagated into shmem and 'convered' into a cv::Mat
-    // (although this 'coversion' is simply filling in appropriate header info,
-    // which was accomplished in the called to frame_sink_.retrieve())
-    rgb_image = std::make_unique<pg::Image>
+    // rbg_image's data buffer. When changes are made to rgb_image_, this is
+    // automatically propagated into shmem and 'converted' into a cv::Mat
+    // (although this 'conversion' is simply filling in appropriate header info,
+    // which was accomplished in the call to frame_sink_.retrieve())
+    rgb_image_ = std::make_unique<pg::Image>
             (rows, cols, stride, shared_frame_.data, bytes, pg::PIXEL_FORMAT_BGR);
 }
 
 bool PGGigECam::serveFrame() {
 
-    int retransmits = grabImage();
-    int i = 0;
+    int rc = grabImage();
+
+    // There was a grab timeout.
+    // Allow check to see if SIGINT occurred.
+    if (rc == -1)
+        return false;
 
 #ifndef NDEBUG
-    if (retransmits != 0) {
+    if (rc != 0) {
         std::cerr << oat::Warn("Frame re-transmission due to " +
-                               std::to_string(retransmits) + 
+                               std::to_string(rc) +
                                " skipped trigger(s).\n");
     }
 #endif
 
+    int i = 0;
     do {
 
         // START CRITICAL SECTION //
@@ -956,7 +983,7 @@ bool PGGigECam::serveFrame() {
         // Wait for sources to read
         frame_sink_.wait();
 
-        raw_image.Convert(pg::PIXEL_FORMAT_BGR, rgb_image.get());
+        raw_image_.Convert(pg::PIXEL_FORMAT_BGR, rgb_image_.get());
         shared_frame_.sample().incrementCount(tick_);
 
         // Tell sources there is new data
@@ -965,7 +992,7 @@ bool PGGigECam::serveFrame() {
         ////////////////////////////
         //  END CRITICAL SECTION  //
 
-    } while (i++ < retransmits);
+    } while (i++ < rc);
 
     return false;
 }
@@ -975,11 +1002,11 @@ int PGGigECam::findNumCameras(void) {
     pg::Error error;
     pg::BusManager busMgr;
 
-    error = busMgr.GetNumOfCameras(&num_cameras);
-    if (num_cameras == 0)
+    error = busMgr.GetNumOfCameras(&num_cameras_);
+    if (num_cameras_ == 0)
         throw (std::runtime_error("No GigE cameras were detected.\n"));
 
-    max_index = num_cameras - 1;
+    max_index_ = num_cameras_ - 1;
     if (error != pg::PGRERROR_OK)
         throw (std::runtime_error(error.GetDescription()));
 
@@ -988,7 +1015,7 @@ int PGGigECam::findNumCameras(void) {
 
 void PGGigECam::printError(pg::Error error) {
     error.PrintErrorTrace();
-    if (!camera.IsConnected())
+    if (!camera_.IsConnected())
         std::cerr << "Camera must be connected before getting its info.\n";
 }
 
@@ -999,7 +1026,7 @@ bool PGGigECam::pollForTriggerReady() {
     unsigned int regVal = 0;
 
     do {
-        error = camera.ReadRegister(k_softwareTrigger, &regVal);
+        error = camera_.ReadRegister(k_softwareTrigger, &regVal);
         if (error != pg::PGRERROR_OK) {
             throw (std::runtime_error(error.GetDescription()));
         }
@@ -1013,44 +1040,54 @@ int PGGigECam::printBusInfo(void) {
 
     std::cout << "\n";
     std::cout << "*** BUS INFORMATION ***\n";
-    std::cout << "No. cameras detected on bus: " << num_cameras << "\n";
+    std::cout << "No. cameras detected on bus: " << num_cameras_ << "\n";
     return 0;
 }
 
 int PGGigECam::printCameraInfo(void) {
 
-    pg::Error error = camera.GetCameraInfo(&camera_info);
+    pg::CameraInfo camera_info;
+    pg::Error error = camera_.GetCameraInfo(&camera_info);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
     std::ostringstream macAddress;
-    macAddress << 
-            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[0] << ":" <<
-            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[1] << ":" <<
-            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[2] << ":" <<
-            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[3] << ":" <<
-            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[4] << ":" <<
-            std::hex << std::setw(2) << std::setfill('0') << (unsigned int) camera_info.macAddress.octets[5];
+    macAddress
+        << std::hex << std::setw(2) << std::setfill('0')
+        << (unsigned int) camera_info.macAddress.octets[0] << ":"
+        << std::hex << std::setw(2) << std::setfill('0')
+        << (unsigned int) camera_info.macAddress.octets[1] << ":"
+        << std::hex << std::setw(2) << std::setfill('0')
+        << (unsigned int) camera_info.macAddress.octets[2] << ":"
+        << std::hex << std::setw(2) << std::setfill('0')
+        << (unsigned int) camera_info.macAddress.octets[3] << ":"
+        << std::hex << std::setw(2) << std::setfill('0')
+        << (unsigned int) camera_info.macAddress.octets[4] << ":"
+        << std::hex << std::setw(2) << std::setfill('0')
+        << (unsigned int) camera_info.macAddress.octets[5];
 
 
     std::ostringstream ipAddress;
-    ipAddress << (unsigned int) camera_info.ipAddress.octets[0] << "." <<
-            (unsigned int) camera_info.ipAddress.octets[1] << "." <<
-            (unsigned int) camera_info.ipAddress.octets[2] << "." <<
-            (unsigned int) camera_info.ipAddress.octets[3];
+    ipAddress
+        << (unsigned int) camera_info.ipAddress.octets[0] << "."
+        << (unsigned int) camera_info.ipAddress.octets[1] << "."
+        << (unsigned int) camera_info.ipAddress.octets[2] << "."
+        << (unsigned int) camera_info.ipAddress.octets[3];
 
     std::ostringstream subnetMask;
-    subnetMask << (unsigned int) camera_info.subnetMask.octets[0] << "." <<
-            (unsigned int) camera_info.subnetMask.octets[1] << "." <<
-            (unsigned int) camera_info.subnetMask.octets[2] << "." <<
-            (unsigned int) camera_info.subnetMask.octets[3];
+    subnetMask
+        << (unsigned int) camera_info.subnetMask.octets[0] << "."
+        << (unsigned int) camera_info.subnetMask.octets[1] << "."
+        << (unsigned int) camera_info.subnetMask.octets[2] << "."
+        << (unsigned int) camera_info.subnetMask.octets[3];
 
     std::ostringstream defaultGateway;
-    defaultGateway << (unsigned int) camera_info.defaultGateway.octets[0] << "." <<
-            (unsigned int) camera_info.defaultGateway.octets[1] << "." <<
-            (unsigned int) camera_info.defaultGateway.octets[2] << "." <<
-            (unsigned int) camera_info.defaultGateway.octets[3];
+    defaultGateway
+        << (unsigned int) camera_info.defaultGateway.octets[0] << "."
+        << (unsigned int) camera_info.defaultGateway.octets[1] << "."
+        << (unsigned int) camera_info.defaultGateway.octets[2] << "."
+        << (unsigned int) camera_info.defaultGateway.octets[3];
 
     std::cout << "\n";
     std::cout << "*** GENERAL CAMERA INFORMATION ***\n";
@@ -1063,7 +1100,9 @@ int PGGigECam::printCameraInfo(void) {
     std::cout << "Firmware build time: " << camera_info.firmwareBuildTime << "\n\n";
 
     std::cout << "*** CAMERA INTERFACE INFORMATION ***\n";
-    std::cout << "GigE version :" << camera_info.gigEMajorVersion << "." << camera_info.gigEMinorVersion << "\n";
+    std::cout << "GigE version :"
+              << camera_info.gigEMajorVersion << "."
+              << camera_info.gigEMinorVersion << "\n";
     std::cout << "User defined name :" << camera_info.userDefinedName << "\n";
     std::cout << "XML URL 1: " << camera_info.xmlURL1 << "\n";
     std::cout << "XML URL 2: " << camera_info.xmlURL2 << "\n";
@@ -1078,10 +1117,11 @@ int PGGigECam::printCameraInfo(void) {
 void PGGigECam::printStreamChannelInfo(pg::GigEStreamChannel *pStreamChannel) {
     //char ipAddress[32];
     std::ostringstream ipAddress;
-    ipAddress << (unsigned int) pStreamChannel->destinationIpAddress.octets[0] << "." <<
-            (unsigned int) pStreamChannel->destinationIpAddress.octets[1] << "." <<
-            (unsigned int) pStreamChannel->destinationIpAddress.octets[2] << "." <<
-            (unsigned int) pStreamChannel->destinationIpAddress.octets[3];
+    ipAddress
+        << (unsigned int) pStreamChannel->destinationIpAddress.octets[0] << "."
+        << (unsigned int) pStreamChannel->destinationIpAddress.octets[1] << "."
+        << (unsigned int) pStreamChannel->destinationIpAddress.octets[2] << "."
+        << (unsigned int) pStreamChannel->destinationIpAddress.octets[3];
 
     std::cout << "Network interface: " << pStreamChannel->networkInterfaceIndex << "\n";
     //std::cout << "Host Port: " << pStreamChannel->hostPort << "\n";
@@ -1089,14 +1129,14 @@ void PGGigECam::printStreamChannelInfo(pg::GigEStreamChannel *pStreamChannel) {
     std::cout << "Packet size: " << pStreamChannel->packetSize << "\n";
     std::cout << "Inter packet delay: " << pStreamChannel->interPacketDelay << "\n";
     std::cout << "Destination IP address: " << ipAddress.str() << "\n";
-    std::cout << "Source port (on camera): " << pStreamChannel->sourcePort << "\n\n";
+    std::cout << "Source port (on camera_): " << pStreamChannel->sourcePort << "\n\n";
 
 }
 
 void PGGigECam::fireSoftwareTrigger() {
     // Check that the trigger is ready
 
-    if (use_trigger && use_software_trigger) {
+    if (use_trigger_ && use_software_trigger_) {
 
         pollForTriggerReady();
 
@@ -1108,7 +1148,7 @@ void PGGigECam::fireSoftwareTrigger() {
         const unsigned int k_fireVal = 0x80000000;
         pg::Error error;
 
-        error = camera.WriteRegister(k_softwareTrigger, k_fireVal);
+        error = camera_.WriteRegister(k_softwareTrigger, k_fireVal);
         if (error != pg::PGRERROR_OK) {
             printError(error);
             std::cout << "Error firing software trigger\n";
