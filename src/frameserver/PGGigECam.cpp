@@ -84,11 +84,11 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
                                        "gain",
                                        "white_bal",
                                        "roi",
-                                       "x_bin_",
-                                       "y_bin_",
+                                       "x_bin",
+                                       "y_bin",
                                        "trigger_on",
                                        "trigger_rising",
-                                       "trigger_mode_",
+                                       "trigger_mode",
                                        "trigger_pin",
                                        "enforce_fps",
                                        "strobe_pin",
@@ -867,9 +867,8 @@ int PGGigECam::grabImage() {
 
     if (error == pg::PGRERROR_TIMEOUT) {
         return -1;
-    }
 #ifndef NDEBUG
-    else if (error == pg::PGRERROR_IMAGE_CONSISTENCY_ERROR) {
+    } else if (error == pg::PGRERROR_IMAGE_CONSISTENCY_ERROR) {
         std::cerr << oat::Error("WARNING: torn image detected.\n");
 #endif
     } else if (error != pg::PGRERROR_OK) {

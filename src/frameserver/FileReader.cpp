@@ -113,7 +113,7 @@ void FileReader::configure(const std::string& config_file,
                            const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {"frame_rate", "roi"};
+    std::vector<std::string> options {"fps", "roi"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -129,7 +129,7 @@ void FileReader::configure(const std::string& config_file,
         oat::config::checkKeys(options, this_config);
 
         // Set the frame rate
-        oat::config::getValue(this_config, "frame_rate", frame_rate_in_hz_, 0.0);
+        oat::config::getValue(this_config, "fps", frame_rate_in_hz_, 0.0);
         calculateFramePeriod();
 
         // Set the ROI

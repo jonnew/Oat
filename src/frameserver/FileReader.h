@@ -21,6 +21,7 @@
 #define	OAT_FILEREADER_H
 
 #include <chrono>
+#include <limits>
 #include <string>
 #include <opencv2/videoio.hpp>
 
@@ -33,7 +34,7 @@ public:
 
     FileReader(const std::string &file_name_in,
                const std::string &image_sink_name,
-               const double frames_per_second = 30);
+               const double frames_per_second = std::numeric_limits<double>::max());
 
     // Implement FrameServer interface
     void configure(void) override;

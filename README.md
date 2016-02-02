@@ -212,7 +212,7 @@ component.
 (e.g. webcam or GIGE camera) or from file.
 
 #### Signature
-    oat-frameview --> frame
+    oat-frameserve --> frame
 
 #### Usage
 ```
@@ -251,8 +251,9 @@ __TYPE = `gige`__
 
 - __`index`__=`+int` User specified camera index. Useful in multi-camera
   imaging configurations.
-- __`fps`__=`+float` Acquisition frame rate (Hz). Ignored if `trigger_on=true`.
-  If unspecified, then the maximum frame rate will be used.
+- __`fps`__=`+float` Acquisition frame rate (Hz). Ignored if `trigger_on=true`
+  and `enforce_fps=false`.  If unspecified, then the maximum frame rate will be
+  used.
 - __`exposure`__=`float` Automatically adjust both shutter and gain to
   achieve given exposure (EV).
 - __`shutter`__=`+float` Shutter time in milliseconds. Specifying `exposure`
@@ -281,11 +282,16 @@ __TYPE = `gige`__
   trigger is sent to.
 - __`strobe_pin`__=`+int` Hardware pin number on Point-grey camera that
   a gate signal for the camera shutter is copied  to.
-- __`enforce_fps`__=`bool`If true, ensures that frames are produced at the `fps` setting by retransmitting frames if the requested period is exceeded. This is sometimes needed in the case of an external trigger because PG cameras sometimes just ignore them. I have opened a support ticket on this, but PG has no solution yet.
+- __`enforce_fps`__=`bool`If true, ensures that frames are produced at the
+  `fps` setting by retransmitting frames if the requested period is exceeded.
+  This is sometimes needed in the case of an external trigger because PG
+  cameras sometimes just ignore them. I have opened a support ticket on this,
+  but PG has no solution yet.
 
 __TYPE = `file`__
 
-- __`frame_rate`__=`float` Frame rate in frames per second
+- __`fps`__=`float` Target frame rate in frames per second. If left undefined,
+  frames will be read as quickly as possible.
 - __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of
   interest to extract from the camera or video stream (pixels).
 

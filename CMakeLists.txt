@@ -55,6 +55,7 @@ include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 # Build options 
 option (USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
 option (BUILD_TESTS "Build and run tests." ON)
+option (BUILD_DOCS "Build doxygen documentation." OFF)
 
 # Show options summary
 message (STATUS "Oat version: ${VERSION_LIST}")
@@ -169,7 +170,9 @@ if (${BUILD_TESTS})
 endif()
 
 # API documentation
-add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
+if (${BUILD_DOCS})
+    add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
+endif()
 
 # CPack Deb package
 set (CPACK_GENERATOR "DEB")
