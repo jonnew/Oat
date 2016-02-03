@@ -830,26 +830,35 @@ client or server configurations.
 
 #### Usage
 ```
-Usage: posisock [OPTIONS]
-   or: posisock TYPE SOURCE [CONFIGURATION]
-Send positions from SOURCE to a remove endpoint.
+Usage: posisock [INFO]
+   or: posisock TYPE SOURCE ENDPOINT
+Send positions from SOURCE to a remote endpoint.
 
-TYPE
-  udp: User datagram protocol.
+TYPE:
+  pub: Asynchronous position publisher over ZMQ socket.
+       Publishes positions without request to potentially many
+       subscribers.
+  rep: Synchronous position replier over ZMQ socket. 
+       Sends positions in response to requests from a single
+       endpoint.Several transport/protocol options. The most
+       useful are tcp and interprocess (ipc).
+  udp: Asynchronous, client-side, unicast user datagram protocol
+       over a traditional BSD-style socket.
+
+ENDPOINT:
+Device to send positions to.
+  When TYPE is pos or rep, this is specified using a ZMQ-style
+  endpoint: '<transport>://<host>:<port>'. For instance, 
+  'tcp://*:5555' or 'ipc://*:5556' specify TCP and interprocess
+  communication on ports 5555 or 5556, respectively
+  When TYPE is udp, this is specified as '<host> <port>'
+  For instance, '10.0.0.1 5555'.
 
 OPTIONS:
 
 INFO:
-  --help                    Produce help message.
-  -v [ --version ]          Print version information.
-
-CONFIGURATION:
-  -h [ --host ] arg         Remote host to send positions to.
-  -p [ --port ] arg         Port on which to send positions.
-  --server                  Server-side socket sychronization. Position data
-                            packets are sent whenever requestedby a remote
-                            client. TODO: explain request protocol...
-  -c [ --config ] arg       Configuration file/key pair.
+  --help                 Produce help message.
+  -v [ --version ]       Print version information.
 
 ```
 
@@ -1451,18 +1460,6 @@ RJ45 ------------
 \newpage
 
 ## TODO
-- [ ] Networked communication with remote endpoints that use extracted
-  positional information
-    - ~~Strongly prefer to consume JSON over something opaque and untyped~~
-    - ~~UDP~~
-        - ~~Client version (sends data without request)~~
-        - ~~Server version (pipeline is heldup by client position requests)~~
-    - TCP/IP
-        - Client version (sends data without request)
-        - Server version (pipeline is heldup by client position requests)
-    - Broadcast
-        - Client version (sends data without request)
-    - Move to ZMQ sockets?
 - [ ] Mac, Windows builds?
 - [ ] Unit and stress testing
     - Unit tests for `libshmemdf`
@@ -1492,10 +1489,13 @@ RJ45 ------------
       consumers need to speed up or producers need to slow down.
     - EDIT: `oat-buffer` takes care of this.
 - [ ] GigE interface cleanup
-    - The PGGigeCam class is a big mess. It has has tons of code redundancy.
-    - `oat frameserve gige` can wait indefinitely if the cameras use an
+    - ~~The PGGigeCam class is a big mess. It has has tons of code redundancy.~~
+        - EDIT: A lot of this is due to the PG API. I've cleaned up a bit, but
+          more would be a waste of time.
+    - ~~`oat frameserve gige` can wait indefinitely if the cameras use an
       external trigger and that trigger source stops before the process is
-      interrupted. Need a timed wait there.
+      interrupted. Need a timed wait there.~~
+        - EDIT: Fixed in [a0c97e56bbe66227b03dd9253fdff33f0550465b](https://github.com/jonnew/Oat/commit/a0c97e56bbe66227b03dd9253fdff33f0550465b)
     - Should I be using the generic [GenICam API](https://en.wikipedia.org/wiki/GenICam) 
       instead of PG's non-standard API? e.g. [Aravis](https://github.com/GNOME/aravis).
     - ~~Additionally, it needs to be optimized for performance. Are their

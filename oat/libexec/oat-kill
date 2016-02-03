@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
+# Usage: oat kill [LEVEL]
+# Summary: Issue SIGINT to all currently rinning oat-* programs.  Help: If
+# issued without the optional LEVEL argument, defaults to SIGINT. LEVEL can be
+# any standard termination signal. See man kill for more info.
+
 set -e
 
-# Defaults to SIGINT, but can use any standard termination signal. See man
-# kill.
 LEVEL=${1:--2}
 pkill $LEVEL -u $USER oat-

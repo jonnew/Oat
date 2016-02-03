@@ -42,7 +42,7 @@ void printUsage(po::options_description options) {
     std::cout << "Usage: posisock [INFO]\n"
               << "   or: posisock TYPE SOURCE ENDPOINT\n"
               << "Send positions from SOURCE to a remote endpoint.\n\n"
-              << "TYPE\n"
+              << "TYPE:\n"
               << "  pub: Asynchronous position publisher over ZMQ socket.\n"
               << "       Publishes positions without request to potentially many\n"
               << "       subscribers.\n"
@@ -52,16 +52,14 @@ void printUsage(po::options_description options) {
               << "       useful are tcp and interprocess (ipc).\n"
               << "  udp: Asynchronous, client-side, unicast user datagram protocol\n"
               << "       over a traditional BSD-style socket.\n\n"
-              << "ENDPOINT\n"
-              << "Endpoint to send positions to.\n"
-              << "  For pos and rep:\n"
-              << "       Specified as a ZMQ-style endpoint\n"
-              << "           <transport>://<host>:<port>\n"
-              << "       e.g. tcp://*:5555 or ipc://*:5556\n"
-              << "  For udp:\n"
-              << "       Specified as\n"
-              << "          <host> <port>\n"
-              << "       e.g. 10.0.0.1 5555.\n\n"
+              << "ENDPOINT:\n"
+              << "Device to send positions to.\n"
+              << "  When TYPE is pos or rep, this is specified using a ZMQ-style\n"
+              << "  endpoint: '<transport>://<host>:<port>'. For instance, \n" 
+              << "  'tcp://*:5555' or 'ipc://*:5556' specify TCP and interprocess\n"
+              << "  communication on ports 5555 or 5556, respectively\n"
+              << "  When TYPE is udp, this is specified as '<host> <port>'\n"
+              << "  For instance, '10.0.0.1 5555'.\n\n"
               << options << "\n";
 }
 
@@ -126,7 +124,7 @@ int main(int argc, char *argv[]) {
                 ("positionsource", po::value<std::string>(&source),
                 "The name of the server that supplies object position information."
                 "The server must be of type SMServer<Position>\n")
-                ("endpoint,e", po::value<std::vector<std::string> >()->multitoken(), 
+                ("endpoint,e", po::value<std::vector<std::string> >()->multitoken(),
                  "Endpoint to send positions to.\n")
                 ;
 
@@ -176,19 +174,19 @@ int main(int argc, char *argv[]) {
             std::cerr << oat::Error("A position SOURCE must be specified.\n");
             return -1;
         }
-        
+
         if (!variable_map["endpoint"].empty()) {
 
             endpoint = variable_map["endpoint"].as<std::vector<std::string> >();
 
             if (endpoint.size() > 2 || endpoint.size() < 1) {
                 printUsage(visible_options);
-                std::cerr << oat::Error("Endpoint was incorrectly formatted.\n"); 
+                std::cerr << oat::Error("Endpoint was incorrectly formatted.\n");
                 return -1;
             } else if (endpoint.size() != 2 && type == "udp") {
                 printUsage(visible_options);
-                std::cerr << oat::Error("udp endpoint must be specified as <host> <port>.\n"); 
-                return -1;  
+                std::cerr << oat::Error("udp endpoint must be specified as <host> <port>.\n");
+                return -1;
             }
         } else {
             printUsage(visible_options);
