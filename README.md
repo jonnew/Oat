@@ -1526,6 +1526,16 @@ RJ45 ------------
       stateless detection. However, it would make the concept of position
       combining hard to define (although that is even true now is just a design
       choice, really).
+- [ ] Frame visualization is nice, but should no cause holdups in the processing 
+      pipeline. In this case frames should just be dropped. This might be as 
+      simple as making the actual visualization call in 
+      [Viewer.cpp](/src/frameviewer/Viewer.cpp) and callback operating on a 
+      separate visualization thread that is triggered after `internal_frame_` 
+      is written to. 
+    - This may cause `internal_frame_` to be overwritten during visualization. 
+      Problem?
+    - Visualization could somehow be 'aborted' if it has not completed and 
+      a new frame is available.
 - [ ] Colors
     - Should visual ID information (e.g. color) be integrated into the
       `position` type?
