@@ -48,7 +48,7 @@ using camModel = oat::CameraCalibrator::CameraModel;
 
 void printUsage(po::options_description options){
     std::cout << "Usage: calibrate [INFO]\n"
-              << "   or: calibrate SOURCE [CONFIGURATION]\n"
+              << "   or: calibrate TYPE SOURCE [CONFIGURATION]\n"
               << "Generate camera calibration and homography transform for a "
               << "frame SOURCE.\n\n"
               << "TYPE\n"

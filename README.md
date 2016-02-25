@@ -1495,7 +1495,8 @@ RJ45 ------------
     - ~~`oat frameserve gige` can wait indefinitely if the cameras use an
       external trigger and that trigger source stops before the process is
       interrupted. Need a timed wait there.~~
-        - EDIT: Fixed in [a0c97e56bbe66227b03dd9253fdff33f0550465b](https://github.com/jonnew/Oat/commit/a0c97e56bbe66227b03dd9253fdff33f0550465b)
+        - EDIT: Fixed in
+          [a0c97e56bbe66227b03dd9253fdff33f0550465b](https://github.com/jonnew/Oat/commit/a0c97e56bbe66227b03dd9253fdff33f0550465b)
     - Should I be using the generic [GenICam API](https://en.wikipedia.org/wiki/GenICam) 
       instead of PG's non-standard API? e.g. [Aravis](https://github.com/GNOME/aravis).
     - ~~Additionally, it needs to be optimized for performance. Are their
@@ -1508,6 +1509,15 @@ RJ45 ------------
       great pieces of code, but I should at least use them for inspiration.
     - `oat-frameserve gige` lacks the ability to set FPS in free running
       (non-triggered mode)
+    - ~~Configuration of the camera can get into impossible states if oat is used
+      in combo with other programs that mess with the camera's registers.
+      Configuration via Oat should start with a clean slate by setting the
+      camera to a default register state.~~
+      - ~~See flycap --> advanced camera settings --> restor default memory
+        channel for how.~~
+    - Binning should be specified in terms of mode number (see pg. 66 of
+      blackfly tech ref) instead of bin size since not all bin sizes are
+      allowed.
 - [ ] Position type generalization
     - It might be a good idea to generalize the concept of a position to a
       multi-positional element

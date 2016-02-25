@@ -175,15 +175,16 @@ void PGGigECam::configure(const std::string& config_file, const std::string& con
         // Pixel binning
         {
             int64_t val;
-            if (oat::config::getValue(this_config, "x_bin_", val, (int64_t)0, (int64_t)8)) {
+            if (oat::config::getValue(this_config, "x_bin", val, (int64_t)0, (int64_t)8)) {
                 x_bin_ = val;
             }
 
-            if (oat::config::getValue(this_config, "y_bin_", val, (int64_t)0, (int64_t)8)) {
+            if (oat::config::getValue(this_config, "y_bin", val, (int64_t)0, (int64_t)8)) {
                 y_bin_ = val;
             }
         }
 
+        // TODO: Must come after setting up image?
         setupPixelBinning(x_bin_, y_bin_);
 
         // Set the ROI
@@ -282,7 +283,7 @@ int PGGigECam::setCameraIndex(unsigned int requested_idx) {
     if (num_cameras_ > requested_idx) {
         index_ = requested_idx;
     } else {
-        throw (std::runtime_error("Requested camera_ index " +
+        throw (std::runtime_error("Requested camera index " +
                 std::to_string(requested_idx) + " is out of range.\n"));
     }
 
@@ -291,7 +292,7 @@ int PGGigECam::setCameraIndex(unsigned int requested_idx) {
 
 int PGGigECam::connectToCamera(void) {
 
-    std::cout << "Connecting to camera_: " << index_ << "\n";
+    std::cout << "Connecting to camera: " << index_ << "\n";
 
     pg::BusManager busMgr;
     pg::PGRGuid guid;
@@ -300,14 +301,21 @@ int PGGigECam::connectToCamera(void) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    // Connect to a camera_
     error = camera_.Connect(&guid);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
 
-    // Print camera_ information
     printCameraInfo();
+
+    std::cout << "Restoring default camcera acqusition settings...\n";
+    
+    error = camera_.RestoreFromMemoryChannel(0);
+    if (error != pg::PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
+
+    std::cout << "Default settings restored.\n";
 
     return 0;
 }
@@ -420,7 +428,7 @@ int PGGigECam::setupShutter(float shutter_ms_in) {
 
 int PGGigECam::setupGain(bool is_auto) {
 
-    std::cout << "Setting camera_ gain...\n";
+    std::cout << "Setting camera gain...\n";
 
     pg::Property prop;
     prop.type = pg::GAIN;
@@ -500,7 +508,7 @@ int PGGigECam::setupExposure(float exposure_EV_in) {
 
 int PGGigECam::setupWhiteBalance(bool is_on) {
 
-    std::cout << "Setting camera_ white balance...\n";
+    std::cout << "Setting camera white balance...\n";
 
     pg::Property prop;
     prop.type = pg::WHITE_BALANCE;
@@ -591,7 +599,7 @@ int PGGigECam::setupDefaultImageFormat() {
  */
 int PGGigECam::setupImageFormat() {
 
-    std::cout << "Querying GigE image setting information...\n";
+    std::cout << "Querying image settings information...\n";
 
     pg::GigEImageSettingsInfo image_settings_info;
     pg::Error error = camera_.GetGigEImageSettingsInfo(&image_settings_info);
@@ -619,7 +627,7 @@ int PGGigECam::setupImageFormat() {
     imageSettings.width = region_of_interest_.width;
     imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW12;
 
-    std::cout << "Setting GigE image settings...\n";
+    std::cout << "Setting image settings...\n";
 
     error = camera_.SetGigEImageSettings(&imageSettings);
     if (error != pg::PGRERROR_OK) {
@@ -631,12 +639,16 @@ int PGGigECam::setupImageFormat() {
 
 int PGGigECam::setupPixelBinning(int x_bin, int y_bin) {
 
+    std::cout << "Setting image binning...\n";
+
     // On-board image binning
     pg::Error error;
     error = camera_.SetGigEImageBinningSettings(x_bin, y_bin);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
+
+    std::cout << "Onboard binning set to [" << x_bin << " " << y_bin << "]\n";
 
     return 0;
 }
@@ -965,13 +977,13 @@ bool PGGigECam::serveFrame() {
     if (rc == -1)
         return false;
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
     if (rc != 0) {
         std::cerr << oat::Warn("Frame re-transmission due to " +
                                std::to_string(rc) +
                                " skipped trigger(s).\n");
     }
-#endif
+//#endif
 
     int i = 0;
     do {
@@ -1103,8 +1115,8 @@ int PGGigECam::printCameraInfo(void) {
               << camera_info.gigEMajorVersion << "."
               << camera_info.gigEMinorVersion << "\n";
     std::cout << "User defined name :" << camera_info.userDefinedName << "\n";
-    std::cout << "XML URL 1: " << camera_info.xmlURL1 << "\n";
-    std::cout << "XML URL 2: " << camera_info.xmlURL2 << "\n";
+    //std::cout << "XML URL 1: " << camera_info.xmlURL1 << "\n";
+    //std::cout << "XML URL 2: " << camera_info.xmlURL2 << "\n";
     std::cout << "MAC address: " << macAddress.str() << "\n";
     std::cout << "IP address: " << ipAddress.str() << "\n";
     std::cout << "Subnet mask: " << subnetMask.str() << "\n";
@@ -1128,7 +1140,7 @@ void PGGigECam::printStreamChannelInfo(pg::GigEStreamChannel *pStreamChannel) {
     std::cout << "Packet size: " << pStreamChannel->packetSize << "\n";
     std::cout << "Inter packet delay: " << pStreamChannel->interPacketDelay << "\n";
     std::cout << "Destination IP address: " << ipAddress.str() << "\n";
-    std::cout << "Source port (on camera_): " << pStreamChannel->sourcePort << "\n\n";
+    std::cout << "Source port (on camera): " << pStreamChannel->sourcePort << "\n\n";
 
 }
 
