@@ -85,7 +85,7 @@ public:
 private:
 
     uint64_t count_ {0};
-    Microseconds microseconds_;
+    Microseconds microseconds_ {0};
     double period_sec_ {-1.0};
     double rate_hz_ {-1.0};
 

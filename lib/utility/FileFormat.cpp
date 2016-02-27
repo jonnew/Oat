@@ -76,7 +76,7 @@ std::string createTimeStamp() {
 }
 
 
-bool ensureUniquePath(std::string& file) {
+int ensureUniquePath(std::string& file) {
 
     int i = 0;
     std::string original_file = file;
@@ -98,7 +98,7 @@ bool ensureUniquePath(std::string& file) {
                std::string(extension.generic_string());
     }
 
-    return (i != 0) ? true : false; 
+    return i;
 }
 
 bool checkWritePermission(const std::string &file_path) {

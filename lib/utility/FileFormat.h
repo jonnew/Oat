@@ -58,9 +58,10 @@ std::string createTimeStamp();
  * encountered file path is appended with a numeral.
  *
  * @param file_path Full path of the file to check and potentially modify
- * @return True if the file_path was modified due to a conflict.
+ * @return The number of interations the file_path was modified due to a
+ * conflict. 0 indicates no modification.
  */
-bool ensureUniquePath(std::string& file_path);
+int ensureUniquePath(std::string& file_path);
 
 /**
  * Check if we have write access to a file.

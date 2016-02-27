@@ -1488,6 +1488,9 @@ RJ45 ------------
       lunch: if consumers cannot keep up with producers on average, then
       consumers need to speed up or producers need to slow down.
     - EDIT: `oat-buffer` takes care of this.
+- [ ] oat-posifilt kalman sample period redundancy
+  - The kalman filter requires the user to provide the sample period of
+    incoming positions, but this is now stored with each position packet. 
 - [ ] GigE interface cleanup
     - ~~The PGGigeCam class is a big mess. It has has tons of code redundancy.~~
         - EDIT: A lot of this is due to the PG API. I've cleaned up a bit, but

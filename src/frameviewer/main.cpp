@@ -90,9 +90,9 @@ int main(int argc, char *argv[]) {
         po::options_description config("CONFIGURATION");
         config.add_options()
                 ("snapshot-path,f", po::value<std::string>(&snapshot_path),
-                "The path to which in which snapshots will be saved."
-                "If a folder is designated, the base file name will be SOURCE."
-                "The timestamp of the snapshot will be prepended to the file name."
+                "The path to which in which snapshots will be saved. "
+                "If a folder is designated, the base file name will be SOURCE. "
+                "The timestamp of the snapshot will be prepended to the file name. "
                 "Defaults to the current directory.")
                 ;
 

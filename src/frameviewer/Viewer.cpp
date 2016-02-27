@@ -111,8 +111,11 @@ bool Viewer::showImage() {
 
         char command = cv::waitKey(1);
 
-        if (command == 's')
+        if (command == 's') {
+            std::string fid = makeFileName();
             cv::imwrite(makeFileName(), internal_frame_, compression_params_);
+            std::cout << "Snapshot saved to " << fid << "\n";
+        }
     }
 
     // Sink was not at END state
@@ -130,13 +133,17 @@ void Viewer::storeSnapshotPath(const std::string &snapshot_path) {
     }
 
     // Get folder from path
-    snapshot_folder_ = path.parent_path().string();
-
-    // Generate base file name
-    snapshot_base_file_ = path.stem().string();
-    if (snapshot_base_file_.empty() || snapshot_base_file_ == ".")
+    if (bfs::is_directory(path)) {
+        snapshot_folder_ = path.string();
         snapshot_base_file_ = frame_source_address_;
+    } else {
+        snapshot_folder_ = path.parent_path().string();
 
+        // Generate base file name
+        snapshot_base_file_ = path.stem().string();
+        if (snapshot_base_file_.empty() || snapshot_base_file_ == ".")
+            snapshot_base_file_ = frame_source_address_;
+    }
 }
 
 std::string Viewer::makeFileName() {
