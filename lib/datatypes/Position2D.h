@@ -28,7 +28,7 @@
 #include "Position.h"
 
 namespace oat {
-
+    
 using Point2D = cv::Point2d;
 using Velocity2D = cv::Point2d;
 using UnitVector2D = cv::Point2d;
@@ -42,6 +42,9 @@ public:
         // Nothing
     }
 
+    bool region_valid {false};
+    char region[100];
+      
     bool position_valid {false};
     Point2D position;
 
@@ -50,9 +53,6 @@ public:
 
     bool heading_valid {false};
     UnitVector2D heading;
-
-    bool region_valid {false};
-    char region[100];
 
     template <typename Writer>
     void Serialize(Writer& writer) const {
@@ -117,6 +117,19 @@ public:
 
         writer.EndObject();
     }
+    
+    void setCoordSystem(const DistanceUnit value, 
+                        const cv::Matx33d homography) { 
+        unit_of_length_ = value;
+        homography_ = homography; 
+    }
+    
+    cv::Matx33d homography() const { return homography_; }
+    
+private:
+    
+    cv::Matx33d homography_ {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
+    
 };
 
 }      /* namespace oat */

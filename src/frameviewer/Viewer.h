@@ -78,13 +78,6 @@ private:
     std::string snapshot_base_file_;
     std::vector<int> compression_params_;
 
-
-    /**
-     * Make the snapshot file path using the requested save folder
-     * and current timestamp.
-     * return Snapshot filepath
-     */
-    std::string makeFileName(void);
 };
 
 }      /* namespace oat */

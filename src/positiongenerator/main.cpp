@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
         positional_options.add("type", 1);
         positional_options.add("sink", 1);
 
-        po::options_description visible_options("VISIBLE OPTIONS");
+        po::options_description visible_options("OPTIONAL ARGUMENTS");
         visible_options.add(options).add(config);
 
         po::options_description all_options("ALL OPTIONS");

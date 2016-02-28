@@ -44,6 +44,8 @@ void TestFrame::configure(const std::string &config_file,
 void TestFrame::connectToNode() {
 
     cv::Mat example_frame = cv::imread(file_name_);
+    if (example_frame.empty())
+        throw std::runtime_error(file_name_ + " could not be opened.");
 
     frame_sink_.bind(frame_sink_address_,
             example_frame.total() * example_frame.elemSize());
@@ -53,6 +55,9 @@ void TestFrame::connectToNode() {
 
     // Static image, never changes
     example_frame.copyTo(shared_frame_);
+    
+    // Put a dummy rate in the shared frame
+    shared_frame_.sample().set_period_sec(0.01);
 }
 
 bool TestFrame::serveFrame() {

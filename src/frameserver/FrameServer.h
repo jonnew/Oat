@@ -75,9 +75,6 @@ protected:
     bool use_roi_ {false};
     cv::Rect_<size_t> region_of_interest_;
 
-    // Pure frame sinks must assosciate frames with a real time clock
-    //std::chrono::system_clock wall_clock_;
-
     // Frame sink
     const std::string frame_sink_address_;
     oat::Sink<oat::SharedFrameHeader> frame_sink_;

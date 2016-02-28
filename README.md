@@ -14,8 +14,6 @@ __Contributors__
 
 - jonnew [http://www.mit.edu/~jpnewman/](http://www.mit.edu/~jpnewman/)
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
 - [Manual](#manual)
@@ -38,41 +36,46 @@ __Contributors__
         - [Usage](#usage-3)
         - [Configuration File Options](#configuration-file-options-2)
         - [Example](#example-1)
-    - [Position Filter](#position-filter)
+    - [Position Generator](#position-generator)
         - [Signature](#signature-4)
         - [Usage](#usage-4)
         - [Configuration File Options](#configuration-file-options-3)
         - [Example](#example-2)
-    - [Position Combiner](#position-combiner)
+    - [Position Filter](#position-filter)
         - [Signature](#signature-5)
         - [Usage](#usage-5)
         - [Configuration File Options](#configuration-file-options-4)
         - [Example](#example-3)
-    - [Frame Decorator](#frame-decorator)
+    - [Position Combiner](#position-combiner)
         - [Signature](#signature-6)
         - [Usage](#usage-6)
+        - [Configuration File Options](#configuration-file-options-5)
         - [Example](#example-4)
-    - [Recorder](#recorder)
+    - [Frame Decorator](#frame-decorator)
         - [Signature](#signature-7)
         - [Usage](#usage-7)
         - [Example](#example-5)
-    - [Position Network Socket](#position-network-socket)
+    - [Recorder](#recorder)
         - [Signature](#signature-8)
         - [Usage](#usage-8)
         - [Example](#example-6)
-    - [Buffer](#buffer)
-        - [Signatures](#signatures)
+    - [Position Network Socket](#position-network-socket)
+        - [Signature](#signature-9)
         - [Usage](#usage-9)
         - [Example](#example-7)
-    - [Calibrate](#calibrate)
-        - [Signature](#signature-9)
+    - [Buffer](#buffer)
+        - [Signatures](#signatures)
         - [Usage](#usage-10)
-    - [Kill](#kill)
-        - [Usage](#usage-11)
         - [Example](#example-8)
-    - [Clean](#clean)
+    - [Calibrate](#calibrate)
+        - [Signature](#signature-10)
+        - [Usage](#usage-11)
+    - [Kill](#kill)
         - [Usage](#usage-12)
         - [Example](#example-9)
+    - [Clean](#clean)
+        - [Usage](#usage-13)
+        - [Example](#example-10)
 - [Installation](#installation)
     - [Dependencies](#dependencies)
         - [Flycapture SDK](#flycapture-sdk)
@@ -86,8 +89,6 @@ __Contributors__
             - [Example](#example-7)
 - [TODO](#todo)
 
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 \newpage
 ## Manual
 ## Introduction
@@ -95,7 +96,7 @@ Oat's design is influenced by the [UNIX
 philosophy](https://en.wikipedia.org/wiki/Unix_philosophy), [suckless
 tools](http://suckless.org/philosophy), and
 [MEABench](http://www.danielwagenaar.net/res/software/meabench/). Oat consists
-of a set of small, composable programs (called **components**) Components are
+of a set of small, composable programs (called **components**). Components are
 equipped with standard interfaces that permit communication through shared
 memory to capture, process, and record video streams.  Currently, Oat
 components act on two basic data types: `frames` and `positions`.
@@ -509,6 +510,54 @@ oat posidet hsv raw cpos -c config.toml hsv_config
 # Use motion-based object detection on the 'raw' frame stream
 # publish the result to the 'mpos' position stream
 oat posidet diff raw mpos
+```
+
+\newpage
+
+### Position Generator
+`oat-posigen` - Generate positions for testing downstream components.  Publish
+generated positions to shared memory.
+
+#### Signature
+    oat-posigen --> position
+
+#### Usage
+```
+Usage: posigen [INFO]
+   or: posigen TYPE SINK [CONFIGURATION]
+Publish generated positions to SINK.
+
+TYPE
+  rand2D: Randomly accelerating 2D Position
+
+SINK:
+  User supplied position sink name (e.g. pos).
+
+OPTIONAL ARGUMENTS:
+
+INFO:
+  --help                 Produce help message.
+  -v [ --version ]       Print version information.
+
+CONFIGURATION:
+  -r [ --sps ] arg       Samples per second. Overriden by information in 
+                         configuration file if provided.
+  -c [ --config ] arg    Configuration file/key pair.
+```
+
+#### Configuration File Options
+__TYPE = `rand2D`__
+
+- __`dt`__=`+double` Position update period
+- __`room`__=`[+double, +double, +double, +double]` The 'room' in which generated
+  positions reside specified as [x origin, y origin, width, height]. Arbitrary
+  units. The room has periodic boundaries so when a position leaves one side it
+  will enter the opposing one.
+
+#### Example
+```bash
+# Publish randomly moving positions to the 'pos' position stream
+oat posigen rand2D pos 
 ```
 
 \newpage
@@ -1464,7 +1513,7 @@ RJ45 ------------
 - [ ] Unit and stress testing
     - Unit tests for `libshmemdf`
         - ~~Nominal data types, `T`~~
-        - Specializations for `frames`
+        - Specializations for `Frames`
     - Stress tests for data processing chains
         - I need to come up with a series of scripts that configure and run
           components in odd and intensive, but legal, ways to ensure sample
@@ -1483,14 +1532,11 @@ RJ45 ------------
       regardless of remote requests for data processing chain updates. If
       remote sychronization is required, this is undesirable.
     - One thing that could be done is to implement buffer components that
-      provide FIFOs that can follow `pure SINKs`. However, this should
+      provide FIFOs that can follow `pure SINK`'s. However, this should
       only deal with 'hickups' in data processing. There is no free
       lunch: if consumers cannot keep up with producers on average, then
       consumers need to speed up or producers need to slow down.
     - EDIT: `oat-buffer` takes care of this.
-- [ ] oat-posifilt kalman sample period redundancy
-  - The kalman filter requires the user to provide the sample period of
-    incoming positions, but this is now stored with each position packet. 
 - [ ] GigE interface cleanup
     - ~~The PGGigeCam class is a big mess. It has has tons of code redundancy.~~
         - EDIT: A lot of this is due to the PG API. I've cleaned up a bit, but

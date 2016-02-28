@@ -37,7 +37,7 @@ void PositionFilter::connectToNode() {
     // Establish our a slot in the node 
     position_source_.touch(position_source_address_);
 
-    // Wait for sychronous start with sink when it binds the node
+    // Wait for synchronous start with sink when it binds the node
     position_source_.connect();
 
     // Bind to sink sink node and create a shared position

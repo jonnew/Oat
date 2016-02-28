@@ -123,12 +123,19 @@ private:
                                      {196, 113, 108},
                                      {210, 139,  38}};
 
+    /**
+     * Project Positions into oat::PIXEL coordinates.
+     * @param pos Position with unit_of_length != oat::PIXEL to be converted to
+     * unit_of_length == oat::PIXEL.
+     */
+    void invertHomography(oat::Position2D &pos);
+
     // TODO: Look at these glorious type signatures
     void drawPosition(void);
-    void drawHeading(void);
-    void drawVelocity(void);
+    //void drawHeading(void);
+    //void drawVelocity(void);
     void printRegion(void);
-    void drawSymbols(void);
+    void drawOnFrame(void);
     void printTimeStamp(void);
     void printSampleNumber(void);
     void encodeSampleNumber(void);

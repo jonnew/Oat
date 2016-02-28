@@ -130,7 +130,7 @@ bool Decorator::decorateFrame() {
     }
 
     // Decorate frame
-    drawSymbols();
+    drawOnFrame();
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -150,14 +150,11 @@ bool Decorator::decorateFrame() {
     return false;
 }
 
-void Decorator::drawSymbols() {
+void Decorator::drawOnFrame() {
 
     if (decorate_position_) {
-
-        // Non-optional drawing
+        
         drawPosition();
-        drawHeading();
-        drawVelocity();
 
         if (print_region_)
             printRegion();
@@ -173,56 +170,90 @@ void Decorator::drawSymbols() {
         encodeSampleNumber();
 }
 
+void Decorator::invertHomography(oat::Position2D &p) {
+
+    if (p.position_valid) {
+
+        cv::Matx33d inv_homo = p.homography().inv();
+        
+        std::vector<oat::Point2D> in_positions;
+        std::vector<oat::Point2D> out_positions;
+        in_positions.push_back(p.position);
+        cv::perspectiveTransform(in_positions, out_positions, inv_homo);
+        p.position = out_positions[0];
+
+        if (p.velocity_valid) {
+
+            std::vector<oat::Velocity2D> in_velocities;
+            std::vector<oat::Velocity2D> out_velocities;
+            cv::Matx33d vel_inv_homo = inv_homo;
+            vel_inv_homo(0, 2) = 0.0; // offsets do not apply to velocity
+            vel_inv_homo(1, 2) = 0.0; // offsets do not apply to velocity
+            in_velocities.push_back(p.velocity);
+            cv::perspectiveTransform(in_velocities, out_velocities, vel_inv_homo);
+            p.velocity = out_velocities[0];
+        }
+
+        // TODO: Requires homography treatment like velocity and position
+        if (p.heading_valid) {
+
+            std::vector<oat::UnitVector2D> in_heading;
+            std::vector<oat::UnitVector2D> out_heading;
+            cv::Matx33d head_inv_homo = inv_homo;
+            head_inv_homo(0, 2) = 0.0; // offsets do not apply to heading
+            head_inv_homo(1, 2) = 0.0; // offsets do not apply to heading
+            in_heading.push_back(p.heading);
+            cv::perspectiveTransform(in_heading, out_heading, head_inv_homo);
+            cv::normalize(out_heading, out_heading);
+            p.heading = out_heading[0];
+        }
+    }
+}
+
 void Decorator::drawPosition() {
 
     size_t i = 0;
     for (auto pos : position_sources_) {
-        if (std::get<1>(pos).position_valid) {
+        
+        oat::Position2D p = std::get<1>(pos);
+
+        if (p.unit_of_length() != oat::DistanceUnit::PIXELS)
+            invertHomography(p);
+
+        if (p.position_valid) {
 
             cv::circle(internal_frame_,
-                       std::get<1>(pos).position,
+                       p.position,
                        position_circle_radius_,
                        pos_colors_[i],
                        line_thickness_);
+
+            if (p.velocity_valid) {
+
+                cv::Point2d end = 
+                    p.position + (velocity_scale_factor_ * p.velocity);
+                cv::line(internal_frame_,
+                         p.position,
+                         end,
+                         pos_colors_[i],
+                         line_thickness_);
+            }
+
+            if (p.heading_valid) {
+
+                cv::Point2d start =
+                        p.position - (heading_line_length_ * p.heading);
+                cv::Point2d end =
+                        p.position + (heading_line_length_ * p.heading);
+
+                cv::line(internal_frame_, start, end, font_color_, line_thickness_);
+            }
         }
 
         (i > position_sources_.size() - 1) ? i = 0 : i++;
     }
 }
 
-void Decorator::drawHeading() {
-
-    for (auto pos : position_sources_) {
-        if (std::get<1>(pos).position_valid && std::get<1>(pos).heading_valid) {
-
-            cv::Point2d start =
-                    std::get<1>(pos).position - (heading_line_length_ * std::get<1>(pos).heading);
-            cv::Point2d end =
-                    std::get<1>(pos).position + (heading_line_length_ * std::get<1>(pos).heading);
-
-            // Draw heading line
-            cv::line(internal_frame_, start, end, font_color_, line_thickness_);
-        }
-    }
-}
-
-void Decorator::drawVelocity() {
-
-     size_t i = 0;
-    for (auto pos : position_sources_) {
-
-        if (std::get<1>(pos).velocity_valid && std::get<1>(pos).position_valid) {
-            cv::Point2d end = std::get<1>(pos).position + (velocity_scale_factor_ * std::get<1>(pos).velocity);
-            cv::line(internal_frame_,
-                     std::get<1>(pos).position,
-                     end,
-                     pos_colors_[i],
-                     line_thickness_);
-        }
-
-        (i > position_sources_.size() - 1) ? i = 0 : i++;
-    }
-}
 
 void Decorator::printRegion() {
 

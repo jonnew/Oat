@@ -60,7 +60,7 @@ Viewer::Viewer(const std::string& frame_source_address) :
         cv::namedWindow(name_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
     } catch (cv::Exception& ex) {
         oat::whoWarn(name_, "OpenCV not compiled with OpenGL support. "
-                           "Falling back to OpenCV's display driver.\n");
+                            "Falling back to OpenCV's display driver.\n");
         cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
     }
 #else
@@ -73,7 +73,7 @@ void Viewer::connectToNode() {
     // Establish our a slot in the node
     frame_source_.touch(frame_source_address_);
 
-    // Wait for sychronous start with sink when it binds the node
+    // Wait for synchronous start with sink when it binds the node
     frame_source_.connect();
 }
 
@@ -112,9 +112,24 @@ bool Viewer::showImage() {
         char command = cv::waitKey(1);
 
         if (command == 's') {
-            std::string fid = makeFileName();
-            cv::imwrite(makeFileName(), internal_frame_, compression_params_);
-            std::cout << "Snapshot saved to " << fid << "\n";
+            
+            // Generate current snapshot save path
+            std::string fid;
+            std::string timestamp = oat::createTimeStamp();
+
+            int err = oat::createSavePath(fid,
+                                         snapshot_folder_,
+                                         snapshot_base_file_ + ".png",
+                                         timestamp + "_" ,
+                                         true);
+            
+            if (!err) {
+                cv::imwrite(fid, internal_frame_, compression_params_);
+                std::cout << "Snapshot saved to " << fid << "\n";
+            } else {
+                std::cerr << oat::Error("Snapshop file creation exited "
+                        "with error " + std::to_string(err) + "\n");
+            }
         }
     }
 
@@ -144,26 +159,6 @@ void Viewer::storeSnapshotPath(const std::string &snapshot_path) {
         if (snapshot_base_file_.empty() || snapshot_base_file_ == ".")
             snapshot_base_file_ = frame_source_address_;
     }
-}
-
-std::string Viewer::makeFileName() {
-
-    // Generate current snapshot save path
-    std::string fid;
-    std::string timestamp = oat::createTimeStamp();
-
-    int err = oat::createSavePath(fid,
-                                 snapshot_folder_,
-                                 snapshot_base_file_ + ".png",
-                                 timestamp + "_" ,
-                                 true);
-
-    if (err) {
-        std::cerr << oat::Error("Snapshop file creation exited "
-                                "with error " + std::to_string(err) + "\n");
-    }
-
-    return fid;
 }
 
 } /* namespace oat */

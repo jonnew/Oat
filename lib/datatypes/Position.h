@@ -55,7 +55,6 @@ public:
         // Copy all except label_
         unit_of_length_ = p.unit_of_length_;
         sample_ = p.sample_;
-        //sample_period_sec_ = p.sample_period_sec_;
         return *this;
     }
 
@@ -63,14 +62,14 @@ public:
     oat::Sample & sample() { return sample_; };
 
     // Accessors
-    DistanceUnit unit_of_length(void) const { return unit_of_length_; }
-    void set_unit_of_length(DistanceUnit value) { unit_of_length_ = value; }
     char * label() {return label_; }
-
+    DistanceUnit unit_of_length(void) const { return unit_of_length_; }
+    
 protected:
-
+    
     char label_[100]; //!< Position label (e.g. "anterior")
     DistanceUnit unit_of_length_ {DistanceUnit::PIXELS};
+    
     oat::Sample sample_;
 };
 

@@ -382,7 +382,18 @@ int PGGigECam::setupFrameRate(double fps, bool is_auto) {
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
-
+    
+    // If set to auto, then get the automatically configured frame frame rate
+    if (is_auto) {
+        error = camera_.GetProperty(&prop);
+        if (
+        frames_per_secoerror != pg::PGRERROR_OK) {
+            throw (std::runtime_error(error.GetDescription()));
+        }
+        
+        frames_per_second_ = prop.absValue;
+    }
+    
     return 0;
 }
 

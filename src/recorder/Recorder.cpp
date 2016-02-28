@@ -60,7 +60,8 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
             positions_.push_back(std::move(pos));
             position_write_number_.push_back(0);
             position_sources_.push_back(std::make_pair(addr,
-                    std::make_unique<oat::Source < oat::Position2D >> () ));
+                    std::make_unique<oat::Source < oat::Position2D >> ())
+            );
         }
     }
 
@@ -144,7 +145,7 @@ void Recorder::connectToNodes() {
     bool ts_consistent = true;
     double ts {-1.0}, ts_last {-1.0};
 
-    // TODO: This procedure may be approriate for all multi source components
+    // TODO: This procedure may be appropriate for all multi source components
 
     // Frame sources
     for (auto &fs: frame_sources_) {
@@ -153,9 +154,9 @@ void Recorder::connectToNodes() {
         if (ts_last != -1.0 && ts != ts_last) {
             ts = ts > ts_last ? ts : ts_last;
             ts_consistent = false;
-         } else {
+        } else {
             ts_last = ts;
-         }
+        }
     }
 
     // Position sources
@@ -165,9 +166,9 @@ void Recorder::connectToNodes() {
         if (ts_last != -1.0 && ts != ts_last) {
             ts = ts > ts_last ? ts : ts_last;
             ts_consistent = false;
-         } else {
+        } else {
             ts_last = ts;
-         }
+        }
     }
 
     sample_rate_hz_ = 1.0 / ts;

@@ -36,33 +36,46 @@ PositionFilter(position_source_address, position_sink_address)
 
 void HomographyTransform2D::filter(oat::Position2D& position) {
 
-    // Position transforms
-    std::vector<oat::Point2D> in_positions;
-    std::vector<oat::Point2D> out_positions;
-    in_positions.push_back(position.position);
-    cv::perspectiveTransform(in_positions, out_positions, homography_);
-    position.position = out_positions[0];
+    // TODO: If the homography_is not valid, I should warn the user...
+    if (homography_valid_) {
 
-    // Velocity transform
-    std::vector<oat::Velocity2D> in_velocities;
-    std::vector<oat::Velocity2D> out_velocities;
-    cv::Matx33d vel_homo = homography_;
-    vel_homo(0, 2) = 0.0; // offsets do not apply to velocity
-    vel_homo(1, 2) = 0.0; // offsets do not apply to velocity
-    in_velocities.push_back(position.velocity);
-    cv::perspectiveTransform(in_velocities, out_velocities, vel_homo);
-    position.velocity = out_velocities[0];
+        // Position transform
+        if (position.position_valid) {
+            std::vector<oat::Point2D> in_positions;
+            std::vector<oat::Point2D> out_positions;
+            in_positions.push_back(position.position);
+            cv::perspectiveTransform(in_positions, out_positions, homography_);
+            position.position = out_positions[0];
+        }
 
-    // Head direction is normalized and unit-free, and therefore
-    // does not require conversion
-    // TODO: No, this is not true. what about shear distortion??
+        // Velocity transform
+        if (position.velocity_valid) {
+            std::vector<oat::Velocity2D> in_velocities;
+            std::vector<oat::Velocity2D> out_velocities;
+            cv::Matx33d vel_homo = homography_;
+            vel_homo(0, 2) = 0.0; // offsets do not apply to velocity
+            vel_homo(1, 2) = 0.0; // offsets do not apply to velocity
+            in_velocities.push_back(position.velocity);
+            cv::perspectiveTransform(in_velocities, out_velocities, vel_homo);
+            position.velocity = out_velocities[0];
+        }
 
-    // TODO: If the homography_ is not valid, why would I even do the above
-    //       transforms??
-    // Return value uses world coordinates
-    if (homography_valid_)
-        position.set_unit_of_length(oat::DistanceUnit::WORLD);
+        // Heading transform
+        if (position.heading_valid) {
+            std::vector<oat::UnitVector2D> in_heading;
+            std::vector<oat::UnitVector2D> out_heading;
+            cv::Matx33d head_homo = homography_;
+            head_homo(0, 2) = 0.0; // offsets do not apply to heading
+            head_homo(1, 2) = 0.0; // offsets do not apply to heading
+            in_heading.push_back(position.heading);
+            cv::perspectiveTransform(in_heading, out_heading, head_homo);
+            cv::normalize(out_heading, out_heading);
+            position.heading = out_heading[0];
+        }
 
+        // Update outgoing position's coordinate system
+        position.setCoordSystem(oat::DistanceUnit::WORLD, homography_);
+    }
 }
 
 void HomographyTransform2D::configure(const std::string &config_file,
