@@ -71,6 +71,10 @@ private:
     CameraModel camera_model_ {CameraModel::PINHOLE};
     cv::Matx33d camera_matrix_  {cv::Matx33d::eye()};
     std::vector<double> distortion_coefficients_ {0,0,0,0,0,0,0,0};
+
+    // Negative implied no rotation
+    double rotation_deg_ = 0.0;
+    cv::Matx23d rotation_matrix_; 
 };
 
 }      /* namespace oat */

@@ -43,7 +43,8 @@ void Undistorter::configure(const std::string &config_file,
     // Available options
     std::vector<std::string> options {"camera-model",
                                       "camera-matrix",
-                                      "distortion-coeffs"};
+                                      "distortion-coeffs",
+                                      "rotation" };
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -97,6 +98,9 @@ void Undistorter::configure(const std::string &config_file,
             camera_matrix_(2, 2) = camera_vec[8]->get();
 
         }
+
+        oat::config::getValue(this_config, "rotation", rotation_deg_, 0.0, 360.0);
+
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
@@ -124,6 +128,13 @@ void Undistorter::filter(cv::Mat& frame) {
             break;
         }
     }
+
+    if (rotation_deg_ != 0.0) {
+        cv::Point center = cv::Point(frame.cols/2, frame.rows/2 );
+        rotation_matrix_ = cv::getRotationMatrix2D(center, rotation_deg_, 1.0);
+        cv::warpAffine(frame, frame, rotation_matrix_, frame.size());
+    }
+
 }
 
 } /* namespace oat */
