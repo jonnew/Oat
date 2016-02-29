@@ -13,7 +13,10 @@ fps = 30.0              # Frames per second
 shutter = 3.0           # Shutter time (ms; ignored if exposure on)
 gain = 10.0             # Sensor gain(dB; ignored if exposure on)
 white_bal = {red = 500, blue = 800} # White balance (0-1000; if note specified, defaults to "off")
-roi = {x_offset = 0, y_offset = 0, width = 100, height = 100} # Region of interest (pixels)
+# Region of interest (pixels) 
+# NOTE: I cannot find this documented anywhere, but it seems that these need to
+# be even numbers!                                                                                 
+roi = {x_offset = 0, y_offset = 0, width = 100, height = 100}                                  
 x_bin = 2               # On-camera x-dimension pixel binning (pixels; if note specified, defaults to "off")
 y_bin = 2               # On-camera y-dimension pixel binning (pixels; if note specified, defaults to "off")
 trigger_on = false      # If false, free run at fps or maximum rate if that is not specified

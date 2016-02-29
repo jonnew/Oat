@@ -29,7 +29,6 @@
 
 namespace oat {
 
-
 void siftContours(cv::Mat &frame, Position2D &position, 
                   double &area, double min_area, double max_area) {
 
@@ -51,8 +50,8 @@ void siftContours(cv::Mat &frame, Position2D &position,
 
         // Isolate the largest contour within the min/max range.
         if (countour_area > min_area &&
-                countour_area < max_area &&
-                countour_area > object_area) {
+            countour_area < max_area &&
+            countour_area > object_area) {
 
             position.position.x = moment.m10 / countour_area;
             position.position.y = moment.m01 / countour_area;

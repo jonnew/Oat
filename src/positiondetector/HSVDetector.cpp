@@ -68,7 +68,7 @@ void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
     // Threshold frame will be destroyed by the transform below, so we need to use
     // it to form the frame that will be shown in the tuning window here
     if (tuning_on_)
-        frame.setTo(0, threshold_frame_ == 0);
+        frame.setTo(0, threshold_frame_ == 0).clone();
 
     // Find the largest contour in the threshold image
     siftContours(threshold_frame_,

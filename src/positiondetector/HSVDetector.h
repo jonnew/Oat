@@ -73,6 +73,7 @@ private:
     int erode_px_ {0}, dilate_px_ {10};
     bool erode_on_ {false}, dilate_on_ {false};
 
+    // Internal matricies
     cv::Mat threshold_frame_, erode_element_, dilate_element_;
 
     // HSV threshold values
