@@ -45,8 +45,9 @@ void KalmanFilter2D::filter(oat::Position2D &position) {
         kf_meas_(1,0) = position.position.y;
         not_found_count_ = 0;
 
-        // We are coming from a time step where there were no measurements for a
-        // long time, so we need to reinitialize the filter
+        // We are coming from a time step where there were no measurements for
+        // a long time, or the first sample, so we need to reinitialize the
+        // filter
         if (!found_)
             initializeFilter();
 
@@ -70,10 +71,10 @@ void KalmanFilter2D::filter(oat::Position2D &position) {
         kf_.correct(kf_meas_);
     }
 
-    position.position.x = kf_predicted_state_(0,0);
-    position.velocity.x = kf_predicted_state_(1,0);
-    position.position.y = kf_predicted_state_(2,0);
-    position.velocity.y = kf_predicted_state_(3,0);
+    position.position.x = kf_predicted_state_(0, 0);
+    position.velocity.x = kf_predicted_state_(1, 0);
+    position.position.y = kf_predicted_state_(2, 0);
+    position.velocity.y = kf_predicted_state_(3, 0);
 
     // This Position is only valid if the not_found_count_threshold_ has not
     // be exceeded
@@ -163,43 +164,35 @@ void KalmanFilter2D::initializeStaticMatracies() {
 
     // State transition matrix
     // [ 1  dt_ 0  0  ]
-    // [ 0  1  0  0  ]
+    // [ 0  1  0  0   ]
     // [ 0  0  1  dt_ ]
-    // [ 0  0  0  1  ]
+    // [ 0  0  0  1   ]
     cv::setIdentity(kf_.transitionMatrix);
     kf_.transitionMatrix.at<double>(0, 1) = dt_;
     kf_.transitionMatrix.at<double>(2, 3) = dt_;
-    kf_.transitionMatrix.at<double>(4, 5) = dt_;
 
     // Observation Matrix (can only see position directly)
     // [ 1  0  0  0 ]
     // [ 0  0  1  0 ]
-    cv::Mat::zeros(3, 6, CV_32F);
+    kf_.measurementMatrix = cv::Mat::zeros(2, 4, CV_64F);
     kf_.measurementMatrix.at<double>(0, 0) = 1.0;
     kf_.measurementMatrix.at<double>(1, 2) = 1.0;
 
     // Noise covariance matrix (see pp13-15 of MWL.JPN.105.02.002 for derivation)
-    // [ dt_^4/4 dt_^3/2 		     ]
-    // [ dt_^3/2 dt_^2   		     ]
+    // [ dt_^4/4 dt_^3/2 		       ]
+    // [ dt_^3/2 dt_^2   		       ]
     // [               dt_^4/2 dt_^2/3 ] * sigma_accel^2
     // [               dt_^2/3 dt_^2   ]
+    kf_.processNoiseCov = cv::Mat::zeros(4, 4, CV_64F);
     kf_.processNoiseCov.at<double>(0, 0) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_ * dt_) / 4.0;
     kf_.processNoiseCov.at<double>(0, 1) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_) / 2.0;
-    kf_.processNoiseCov.at<double>(0, 2) = 0.0;
-    kf_.processNoiseCov.at<double>(0, 3) = 0.0;
 
     kf_.processNoiseCov.at<double>(1, 0) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_) / 2.0;
     kf_.processNoiseCov.at<double>(1, 1) = sig_accel_ * sig_accel_ * (dt_ * dt_);
-    kf_.processNoiseCov.at<double>(1, 2) = 0.0;
-    kf_.processNoiseCov.at<double>(1, 3) = 0.0;
 
-    kf_.processNoiseCov.at<double>(2, 0) = 0.0;
-    kf_.processNoiseCov.at<double>(2, 1) = 0.0;
     kf_.processNoiseCov.at<double>(2, 2) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_ * dt_) / 4.0;
     kf_.processNoiseCov.at<double>(2, 3) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_) / 2.0;
 
-    kf_.processNoiseCov.at<double>(3, 0) = 0.0;
-    kf_.processNoiseCov.at<double>(3, 1) = 0.0;
     kf_.processNoiseCov.at<double>(3, 2) = sig_accel_ * sig_accel_ * (dt_ * dt_ * dt_) / 2.0;
     kf_.processNoiseCov.at<double>(3, 3) = sig_accel_ * sig_accel_ * (dt_ * dt_);
 
