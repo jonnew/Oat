@@ -17,9 +17,12 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include <csignal>
 #include <unordered_map>
 
 #include "RecordControl.h"
+
+extern volatile sig_atomic_t quit;
 
 namespace oat {
 
@@ -30,7 +33,7 @@ int controlRecorder(std::istream &in,
 
     // Command map
     std::unordered_map<std::string, char> cmd_map;
-    cmd_map["exit"] = 'e';
+    cmd_map["quit"] = 'q';
     cmd_map["help"] = 'h';
     cmd_map["start"] = 's';
     cmd_map["pause"] = 'p';
@@ -39,20 +42,23 @@ int controlRecorder(std::istream &in,
 
     // User control loop
     std::string cmd;
-    bool quit = false;
+    bool interactive_quit = false;
 
-    while (!quit) {
+    while (!interactive_quit && !::quit) {
         
         if (pretty_cmd)
             out << ">>> " << std::flush;
 
         std::getline(in, cmd);
+        
+        if (cmd.empty()) // Timeout
+            continue;
 
         switch (cmd_map[cmd]) {
-            case 'e' :
+            case 'q' :
             {
-                quit = true;
-                out << "Received exit signal.";
+                interactive_quit = true;
+                out << "Received quit signal.";
                 out << std::endl;
                 break;
             }
@@ -114,7 +120,7 @@ void printInteractiveUsage(std::ostream &out) {
         //<< "            unique file name.\n"
         //<< " rename     Specify a new file location. User will be prompted\n"
         //<< "            to select a new save location.\n"
-        << " exit       Exit the program.\n";
+        << " quit       Exit the program.\n";
 }
 
 void printRemoteUsage(std::ostream &out) {

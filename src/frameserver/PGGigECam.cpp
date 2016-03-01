@@ -47,6 +47,23 @@ PGGigECam::PGGigECam(const std::string &frame_sink_address,
 {
     // Find the number of cameras on the bus
     findNumCameras();
+
+    // Intialize frame timing
+    tick_ = oat::Sample::Microseconds(0);
+    tock_ = oat::Sample::Microseconds(0);
+}
+
+PGGigECam::~PGGigECam() {
+
+    pg::Error error = camera_.StopCapture();
+    if (error != pg::PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
+
+    error = camera_.Disconnect();
+    if (error != pg::PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
 }
 
 /**
@@ -663,38 +680,38 @@ int PGGigECam::setupPixelBinning(int x_bin, int y_bin) {
     return 0;
 }
 
-int PGGigECam::setupCameraFrameBuffer() {
-
-    // If requested
-    if (use_frame_buffer_) {
-
-        unsigned int image_retransmit_reg;
-        const unsigned int image_retransmit_addr = 0x634;
-
-        pg::Error error = camera_.ReadRegister(image_retransmit_addr,
-                                              &image_retransmit_reg);
-        if (error != pg::PGRERROR_OK) {
-            throw (std::runtime_error(error.GetDescription()));
-        }
-
-        std::cout << "Setting up camera_ frame buffering...\n";
-        // Enable framebuffer
-        image_retransmit_reg |= 1 << 0;
-
-        // Direct image data through frame buffer
-        image_retransmit_reg |= 1 << 1;
-
-        error = camera_.WriteRegister(image_retransmit_addr, image_retransmit_reg);
-        if (error != pg::PGRERROR_OK) {
-            std::cout << "Warning: camera_ frame buffering requested, but this "
-                         "camera_ does not support frame buffering.\n"
-                      << "Request ignored.\n";
-            use_frame_buffer_ = false;
-        }
-    }
-
-    return 0;
-}
+//int PGGigECam::setupCameraFrameBuffer() {
+//
+//    // If requested
+//    if (use_frame_buffer_) {
+//
+//        unsigned int image_retransmit_reg;
+//        const unsigned int image_retransmit_addr = 0x634;
+//
+//        pg::Error error = camera_.ReadRegister(image_retransmit_addr,
+//                                              &image_retransmit_reg);
+//        if (error != pg::PGRERROR_OK) {
+//            throw (std::runtime_error(error.GetDescription()));
+//        }
+//
+//        std::cout << "Setting up camera_ frame buffering...\n";
+//        // Enable framebuffer
+//        image_retransmit_reg |= 1 << 0;
+//
+//        // Direct image data through frame buffer
+//        image_retransmit_reg |= 1 << 1;
+//
+//        error = camera_.WriteRegister(image_retransmit_addr, image_retransmit_reg);
+//        if (error != pg::PGRERROR_OK) {
+//            std::cout << "Warning: camera_ frame buffering requested, but this "
+//                         "camera_ does not support frame buffering.\n"
+//                      << "Request ignored.\n";
+//            use_frame_buffer_ = false;
+//        }
+//    }
+//
+//    return 0;
+//}
 
 /**
  * Once connected to the camera_, issue power on command.
@@ -792,8 +809,8 @@ int PGGigECam::setupTrigger() {
     error = camera_.GetConfiguration(&flyCapConfig);
     flyCapConfig.grabTimeout = 10;
     flyCapConfig.grabMode = pg::DROP_FRAMES;
-    flyCapConfig.highPerformanceRetrieveBuffer = true;
-    flyCapConfig.numBuffers = 10;
+    //flyCapConfig.highPerformanceRetrieveBuffer = true;
+    //flyCapConfig.numBuffers = 10;
 
     error = camera_.SetConfiguration(&flyCapConfig);
     if (error != pg::PGRERROR_OK) {
@@ -826,9 +843,9 @@ int PGGigECam::setupTrigger() {
 
     acquisition_started_ = true;
     if (use_trigger_ && use_software_trigger_) {
-        std::cout << "Trigger the camera_ by pressing Enter\n";
+        std::cout << "Trigger the camera by pressing Enter\n";
     } else if (use_trigger_) {
-        std::cout << "Trigger the camera_ by sending a trigger pulse to GPIO_"
+        std::cout << "Trigger the camera by sending a trigger pulse to GPIO_"
                   << triggerMode.source << "\n";
     } else {
         std::cout << "Camera by started in free running mode.\n";
@@ -852,6 +869,9 @@ int PGGigECam::setupEmbeddedImageData() {
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
+    
+    // TODO: HACK! See https://github.com/jonnew/Oat/issues/11
+    raw_image_.ReleaseBuffer();
 
     return 0;
 }
@@ -922,11 +942,13 @@ int PGGigECam::grabImage() {
     if (first_frame_ || !enforce_fps_) {
         first_frame_ = false;
         return 0;
-    } else {
+    } else if (delay > 0.0) {
         // Return the number of skipped frames. This should be 0, but PG cameras
         // reject triggers on some occations and we need to fill in the blanks to
         // prevent offsets...
         return (int)(std::round(frames_per_second_ * delay  - 1.0));
+    } else {
+        return 0;
     }
 }
 
@@ -988,7 +1010,7 @@ bool PGGigECam::serveFrame() {
         return false;
 
 //#ifndef NDEBUG
-    if (rc != 0) {
+    if (rc > 0) {
         std::cerr << oat::Warn("Frame re-transmission due to " +
                                std::to_string(rc) +
                                " skipped trigger(s).\n");

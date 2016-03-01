@@ -174,7 +174,7 @@ void Recorder::connectToNodes() {
     sample_rate_hz_ = 1.0 / ts;
 
 #ifndef NDEBUG
-    std::cout << "Recording sample rate: " << sample_rate_hz_;
+    std::cout << "Recording sample rate: " << sample_rate_hz_ << "\n";
 #endif
 
     if (!ts_consistent) {

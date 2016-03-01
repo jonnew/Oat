@@ -41,6 +41,8 @@ public:
               const size_t index,
               const double fps);
 
+    ~PGGigECam();
+
     // Use a configuration file to specify parameters
     void configure(void) override; // Default options
     void configure(const std::string &config_file,
@@ -115,7 +117,7 @@ private:
     int setupPixelBinning(int x_bin, int y_bin);
     int setupImageFormat(void);
     int setupDefaultImageFormat(void);
-    int setupCameraFrameBuffer(void);
+    //int setupCameraFrameBuffer(void);
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
     int setupTrigger(void);
     int setupEmbeddedImageData(void);

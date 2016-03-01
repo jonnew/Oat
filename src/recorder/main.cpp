@@ -201,12 +201,7 @@ int main(int argc, char *argv[]) {
             control_mode = ControlMode::NONE;
         }
 
-        // Uninstall SIGINT handler if we are using Interactive/RPC modes which
-        // require "exit" command
-        if (control_mode != ControlMode::NONE)
-            std::signal(SIGINT, SIG_IGN);
-
-        // May contain imagesource and sink information!]
+        // May contain image source and sink information
         if (variable_map.count("position-sources")) {
             position_sources = variable_map["position-sources"].as< std::vector<std::string> >();
 
@@ -315,6 +310,7 @@ int main(int argc, char *argv[]) {
                 try {
                     auto ctx = std::make_shared<zmq::context_t>(1);
                     auto sock = std::make_shared<zmq::socket_t>(*ctx, ZMQ_REP);
+                    sock->setsockopt(ZMQ_RCVTIMEO, 100);
                     sock->bind(rpc_endpoint);
                     zmq_istream_t in(ctx, sock);
                     zmq_ostream_t out(ctx, sock);
@@ -334,10 +330,8 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        // Tell user
-        std::cout << oat::whoMessage(recorder->name(), "Exiting.\n");
-
         // Exit
+        std::cout << oat::whoMessage(recorder->name(), "Exiting.\n");
         return 0;
 
     } catch (const std::runtime_error &ex) {
