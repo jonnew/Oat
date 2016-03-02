@@ -111,7 +111,7 @@ Recorder::~Recorder() {
     // std::unique_ptr, this will happen automatically. However -- don't try to
     // look at a video before the recorder destructs because it will be
     // incomplete! Same with the position file.
-    
+
     // Set running to false to trigger thread join
     running_ = false;
     for (auto &value : frame_write_condition_variables_)
@@ -308,6 +308,7 @@ void Recorder::initializeVideoWriter(cv::VideoWriter& writer,
 void Recorder::initializeRecording(const std::string &save_directory,
                                    const std::string &file_name,
                                    const bool prepend_timestamp,
+                                   const bool prepend_source,
                                    const bool allow_overwrite) {
 
     // Generate timestamp for headers and potentially for file names
@@ -324,7 +325,13 @@ void Recorder::initializeRecording(const std::string &save_directory,
 
         // Create a single position file
         std::string posi_fid;
-        std::string base_fid = file_name.empty() ? position_sources_[0].first : file_name;
+        std::string base_fid;
+        if (prepend_source)
+           base_fid = position_sources_[0].first;
+        if (!file_name.empty() && base_fid.empty())
+           base_fid = file_name;
+        else if (!file_name.empty() && !base_fid.empty())
+           base_fid += "_" + file_name;
         base_fid += ".json";
 
         int err = oat::createSavePath(posi_fid,
@@ -382,7 +389,13 @@ void Recorder::initializeRecording(const std::string &save_directory,
             // Generate file name for this video
             // Create a single position file
             std::string frame_fid;
-            std::string base_fid = file_name.empty() ? s.first : file_name;
+            std::string base_fid;
+            if (prepend_source)
+               base_fid = s.first;
+            if (!file_name.empty() && base_fid.empty())
+               base_fid = file_name;
+            else if (!file_name.empty() && !base_fid.empty())
+               base_fid += "_" + file_name;
             base_fid += ".avi";
 
             int err = oat::createSavePath(frame_fid,

@@ -809,8 +809,8 @@ int PGGigECam::setupTrigger() {
     error = camera_.GetConfiguration(&flyCapConfig);
     flyCapConfig.grabTimeout = 10;
     flyCapConfig.grabMode = pg::DROP_FRAMES;
-    //flyCapConfig.highPerformanceRetrieveBuffer = true;
-    //flyCapConfig.numBuffers = 10;
+    flyCapConfig.highPerformanceRetrieveBuffer = true;
+    //flyCapConfig.numBuffers = 1;
 
     error = camera_.SetConfiguration(&flyCapConfig);
     if (error != pg::PGRERROR_OK) {
@@ -871,7 +871,11 @@ int PGGigECam::setupEmbeddedImageData() {
     }
     
     // TODO: HACK! See https://github.com/jonnew/Oat/issues/11
-    raw_image_.ReleaseBuffer();
+    int i = 0;
+    while (use_trigger_ && (error == pg::PGRERROR_OK || i < 10)) {
+        error = camera_.RetrieveBuffer(&raw_image_);
+        i++;
+    }
 
     return 0;
 }
@@ -944,14 +948,13 @@ int PGGigECam::grabImage() {
         return 0;
     } else if (delay > 0.0) {
         // Return the number of skipped frames. This should be 0, but PG cameras
-        // reject triggers on some occations and we need to fill in the blanks to
+        // reject triggers on some ocations and we need to fill in the blanks to
         // prevent offsets...
         return (int)(std::round(frames_per_second_ * delay  - 1.0));
     } else {
         return 0;
     }
 }
-
 
 uint64_t PGGigECam::uncycle1394Timestamp(int ieee_1394_sec,
                                          int ieee_1394_cycle) {

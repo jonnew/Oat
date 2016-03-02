@@ -69,7 +69,7 @@ class Device(object):
 # Hard-coded devices along with appropriate commands. Add more or remove the ones you don't want
 DEVICES = [
     Device("Open Ephys", "tcp://localhost:5556", "", "StartRecord", "StopRecord", "NewFile",""),
-    Device("Oat", "tcp://localhost:5557", "help\n", "start\n", "pause\n", "new\n", "exit\n"),
+    Device("Oat", "tcp://localhost:5557", "help\n", "start\n", "pause\n", "new\n", "quit\n"),
     Device("Maze", "tcp://localhost:5558", "help", "start", "pause", "new", "exit")
 ]
 
@@ -229,7 +229,6 @@ def main():
     root = tk.Tk()
     root.title("Stupid Controller")
     root.font = tkFont.Font(family="Helvetica", size=12)
-    root.geometry("250x150+300+300")
     app = RemoteControl(root)
     root.mainloop()
 

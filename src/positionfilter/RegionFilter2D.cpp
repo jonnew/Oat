@@ -97,16 +97,16 @@ void RegionFilter2D::configure(const std::string &config_file,
             it++;
         }
 
-#ifndef NDEBUG
-        //check the result
-        for (size_t i = 0; i < region_contours.size(); i++) {
-            std::cout << oat::dbgMessage("Region ID: " + region_ids[i] + "\n");
-            for (size_t j = 0; j < region_contours[i]->size(); j++) {
-                std::cout << oat::dbgMessage("x: " + std::to_string(region_contours[i]->at(j).x) + " "
-                          + "y: " + std::to_string(region_contours[i]->at(j).y) + "\n");
-            }
-        }
-#endif
+//#ifndef NDEBUG
+//        //check the result
+//        for (size_t i = 0; i < region_contours.size(); i++) {
+//            std::cout << oat::dbgMessage("Region ID: " + region_ids[i] + "\n");
+//            for (size_t j = 0; j < region_contours[i]->size(); j++) {
+//                std::cout << oat::dbgMessage("x: " + std::to_string(region_contours[i]->at(j).x) + " "
+//                          + "y: " + std::to_string(region_contours[i]->at(j).y) + "\n");
+//            }
+//        }
+//#endif
     } else {
          throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }

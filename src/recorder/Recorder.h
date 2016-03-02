@@ -93,6 +93,7 @@ public:
     void initializeRecording(const std::string &save_directory=".",
                              const std::string &file_name = "",
                              const bool prepend_timestamp = false,
+                             const bool prepend_source = false,
                              const bool allow_overwrite = false);
 
     /**

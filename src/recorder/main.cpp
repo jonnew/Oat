@@ -48,6 +48,7 @@ std::string file_name;
 std::string save_path;
 bool allow_overwrite = false;
 bool prepend_timestamp = false;
+bool prepend_source = false;
 
 // ZMQ stream
 using zmq_istream_t = boost::iostreams::stream<oat::zmq_istream>;
@@ -96,6 +97,7 @@ void run(std::shared_ptr<oat::Recorder>& recorder) {
         recorder->initializeRecording(save_path,
                                       file_name,
                                       prepend_timestamp,
+                                      prepend_source,
                                       allow_overwrite);
 
         while (!quit && !source_eof) {
@@ -132,14 +134,21 @@ int main(int argc, char *argv[]) {
                 ("filename,n", po::value<std::string>(&file_name),
                 "The base file name to which to source name will be appended")
                 ("folder,f", po::value<std::string>(&save_path),
-                "The path to the folder to which the video stream and position information will be saved.")
+                "The path to the folder to which the video stream and position "
+                "information will be saved.")
                 ("date,d",
-                "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the filename.")
+                "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the "
+                "filename.")
+                ("prepend-source,a",
+                "If specified, the source name will be prepended to the "
+                "filename, after the data, if selected")
                 ("allow-overwrite,o",
-                "If set and save path matches and existing file, the file will be overwritten instead of"
-                "a numerical index being added to the file path.")
+                "If set and save path matches and existing file, the file will "
+                "be overwritten instead of a numerical index being added to "
+                "the file path.")
                 ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
-                "The names of the POSITION SOURCES that supply object positions to be recorded.")
+                "The names of the POSITION SOURCES that supply object positions "
+                "to be recorded.")
                 ("interactive", "Start recorder with interactive controls enabled.")
                 ("rpc-endpoint", po::value<std::string>(&rpc_endpoint),
                  "Yield interactive control of the recorder to a remote source.")
@@ -228,6 +237,9 @@ int main(int argc, char *argv[]) {
 
         if (variable_map.count("date"))
             prepend_timestamp = true;
+
+        if (variable_map.count("prepend-source"))
+            prepend_source = true;
 
         if (variable_map.count("allow-overwrite"))
             allow_overwrite = true;
