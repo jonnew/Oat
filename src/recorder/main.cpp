@@ -310,7 +310,6 @@ int main(int argc, char *argv[]) {
                 try {
                     auto ctx = std::make_shared<zmq::context_t>(1);
                     auto sock = std::make_shared<zmq::socket_t>(*ctx, ZMQ_REP);
-                    sock->setsockopt(ZMQ_RCVTIMEO, 100);
                     sock->bind(rpc_endpoint);
                     zmq_istream_t in(ctx, sock);
                     zmq_ostream_t out(ctx, sock);

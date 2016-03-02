@@ -50,8 +50,8 @@ int controlRecorder(std::istream &in,
             out << ">>> " << std::flush;
 
         std::getline(in, cmd);
-        
-        if (cmd.empty()) // Timeout
+
+        if (cmd.empty())
             continue;
 
         switch (cmd_map[cmd]) {
@@ -96,8 +96,6 @@ int controlRecorder(std::istream &in,
 //            }
             default :
             {
-                in.clear();
-                in.ignore(std::numeric_limits<std::streamsize>::max());
                 out << "Invalid command \'" << cmd << "\'" << std::endl;
                 break;
             }

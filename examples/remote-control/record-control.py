@@ -31,22 +31,25 @@ class Device(object):
 
     def connect(self):
         self.rpc.socket.connect(self.req_addr)
-        self.rpc.socket.setsockopt(zmq.LINGER, 0)
+        #self.rpc.socket.setsockopt(zmq.LINGER, 0)
 
     def disconnect(self):
         self.rpc.socket.disconnect(self.conn_addr)
 
     def sendMsg(self, request):
         self.rpc.socket.send(request)
-        poller = zmq.Poller()
-        poller.register(self.rpc.socket, zmq.POLLIN)
-        if poller.poll(1000): # 1 sec timeout 
-            reply = socket.recv_json()
-            print("[%s] Sent: \'%s\' and received\n" % (self.name, request.rstrip()))
-            print("%s" % (reply))
-        else:
-            raise IOError("Timeout processing remote request. Are your servers running?")
-            # TODO: Retry request
+        reply = self.rpc.socket.recv()
+        print("[%s] Sent: \'%s\' and received\n" % (self.name, request.rstrip()))
+        print("%s" % (reply))
+        #poller = zmq.Poller()
+        #poller.register(self.rpc.socket, zmq.POLLIN)
+        #if poller.poll(1000): # 1 sec timeout 
+        #    reply = socket.recv_json()
+        #    print("[%s] Sent: \'%s\' and received\n" % (self.name, request.rstrip()))
+        #    print("%s" % (reply))
+        #else:
+        #    raise IOError("Timeout processing remote request. Are your servers running?")
+        #    # TODO: Retry request
 
     def getHelp(self):
         self.sendMsg(self.rpc.help_cmd)
