@@ -117,6 +117,7 @@ public:
     // Accessors
     bool record_on(void) const { return record_on_; }
     void set_record_on(const bool value) { record_on_ = value; }
+    bool source_eof(void) const { return source_eof_; }
 
 private:
 
@@ -135,6 +136,9 @@ private:
     // The true sample rate is enforced by the slowest SOURCE since all SOURCEs
     // are sychronized. User will be warned if SOURCE sample rates differ.
     double sample_rate_hz_ {0.0};
+
+    // Source end of file flag
+    bool source_eof_ {false};
 
     // Video files
     std::vector< std::string > video_file_names_;
@@ -165,9 +169,6 @@ private:
     std::vector<oat::Position2D> positions_;
     std::vector<uint64_t> position_write_number_;
     std::vector<PositionSource> position_sources_;
-
-    // SOURCES EOF flag
-    bool sources_eof {false};
 
     void initializeVideoWriter(cv::VideoWriter& writer,
                                const std::string &file_name,

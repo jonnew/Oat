@@ -42,17 +42,22 @@ int controlRecorder(std::istream &in,
 
     // User control loop
     std::string cmd;
+
+    // Means to exit via user input
     bool interactive_quit = false;
 
-    while (!interactive_quit && !::quit) {
-        
+    while (!interactive_quit && !::quit && !recorder.source_eof()) {
+
         if (pretty_cmd)
             out << ">>> " << std::flush;
 
         std::getline(in, cmd);
 
-        if (cmd.empty())
+        if (cmd.empty()) {
+            std::cout << "No command...\n";
+            std::cout << "source_eof: " << recorder.source_eof() << "\n";
             continue;
+        }
 
         switch (cmd_map[cmd]) {
             case 'q' :
@@ -110,10 +115,10 @@ void printInteractiveUsage(std::ostream &out) {
     out << "COMMANDS\n"
         << "CMD         FUNCTION\n"
         << " help       Print this information.\n"
-        << " start      Start recording. This will append and file if it\n"
-        << "            already exists.\n"
+        << " start      Start recording. This will append the file if it\n"
+        << "            already exists. It will create a new one if it doesn't.\n"
         << " pause      Pause recording. This will pause the recording\n"
-        << "            and without creating a new file.\n"
+        << "            without creating a new file.\n"
         //<< " new        Start new file. Start time will be used to create\n"
         //<< "            unique file name.\n"
         //<< " rename     Specify a new file location. User will be prompted\n"
@@ -124,7 +129,8 @@ void printInteractiveUsage(std::ostream &out) {
 void printRemoteUsage(std::ostream &out) {
 
     out << "Recorder is under remote control.\n"
-        << "Commands provided through STDIN have no effect.\n";
+        << "Commands provided through STDIN have no effect\n"
+        << "except Ctrl+C to quit.\n";
 }
 
 } /* namespace oat */

@@ -59,8 +59,9 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
             oat::Position2D pos(addr);
             positions_.push_back(std::move(pos));
             position_write_number_.push_back(0);
-            position_sources_.push_back(std::make_pair(addr,
-                    std::make_unique<oat::Source < oat::Position2D >> ())
+            position_sources_.push_back(std::make_pair(
+                addr,
+                std::make_unique<oat::Source < oat::Position2D >>())
             );
         }
     }
@@ -173,10 +174,6 @@ void Recorder::connectToNodes() {
 
     sample_rate_hz_ = 1.0 / ts;
 
-#ifndef NDEBUG
-    std::cout << "Recording sample rate: " << sample_rate_hz_ << "\n";
-#endif
-
     if (!ts_consistent) {
         std::cerr << oat::Warn(
                      "Warning: Sample rates of SOURCEs are inconsistent.\n"
@@ -194,7 +191,7 @@ bool Recorder::writeStreams() {
 
          // START CRITICAL SECTION //
         ////////////////////////////
-        sources_eof |= frame_sources_[i].second->wait() == oat::NodeState::END;
+        source_eof_ |= (frame_sources_[i].second->wait() == oat::NodeState::END);
 
         // Push newest frame into client N's queue
         if (record_on_) {
@@ -217,7 +214,7 @@ bool Recorder::writeStreams() {
 
         // START CRITICAL SECTION //
         ////////////////////////////
-        sources_eof |= position_sources_[i].second->wait() == oat::NodeState::END;
+        source_eof_ |= (position_sources_[i].second->wait() == oat::NodeState::END);
 
         position_write_number_[i] = position_sources_[i].second->write_number();
         positions_[i] = position_sources_[i].second->clone();
@@ -232,7 +229,7 @@ bool Recorder::writeStreams() {
     if (record_on_)
         writePositionsToFile();
 
-    return sources_eof;
+    return source_eof_;
 }
 
 void Recorder::writeFramesToFileFromBuffer(uint32_t writer_idx) {

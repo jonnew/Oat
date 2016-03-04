@@ -111,17 +111,22 @@ private:
     const double font_scale_ {1.0};
     const int font_thickness_ {1};
     const int line_thickness_ {2};
-    const cv::Scalar font_color_ {213, 232, 238};
+    const cv::Scalar font_color_ {255, 255, 255};
     const int font_type_ {cv::FONT_HERSHEY_SIMPLEX};
     int encode_bit_size_ {5};
-    const cv::Scalar pos_colors_[8] {{  0, 137, 181},
-                                     {152, 161,  42},
-                                     { 22,  75, 203},
-                                     { 61, 249, 192},
-                                     { 47,  50, 220},
-                                     {130,  54, 211},
-                                     {196, 113, 108},
-                                     {210, 139,  38}};
+
+    const cv::Scalar pos_colors_[12] {CV_RGB(255,  51,  51),
+                                      CV_RGB( 51, 255,  51),
+                                      CV_RGB( 51,  51, 255),
+                                      CV_RGB(255, 153,  51),
+                                      CV_RGB( 51, 255, 153),
+                                      CV_RGB(255,  51, 153),
+                                      CV_RGB(255, 255,  51),
+                                      CV_RGB( 51, 255, 255),
+                                      CV_RGB(255,  51, 255),
+                                      CV_RGB(153, 255,  51),
+                                      CV_RGB( 51, 153, 255),
+                                      CV_RGB(153,  51, 255)};
 
     /**
      * Project Positions into oat::PIXEL coordinates.
