@@ -20,6 +20,7 @@
 #ifndef OAT_TESTFRAME_H
 #define	OAT_TESTFRAME_H
 
+#include <limits>
 #include <string>
 
 #include "FrameServer.h"
@@ -43,6 +44,10 @@ private:
 
     // Image file 
     std::string file_name_;
+
+    // Sample count specification
+    int64_t num_samples_ {std::numeric_limits<int64_t>::max()};
+    int64_t it_ {0};
 };
 
 }       /* namespace oat */

@@ -7,7 +7,7 @@
 # ```
 
 [kalman]
-dt = 0.02		# Sample period, seconds (Should be automatically provided)
+dt = 0.02		# Sample period, seconds 
 timeout = 2.0           # Seconds to perform position estimation detection with lack of position measure
 sigma_accel = 200.0 	# Position units/s^2 (e.g. Pixels/s^2)
 sigma_noise = 10.0	# Noise measurement (position units)

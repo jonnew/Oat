@@ -38,8 +38,31 @@ TestFrame::TestFrame(const std::string &image_sink_address,
 
 void TestFrame::configure(void) { }
 
-void TestFrame::configure(const std::string &config_file, 
-                          const std::string &config_key) { }
+void TestFrame::configure(const std::string &config_file,
+                          const std::string &config_key) {
+
+    // Available options
+    std::vector<std::string> options {"num-samples"};
+
+    // This will throw cpptoml::parse_exception if a file
+    // with invalid TOML is provided
+    auto config = cpptoml::parse_file(config_file);
+
+    // See if a configuration was provided
+    if (config->contains(config_key)) {
+
+        // Get this components configuration table
+        auto this_config = config->get_table(config_key);
+
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
+
+        oat::config::getValue(this_config, "num-samples", num_samples_, 0);
+
+    } else {
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
+    }
+}
 
 void TestFrame::connectToNode() {
 
@@ -55,29 +78,36 @@ void TestFrame::connectToNode() {
 
     // Static image, never changes
     example_frame.copyTo(shared_frame_);
-    
+
     // Put a dummy rate in the shared frame
-    shared_frame_.sample().set_period_sec(0.01);
+    shared_frame_.sample().set_period_sec(0.00001);
 }
 
 bool TestFrame::serveFrame() {
 
-    // START CRITICAL SECTION //
-    ////////////////////////////
+    if (it_ < num_samples_) {
 
-    // Wait for sources to read
-    frame_sink_.wait();
+        // START CRITICAL SECTION //
+        ////////////////////////////
 
-    // Increment sample count
-    shared_frame_.sample().incrementCount();
+        // Wait for sources to read
+        frame_sink_.wait();
 
-    // Tell sources there is new data
-    frame_sink_.post();
+        // Increment sample count
+        shared_frame_.sample().incrementCount();
 
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
+        // Tell sources there is new data
+        frame_sink_.post();
 
-    return false;
+        ////////////////////////////
+        //  END CRITICAL SECTION  //
+        
+        it_++;
+
+        return false;
+    }
+
+    return true;
 }
 
 } /* namespace oat */

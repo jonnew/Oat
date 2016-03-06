@@ -1590,13 +1590,18 @@ RJ45 ------------
 - [ ] Frame visualization is nice, but should no cause holdups in the processing 
       pipeline. In this case frames should just be dropped. This might be as 
       simple as making the actual visualization call in 
-      [Viewer.cpp](/src/frameviewer/Viewer.cpp) and callback operating on a 
+      [Viewer.cpp](/src/frameviewer/Viewer.cpp) a callback operating on a 
       separate visualization thread that is triggered after `internal_frame_` 
       is written to. 
     - This may cause `internal_frame_` to be overwritten during visualization. 
       Problem?
     - Visualization could somehow be 'aborted' if it has not completed and 
       a new frame is available.
+- [ ] Saving tuning parameters
+    - Components that have a `--tune` option should also allow for the user to
+      press a key and those tuning paramters to be injected into the current
+      `config.toml` file so that they don't have to write them down and
+      manually edit the file later
 - [ ] Colors
     - Should visual ID information (e.g. color) be integrated into the
       `position` type?

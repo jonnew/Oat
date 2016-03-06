@@ -40,4 +40,4 @@ index = 0               # Index of camera on the bus (there can be more than one
 roi = {x_offset = 0, y_offset = 0, width = 100, height = 100} # Region of interest (pixels)
 
 [test]
-# No options.
+num-samples = 1000

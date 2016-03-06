@@ -42,11 +42,10 @@ public:
      * A 2D Gaussian random acceleration generator.
      * Test positions are subject to random, uncorrelated 2D, Gaussian
      * accelerations.
-     * @param position_sink_name Test position SINK name
-     * @param samples_per_second Sample rate in Hz
      */
     RandomAccel2D(const std::string &position_sink_address,
-                  const double samples_per_second=30);
+                  const double samples_per_second,
+                  const int64_t num_samples);
 
     void configure(const std::string &file_name,
                    const std::string &key) override;
@@ -66,7 +65,7 @@ private:
     cv::Matx44d state_transition_mat_;
     cv::Matx<double, 4, 2> input_mat_;
 
-    void generatePosition(oat::Position2D &position) override;
+    bool generatePosition(oat::Position2D &position) override;
     void createStaticMatracies(void);
     void simulateMotion(void);
 

@@ -21,8 +21,9 @@
 #define	OAT_POSITIONGENERATOR_H
 
 #include <chrono>
-#include <string>
+#include <limits>
 #include <random>
+#include <string>
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
@@ -45,10 +46,14 @@ public:
      * to server test positions with different motion characteristics to test
      * subsequent processing steps.
      * @param position_sink_name Position SINK to publish test positions
-     * @param samples_per_second Sample rate in Hz
+     * @param samples_per_second Sample rate in Hz. Negative number indicates
+     * that samples should be served as rapidly as possible.
+     * @param num_samples Number of position samples to serve before
+     * automatically exiting. 
      */
     PositionGenerator(const std::string& position_sink_address,
-                      const double samples_per_second = 30);
+                      const double samples_per_second,
+                      const int64_t num_samples);
 
     virtual ~PositionGenerator() { }
 
@@ -83,13 +88,19 @@ protected:
     /**
      * Generate test position.
      * @param position Generated position.
+     * @return true if EOF has been genereated, false otherwise.
      */
-    virtual void generatePosition(T &position) = 0;
+    virtual bool generatePosition(T &position) = 0;
 
     // Test position sample clock
-    std::chrono::high_resolution_clock clock;
+    bool enforce_sample_clock_ {false};
+    std::chrono::high_resolution_clock clock_;
     std::chrono::duration<double> sample_period_in_sec_;
-    std::chrono::high_resolution_clock::time_point tick;
+    std::chrono::high_resolution_clock::time_point tick_;
+
+    // Sample count specification
+    int64_t num_samples_ {std::numeric_limits<int64_t>::max()};
+    int64_t it_ {0};
 
     /**
      * Configure the sample period

@@ -18,7 +18,6 @@
 //*****************************************************************************
 
 #include <iostream>
-#include <limits>
 #include <math.h>
 #include <string>
 #include <thread>
@@ -34,8 +33,9 @@
 namespace oat {
 
 RandomAccel2D::RandomAccel2D(const std::string &position_sink_address,
-                             const double samples_per_second) :
-  PositionGenerator<oat::Position2D>(position_sink_address, samples_per_second)
+                             const double samples_per_second,
+                             const int64_t num_samples) :
+  PositionGenerator<oat::Position2D>(position_sink_address, samples_per_second, num_samples)
 {
     createStaticMatracies();
 }
@@ -44,7 +44,9 @@ void RandomAccel2D::configure(const std::string &config_file,
                               const std::string &config_key) {
 
     // Available options
-    std::vector<std::string> options {"dt", "room"};
+    std::vector<std::string> options {"dt",
+                                      "num-samples",
+                                      "room"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -65,12 +67,14 @@ void RandomAccel2D::configure(const std::string &config_file,
              generateSamplePeriod(1.0/dt);
         }
 
+        // Number of position samples
+        oat::config::getValue(this_config, "num-samples", num_samples_, 0);
+
         // Camera Matrix
         oat::config::Array room_array;
         if (oat::config::getArray(this_config, "room", room_array, 4, false)) {
 
             auto room_vec = room_array->array_of<double>();
-
             room_.x      = room_vec[0]->get();
             room_.y      = room_vec[1]->get();
             room_.width  = room_vec[2]->get();
@@ -82,25 +86,35 @@ void RandomAccel2D::configure(const std::string &config_file,
     }
 }
 
-void RandomAccel2D::generatePosition(oat::Position2D &position) {
+bool RandomAccel2D::generatePosition(oat::Position2D &position) {
 
-    // Simulate one step of random, but smooth, motion
-    simulateMotion();
+    if (it_ < num_samples_) {
 
-    // Simulated position info
-    position.position_valid = true;
-    position.position.x = state_(0);
-    position.position.y = state_(2);
+        // Simulate one step of random, but smooth, motion
+        simulateMotion();
 
-    // We have access to the velocity info for comparison
-    position.velocity_valid = true;
-    position.velocity.x = state_(1);
-    position.velocity.y = state_(3);
+        // Simulated position info
+        position.position_valid = true;
+        position.position.x = state_(0);
+        position.position.y = state_(2);
 
-    // Enforce sample period
-    auto tock = clock.now();
-    std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick));
-    tick = clock.now();
+        // We have access to the velocity info for comparison
+        position.velocity_valid = true;
+        position.velocity.x = state_(1);
+        position.velocity.y = state_(3);
+
+        if (enforce_sample_clock_) {
+            auto tock_ = clock_.now();
+            std::this_thread::sleep_for(sample_period_in_sec_ - (tock_ - tick_));
+            tick_ = clock_.now();
+        }
+
+        it_++;
+
+        return false;
+    }
+
+    return true;
 }
 
 void RandomAccel2D::simulateMotion() {

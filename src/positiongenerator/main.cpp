@@ -21,6 +21,7 @@
 
 #include <csignal>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -82,7 +83,9 @@ int main(int argc, char *argv[]) {
 
     std::string sink;
     std::string type;
-    double samples_per_second = 30;
+    double samples_per_second = -1.0; // Don't enforce sample rate
+    int64_t num_samples = std::numeric_limits<int64_t>::max();
+    size_t num_samples_st;
     std::vector<std::string> config_fk;
     bool config_used = false;
     po::options_description visible_options("OPTIONS");
@@ -101,7 +104,12 @@ int main(int argc, char *argv[]) {
         po::options_description config("CONFIGURATION");
         config.add_options()
                 ("sps,r", po::value<double>(&samples_per_second),
-                "Samples per second. Overriden by information in configuration file if provided.")
+                "Samples per second. Overriden by information in configuration "
+                "file if provided. Defaults to unenforced.")
+                ("num-samples,n", po::value<size_t>(&num_samples_st),
+                "Number of position samples to generate and serve. Overriden by "
+                "information in configuration file if provided. Deafaults to "
+                "approximately infinite.")
                 ("config,c", po::value<std::vector<std::string> >()->multitoken(),
                 "Configuration file/key pair.")
                 ;
@@ -161,6 +169,10 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
+        if (variable_map.count("num-samples")) {
+            num_samples = static_cast<uint64_t>(num_samples_st);
+        }
+
         if (!variable_map["config"].empty()) {
 
             config_fk = variable_map["config"].as<std::vector<std::string> >();
@@ -182,10 +194,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // TODO: Right now I need to use oat::Position2D as a template parameter
-    // because otherwise this is no longer a valid base class for RandomAccel2D whose
-    // base class is indeed TestPosition<oat::Position2D>
-
     // Create component
     std::shared_ptr<oat::PositionGenerator<oat::Position2D>> posigen;
 
@@ -196,7 +204,10 @@ int main(int argc, char *argv[]) {
         switch (type_hash[type]) {
             case 'a':
             {
-                posigen =  std::make_shared<oat::RandomAccel2D>(sink, samples_per_second);
+                posigen =
+                    std::make_shared<oat::RandomAccel2D>(sink,
+                                                         samples_per_second,
+                                                         num_samples);
                 break;
             }
             default:
@@ -242,5 +253,3 @@ int main(int argc, char *argv[]) {
     // Exit failure
     return -1;
 }
-
-

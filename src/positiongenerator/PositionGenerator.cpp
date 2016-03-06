@@ -26,12 +26,18 @@ namespace oat {
 
 template<typename T>
 PositionGenerator<T>::PositionGenerator(const std::string &position_sink_address,
-                                        const double samples_per_second) :
-  name_("posigen[*->" + position_sink_address + "]")
+                                        const double samples_per_second, 
+                                        const int64_t num_samples) :
+  num_samples_(num_samples - 1)
+, name_("posigen[*->" + position_sink_address + "]")
 , position_sink_address_(position_sink_address)
 {
-  generateSamplePeriod(samples_per_second);
-  tick = clock.now();
+    if (samples_per_second > 0) {
+        enforce_sample_clock_ = true;
+        generateSamplePeriod(samples_per_second);
+    }
+
+    tick_ = clock_.now();
 }
 
 template<typename T>
@@ -46,7 +52,7 @@ template<typename T>
 bool PositionGenerator<T>::process() {
 
     // Generate internal frame
-    generatePosition(internal_position_);
+    bool eof = generatePosition(internal_position_);
 
     // This is pure SINK, so it increments the sample count
     internal_position_.sample().incrementCount();
@@ -65,8 +71,7 @@ bool PositionGenerator<T>::process() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // This sink never reaches END state
-    return false;
+    return eof;
 }
 
 template<typename T>
