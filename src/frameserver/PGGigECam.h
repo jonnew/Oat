@@ -54,7 +54,7 @@ public:
 private:
 
     // Timing stuff
-    bool enforce_fps_;
+    bool enforce_fps_ {false};
     static constexpr uint64_t IEEE_1394_HZ = {8000};
     uint64_t ieee_1394_cycle_index_ {0};
     uint64_t ieee_1394_start_cycle_ {0};

@@ -271,14 +271,14 @@ int main(int argc, char *argv[]) {
         // Exit success
         return 0;
 
-    } catch (const cpptoml::parse_exception& ex) {
+    } catch (const cpptoml::parse_exception &ex) {
         std::cerr << oat::whoError(filter->name(),
                      "Failed to parse configuration file " + config_fk[0] + "\n")
                   << oat::whoError(filter->name(), ex.what())
                   << "\n";
-    } catch (const std::runtime_error ex) {
+    } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(filter->name(),ex.what()) << "\n";
-    } catch (const cv::Exception ex) {
+    } catch (const cv::Exception &ex) {
         std::cerr << oat::whoError(filter->name(), ex.what()) << "\n";
     } catch (...) {
         std::cerr << oat::whoError(filter->name(), "Unknown exception.\n");

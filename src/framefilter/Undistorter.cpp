@@ -125,7 +125,6 @@ void Undistorter::filter(cv::Mat& frame) {
         default :
         {
             throw std::runtime_error("Invalid camera model selection.\n");
-            break;
         }
     }
 

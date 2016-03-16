@@ -38,7 +38,7 @@ class PositionSocket  {
 
 public:
 
-    PositionSocket(const std::string &position_source_address);
+    explicit PositionSocket(const std::string &position_source_address);
 
     virtual ~PositionSocket() { }
 
@@ -72,7 +72,7 @@ private:
 
     // The position SOURCE
     std::string position_source_address_;
-    oat::NodeState node_state_;
+    oat::NodeState node_state_ {oat::NodeState::UNDEFINED};
     oat::Source<oat::Position2D> position_source_;
 
     // The current, internally allocated position

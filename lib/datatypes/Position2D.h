@@ -36,22 +36,15 @@ using UnitVector2D = cv::Point2d;
 class Position2D : public Position {
 
 public:
-    Position2D(const std::string &label) :
+    explicit Position2D(const std::string &label) :
       Position(label)
     {
         // Nothing
     }
-
-    bool region_valid {false};
-    char region[100];
       
-    bool position_valid {false};
+    // 2D position primatives
     Point2D position;
-
-    bool velocity_valid {false};
     Velocity2D velocity;
-
-    bool heading_valid {false};
     UnitVector2D heading;
 
     template <typename Writer>

@@ -38,7 +38,7 @@ class Position {
 
 public:
 
-    Position(const std::string &label) 
+    explicit Position(const std::string &label) 
     {
         strncpy(label_, label.c_str(), sizeof(label_));
         label_[sizeof(label_) - 1] = 0;
@@ -65,9 +65,18 @@ public:
     char * label() {return label_; }
     DistanceUnit unit_of_length(void) const { return unit_of_length_; }
     
+    // Categorical position
+    bool region_valid {false};
+    char region[100] {0}; //!< Categorical position label (e.g. "North West")
+
+    // Validity booleans
+    bool position_valid {false};
+    bool velocity_valid {false};
+    bool heading_valid {false};
+
 protected:
     
-    char label_[100]; //!< Position label (e.g. "anterior")
+    char label_[100] {0}; //!< Position label (e.g. "anterior")
     DistanceUnit unit_of_length_ {DistanceUnit::PIXELS};
     
     oat::Sample sample_;

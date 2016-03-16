@@ -107,7 +107,7 @@ private:
     std::string name_;                      //!< Calibrator name
     oat::Frame internal_frame_;             //!< Current frame provided by SOURCE
     std::string frame_source_address_;      //!< Frame source address
-    oat::NodeState node_state_;             //!< Frame source node state
+    oat::NodeState node_state_ {oat::NodeState::UNDEFINED}; //!< Frame source node state
     oat::Source<SharedFrameHeader> frame_source_; //!< The calibrator frame SOURCE
 };
 

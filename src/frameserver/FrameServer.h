@@ -36,15 +36,12 @@ namespace oat {
 class FrameServer {
 public:
 
-    FrameServer(const std::string &frame_sink_address) :
+    explicit FrameServer(const std::string &frame_sink_address) :
       name_("frameserve[" + frame_sink_address + "]")
     , frame_sink_address_(frame_sink_address)
     {
         // Nothing
     }
-
-    // Oat components are not copyable
-    FrameServer(const FrameServer& server) = delete;
 
     virtual ~FrameServer() {};
 
@@ -80,7 +77,7 @@ protected:
     oat::Sink<oat::SharedFrameHeader> frame_sink_;
 
     // Currently acquired, shared frame
-    bool frame_empty_;
+    bool frame_empty_ {true};
     oat::Frame shared_frame_;
 };
 

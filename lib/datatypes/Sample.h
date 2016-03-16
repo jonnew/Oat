@@ -40,7 +40,7 @@ public:
     //using Time = std::chrono::time_point<Clock, Milliseconds>;
     using IEEE1394Tick = std::chrono::duration<float, std::ratio<1,8000>>;
 
-    Sample() 
+    explicit Sample() 
     {
         // Nothing
     }
@@ -50,7 +50,7 @@ public:
      *
      * @param period_sec The period of the sample clock in seconds.
      */
-    Sample(double period_sec) : 
+    explicit Sample(double period_sec) : 
       period_sec_(period_sec)
     , rate_hz_( 1.0 / period_sec)
     {

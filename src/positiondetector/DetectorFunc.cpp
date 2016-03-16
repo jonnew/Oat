@@ -40,16 +40,15 @@ void siftContours(cv::Mat &frame, Position2D &position,
                      cv::CHAIN_APPROX_SIMPLE);
 
     double object_area = 0;
-    double countour_area = 0;
     position.position_valid = false;
 
     for (auto &c : contours) {
 
         cv::Moments moment = cv::moments(static_cast<cv::Mat>(c));
-        countour_area = moment.m00;
+        double countour_area = moment.m00;
 
         // Isolate the largest contour within the min/max range.
-        if (countour_area > min_area &&
+        if (countour_area >= min_area &&
             countour_area < max_area &&
             countour_area > object_area) {
 

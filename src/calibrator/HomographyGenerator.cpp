@@ -218,7 +218,7 @@ int HomographyGenerator::addDataPoint() {
 
         std::cout << "Coordinate added to map.\n";
 
-    } catch (std::invalid_argument ex) {
+    } catch (const std::invalid_argument &ex) {
 
         oat::ignoreLine(std::cin);
         std::cerr << oat::Error("Invalid argument: ") << oat::Error(ex.what()) << "\n";
@@ -251,7 +251,7 @@ int HomographyGenerator::removeDataPoint() {
         world_points_.erase(world_points_.begin() + idx);
 
         std::cout << "Data point at index " << idx << " was deleted.\n";
-    } catch (std::invalid_argument ex) {
+    } catch (const std::invalid_argument &ex) {
 
         // Flush cin and report error
         oat::ignoreLine(std::cin);

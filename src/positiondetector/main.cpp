@@ -252,15 +252,15 @@ int main(int argc, char *argv[]) {
         // Exit
         return 0;
 
-    } catch (const cpptoml::parse_exception& ex) {
+    } catch (const cpptoml::parse_exception &ex) {
         std::cerr << oat::whoError(detector->name(),
                      "Failed to parse configuration file " + config_fk[0] + "\n")
                   << oat::whoError(detector->name(), ex.what())
                   << "\n";
-    } catch (const std::runtime_error ex) {
+    } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(detector->name(), ex.what())
                   << "\n";
-    } catch (const cv::Exception ex) {
+    } catch (const cv::Exception &ex) {
         std::cerr << oat::whoError(detector->name(), ex.what())
                   << "\n";
     } catch (...) {

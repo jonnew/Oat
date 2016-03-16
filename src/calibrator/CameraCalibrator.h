@@ -109,9 +109,9 @@ private:
 
     // Is camera calibration well-defined?
     CameraModel calibration_model_ {CameraModel::NA};
-    bool calibration_valid_;
+    bool calibration_valid_ {false};
     cv::Mat camera_matrix_, distortion_coefficients_;
-    double rms_error_;
+    double rms_error_ {-1.0};
 
     // Default estimation method
     CameraModel model_ {CameraModel::PINHOLE};

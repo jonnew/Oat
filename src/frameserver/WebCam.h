@@ -34,7 +34,7 @@ class WebCam : public FrameServer {
 
 public:
 
-    WebCam(const std::string &frame_sink_address_);
+    explicit WebCam(const std::string &frame_sink_address_);
 
     // Implement FrameServer interface
     void configure(void) override;

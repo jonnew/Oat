@@ -68,17 +68,16 @@ private:
     bool last_image_set_ {false};
 
     // Object detection
-    double object_area_;
+    double object_area_ {0.0};
 
     // Detector parameters
-    int difference_intensity_threshold_;
+    int difference_intensity_threshold_ {0};
     cv::Size blur_size_;
     bool blur_on_ {false};
     double min_object_area_ {0.0};
     double max_object_area_ {std::numeric_limits<double>::max()};
 
     // Tuning stuff
-    bool tuning_windows_created_ {false};
     const std::string tuning_image_title_;
     cv::Mat tune_frame_;
     int dummy0_ {0}, dummy1_ {10000};

@@ -55,15 +55,10 @@ PGGigECam::PGGigECam(const std::string &frame_sink_address,
 
 PGGigECam::~PGGigECam() {
 
-    pg::Error error = camera_.StopCapture();
-    if (error != pg::PGRERROR_OK) {
-        throw (std::runtime_error(error.GetDescription()));
-    }
-
-    error = camera_.Disconnect();
-    if (error != pg::PGRERROR_OK) {
-        throw (std::runtime_error(error.GetDescription()));
-    }
+    // Don't acquire error data in order to throw exception. Unsafe in
+    // destructor
+    camera_.StopCapture();
+    camera_.Disconnect();
 }
 
 /**
@@ -807,6 +802,10 @@ int PGGigECam::setupTrigger() {
     // understand why.
     pg::FC2Config flyCapConfig;
     error = camera_.GetConfiguration(&flyCapConfig);
+    if (error != pg::PGRERROR_OK) {
+        throw (std::runtime_error(error.GetDescription()));
+    }
+
     flyCapConfig.grabTimeout = 10;
     flyCapConfig.grabMode = pg::DROP_FRAMES;
     flyCapConfig.highPerformanceRetrieveBuffer = true;

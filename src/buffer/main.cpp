@@ -221,9 +221,9 @@ int main(int argc, char *argv[]) {
         // Exit success
         return 0;
 
-    } catch (const std::runtime_error ex) {
+    } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(buffer->name(),ex.what()) << "\n";
-    } catch (const cv::Exception ex) {
+    } catch (const cv::Exception &ex) {
         std::cerr << oat::whoError(buffer->name(), ex.what()) << "\n";
     } catch (...) {
         std::cerr << oat::whoError(buffer->name(), "Unknown exception.\n");

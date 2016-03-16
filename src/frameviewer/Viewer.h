@@ -44,7 +44,7 @@ public:
     /**
      * View a frame stream on the monitor.
      */
-    Viewer(const std::string &frame_source_name);
+    explicit Viewer(const std::string &frame_source_name);
 
     void connectToNode(void);
     bool showImage(void);
@@ -67,7 +67,7 @@ private:
 
     // Frame SOURCE to get frames to display
     const std::string frame_source_address_;
-    oat::NodeState node_state_;
+    oat::NodeState node_state_ {oat::NodeState::UNDEFINED};
     oat::Source<oat::SharedFrameHeader> frame_source_;
 
     // Minimum viewer refresh period
