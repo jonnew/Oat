@@ -146,7 +146,8 @@ void Recorder::connectToNodes() {
     bool ts_consistent = true;
     double ts {-1.0}, ts_last {-1.0};
 
-    // TODO: This procedure may be appropriate for all multi source components
+    // TODO: The following procedure may be appropriate for all multi source
+    // components
 
     // Frame sources
     for (auto &fs: frame_sources_) {
@@ -299,9 +300,6 @@ void Recorder::initializeVideoWriter(cv::VideoWriter& writer,
     writer.open(file_name, fourcc, sample_rate_hz_, image.size());
 }
 
-// TODO: Eventually, this will be called from different threads. This
-// means I need to be careful files are not closed when they are being
-// used for a write.
 void Recorder::initializeRecording(const std::string &save_directory,
                                    const std::string &file_name,
                                    const bool prepend_timestamp,
@@ -376,9 +374,6 @@ void Recorder::initializeRecording(const std::string &save_directory,
     }
 
     if (!frame_sources_.empty()) {
-
-        // TODO: If videowriters exist, close them and clear the video_file_names_
-        // and video_writers_ vectors.
 
         // Create a file and writer for each frame source
         for (auto &s : frame_sources_) {

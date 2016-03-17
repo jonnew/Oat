@@ -26,6 +26,20 @@ extern volatile sig_atomic_t quit;
 
 namespace oat {
 
+/** 
+ * @brief Control a recorder.
+ * 
+ * Allows user to control a recorder object via a simple message interface.
+ *
+ * @param in Input command stream.
+ * @param out Output stream for command confirmations.
+ * @param recorder Recorder to control.
+ * @param pretty_cmd Format IO for console usage.
+ * 
+ * @return Code:
+ * 0. Normal exit.
+ * 1. Creat new recorder and re-enter.
+ */
 int controlRecorder(std::istream &in,
                     std::ostream &out,
                     oat::Recorder &recorder,
@@ -38,7 +52,6 @@ int controlRecorder(std::istream &in,
     cmd_map["start"] = 's';
     cmd_map["pause"] = 'p';
     cmd_map["new"] = 'n';
-    cmd_map["rename"] = 'r';
 
     // User control loop
     std::string cmd;
@@ -54,8 +67,8 @@ int controlRecorder(std::istream &in,
         std::getline(in, cmd);
 
         if (cmd.empty()) {
-            std::cout << "No command...\n";
-            std::cout << "source_eof: " << recorder.source_eof() << "\n";
+            out << "No command...\n";
+            out << "source_eof: " << recorder.source_eof() << "\n";
             continue;
         }
 
@@ -86,19 +99,13 @@ int controlRecorder(std::istream &in,
                 out << "Recording PAUSED." << std::endl;
                 break;
             }
-//            case 'n' :
-//            {
-//                if (recorder.record_on())
-//                    std::cerr << "Recording must be paused to create new file.\n";
-//                else
-//                    //recorder.createFile();
-//                break;
-//            }
-//            case 'r' :
-//            {
-//                std::cerr << "\'" << cmd << "\' is not implemented.\n";
-//                break;
-//            }
+            case 'n' :
+            {
+                if (recorder.record_on())
+                    std::cerr << "Recording must be paused to create new file.\n";
+                else
+                    return 1; // Signal new file
+            }
             default :
             {
                 out << "Invalid command \'" << cmd << "\'" << std::endl;
@@ -119,10 +126,8 @@ void printInteractiveUsage(std::ostream &out) {
         << "            already exists. It will create a new one if it doesn't.\n"
         << " pause      Pause recording. This will pause the recording\n"
         << "            without creating a new file.\n"
-        //<< " new        Start new file. Start time will be used to create\n"
-        //<< "            unique file name.\n"
-        //<< " rename     Specify a new file location. User will be prompted\n"
-        //<< "            to select a new save location.\n"
+        //<< " new ARG  Start new file. Start time will be used to create\n"
+        //<< "          unique file name.\n"
         << " quit       Exit the program.\n";
 }
 
@@ -134,4 +139,3 @@ void printRemoteUsage(std::ostream &out) {
 }
 
 } /* namespace oat */
-
