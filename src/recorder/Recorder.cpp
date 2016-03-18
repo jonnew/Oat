@@ -311,17 +311,17 @@ void Recorder::initializeRecording(const std::string &save_directory,
 
     if (!position_sources_.empty()) {
 
-        // If there we are starting a new file, finish up the old one
-        if (position_fp_ != nullptr) {
-            json_writer_.EndArray();
-            json_writer_.EndObject();
-            file_stream_->Flush();
-        }
+        //// If there we are starting a new file, finish up the old one
+        //if (position_fp_ != nullptr) {
+        //    json_writer_.EndArray();
+        //    json_writer_.EndObject();
+        //    file_stream_->Flush();
+        //}
 
         // Create a single position file
         std::string posi_fid;
         std::string base_fid;
-        if (prepend_source)
+        if (prepend_source || file_name.empty())
            base_fid = position_sources_[0].first;
         if (!file_name.empty() && base_fid.empty())
            base_fid = file_name;
@@ -382,7 +382,7 @@ void Recorder::initializeRecording(const std::string &save_directory,
             // Create a single position file
             std::string frame_fid;
             std::string base_fid;
-            if (prepend_source)
+            if (prepend_source || file_name.empty())
                base_fid = s.first;
             if (!file_name.empty() && base_fid.empty())
                base_fid = file_name;

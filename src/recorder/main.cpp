@@ -151,7 +151,11 @@ int main(int argc, char *argv[]) {
                 "to be recorded.")
                 ("interactive", "Start recorder with interactive controls enabled.")
                 ("rpc-endpoint", po::value<std::string>(&rpc_endpoint),
-                 "Yield interactive control of the recorder to a remote source.")
+                 "Yield interactive control of the recorder to a remote ZMQ REQ " 
+                 "socket using an interal REP socket with ZMQ style endpoint "
+                 "specifier: '<transport>://<host>:<port>'. For instance, "
+                 "'tcp://*:5555' or 'ipc://*:5556' specify TCP and interprocess "
+                 "communication on ports 5555 or 5556, respectively")
                 ("frame-sources,s", po::value< std::vector<std::string> >()->multitoken(),
                 "The names of the FRAME SOURCES that supply images to save to video.")
                 ;
@@ -253,106 +257,121 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // Create component
-    auto recorder = std::make_shared<oat::Recorder>(position_sources, frame_sources);
 
-    // Tell user
-    if (!frame_sources.empty()) {
-
-        std::cout << oat::whoMessage(recorder->name(),
-                "Listening to frame sources ");
-
-        for (auto s : frame_sources)
-            std::cout << oat::sourceText(s) << " ";
-
-        std::cout << ".\n";
-    }
-
-    if (!position_sources.empty()) {
-
-        std::cout << oat::whoMessage(recorder->name(),
-                "Listening to position sources ");
-
-        for (auto s : position_sources)
-            std::cout << oat::sourceText(s) << " ";
-
-        std::cout << ".\n";
-    }
-
-    std::cout << oat::whoMessage(recorder->name(),
-                 "Press CTRL+C to exit.\n");
+    // Reserve name Create component
+    std::string name;
 
     // The business
     try {
 
-        switch (control_mode)
-        {
-            case ControlMode::NONE :
-            {
-                // Start the recorder w/o controls
-                run(recorder);
+        int rc = 1;
+        while (rc == 1) {
 
-                break;
+            // We may be coming around for another recording so reset quit
+            // flag
+            quit = 0;
+
+            auto recorder = 
+                std::make_shared<oat::Recorder>(position_sources, frame_sources);
+            name = recorder->name();
+
+            // Tell user
+            if (!frame_sources.empty()) {
+
+                std::cout << oat::whoMessage(recorder->name(),
+                        "Listening to frame sources ");
+
+                for (auto s : frame_sources)
+                    std::cout << oat::sourceText(s) << " ";
+
+                std::cout << ".\n";
             }
-            case ControlMode::LOCAL :
-            {
-                // For interactive control, recorder must be started by user
-                recorder->set_record_on(false);
 
-                // Start recording in background
-                std::thread process(run, std::ref(recorder));
+            if (!position_sources.empty()) {
 
-                // Interact using stdin
-                oat::printInteractiveUsage(std::cout);
-                oat::controlRecorder(std::cin, std::cout, *recorder, true);
+                std::cout << oat::whoMessage(recorder->name(),
+                        "Listening to position sources ");
 
-                // Interupt and join threads
-                cleanup(process);
+                for (auto s : position_sources)
+                    std::cout << oat::sourceText(s) << " ";
 
-                break;
+                std::cout << ".\n";
             }
-            case ControlMode::RPC :
+
+            std::cout << oat::whoMessage(recorder->name(),
+                    "Press CTRL+C to exit.\n");
+
+
+            switch (control_mode)
             {
-                // For interactive control, recorder must be started by user
-                recorder->set_record_on(false);
+                case ControlMode::NONE :
+                {
+                    // Start the recorder w/o controls
+                    run(recorder);
+                    rc = 0;
 
-                // Start recording in background
-                std::thread process(run, std::ref(recorder));
-
-                try {
-                    auto ctx = std::make_shared<zmq::context_t>(1);
-                    auto sock = std::make_shared<zmq::socket_t>(*ctx, ZMQ_REP);
-                    sock->bind(rpc_endpoint);
-                    zmq_istream_t in(ctx, sock);
-                    zmq_ostream_t out(ctx, sock);
-                    oat::printRemoteUsage(std::cout);
-                    oat::controlRecorder(in, out, *recorder, false);
-                } catch (const zmq::error_t &ex) {
-                    std::cerr << oat::whoError(recorder->name(), "zeromq error: "
-                            + std::string(ex.what())) << "\n";
-                    cleanup(process);
-                    return -1;
+                    break;
                 }
+                case ControlMode::LOCAL :
+                {
+                    // For interactive control, recorder must be started by user
+                    recorder->set_record_on(false);
 
-                // Interupt and join threads
-                cleanup(process);
+                    // Start recording in background
+                    std::thread process(run, std::ref(recorder));
 
-                break;
+                    // Interact using stdin
+                    oat::printInteractiveUsage(std::cout);
+                    rc = oat::controlRecorder(std::cin, std::cout, *recorder, file_name, true);
+
+                    // Interupt and join threads
+                    cleanup(process);
+
+                    break;
+                }
+                case ControlMode::RPC :
+                {
+                    // For interactive control, recorder must be started by user
+                    recorder->set_record_on(false);
+
+                    // Start recording in background
+                    std::thread process(run, std::ref(recorder));
+
+                    try {
+                        auto ctx = std::make_shared<zmq::context_t>(1);
+                        auto sock = std::make_shared<zmq::socket_t>(*ctx, ZMQ_REP);
+                        sock->bind(rpc_endpoint);
+                        zmq_istream_t in(ctx, sock);
+                        zmq_ostream_t out(ctx, sock);
+                        oat::printRemoteUsage(std::cout);
+                        rc = oat::controlRecorder(in, out, *recorder, file_name, false);
+                    } catch (const zmq::error_t &ex) {
+                        std::cerr << oat::whoError(recorder->name(), "zeromq error: "
+                                + std::string(ex.what())) << "\n";
+                        cleanup(process);
+                        return -1;
+                    }
+
+                    // Interupt and join threads
+                    cleanup(process);
+
+                    break;
+                }
             }
         }
 
         // Exit
-        std::cout << oat::whoMessage(recorder->name(), "Exiting.\n");
+        std::cout << oat::whoMessage(name, "Exiting.\n");
         return 0;
 
     } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(recorder->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(name, ex.what()) << "\n";
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(recorder->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(name, ex.what()) << "\n";
     } catch (const boost::interprocess::interprocess_exception &ex) {
-        std::cerr << oat::whoError(recorder->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(name, ex.what()) << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(recorder->name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(name, "Unknown exception.\n");
     }
 
     // Exit failure

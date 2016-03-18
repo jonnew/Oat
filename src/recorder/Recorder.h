@@ -83,14 +83,16 @@ public:
 
     ~Recorder();
 
-    /**
-     * Create and initialize recording file(s). Must be called before writeStreams.
-     *
+    /** 
+     * @brief Create and initialize recording file(s). Must be called before writeStreams.
+     * 
      * @param save_directory Requested save directory
-     * @param base_file_name Requested base file name. Extension should be included.
+     * @param file_name Requested base file name. Extension should be included.
      * @param prepend_timestamp Should a timestamp be prepended to the file name?
+     * @param prepend_source
+     * @param allow_overwrite
      */
-    void initializeRecording(const std::string &save_directory=".",
+    void initializeRecording(const std::string &save_directory = ".",
                              const std::string &file_name = "",
                              const bool prepend_timestamp = false,
                              const bool prepend_source = false,

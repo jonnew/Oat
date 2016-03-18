@@ -38,11 +38,12 @@ namespace oat {
  * 
  * @return Code:
  * 0. Normal exit.
- * 1. Creat new recorder and re-enter.
+ * 1. Create new recorder and re-enter.
  */
 int controlRecorder(std::istream &in,
                     std::ostream &out,
                     oat::Recorder &recorder,
+                    std::string &file_name,
                     bool pretty_cmd) {
 
     // Command map
@@ -89,22 +90,28 @@ int controlRecorder(std::istream &in,
             case 's' :
             {
                 recorder.set_record_on(true);
-                out << "Recording STARTED." << std::endl;
+                out << "Recording started." << std::endl;
                 out.flush();
                 break;
             }
             case 'p' :
             {
                 recorder.set_record_on(false);
-                out << "Recording PAUSED." << std::endl;
+                out << "Recording paused." << std::endl;
                 break;
             }
             case 'n' :
             {
-                if (recorder.record_on())
+                if (recorder.record_on()) {
                     std::cerr << "Recording must be paused to create new file.\n";
-                else
+                } else {
+                    out << "Enter new file name. Enter nothing to keep the same." << std::endl;
+                    std::string fn;
+                    std::getline(in, fn);
+                    file_name = fn.empty() ? file_name : fn; 
+                    out << "File name set to " + file_name << std::endl;
                     return 1; // Signal new file
+                }
             }
             default :
             {
@@ -126,8 +133,8 @@ void printInteractiveUsage(std::ostream &out) {
         << "            already exists. It will create a new one if it doesn't.\n"
         << " pause      Pause recording. This will pause the recording\n"
         << "            without creating a new file.\n"
-        //<< " new ARG  Start new file. Start time will be used to create\n"
-        //<< "          unique file name.\n"
+        << " new ARG    Start new file. User will be prompted for new file\n"
+        << "            name.\n"
         << " quit       Exit the program.\n";
 }
 

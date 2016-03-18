@@ -21,15 +21,17 @@
 #define OAT_RECORDCONTROL_H
 
 #include <iosfwd>
+#include <string>
 
 #include "Recorder.h"
 
 namespace oat {
 
-    int controlRecorder(std::istream &in, 
-                        std::ostream &out, 
-                        oat::Recorder &recorder, 
-                        bool pretty_cmd=false);
+    int controlRecorder(std::istream &in,
+                        std::ostream &out,
+                        oat::Recorder &recorder,
+                        std::string &file_name,
+                        bool pretty_cmd = false);
 
     void printInteractiveUsage(std::ostream &out);
     void printRemoteUsage(std::ostream &out);
