@@ -41,7 +41,7 @@ public:
     explicit Position(const std::string &label) 
     {
         strncpy(label_, label.c_str(), sizeof(label_));
-        label_[sizeof(label_) - 1] = 0;
+        label_[sizeof(label_) - 1] = '\0';
     }
 
     virtual ~Position() { };
@@ -55,6 +55,13 @@ public:
         // Copy all except label_
         unit_of_length_ = p.unit_of_length_;
         sample_ = p.sample_;
+        position_valid = p.position_valid;
+        velocity_valid = p.velocity_valid;
+        heading_valid = p.heading_valid;
+        region_valid = p.region_valid;
+        strncpy(region, p.region, sizeof(region));
+        region[sizeof(region) - 1] = '\0';
+
         return *this;
     }
 
