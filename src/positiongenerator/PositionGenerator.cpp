@@ -19,6 +19,7 @@
 
 #include <chrono>
 #include <string>
+#include <thread>
 
 #include "PositionGenerator.h"
 
@@ -35,6 +36,10 @@ PositionGenerator<T>::PositionGenerator(const std::string &position_sink_address
     if (samples_per_second > 0) {
         enforce_sample_clock_ = true;
         generateSamplePeriod(samples_per_second);
+    } else {
+
+        // Need something so that positions are not nonsense
+        generateSamplePeriod(1000.0);
     }
 
     tick_ = clock_.now();
@@ -53,6 +58,12 @@ bool PositionGenerator<T>::process() {
 
     // Generate internal frame
     bool eof = generatePosition(internal_position_);
+
+    if (enforce_sample_clock_) {
+        auto tock = clock_.now();
+        std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick_));
+        tick_ = clock_.now();
+    }
 
     // This is pure SINK, so it increments the sample count
     internal_position_.sample().incrementCount();
@@ -77,7 +88,8 @@ bool PositionGenerator<T>::process() {
 template<typename T>
 void PositionGenerator<T>::generateSamplePeriod(const double samples_per_second) {
 
-    std::chrono::duration<double> period {1.0 / samples_per_second};
+    oat::Sample::Seconds period(1.0 / samples_per_second);
+    //std::chrono::duration<double> period {1.0 / samples_per_second};
 
     // Automatic conversion
     sample_period_in_sec_ = period;

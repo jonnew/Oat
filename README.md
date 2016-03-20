@@ -17,6 +17,7 @@ __Contributors__
 **Table of Contents**
 
 - [Manual](#manual)
+    - [Introduction](#introduction)
     - [Frame Server](#frame-server)
         - [Signature](#signature)
         - [Usage](#usage)
@@ -86,12 +87,12 @@ __Contributors__
             - [Camera IP Address Configuration](#camera-ip-address-configuration)
             - [Point Greg GigE Host Adapter Card Configuration](#point-greg-gige-host-adapter-card-configuration)
             - [Multiple Cameras](#multiple-cameras)
-            - [Example](#example-7)
+            - [Example](#example-camera-configuration)
 - [TODO](#todo)
 
 \newpage
 ## Manual
-## Introduction
+### Introduction
 Oat's design is influenced by the [UNIX
 philosophy](https://en.wikipedia.org/wiki/Unix_philosophy), [suckless
 tools](http://suckless.org/philosophy), and
@@ -872,7 +873,7 @@ oat record -i raw -p pos -d -f ~/Desktop -n test
 ```
 
 \newpage
-### Position Network Socket
+### Position Socket
 `oat-posisock` - Stream detected object positions to the network in either
 client or server configurations.
 
@@ -881,11 +882,13 @@ client or server configurations.
 
 #### Usage
 ```
+
 Usage: posisock [INFO]
-   or: posisock TYPE SOURCE ENDPOINT
+   or: posisock TYPE SOURCE [ENDPOINT]
 Send positions from SOURCE to a remote endpoint.
 
 TYPE:
+  std: Asynchronous position dump to stdout.
   pub: Asynchronous position publisher over ZMQ socket.
        Publishes positions without request to potentially many
        subscribers.
@@ -904,8 +907,6 @@ Device to send positions to.
   communication on ports 5555 or 5556, respectively
   When TYPE is udp, this is specified as '<host> <port>'
   For instance, '10.0.0.1 5555'.
-
-OPTIONS:
 
 INFO:
   --help                 Produce help message.
@@ -1454,7 +1455,7 @@ camera with your computer.
           - Subnet mask: 255.255.255.0
           - DNS server IP: 192.168.__1__.1
 
-### Example
+### Example Camera Configuration
 Below is an example network adapter and camera configuration for a two-camera
 imaging system provided by [Point Grey](http://www.ptgrey.com/). It consists of
 two Blackfly GigE cameras (Point Grey part number: BFLY-PGE-09S2C) and a single
@@ -1511,7 +1512,8 @@ RJ45 ------------
 \newpage
 
 ## TODO
-- [ ] Mac, Windows builds?
+- [ ] ~~Mac, Windows builds?~~
+  - EDIT: Wait till someobody cares enough to do it.
 - [ ] Unit and stress testing
     - Unit tests for `libshmemdf`
         - ~~Nominal data types, `T`~~
@@ -1520,25 +1522,6 @@ RJ45 ------------
         - I need to come up with a series of scripts that configure and run
           components in odd and intensive, but legal, ways to ensure sample
           sychronization is maintained, graceful exits, etc
-- [x] Pull-based synchronization with remote client.
-    - By virtue of the synchronization architecture I'm using to
-      coordinate samples between SOURCE and SINK components, I get both
-      push and pull based processing chain updates for free. This means
-      if I use `oat-posisock` in server mode, and it blocks until a
-      remote client requests a position, then the data processing chain
-      update will be sychronized to these remote requestions. The
-      exception are `pure SINK` components, which can be driven by an
-      external clock. Namely, hardware devices: `oat-frameserve gige`,
-      `oat-frameserve wcam`, etc. When these components are driven by an
-      external clock, they will publish at a rate driven by the clock
-      regardless of remote requests for data processing chain updates. If
-      remote sychronization is required, this is undesirable.
-    - One thing that could be done is to implement buffer components that
-      provide FIFOs that can follow `pure SINK`'s. However, this should
-      only deal with 'hickups' in data processing. There is no free
-      lunch: if consumers cannot keep up with producers on average, then
-      consumers need to speed up or producers need to slow down.
-    - EDIT: `oat-buffer` takes care of this.
 - [ ] GigE interface cleanup
     - ~~The PGGigeCam class is a big mess. It has has tons of code redundancy.~~
         - EDIT: A lot of this is due to the PG API. I've cleaned up a bit, but
@@ -1603,8 +1586,10 @@ RJ45 ------------
       `config.toml` file so that they don't have to write them down and
       manually edit the file later
 - [ ] Colors
-    - Should visual ID information (e.g. color) be integrated into the
-      `position` type?
+    - ~~Should visual ID information (e.g. color) be integrated into the
+      `position` type.~~
+        - EDIT: No. What does position have to do with color? Sound? Touch? or
+          ...
     - All this output color formatting might be very stupid because it screws
       up log files when stdout or stderr are piped to file.
 - [ ] It would be good to warn people if the inputs to a multisource component
@@ -1623,3 +1608,14 @@ RJ45 ------------
       multisource components are dealing with sychonized sample numbers when
       pull-based sychornization strategy is enforced (no external clock driving
       acqusition, so no chance for buffer overrun).
+- [ ] Configuration via file
+    - There are a couple issues with configuration via TOML file as it stands
+         1. Command line switches should take precedence over TOML file options.
+            This is standard practice, but is not how Oat works currently.
+         1. For (all?) most components, `configure` is pure abstract in the
+            component's base class. This doesn't make too much sense because
+            options are often common to many components. For instance, in
+            `oat-posigen`, the sample period, and number of samples parameters are
+            certainly relevant to any implementation of the position generator
+            idea. Therefore, `configure` should be abstract with a base
+            implmentation containing guaranteed-to-be-common parameters.

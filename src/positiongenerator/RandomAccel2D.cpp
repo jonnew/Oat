@@ -20,7 +20,6 @@
 #include <iostream>
 #include <math.h>
 #include <string>
-#include <thread>
 #include <opencv2/opencv.hpp>
 #include <cpptoml.h>
 
@@ -62,13 +61,13 @@ void RandomAccel2D::configure(const std::string &config_file,
         oat::config::checkKeys(options, this_config);
 
         // Sample generation period
-        double dt;
+        double dt; 
         if (oat::config::getValue(this_config, "dt", dt, 0)) {
              generateSamplePeriod(1.0/dt);
         }
 
         // Number of position samples
-        oat::config::getValue(this_config, "num-samples", num_samples_, 0);
+        oat::config::getValue(this_config, "num-samples", num_samples_, 0); // TODO: This should be part of the base class
 
         // Camera Matrix
         oat::config::Array room_array;
@@ -88,7 +87,7 @@ void RandomAccel2D::configure(const std::string &config_file,
 
 bool RandomAccel2D::generatePosition(oat::Position2D &position) {
 
-    if (it_ < num_samples_) {
+    if (it_ < num_samples_) { // TODO: This should be part of the base class
 
         // Simulate one step of random, but smooth, motion
         simulateMotion();
@@ -102,12 +101,6 @@ bool RandomAccel2D::generatePosition(oat::Position2D &position) {
         position.velocity_valid = true;
         position.velocity.x = state_(1);
         position.velocity.y = state_(3);
-
-        if (enforce_sample_clock_) {
-            auto tock_ = clock_.now();
-            std::this_thread::sleep_for(sample_period_in_sec_ - (tock_ - tick_));
-            tick_ = clock_.now();
-        }
 
         it_++;
 

@@ -1,31 +1,40 @@
 #!/usr/bin/python
 
 """
-A stupid GUI to control oat-record remotely
+A stupid GUI to control oat-record and some other crap remotely.
 
 Warning: I don't know how to write Python.
 """
+
 import collections
 import Tkinter as tk
 import tkFont
 import zmq
+import signal
+import sys
 
-CTX = zmq.Context()
+# Exit routine
+def signal_handler(signal, frame):
+    print('Exiting')
+    sys.exit(0)
 
+signal.signal(signal.SIGINT, signal_handler)
+
+# RPC command set
 RPCInterface = collections.namedtuple('RPC', ['socket',
                                               'help_cmd',
                                               'start_cmd',
                                               'stop_cmd',
                                               'newfile_cmd',
                                               'exit_cmd'])
-# Device tuple
 class Device(object):
 
     def __init__(self, name, addr, help_cmd, start_cmd, stop_cmd, newfile_cmd, exit_cmd):
 
+        ctx = zmq.Context()
         self.name = name
         self.is_connected = False
-        self.rpc = RPCInterface(CTX.socket(zmq.REQ), help_cmd, start_cmd, stop_cmd, newfile_cmd, exit_cmd)
+        self.rpc = RPCInterface(ctx.socket(zmq.REQ), help_cmd, start_cmd, stop_cmd, newfile_cmd, exit_cmd)
         self.req_addr = addr
         self.conn_addr = None
 
@@ -43,7 +52,7 @@ class Device(object):
         print("%s" % (reply))
         #poller = zmq.Poller()
         #poller.register(self.rpc.socket, zmq.POLLIN)
-        #if poller.poll(1000): # 1 sec timeout 
+        #if poller.poll(1000): # 1 sec timeout
         #    reply = socket.recv_json()
         #    print("[%s] Sent: \'%s\' and received\n" % (self.name, request.rstrip()))
         #    print("%s" % (reply))
@@ -72,6 +81,45 @@ DEVICES = [
     Device("Oat", "tcp://localhost:5557", "help\n", "start\n", "pause\n", "new\n", "quit\n"),
     Device("Maze", "tcp://localhost:5558", "help", "start", "pause", "new", "exit")
 ]
+
+# Common file name
+class FileName(tk.Frame):
+
+    def __init__(self, parent):
+
+        tk.Frame.__init__(self, parent)
+
+        self.parent = parent
+        self.font = parent.font
+
+        self.filename = None
+
+        self.initUI()
+
+    def initUI(self):
+
+        # Grid config
+        self.columnconfigure(1, weight=1)
+
+        # Label
+        label = tk.Label(self, font=self.font, text="File name", width=15, anchor=tk.W)
+        label.grid(row=0, column=0, padx=10, sticky=tk.W)
+
+        # Text entry
+        entry = tk.Entry(self, font=self.font)
+        entry.delete(0, tk.END)
+        entry.insert(0, "file") 
+        entry.grid(row=0, column=1, sticky=tk.W+tk.E)
+        entry.bind('<Leave>', lambda event: self.updateFileName(event))
+
+    # Udpate socket address
+    def updateFileName(self, event):
+
+        txt = event.widget.get()
+        if txt:
+            self.filename = txt
+        else:
+            self.filename = None
 
 # Generic remote connction for interacting with a single device
 class RemoteConnection(tk.Frame):
@@ -144,7 +192,6 @@ class RemoteConnection(tk.Frame):
         else:
             self.device.req_addr = None
 
-
 # Basic GUI
 class RemoteControl(tk.Frame):
 
@@ -154,7 +201,10 @@ class RemoteControl(tk.Frame):
         self.parent = parent
         self.font = parent.font
 
-        # The connections we are interested in
+        # Common file name
+        self.filename = FileName(self)
+
+        # The devices we are interested in contolling
         self.connections = [RemoteConnection(self, dev) for dev in DEVICES]
 
         self.initUI()
@@ -167,22 +217,32 @@ class RemoteControl(tk.Frame):
         # Current row counter
         i = 0
 
-        # Connection UIs
-        l_connections = tk.Label(self, text="Remote Endpoints", font=self.font)
-        l_connections.grid(row=i, column=0)
+        # Common file name to issue during call to 'new'. Empty means use the
+        # same one that the remot recorder already was using.
+        l_filename = tk.Label(self, text="Common File Name", font=self.font)
+        l_filename.grid(row=i, column=0)
         i+=1
 
+        self.filename.grid(row=i, column=0, pady=5, sticky="ew")
+        i+=1
+
+        # Connection UIs
+        l_endpoints = tk.Label(self, text="Remote Endpoints", font=self.font)
+        l_endpoints.grid(row=i, column=0)
+        i+=1
+
+        # Align the Remote Connection components
         start_row = i
         for j,c in enumerate(self.connections):
             i = start_row + j
             c.grid(row=i, column=0, pady=5, sticky="ew")
         i += 1
-        
+
         b_frame = tk.Frame(self)
 
         # Record control buttons
-        l_connections = tk.Label(self, text="Remote Controls", font=self.font)
-        l_connections.grid(row=i, column=0)
+        l_controls = tk.Label(self, text="Remote Controls", font=self.font)
+        l_controls.grid(row=i, column=0)
         i+=1
 
         b_help = tk.Button(b_frame, text="Help", font=self.font, command=self.printHelp)

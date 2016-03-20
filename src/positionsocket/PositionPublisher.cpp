@@ -49,8 +49,6 @@ void PositionPublisher::sendPosition(const oat::Position2D& position) {
     zmq::message_t zmsg(buffer.GetSize()); 
     memcpy((void *)zmsg.data(), buffer.GetString(), buffer.GetSize());
     publisher_.send(zmsg);
-    
-    //std::cout << "Sending " << (char *)(zmsg.data()) << "\n"; 
 }
 
 } /* namespace oat */

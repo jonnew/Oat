@@ -1,4 +1,4 @@
-//******************************************************************************
+
 //* File:   Position2D.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
@@ -28,7 +28,7 @@
 #include "Position.h"
 
 namespace oat {
-    
+
 using Point2D = cv::Point2d;
 using Velocity2D = cv::Point2d;
 using UnitVector2D = cv::Point2d;
@@ -41,21 +41,29 @@ public:
     {
         // Nothing
     }
-      
+
     // 2D position primatives
     Point2D position;
     Velocity2D velocity;
     UnitVector2D heading;
 
+    /**
+     * @brief JSON Serializer
+     *
+     * @param writer Writer to use for serialization
+     * @param verbose Should fields be serialed even though they contain
+     * indeterminate data? This is useful for ease of sample alignment during
+     * post processing of saved files.
+     */
     template <typename Writer>
-    void Serialize(Writer& writer) const {
+    void Serialize(Writer& writer, bool verbose = false) const {
 
         writer.StartObject();
 
         // Sample number
         writer.String("samp");
         writer.Int(sample_.count());
-        
+
         writer.String("usec");
         writer.Int64(sample_.microseconds().count());
 
@@ -65,9 +73,9 @@ public:
 
         // Position
         writer.String("pos_ok");
-        writer.Bool(position_valid);
+        writer.Bool(position_valid || verbose);
 
-        if (position_valid) {
+        if (position_valid || verbose) {
             writer.String("pos_xy");
             writer.StartArray();
             writer.Double(position.x);
@@ -77,9 +85,9 @@ public:
 
         // Velocity
         writer.String("vel_ok");
-        writer.Bool(velocity_valid);
+        writer.Bool(velocity_valid || verbose);
 
-        if (velocity_valid) {
+        if (velocity_valid || verbose) {
             writer.String("vel_xy");
             writer.StartArray();
             writer.Double(velocity.x);
@@ -91,7 +99,7 @@ public:
         writer.String("head_ok");
         writer.Bool(heading_valid);
 
-        if (heading_valid) {
+        if (heading_valid || verbose) {
             writer.String("head_xy");
             writer.StartArray();
             writer.Double(heading.x);
@@ -103,26 +111,26 @@ public:
         writer.String("reg_ok");
         writer.Bool(region_valid);
 
-        if (region_valid) {
+        if (region_valid || verbose) {
             writer.String("reg");
             writer.String(region);
         }
 
         writer.EndObject();
     }
-    
-    void setCoordSystem(const DistanceUnit value, 
-                        const cv::Matx33d homography) { 
+
+    void setCoordSystem(const DistanceUnit value,
+                        const cv::Matx33d homography) {
         unit_of_length_ = value;
-        homography_ = homography; 
+        homography_ = homography;
     }
-    
+
     cv::Matx33d homography() const { return homography_; }
-    
+
 private:
-    
+
     cv::Matx33d homography_ {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
-    
+
 };
 
 }      /* namespace oat */

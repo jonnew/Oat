@@ -152,7 +152,7 @@ void Recorder::connectToNodes() {
     // Frame sources
     for (auto &fs: frame_sources_) {
         fs.second->connect();
-        ts = fs.second->retrieve().sample().period_sec();
+        ts = fs.second->retrieve().sample().period_sec().count();
         if (ts_last != -1.0 && ts != ts_last) {
             ts = ts > ts_last ? ts : ts_last;
             ts_consistent = false;
@@ -164,7 +164,7 @@ void Recorder::connectToNodes() {
     // Position sources
     for (auto &ps : position_sources_) {
         ps.second->connect();
-        ts = ps.second->retrieve()->sample().period_sec();
+        ts = ps.second->retrieve()->sample().period_sec().count();
         if (ts_last != -1.0 && ts != ts_last) {
             ts = ts > ts_last ? ts : ts_last;
             ts_consistent = false;
@@ -262,7 +262,7 @@ void Recorder::writePositionsToFile() {
 
         for (pvec_size_t i = 0; i !=  positions_.size(); i++) {
             json_writer_.String(positions_[i].label());
-            positions_[i].Serialize(json_writer_);
+            positions_[i].Serialize(json_writer_, true);
         }
 
         json_writer_.EndObject();
@@ -310,13 +310,6 @@ void Recorder::initializeRecording(const std::string &save_directory,
     std::string timestamp = oat::createTimeStamp();
 
     if (!position_sources_.empty()) {
-
-        //// If there we are starting a new file, finish up the old one
-        //if (position_fp_ != nullptr) {
-        //    json_writer_.EndArray();
-        //    json_writer_.EndObject();
-        //    file_stream_->Flush();
-        //}
 
         // Create a single position file
         std::string posi_fid;

@@ -3,6 +3,7 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create a SOURCES variable containing all required .cpp files:
 set (oat-posisock_SOURCE
+     PositionCout.cpp
      PositionSocket.cpp
      PositionPublisher.cpp
      PositionReplier.cpp

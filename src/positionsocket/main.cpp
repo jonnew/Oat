@@ -28,6 +28,7 @@
 #include "../../lib/utility/IOFormat.h"
 
 #include "PositionSocket.h"
+#include "PositionCout.h"
 #include "PositionPublisher.h"
 #include "PositionReplier.h"
 #include "UDPPositionClient.h"
@@ -40,9 +41,10 @@ volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options) {
     std::cout << "Usage: posisock [INFO]\n"
-              << "   or: posisock TYPE SOURCE ENDPOINT\n"
+              << "   or: posisock TYPE SOURCE [ENDPOINT]\n"
               << "Send positions from SOURCE to a remote endpoint.\n\n"
               << "TYPE:\n"
+              << "  std: Asynchronous position dump to stdout.\n"
               << "  pub: Asynchronous position publisher over ZMQ socket.\n"
               << "       Publishes positions without request to potentially many\n"
               << "       subscribers.\n"
@@ -101,6 +103,7 @@ int main(int argc, char *argv[]) {
     type_hash["pub"] = 'a';
     type_hash["rep"] = 'b';
     type_hash["udp"] = 'c';
+    type_hash["std"] = 'd';
 
     try {
 
@@ -188,7 +191,7 @@ int main(int argc, char *argv[]) {
                 std::cerr << oat::Error("udp endpoint must be specified as <host> <port>.\n");
                 return -1;
             }
-        } else {
+        } else if(type != "std") {
             printUsage(visible_options);
             std::cerr << oat::Error("An endpoint must be specified.\n");
         }
@@ -233,6 +236,11 @@ int main(int argc, char *argv[]) {
 //                    socket = std::make_shared<oat::UDPPositionServer>(source, port);
 //                else
                 socket = std::make_shared<oat::UDPPositionClient>(source, endpoint[0], endpoint[1]);
+                break;
+            }
+            case 'd':
+            {
+                socket = std::make_shared<oat::PositionCout>(source);
                 break;
             }
             default:

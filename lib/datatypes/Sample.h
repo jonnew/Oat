@@ -29,69 +29,98 @@
 namespace oat {
 
 /**
- * Class specifiying general sample timing information.
+ * Class specifying general sample timing information.
  */
 class Sample {
 
 public:
 
-    //using Clock = std::chrono::system_clock;
-    using Microseconds = std::chrono::microseconds; //duration<int64_t, std::micro>;
-    //using Time = std::chrono::time_point<Clock, Milliseconds>;
+    using Seconds = std::chrono::duration<double, std::ratio<1>>;
+    using Microseconds = std::chrono::microseconds; // duration<int64_t, std::micro>;
     using IEEE1394Tick = std::chrono::duration<float, std::ratio<1,8000>>;
 
-    explicit Sample() 
+    explicit Sample()
     {
         // Nothing
     }
 
     /**
-     * An incrementable sample keeper.
+     * @brief An increment-able sample keeper.
      *
      * @param period_sec The period of the sample clock in seconds.
      */
-    explicit Sample(double period_sec) : 
+    explicit Sample(const double period_sec) :
       period_sec_(period_sec)
     , rate_hz_( 1.0 / period_sec)
     {
         // Nothing
     }
 
-    // Only pure SINKs should increment the count, set the sample rates, periods, etc
-    uint64_t incrementCount() { 
-        return ++count_; 
+    /**
+     * @brief An increment-able sample keeper.
+     *
+     * @param period_sec The period of the sample clock in seconds.
+     */
+    explicit Sample(const Seconds period_sec) :
+      period_sec_(period_sec)
+    , rate_hz_( 1.0 / period_sec.count())
+    {
+        // Nothing
     }
 
-    uint64_t incrementCount(const Microseconds usec) { 
-        microseconds_ = usec; 
-        return ++count_; 
+    /**
+     * @brief Increment sample count. Only pure SINKs should increment the
+     * count, set the sample rates, periods, etc.
+     *
+     * @return Current sample count
+     */
+    uint64_t incrementCount() {
+        microseconds_ += period_microseconds_;
+        return ++count_;
     }
 
-    void set_rate_hz(const double value) { 
+    /**
+     * @brief Increment sample count with microseconds override. Only pure SINKs
+     * should increment the count, set the sample rates, periods, etc.
+     *
+     * @param usec Manual override of current sample time in microseconds, e.g.
+     * from an external clock reading.
+     * @return Current sample count
+     */
+    uint64_t incrementCount(const Microseconds usec) {
+        microseconds_ = usec;
+        return ++count_;
+    }
+
+    void set_rate_hz(const double value) {
         rate_hz_ = value;
-        period_sec_ = 1.0 / value;
+        period_sec_ = Seconds(1.0 / value);
+        period_microseconds_ = 
+            std::chrono::duration_cast<Microseconds>(period_sec_);
     }
 
-    void set_period_sec(const double value) { 
-        period_sec_ = value;
+    void set_period_sec(const double value) {
         rate_hz_ = 1.0 / value;
+        period_sec_ = Seconds(1.0 / value);
+        period_microseconds_ = 
+            std::chrono::duration_cast<Microseconds>(period_sec_);
     }
 
     uint64_t count() const { return count_; }
     Microseconds microseconds() const { return microseconds_; }
-    double period_sec() const { return period_sec_; }
-    double rate_hz() const { return 1.0 / period_sec_; }
-    
+    Seconds period_sec() const { return period_sec_; }
+    Microseconds period_microseconds() const { return period_microseconds_; }
+    double rate_hz() const { return 1.0 / period_sec_.count(); }
+
 private:
 
     uint64_t count_ {0};
     Microseconds microseconds_ {0};
-    double period_sec_ {-1.0};
-    double rate_hz_ {-1.0};
+    Seconds period_sec_ {0.0};
+    Microseconds period_microseconds_ {0};
+    double rate_hz_ {0.0};
 
 };
 
 }      /* namespace oat */
 #endif /* OAT_SAMPLE_H */
-
-
