@@ -80,7 +80,7 @@ void TestFrame::connectToNode() {
     example_frame.copyTo(shared_frame_);
 
     // Put a dummy rate in the shared frame
-    shared_frame_.sample().set_period_sec(0.00001);
+    shared_frame_.sample().set_rate_hz(1000000.0);
 }
 
 bool TestFrame::serveFrame() {

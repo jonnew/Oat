@@ -262,7 +262,7 @@ void Recorder::writePositionsToFile() {
 
         for (pvec_size_t i = 0; i !=  positions_.size(); i++) {
             json_writer_.String(positions_[i].label());
-            positions_[i].Serialize(json_writer_, true);
+            positions_[i].Serialize(json_writer_, verbose_file_);
         }
 
         json_writer_.EndObject();
@@ -304,10 +304,13 @@ void Recorder::initializeRecording(const std::string &save_directory,
                                    const std::string &file_name,
                                    const bool prepend_timestamp,
                                    const bool prepend_source,
-                                   const bool allow_overwrite) {
+                                   const bool allow_overwrite,
+                                   const bool concise_file) {
 
     // Generate timestamp for headers and potentially for file names
     std::string timestamp = oat::createTimeStamp();
+
+    verbose_file_ = !concise_file;
 
     if (!position_sources_.empty()) {
 

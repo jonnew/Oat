@@ -92,15 +92,13 @@ public:
         return ++count_;
     }
 
+    /** 
+     * @brief Set the sample rate.
+     * 
+     * @param value Sample rate in Hz.
+     */
     void set_rate_hz(const double value) {
         rate_hz_ = value;
-        period_sec_ = Seconds(1.0 / value);
-        period_microseconds_ = 
-            std::chrono::duration_cast<Microseconds>(period_sec_);
-    }
-
-    void set_period_sec(const double value) {
-        rate_hz_ = 1.0 / value;
         period_sec_ = Seconds(1.0 / value);
         period_microseconds_ = 
             std::chrono::duration_cast<Microseconds>(period_sec_);

@@ -64,7 +64,7 @@ void FileReader::connectToNode() {
     file_reader_.set(CV_CAP_PROP_POS_AVI_RATIO, 0);
 
     // Put the sample rate in the shared frame
-    shared_frame_.sample().set_period_sec(frame_period_in_sec_.count());
+    shared_frame_.sample().set_rate_hz(1.0 / frame_period_in_sec_.count());
 }
 
 bool FileReader::serveFrame() {

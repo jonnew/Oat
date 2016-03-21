@@ -827,27 +827,47 @@ tends to be quite intense and (2) save to multiple locations simultaneously.
 
 #### Usage
 ```
-Usage: record [OPTIONS]
+Usage: record [INFO]
    or: record [CONFIGURATION]
+Record frame and/or position streams.
 
 OPTIONS:
-  --help                        Produce help message.
-  -v [ --version ]              Print version information.
+
+INFO:
+  --help                         Produce help message.
+  -v [ --version ]               Print version information.
 
 CONFIGURATION:
-  -n [ --filename ] arg         The base file name to which to source name will
-                                be appended
-  -f [ --folder ] arg           The path to the folder to which the video
-                                stream and position information will be saved.
-  -d [ --date ]                 If specified, YYYY-MM-DD-hh-mm-ss_ will be
-                                prepended to the filename.
-  -p [ --positionsources ] arg  The name of the server(s) that supply object
-                                position information.The server(s) must be of
-                                type SMServer<Position>
-
-  -i [ --imagesources ] arg     The name of the server(s) that supplies images
-                                to save to video.The server must be of type
-                                SMServer<SharedCVMatHeader>
+  -n [ --filename ] arg          The base file name to which to source name 
+                                 will be appended
+  -f [ --folder ] arg            The path to the folder to which the video 
+                                 stream and position information will be saved.
+  -d [ --date ]                  If specified, YYYY-MM-DD-hh-mm-ss_ will be 
+                                 prepended to the filename.
+  -a [ --prepend-source ]        If specified, the source name will be 
+                                 prepended to the filename, after the data, if 
+                                 selected
+  -o [ --allow-overwrite ]       If set and save path matches and existing 
+                                 file, the file will be overwritten instead of 
+                                 a numerical index being added to the file 
+                                 path.
+  -c [ --concise-file ]          If set, indeterminate position data fields will
+                                 be written in spite of being indeterminate for 
+                                 sample parsing ease. e.g pos_xy will be
+                                 written even when pos_ok = false.
+  -p [ --position-sources ] arg  The names of the POSITION SOURCES that supply 
+                                 object positions to be recorded.
+  --interactive                  Start recorder with interactive controls 
+                                 enabled.
+  --rpc-endpoint arg             Yield interactive control of the recorder to a
+                                 remote ZMQ REQ socket using an interal REP 
+                                 socket with ZMQ style endpoint specifier: 
+                                 '<transport>://<host>:<port>'. For instance, 
+                                 'tcp://*:5555' or 'ipc://*:5556' specify TCP 
+                                 and interprocess communication on ports 5555 
+                                 or 5556, respectively
+  -s [ --frame-sources ] arg     The names of the FRAME SOURCES that supply 
+                                 images to save to video.
 
 ```
 

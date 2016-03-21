@@ -93,7 +93,7 @@ void PositionGenerator<T>::generateSamplePeriod(const double samples_per_second)
 
     // Automatic conversion
     sample_period_in_sec_ = period;
-    internal_position_.sample().set_period_sec(period.count());
+    internal_position_.sample().set_rate_hz(1.0 / period.count());
 }
 
 // Explicit declaration to get around link errors due to this being in its own

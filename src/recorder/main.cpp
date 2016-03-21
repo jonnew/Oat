@@ -49,6 +49,7 @@ std::string save_path;
 bool allow_overwrite = false;
 bool prepend_timestamp = false;
 bool prepend_source = false;
+bool concise_file = false;
 
 // ZMQ stream
 using zmq_istream_t = boost::iostreams::stream<oat::zmq_istream>;
@@ -98,7 +99,8 @@ void run(std::shared_ptr<oat::Recorder>& recorder) {
                                       file_name,
                                       prepend_timestamp,
                                       prepend_source,
-                                      allow_overwrite);
+                                      allow_overwrite,
+                                      concise_file);
 
         while (!quit && !source_eof) {
             source_eof = recorder->writeStreams();
@@ -146,12 +148,16 @@ int main(int argc, char *argv[]) {
                 "If set and save path matches and existing file, the file will "
                 "be overwritten instead of a numerical index being added to "
                 "the file path.")
+                ("concise-file,c",
+                 "If set, indeterminate position data fields will be written "
+                 "in spite of being indeterminate for sample parsing ease. "
+                 "e.g. pos_xy will be written even when pos_ok = false.")
                 ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
                 "The names of the POSITION SOURCES that supply object positions "
                 "to be recorded.")
                 ("interactive", "Start recorder with interactive controls enabled.")
                 ("rpc-endpoint", po::value<std::string>(&rpc_endpoint),
-                 "Yield interactive control of the recorder to a remote ZMQ REQ " 
+                 "Yield interactive control of the recorder to a remote ZMQ REQ "
                  "socket using an interal REP socket with ZMQ style endpoint "
                  "specifier: '<transport>://<host>:<port>'. For instance, "
                  "'tcp://*:5555' or 'ipc://*:5556' specify TCP and interprocess "
@@ -248,6 +254,8 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("allow-overwrite"))
             allow_overwrite = true;
 
+        if (variable_map.count("concise-file"))
+            concise_file = true;
 
     } catch (std::exception& e) {
         std::cerr << oat::Error(e.what()) << "\n";
@@ -271,7 +279,7 @@ int main(int argc, char *argv[]) {
             // flag
             quit = 0;
 
-            auto recorder = 
+            auto recorder =
                 std::make_shared<oat::Recorder>(position_sources, frame_sources);
             name = recorder->name();
 

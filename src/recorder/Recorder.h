@@ -51,8 +51,7 @@ class SharedFrameHeader;
  */
 class Recorder {
 
-    // The control recorder routine needs access to
-    // Recorder's privates
+    // The control recorder routine needs access to Recorder's privates
     friend int controlRecorder(std::istream &in,
                                oat::Recorder &recorder,
                                bool print_cmd);
@@ -89,14 +88,16 @@ public:
      * @param save_directory Requested save directory
      * @param file_name Requested base file name. Extension should be included.
      * @param prepend_timestamp Should a timestamp be prepended to the file name?
-     * @param prepend_source
-     * @param allow_overwrite
+     * @param prepend_source Should the (first) SOURCE name be appended to the file name?
+     * @param allow_overwrite Should existing files with the same name be overwritten?
+     * @param verbose_file Should indeterminate data fields be written anyway? 
      */
     void initializeRecording(const std::string &save_directory = ".",
                              const std::string &file_name = "",
                              const bool prepend_timestamp = false,
                              const bool prepend_source = false,
-                             const bool allow_overwrite = false);
+                             const bool allow_overwrite = false,
+                             const bool concise_file = false);
 
     /**
      * Recorder SOURCEs must be able to connect to a NODEs from
@@ -138,6 +139,11 @@ private:
     // The true sample rate is enforced by the slowest SOURCE since all SOURCEs
     // are sychronized. User will be warned if SOURCE sample rates differ.
     double sample_rate_hz_ {0.0};
+
+    // Should indeterminate position data fields be written in spite of being
+    // indeterminate for sample parsing ease? e.g. Should we write pos_xy when
+    // the pos_ok = false?
+    bool verbose_file_ {true};
 
     // Source end of file flag
     bool source_eof_ {false};
