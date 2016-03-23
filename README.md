@@ -243,7 +243,7 @@ CONFIGURATION:
                          TYPE.
                          Path to image file if 'test' is selected as the server
                          TYPE.
-  -r [ --fps ] arg       Frames per second. Overriden by information in 
+  -r [ --fps ] arg       Frames per second. Overriden by information in
                          configuration file if provided.
   -c [ --config ] arg    Configuration file/key pair.
 ```
@@ -480,7 +480,7 @@ INFO:
   -v [ --version ]          Print version information.
 
 CONFIGURATION:
-  --tune                    Use GUI to tune detection parameters at the cost of 
+  --tune                    Use GUI to tune detection parameters at the cost of
                             performance.
   -c [ --config ] arg       Configuration file/key pair.
 ```
@@ -543,7 +543,7 @@ INFO:
   -v [ --version ]       Print version information.
 
 CONFIGURATION:
-  -r [ --sps ] arg       Samples per second. Overriden by information in 
+  -r [ --sps ] arg       Samples per second. Overriden by information in
                          configuration file if provided.
   -c [ --config ] arg    Configuration file/key pair.
 ```
@@ -560,7 +560,7 @@ __TYPE = `rand2D`__
 #### Example
 ```bash
 # Publish randomly moving positions to the 'pos' position stream
-oat posigen rand2D pos 
+oat posigen rand2D pos
 ```
 
 \newpage
@@ -838,35 +838,35 @@ INFO:
   -v [ --version ]               Print version information.
 
 CONFIGURATION:
-  -n [ --filename ] arg          The base file name to which to source name 
+  -n [ --filename ] arg          The base file name to which to source name
                                  will be appended
-  -f [ --folder ] arg            The path to the folder to which the video 
+  -f [ --folder ] arg            The path to the folder to which the video
                                  stream and position information will be saved.
-  -d [ --date ]                  If specified, YYYY-MM-DD-hh-mm-ss_ will be 
+  -d [ --date ]                  If specified, YYYY-MM-DD-hh-mm-ss_ will be
                                  prepended to the filename.
-  -a [ --prepend-source ]        If specified, the source name will be 
-                                 prepended to the filename, after the data, if 
+  -a [ --prepend-source ]        If specified, the source name will be
+                                 prepended to the filename, after the data, if
                                  selected
-  -o [ --allow-overwrite ]       If set and save path matches and existing 
-                                 file, the file will be overwritten instead of 
-                                 a numerical index being added to the file 
+  -o [ --allow-overwrite ]       If set and save path matches and existing
+                                 file, the file will be overwritten instead of
+                                 a numerical index being added to the file
                                  path.
   -c [ --concise-file ]          If set, indeterminate position data fields will
-                                 be written in spite of being indeterminate for 
+                                 be written in spite of being indeterminate for
                                  sample parsing ease. e.g pos_xy will be
                                  written even when pos_ok = false.
-  -p [ --position-sources ] arg  The names of the POSITION SOURCES that supply 
+  -p [ --position-sources ] arg  The names of the POSITION SOURCES that supply
                                  object positions to be recorded.
-  --interactive                  Start recorder with interactive controls 
+  --interactive                  Start recorder with interactive controls
                                  enabled.
   --rpc-endpoint arg             Yield interactive control of the recorder to a
-                                 remote ZMQ REQ socket using an interal REP 
-                                 socket with ZMQ style endpoint specifier: 
-                                 '<transport>://<host>:<port>'. For instance, 
-                                 'tcp://*:5555' or 'ipc://*:5556' specify TCP 
-                                 and interprocess communication on ports 5555 
+                                 remote ZMQ REQ socket using an interal REP
+                                 socket with ZMQ style endpoint specifier:
+                                 '<transport>://<host>:<port>'. For instance,
+                                 'tcp://*:5555' or 'ipc://*:5556' specify TCP
+                                 and interprocess communication on ports 5555
                                  or 5556, respectively
-  -s [ --frame-sources ] arg     The names of the FRAME SOURCES that supply 
+  -s [ --frame-sources ] arg     The names of the FRAME SOURCES that supply
                                  images to save to video.
 
 ```
@@ -912,7 +912,7 @@ TYPE:
   pub: Asynchronous position publisher over ZMQ socket.
        Publishes positions without request to potentially many
        subscribers.
-  rep: Synchronous position replier over ZMQ socket. 
+  rep: Synchronous position replier over ZMQ socket.
        Sends positions in response to requests from a single
        endpoint.Several transport/protocol options. The most
        useful are tcp and interprocess (ipc).
@@ -922,7 +922,7 @@ TYPE:
 ENDPOINT:
 Device to send positions to.
   When TYPE is pos or rep, this is specified using a ZMQ-style
-  endpoint: '<transport>://<host>:<port>'. For instance, 
+  endpoint: '<transport>://<host>:<port>'. For instance,
   'tcp://*:5555' or 'ipc://*:5556' specify TCP and interprocess
   communication on ports 5555 or 5556, respectively
   When TYPE is udp, this is specified as '<host> <port>'
@@ -1194,8 +1194,8 @@ licenses are shown below:
   you compile without Flycapture support, you can get around this. Also, see
   the `GigE interface cleanup` entry in the TODO section for a potentially free
   alternative.
-- OpenCV: BSD 
-- ZeroMQ: LGPLv3.0 
+- OpenCV: BSD
+- ZeroMQ: LGPLv3.0
 - Boost: Boost software license
 - cpptoml: Some kind of Public Domain Dedication
 - RapidJSON: BSD
@@ -1456,9 +1456,9 @@ camera with your computer.
 
         net.core.rmem_max=1048576
         net.core.rmem_default=1048576
-  
+
   These settings can then be reloaded after reboot using
-       
+
         sudo sysctl -p
 
 ### Multiple Cameras
@@ -1523,7 +1523,7 @@ RJ45 ------------
     - Subnet mask:   255.255.255.0
 - Camera Settings
     - Model:         Blackfly BFLY-PGE-09S2C
-    - Serial No.:    
+    - Serial No.:
     - IP:            192.168.1.1 (Static)
     - Subnet mask:   255.255.255.0
     - Default GW:    0.0.0.0
@@ -1551,7 +1551,7 @@ RJ45 ------------
       interrupted. Need a timed wait there.~~
         - EDIT: Fixed in
           [a0c97e56bbe66227b03dd9253fdff33f0550465b](https://github.com/jonnew/Oat/commit/a0c97e56bbe66227b03dd9253fdff33f0550465b)
-    - Should I be using the generic [GenICam API](https://en.wikipedia.org/wiki/GenICam) 
+    - Should I be using the generic [GenICam API](https://en.wikipedia.org/wiki/GenICam)
       instead of PG's non-standard API? e.g. [Aravis](https://github.com/GNOME/aravis).
     - ~~Additionally, it needs to be optimized for performance. Are their
       unnessesary copies of images being made during conversion from PG Image
@@ -1590,15 +1590,15 @@ RJ45 ------------
       stateless detection. However, it would make the concept of position
       combining hard to define (although that is even true now is just a design
       choice, really).
-- [ ] Frame visualization is nice, but should no cause holdups in the processing 
-      pipeline. In this case frames should just be dropped. This might be as 
-      simple as making the actual visualization call in 
-      [Viewer.cpp](/src/frameviewer/Viewer.cpp) a callback operating on a 
-      separate visualization thread that is triggered after `internal_frame_` 
-      is written to. 
-    - This may cause `internal_frame_` to be overwritten during visualization. 
+- [ ] Frame visualization is nice, but should no cause holdups in the processing
+      pipeline. In this case frames should just be dropped. This might be as
+      simple as making the actual visualization call in
+      [Viewer.cpp](/src/frameviewer/Viewer.cpp) a callback operating on a
+      separate visualization thread that is triggered after `internal_frame_`
+      is written to.
+    - This may cause `internal_frame_` to be overwritten during visualization.
       Problem?
-    - Visualization could somehow be 'aborted' if it has not completed and 
+    - Visualization could somehow be 'aborted' if it has not completed and
       a new frame is available.
 - [ ] Saving tuning parameters
     - Components that have a `--tune` option should also allow for the user to
@@ -1628,14 +1628,20 @@ RJ45 ------------
       multisource components are dealing with sychonized sample numbers when
       pull-based sychornization strategy is enforced (no external clock driving
       acqusition, so no chance for buffer overrun).
-- [ ] Configuration via file
-    - There are a couple issues with configuration via TOML file as it stands
-         1. Command line switches should take precedence over TOML file options.
-            This is standard practice, but is not how Oat works currently.
-         1. For (all?) most components, `configure` is pure abstract in the
-            component's base class. This doesn't make too much sense because
-            options are often common to many components. For instance, in
-            `oat-posigen`, the sample period, and number of samples parameters are
-            certainly relevant to any implementation of the position generator
-            idea. Therefore, `configure` should be abstract with a base
-            implmentation containing guaranteed-to-be-common parameters.
+- [ ] There are a couple issues with configuration via TOML file as it stands
+     1. Command line switches should take precedence over TOML file options.
+        This is standard practice, but is not how Oat works currently.
+     1. For (all?) most components, `configure` is pure abstract in the
+        component's base class. This doesn't make too much sense because
+        options are often common to many components. For instance, in
+        `oat-posigen`, the sample period, and number of samples parameters are
+        certainly relevant to any implementation of the position generator
+        idea. Therefore, `configure` should be abstract with a base
+        implmentation containing guaranteed-to-be-common parameters.
+- [ ] [CBOR](http://tools.ietf.org/html/rfc7049) binary messaging and data files
+  - CBOR is an extremely simple binary encoding scheme for JSON
+  - It would be great to allow the option to save CBOR files (`oat-record`) or
+    send CBOR messages (`oat-posisock`) by creating a CBOR `Writer` acceptable
+    to by `Position` datatype's serialization function.
+  - And, while I'm at it, Position's should be forced to support serialization,
+    so this should be a pure abstract member of the base class. 
