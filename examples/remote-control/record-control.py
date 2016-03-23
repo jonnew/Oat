@@ -78,8 +78,8 @@ class Device(object):
 # Hard-coded devices along with appropriate commands. Add more or remove the ones you don't want
 DEVICES = [
     Device("Open Ephys", "tcp://localhost:5556", "", "StartRecord", "StopRecord", "NewFile",""),
-    Device("Oat", "tcp://localhost:5557", "help\n", "start\n", "pause\n", "new\n", "quit\n"),
-    Device("Maze", "tcp://localhost:5558", "help", "start", "pause", "new", "exit")
+    Device("Oat", "tcp://18.93.13.165:6666", "help\n", "start\n", "pause\n", "new\n", "quit\n"),
+    Device("Maze", "tcp://localhost:6665", "help", "start", "pause", "new", "exit")
 ]
 
 # Common file name

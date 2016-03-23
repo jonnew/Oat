@@ -61,7 +61,7 @@ public:
         writer.StartObject();
 
         // Sample number
-        writer.String("samp");
+        writer.String("tick");
         writer.Int(sample_.count());
 
         writer.String("usec");
