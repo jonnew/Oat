@@ -20,6 +20,10 @@
 #include <chrono>
 #include <string>
 #include <thread>
+#include <cpptoml.h>
+
+#include "../../lib/utility/OatTOMLSanitize.h"
+#include "../../lib/utility/IOFormat.h"
 
 #include "PositionGenerator.h"
 
@@ -27,7 +31,7 @@ namespace oat {
 
 template<typename T>
 PositionGenerator<T>::PositionGenerator(const std::string &position_sink_address,
-                                        const double samples_per_second, 
+                                        const double samples_per_second,
                                         const int64_t num_samples) :
   num_samples_(num_samples - 1)
 , name_("posigen[*->" + position_sink_address + "]")
@@ -43,6 +47,52 @@ PositionGenerator<T>::PositionGenerator(const std::string &position_sink_address
     }
 
     tick_ = clock_.now();
+}
+
+template <typename T>
+void PositionGenerator<T>::configure(const std::string &config_file,
+                              const std::string &config_key) {
+
+    // Available options
+    std::vector<std::string> options {"rate-hz",
+                                      "num-samples",
+                                      "room"};
+
+    // This will throw cpptoml::parse_exception if a file
+    // with invalid TOML is provided
+    auto config = cpptoml::parse_file(config_file);
+
+    // See if a camera configuration was provided
+    if (config->contains(config_key)) {
+
+        // Get this components configuration table
+        auto this_config = config->get_table(config_key);
+
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
+
+        // Sample generation period
+        double rate_hz;
+        if (oat::config::getValue(this_config, "rate-hz", rate_hz, 0))
+             generateSamplePeriod(rate_hz);
+
+        // Number of position samples
+        oat::config::getValue(this_config, "num-samples", num_samples_, 0);
+
+        // Periodic boundaries for the generated positions
+        oat::config::Array room_array;
+        if (oat::config::getArray(this_config, "room", room_array, 4, false)) {
+
+            auto room_vec = room_array->array_of<double>();
+            room_.x      = room_vec[0]->get();
+            room_.y      = room_vec[1]->get();
+            room_.width  = room_vec[2]->get();
+            room_.height = room_vec[3]->get();
+        }
+
+    } else {
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
+    }
 }
 
 template<typename T>

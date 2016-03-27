@@ -17,15 +17,10 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
-#include <iostream>
-#include <math.h>
 #include <string>
 #include <opencv2/opencv.hpp>
-#include <cpptoml.h>
 
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/utility/OatTOMLSanitize.h"
-#include "../../lib/utility/IOFormat.h"
 
 #include "RandomAccel2D.h"
 
@@ -39,55 +34,9 @@ RandomAccel2D::RandomAccel2D(const std::string &position_sink_address,
     createStaticMatracies();
 }
 
-void RandomAccel2D::configure(const std::string &config_file,
-                              const std::string &config_key) {
-
-    // Available options
-    std::vector<std::string> options {"dt",
-                                      "num-samples",
-                                      "room"};
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
-
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        // Sample generation period
-        double dt; 
-        if (oat::config::getValue(this_config, "dt", dt, 0)) {
-             generateSamplePeriod(1.0/dt);
-        }
-
-        // Number of position samples
-        oat::config::getValue(this_config, "num-samples", num_samples_, 0); // TODO: This should be part of the base class
-
-        // Camera Matrix
-        oat::config::Array room_array;
-        if (oat::config::getArray(this_config, "room", room_array, 4, false)) {
-
-            auto room_vec = room_array->array_of<double>();
-            room_.x      = room_vec[0]->get();
-            room_.y      = room_vec[1]->get();
-            room_.width  = room_vec[2]->get();
-            room_.height = room_vec[3]->get();
-        }
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
-}
-
 bool RandomAccel2D::generatePosition(oat::Position2D &position) {
 
-    if (it_ < num_samples_) { // TODO: This should be part of the base class
+    if (it_ < num_samples_) {
 
         // Simulate one step of random, but smooth, motion
         simulateMotion();
@@ -173,7 +122,6 @@ void RandomAccel2D::createStaticMatracies() {
 
     input_mat_(3, 0) = 0.0;
     input_mat_(3, 1) = Ts;
-
 }
 
 } /* namespace oat */

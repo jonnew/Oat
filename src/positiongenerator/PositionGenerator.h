@@ -75,7 +75,7 @@ public:
      * @param config_key configuration key
      */
     virtual void configure(const std::string &file_name,
-                           const std::string &key) = 0;
+                           const std::string &key);
 
     /**
      * Get test position server name.
@@ -98,6 +98,9 @@ protected:
     std::chrono::duration<double> sample_period_in_sec_;
     std::chrono::high_resolution_clock::time_point tick_;
 
+    // Periodic boundaries in which simulated particle resides.
+    cv::Rect_<double> room_ {0, 0, 728, 728};
+    
     // Sample count specification
     int64_t num_samples_ {std::numeric_limits<int64_t>::max()};
     int64_t it_ {0};
@@ -122,12 +125,7 @@ private:
     // The test position SINK
     std::string position_sink_address_;
     oat::Sink<T> position_sink_;
-
 };
-
-// Explicit declaration
-//template class PositionGenerator<oat::Position2D>;
 
 }      /* namespace oat */
 #endif /* OAT_POSITIONGENERATOR_H */
-

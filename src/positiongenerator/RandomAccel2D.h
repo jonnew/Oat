@@ -47,9 +47,6 @@ public:
                   const double samples_per_second,
                   const int64_t num_samples);
 
-    void configure(const std::string &file_name,
-                   const std::string &key) override;
-
 private:
 
     // Random number generator
@@ -61,7 +58,6 @@ private:
     cv::Matx21d accel_vec_;
 
     // STM and input matrix
-    cv::Rect_<double> room_ {0, 0, 728, 728}; //!< "Room" circular boundaries in which simulated particle resides.
     cv::Matx44d state_transition_mat_;
     cv::Matx<double, 4, 2> input_mat_;
 

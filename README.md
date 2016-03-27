@@ -539,19 +539,24 @@ SINK:
 OPTIONAL ARGUMENTS:
 
 INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
+  --help                    Produce help message.
+  -v [ --version ]          Print version information.
 
 CONFIGURATION:
-  -r [ --sps ] arg       Samples per second. Overriden by information in
-                         configuration file if provided.
-  -c [ --config ] arg    Configuration file/key pair.
+  -r [ --rate-hz ] arg      Samples per second. Overriden by information in 
+                            configuration file if provided. Defaults to as fast
+                            as possible.
+  -n [ --num-samples ] arg  Number of position samples to generate and serve. 
+                            Overriden by information in configuration file if 
+                            provided. Deafaults to approximately infinite.
+  -c [ --config ] arg       Configuration file/key pair.
 ```
 
 #### Configuration File Options
 __TYPE = `rand2D`__
 
-- __`dt`__=`+double` Position update period
+- __`rate-hz`__=`+double` Position update rate in Hz.
+- __`num-samples`__=`+int` Number of position samples to produce.
 - __`room`__=`[+double, +double, +double, +double]` The 'room' in which generated
   positions reside specified as [x origin, y origin, width, height]. Arbitrary
   units. The room has periodic boundaries so when a position leaves one side it
@@ -1618,16 +1623,27 @@ RJ45 ------------
       multisource components are dealing with sychonized sample numbers when
       pull-based sychornization strategy is enforced (no external clock driving
       acqusition, so no chance for buffer overrun).
-- [ ] There are a couple issues with configuration via TOML file as it stands
-     1. Command line switches should take precedence over TOML file options.
-        This is standard practice, but is not how Oat works currently.
-     1. For (all?) most components, `configure` is pure abstract in the
-        component's base class. This doesn't make too much sense because
-        options are often common to many components. For instance, in
-        `oat-posigen`, the sample period, and number of samples parameters are
-        certainly relevant to any implementation of the position generator
-        idea. Therefore, `configure` should be abstract with a base
-        implmentation containing guaranteed-to-be-common parameters.
+- [ ] Command line switches should take precedence over TOML file options.  This is
+  standard practice, but is not how Oat works currently.
+    - `oat-frameserve`
+    - `oat-framefilt`
+    - `oat-posifilt`
+    - `oat-posigen`
+    - `oat-posicom`
+    - `oat-posidet`
+- [ ] For (all?) most components, `configure` is pure abstract in the
+  component's base class. This doesn't make too much sense because options are
+  often common to many components. For instance, in `oat-posigen`, the sample
+  period, and number of samples parameters are certainly relevant to any
+  implementation of the position generator idea. Therefore, `configure` should
+  be abstract with a base implementation containing guaranteed-to-be-common
+  parameters.
+    - `oat-frameserve`
+    - `oat-framefilt`
+    - `oat-posifilt`
+    - ~~`oat-posigen`~~
+    - `oat-posicom`
+    - `oat-posidet`
 - [ ] [CBOR](http://tools.ietf.org/html/rfc7049) binary messaging and data files
   - CBOR is an extremely simple binary encoding scheme for JSON
   - It would be great to allow the option to save CBOR files (`oat-record`) or
@@ -1635,3 +1651,5 @@ RJ45 ------------
     to by `Position` datatype's serialization function.
   - And, while I'm at it, Position's should be forced to support serialization,
     so this should be a pure abstract member of the base class. 
+  - Another option that is very similar is messagepack. Don't know which is
+    better.

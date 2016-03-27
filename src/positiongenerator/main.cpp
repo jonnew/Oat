@@ -103,9 +103,9 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
-                ("sps,r", po::value<double>(&samples_per_second),
+                ("rate-hz,r", po::value<double>(&samples_per_second),
                 "Samples per second. Overriden by information in configuration "
-                "file if provided. Defaults to unenforced.")
+                "file if provided. Defaults to as fast as possible.")
                 ("num-samples,n", po::value<size_t>(&num_samples_st),
                 "Number of position samples to generate and serve. Overriden by "
                 "information in configuration file if provided. Deafaults to "

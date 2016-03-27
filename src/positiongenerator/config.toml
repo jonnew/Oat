@@ -3,11 +3,13 @@
 # To use them:
 #
 # ``` bash
-# oat positest TYPE SINK -c config.toml TYPE
+# oat posigen TYPE SINK -c config.toml TYPE
 # ```
 
 [rand2D]
-dt = 0.25                           # Test position sample period in seconds
+rate-hz = 0.25                      # Test position sample period in seconds
+num-samples = 100                   # Number of position samples to produce.
+                                    # Defaults to infinity.
 room = [0.0, 0.0, 1000.0, 1000.0]   # The 'room' in which generated positions reside
                                     # specified as [x origin, y origin, width, height]
                                     # If generated positions extend beyond the
