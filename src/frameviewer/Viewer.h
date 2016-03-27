@@ -21,6 +21,7 @@
 #define OAT_VIEWER_H
 
 #include <chrono>
+#include <future>
 #include <string>
 
 #include "../../lib/datatypes/Frame.h"
@@ -78,6 +79,10 @@ private:
     std::string snapshot_base_file_;
     std::vector<int> compression_params_;
 
+    // Display thread future
+    std::future<void> display_future_;
+
+    void display(void);
 };
 
 }      /* namespace oat */

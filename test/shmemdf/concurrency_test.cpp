@@ -32,7 +32,7 @@
 //### A Sink and Source bound to a common Node must respect eachothers' locks
 //- Given a sink and source
 //    - When source attempts to enter the critical section first
-//        - Then, the the source shall block until the sink post()'s
+//        - Then, the source shall block until the sink post()'s
 //    - When the sink enters a critical section first
 //        - Then, the source shall block until the sink post()'s
 //    - When the source enters a critical section
@@ -46,8 +46,8 @@
 //            3. The sink bind()'s
 //        - Then, the sources shall block until the sink enters/exits the critical section
 //    - When, 1. The sink binds
-//            2. the sources connect()
-//            3. the sources try to enter critical section
+//            2. The sources connect()
+//            3. The sources try to enter critical section
 //        - Then, the sources shall block until the sink enters/exits the critical section
 //    - When, 1. The first source connect()'s
 //            2. The first sources tries to enter the critical section
@@ -59,7 +59,7 @@
 //### Sources attaching or detaching during source or sink wait() periods should not cause deadlocks
 //- Given a sink and two sources
 //    - When, 1. The sink binds
-//            2. the sources connect
+//            2. The sources connect
 //            3. The sink enters the critical section
 //            4. One of the sources is destructed
 //        - Then, the first source shall block until the sink enters/exits the critical section even if the second destructs
@@ -74,7 +74,7 @@ using msec = std::chrono::milliseconds;
 const std::string node_addr = "test";
 
 SCENARIO ("A Sink and Source bound to a common Nodes must respect "
-          "eachothers' locks.", "[Sink, Source, Concurrency]") {
+          "each others' locks.", "[Sink, Source, Concurrency]") {
 
     GIVEN ("A sink and source") {
 
@@ -163,7 +163,7 @@ SCENARIO ("A Sink and Source bound to a common Nodes must respect "
             // Source enters the critical section, correctly
             REQUIRE_NOTHROW(source.wait());
 
-            THEN ("The the sink shall block until the sink post()'s") {
+            THEN ("The sink shall block until the sink post()'s") {
 
                 // The sink attempts to enter the crtical section on
                 // a separate thread
@@ -176,8 +176,8 @@ SCENARIO ("A Sink and Source bound to a common Nodes must respect "
                 auto status = fut.wait_for(msec(0));
                 REQUIRE(status != std::future_status::ready);
 
-                // Source tries to wait after just completeling wait (Bad lock order)
-                REQUIRE_THROWS( source.wait());
+                // Source tries to wait after just completing wait (Bad lock order)
+                REQUIRE_THROWS(source.wait());
 
                 // Correct unlock order
                 REQUIRE_NOTHROW(source.post());
