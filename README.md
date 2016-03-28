@@ -60,7 +60,7 @@ __Contributors__
         - [Signature](#signature-8)
         - [Usage](#usage-8)
         - [Example](#example-6)
-    - [Position Network Socket](#position-network-socket)
+    - [Position Socket](#position-socket)
         - [Signature](#signature-9)
         - [Usage](#usage-9)
         - [Example](#example-7)
