@@ -18,6 +18,6 @@ v_thresholds = {min = 000, max = 070}   # Value pass band
 
 [diff]
 tune = true                             # Provide sliders for tuning diff parameters
-blur = 10 				# Pixels, blurring kernel size (normalized box filter)
-diff_threshold = 20 			# Intensity difference threshold
+blur = 10 				                # Pixels, blurring kernel size (normalized box filter)
+diff_threshold = 20 			        # Intensity difference threshold
 

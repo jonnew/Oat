@@ -99,7 +99,18 @@ void Undistorter::configure(const std::string &config_file,
 
         }
 
-        oat::config::getValue(this_config, "rotation", rotation_deg_, 0.0, 360.0);
+        if (oat::config::getValue(this_config, "rotation", rotation_deg_, 0.0, 360.0)) {
+            // TODO: modify camera matrix to encapuslate rotation operation
+            //cv::Matx33d R;
+            //cv::Point center = cv::Point(frame.cols/2, frame.rows/2 );
+            //cv::Mat rm = cv::getRotationMatrix2D(center, rotation_deg_, 1.0);
+            //R(0, 2) = 0;
+            //R(2, 0) = 0;
+            //R(2, 2) = 1;
+            //rm.copyTo(R(cv::Rect(0,0,2,2)));
+            //std::cout << "Rotation matrix: " << R;
+            //camera_matrix_ = camera_matrix_ * R;
+        }
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));

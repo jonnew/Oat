@@ -1,4 +1,5 @@
 //******************************************************************************
+//
 //* File:   PositionGenerator.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
@@ -55,7 +56,11 @@ public:
                       const double samples_per_second,
                       const int64_t num_samples);
 
-    virtual ~PositionGenerator() { }
+    /** 
+     * @brief Pure virtual destructor makes this class abstract. Must be
+     * implemented to allow destruction of base sub-object in derived classes.
+     */
+    virtual ~PositionGenerator() = 0;
 
     /**
      * PositionDetectors must be able to connect to a Source and Sink

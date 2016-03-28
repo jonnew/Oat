@@ -47,7 +47,7 @@ public:
     FrameFilter(const std::string &frame_source_address,
                 const std::string &frame_sink_address);
 
-    virtual ~FrameFilter() { }
+    virtual ~FrameFilter() { };
 
     /**
      * FrameServers must be able to connect to a Source and Sink

@@ -543,11 +543,11 @@ INFO:
   -v [ --version ]          Print version information.
 
 CONFIGURATION:
-  -r [ --rate-hz ] arg      Samples per second. Overriden by information in 
+  -r [ --rate-hz ] arg      Samples per second. Overriden by information in
                             configuration file if provided. Defaults to as fast
                             as possible.
-  -n [ --num-samples ] arg  Number of position samples to generate and serve. 
-                            Overriden by information in configuration file if 
+  -n [ --num-samples ] arg  Number of position samples to generate and serve.
+                            Overriden by information in configuration file if
                             provided. Deafaults to approximately infinite.
   -c [ --config ] arg       Configuration file/key pair.
 ```
@@ -1637,19 +1637,28 @@ RJ45 ------------
   period, and number of samples parameters are certainly relevant to any
   implementation of the position generator idea. Therefore, `configure` should
   be abstract with a base implementation containing guaranteed-to-be-common
-  parameters.
+  parameters. For components that have no common parameters, it can be left
+  pure-abstract for the time being.
     - `oat-frameserve`
     - `oat-framefilt`
     - `oat-posifilt`
     - ~~`oat-posigen`~~
     - `oat-posicom`
     - `oat-posidet`
+    - EDIT: There are not actually many components that have common
+      configuration parameters among concrete types. `oat-posidet` and possibly
+      `oat-frameserve` seem like the only candidates.
 - [ ] [CBOR](http://tools.ietf.org/html/rfc7049) binary messaging and data files
   - CBOR is an extremely simple binary encoding scheme for JSON
   - It would be great to allow the option to save CBOR files (`oat-record`) or
     send CBOR messages (`oat-posisock`) by creating a CBOR `Writer` acceptable
     to by `Position` datatype's serialization function.
   - And, while I'm at it, Position's should be forced to support serialization,
-    so this should be a pure abstract member of the base class. 
+    so this should be a pure abstract member of the base class.
   - Another option that is very similar is messagepack. Don't know which is
     better.
+- [ ] `oat-framefilt undistort`
+    - Very slow. Needs an OpenGL or CUDA implementation
+    - User supplied frame rotation occurs in a separate step from un-distortion.
+      Very inefficient. Should be able to combine rotation with camera matrix
+      to make this a lot faster.

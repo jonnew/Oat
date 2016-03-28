@@ -35,7 +35,7 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
-  // Nothing
+    // Nothing
 }
 
 void FrameFilter::connectToNode() {

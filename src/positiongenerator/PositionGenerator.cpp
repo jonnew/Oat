@@ -43,15 +43,18 @@ PositionGenerator<T>::PositionGenerator(const std::string &position_sink_address
     } else {
 
         // Need something so that positions are not nonsense
-        generateSamplePeriod(1000.0);
+        generateSamplePeriod(10000.0);
     }
 
     tick_ = clock_.now();
 }
 
 template <typename T>
+PositionGenerator<T>::~PositionGenerator() { }
+
+template <typename T>
 void PositionGenerator<T>::configure(const std::string &config_file,
-                              const std::string &config_key) {
+                                     const std::string &config_key) {
 
     // Available options
     std::vector<std::string> options {"rate-hz",
@@ -106,7 +109,7 @@ void PositionGenerator<T>::connectToNode() {
 template<typename T>
 bool PositionGenerator<T>::process() {
 
-    // Generate internal frame
+    // Generate internal position
     bool eof = generatePosition(internal_position_);
 
     if (enforce_sample_clock_) {
@@ -115,7 +118,7 @@ bool PositionGenerator<T>::process() {
         tick_ = clock_.now();
     }
 
-    // This is pure SINK, so it increments the sample count
+    // This is a pure SINK so it increments the sample count
     internal_position_.sample().incrementCount();
 
     // START CRITICAL SECTION //
