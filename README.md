@@ -890,11 +890,11 @@ oat record -p pos1 pos2
 oat record -p pos1 pos2 -d -f ~/Desktop
 
 # Save frame stream 'raw' to current directory
-oat record -i raw
+oat record -s raw
 
 # Save frame stream 'raw' and positional stream 'pos' to Desktop
 # directory and prepend the timestamp and the word 'test' to each filename
-oat record -i raw -p pos -d -f ~/Desktop -n test
+oat record -s raw -p pos -d -f ~/Desktop -n test
 ```
 
 \newpage
@@ -941,9 +941,14 @@ INFO:
 
 #### Example
 ```bash
-# Stream positions from the 'pos' stream to port 5555 at 18.72.0.3 in
-# client mode
-oat posisock pos -h 18.72.0.3 -p 5555
+# Reply to requests for positions from the 'pos' stream to port 5555 using TCP
+oat posisock rep pos tcp://*:5555
+
+# Asychronously publish positions from the 'pos' stream to port 5556 using TCP
+oat posisock pub pos tcp://*:5556
+
+# Dump positions from the 'pos' stream to stdout
+oat posisock std pos
 ```
 
 \newpage
