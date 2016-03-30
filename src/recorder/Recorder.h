@@ -90,7 +90,7 @@ public:
      * @param prepend_timestamp Should a timestamp be prepended to the file name?
      * @param prepend_source Should the (first) SOURCE name be appended to the file name?
      * @param allow_overwrite Should existing files with the same name be overwritten?
-     * @param verbose_file Should indeterminate data fields be written anyway? 
+     * @param concise_file Should indeterminate data fields be excluded from file?
      */
     void initializeRecording(const std::string &save_directory = ".",
                              const std::string &file_name = "",

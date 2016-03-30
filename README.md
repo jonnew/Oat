@@ -856,10 +856,13 @@ CONFIGURATION:
                                  file, the file will be overwritten instead of
                                  a numerical index being added to the file
                                  path.
-  -c [ --concise-file ]          If set, indeterminate position data fields will
-                                 be written in spite of being indeterminate for
-                                 sample parsing ease. e.g pos_xy will be
-                                 written even when pos_ok = false.
+  -c [ --concise-file ]          If set, indeterminate position data fields
+                                 will not be written e.g. pos_xy will not be be
+                                 written even when pos_ok = false. This means
+                                 that position objects will be of variable size
+                                 depending on the validity on whether a
+                                 position was detected or not, potentially
+                                 complicating file parsing.
   -p [ --position-sources ] arg  The names of the POSITION SOURCES that supply
                                  object positions to be recorded.
   --interactive                  Start recorder with interactive controls
@@ -873,7 +876,6 @@ CONFIGURATION:
                                  or 5556, respectively
   -s [ --frame-sources ] arg     The names of the FRAME SOURCES that supply
                                  images to save to video.
-
 ```
 
 #### Example

@@ -149,9 +149,11 @@ int main(int argc, char *argv[]) {
                 "be overwritten instead of a numerical index being added to "
                 "the file path.")
                 ("concise-file,c",
-                 "If set, indeterminate position data fields will be written "
-                 "in spite of being indeterminate for sample parsing ease. "
-                 "e.g. pos_xy will be written even when pos_ok = false.")
+                 "If set, indeterminate position data fields will not be written "
+                 "e.g. pos_xy will not be be written even when pos_ok = false. This "
+                 "means that position objects will be of variable size depending on the "
+                 "validity on whether a position was detected or not, potentially "
+                 "complicating file parsing.")
                 ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
                 "The names of the POSITION SOURCES that supply object positions "
                 "to be recorded.")
@@ -266,7 +268,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    // Reserve name Create component
+    // Reserve name
     std::string name;
 
     // The business

@@ -19,5 +19,5 @@ total_temp = 0
 while True:
     socket.send(b"gimme") # Can be anything, currently.
     position = socket.recv_string()
-    print position
+    print(position)
 

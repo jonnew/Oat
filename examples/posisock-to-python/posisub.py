@@ -25,4 +25,4 @@ socket.setsockopt_string(zmq.SUBSCRIBE, pos_filter)
 # Listen to positions forever
 while True:
     position = socket.recv_string()
-    print position
+    print(position)

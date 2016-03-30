@@ -32,7 +32,6 @@
 #include "PositionPublisher.h"
 #include "PositionReplier.h"
 #include "UDPPositionClient.h"
-//#include "UDPPositionServer.h"
 
 namespace po = boost::program_options;
 
@@ -96,7 +95,6 @@ int main(int argc, char *argv[]) {
     std::string type;
     std::string source;
     std::vector<std::string> endpoint;
-//    bool server_side = false;
     po::options_description visible_options("OPTIONS");
 
     std::unordered_map<std::string, char> type_hash;
@@ -111,14 +109,7 @@ int main(int argc, char *argv[]) {
         options.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
-                ;
-
-        //po::options_description config("CONFIGURATION");
-        //config.add_options()
-//                ("server", "Server-side socket sychronization. "
-//                           "Position data packets are sent whenever requested "
-//                           "by a remote client. TODO: explain request protocol...")
-                //TODO: Serialization protocol (JSON, binary, etc)
+                //TODO: Serialization protocol (JSON, CBOR, etc)
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -195,14 +186,6 @@ int main(int argc, char *argv[]) {
             printUsage(visible_options);
             std::cerr << oat::Error("An endpoint must be specified.\n");
         }
-//        if (variable_map.count("server")) {
-//             server_side = true;
-//        }
-//
-//        if (variable_map.count("endpoint") && server_side ) {
-//            std::cerr << oat::Warn("Posisock role is server, but host address was specified. ")
-//                      << oat::Warn("Host address " + endpio + " will be ignored.\n");
-//        }
 
     } catch (std::exception& e) {
         std::cerr << oat::Error(e.what()) << "\n";
@@ -213,6 +196,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
+    std::string name;
     std::shared_ptr<oat::PositionSocket> socket;
 
     try {
@@ -232,9 +216,6 @@ int main(int argc, char *argv[]) {
             }
             case 'c':
             {
-//                if (server_side)
-//                    socket = std::make_shared<oat::UDPPositionServer>(source, port);
-//                else
                 socket = std::make_shared<oat::UDPPositionClient>(source, endpoint[0], endpoint[1]);
                 break;
             }
@@ -250,6 +231,8 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
         }
+
+        name = socket->name();
 
         // Tell user
         std::cout << oat::whoMessage(socket->name(),
@@ -267,17 +250,14 @@ int main(int argc, char *argv[]) {
         // Exit
         return 0;
 
-    // TODO: for some reason, socket->name() is uninitialize when we reach
-    // these catch statements, so this will segfault if we try to do
-    // oat::whoError(socket->name(), ...)
     } catch (const std::runtime_error &ex) {
-        std::cerr << oat::Error(ex.what()) << "\n";
+        std::cerr << oat::whoError(name, ex.what()) << "\n";
     } catch (const zmq::error_t &ex) {
-        std::cerr << oat::whoError("zeromq: ", ex.what()) << "\n";
+        std::cerr << oat::whoError(name, ex.what()) << "\n";
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::Error(ex.what()) << "\n";
+        std::cerr << oat::whoError(name,ex.what()) << "\n";
     } catch (const boost::interprocess::interprocess_exception &ex) {
-        std::cerr << oat::Error(ex.what()) << "\n";
+        std::cerr << oat::whoError(name, ex.what()) << "\n";
     } catch (...) {
         std::cerr << oat::Error("Unknown exception.\n");
     }
