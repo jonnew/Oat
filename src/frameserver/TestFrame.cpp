@@ -93,6 +93,13 @@ bool TestFrame::serveFrame() {
         // Wait for sources to read
         frame_sink_.wait();
 
+        // TODO: Enforce sample period
+        //if (enforce_sample_clock_) {
+        //    auto tock = clock_.now();
+        //    std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick_));
+        //    tick_ = clock_.now();
+        //}
+
         // Increment sample count
         shared_frame_.sample().incrementCount();
 

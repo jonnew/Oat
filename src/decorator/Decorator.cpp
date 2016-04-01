@@ -217,7 +217,7 @@ void Decorator::drawPosition() {
         
         oat::Position2D p = std::get<1>(pos);
 
-        if (p.unit_of_length() != oat::DistanceUnit::PIXELS)
+        if (p.unit_of_length() == oat::DistanceUnit::WORLD)
             invertHomography(p);
 
         if (p.position_valid) {

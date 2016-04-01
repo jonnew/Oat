@@ -28,8 +28,9 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/FileFormat.h"
+#include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/make_unique.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/SharedFrameHeader.h"
 
@@ -58,17 +59,16 @@ Viewer::Viewer(const std::string& frame_source_address) :
     compression_params_.push_back(CV_IMWRITE_PNG_COMPRESSION);
     compression_params_.push_back(COMPRESSION_LEVEL);
 
-#ifdef HAVE_OPENGL
-    try {
-        cv::namedWindow(name_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
-    } catch (cv::Exception& ex) {
-        oat::whoWarn(name_, "OpenCV not compiled with OpenGL support. "
-                            "Falling back to OpenCV's display driver.\n");
-        cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
-    }
-#else
-    cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
-#endif
+    // Start display thread
+    display_thread_ = std::make_unique<std::thread>(&Viewer::display, this);
+}
+
+Viewer::~Viewer() {
+
+    // Set running to false to trigger thread join
+    running_ = false;
+    display_cv_.notify_one();
+    display_thread_->join();
 }
 
 void Viewer::connectToNode() {
@@ -100,26 +100,20 @@ bool Viewer::showImage() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Get the future of the display task and figure out if it is running already.
-    std::future_status status;
-    if (display_future_.valid())
-        status = display_future_.wait_for(msec(0));
-    else 
-        status = std::future_status::ready;
-
     // Get current time
     tick_ = Clock::now();
 
     // Figure out the time since we last updated the viewer
-    Milliseconds duration = 
+    Milliseconds duration =
         std::chrono::duration_cast<Milliseconds>(tick_ - tock_);
 
     // If the minimum update period has passed, and display thread is not busy,
     // show frame on the display thread. This prevents frame display from
     // holding up more important upstream processing.
-    if (duration > MIN_UPDATE_PERIOD_MS && status == std::future_status::ready) {
-        display_future_ = 
-            std::async(std::launch::async, [this] { this->display(); });
+    if (duration > MIN_UPDATE_PERIOD_MS && display_complete_) {
+        std::cout << "Duration: " << duration.count() << std::endl;
+        display_complete_ = false;
+        display_cv_.notify_one();
     }
 
     // Sink was not at END state
@@ -128,30 +122,53 @@ bool Viewer::showImage() {
 
 void Viewer::display() {
 
-    cv::imshow(name_, internal_frame_);
-    tock_ = Clock::now();
+#ifdef HAVE_OPENGL
+    try {
+        cv::namedWindow(name_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
+    } catch (cv::Exception& ex) {
+        oat::whoWarn(name_, "OpenCV not compiled with OpenGL support. "
+                            "Falling back to OpenCV's display driver.\n");
+        cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+    }
+#else
+    cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+#endif
 
-    char command = cv::waitKey(1);
+    while (running_) {
 
-    if (command == 's') {
+        std::unique_lock<std::mutex> lk(display_mutex_);
+        display_cv_.wait(lk); 
+
+        if (internal_frame_.rows == 0 || internal_frame_.cols == 0)
+            continue;
         
-        // Generate current snapshot save path
-        std::string fid;
-        std::string timestamp = oat::createTimeStamp();
+        cv::imshow(name_, internal_frame_);
+        tock_ = Clock::now();
 
-        int err = oat::createSavePath(fid,
-                                     snapshot_folder_,
-                                     snapshot_base_file_ + ".png",
-                                     timestamp + "_" ,
-                                     true);
-        
-        if (!err) {
-            cv::imwrite(fid, internal_frame_, compression_params_);
-            std::cout << "Snapshot saved to " << fid << "\n";
-        } else {
-            std::cerr << oat::Error("Snapshop file creation exited "
-                    "with error " + std::to_string(err) + "\n");
+        char command = cv::waitKey(1);
+
+        if (command == 's') {
+
+            // Generate current snapshot save path
+            std::string fid;
+            std::string timestamp = oat::createTimeStamp();
+
+            int err = oat::createSavePath(fid,
+                    snapshot_folder_,
+                    snapshot_base_file_ + ".png",
+                    timestamp + "_",
+                    true);
+
+            if (!err) {
+                cv::imwrite(fid, internal_frame_, compression_params_);
+                std::cout << "Snapshot saved to " << fid << "\n";
+            } else {
+                std::cerr << oat::Error("Snapshop file creation exited "
+                        "with error " + std::to_string(err) + "\n");
+            }
         }
+
+        display_complete_ = true;
     }
 }
 

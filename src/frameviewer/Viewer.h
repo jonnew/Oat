@@ -20,9 +20,13 @@
 #ifndef OAT_VIEWER_H
 #define OAT_VIEWER_H
 
+#include <atomic>
 #include <chrono>
-#include <future>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Source.h"
@@ -46,6 +50,8 @@ public:
      * View a frame stream on the monitor.
      */
     explicit Viewer(const std::string &frame_source_name);
+    
+    ~Viewer();
 
     void connectToNode(void);
     bool showImage(void);
@@ -80,7 +86,12 @@ private:
     std::vector<int> compression_params_;
 
     // Display thread future
-    std::future<void> display_future_;
+    std::atomic<bool> running_ {true}; 
+    std::atomic<bool> display_complete_ {true}; 
+    std::mutex display_mutex_;
+    std::condition_variable display_cv_;
+    std::unique_ptr<std::thread> display_thread_;
+    //std::future<void> display_future_;
 
     void display(void);
 };
