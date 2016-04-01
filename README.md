@@ -1584,8 +1584,6 @@ RJ45 ------------
     - Binning should be specified in terms of mode number (see pg. 66 of
       blackfly tech ref) instead of bin size since not all bin sizes are
       allowed.
-- [ ] Frames per second command line argument is ignored by `oat framserve
-  test`
 - [ ] Position type generalization
     - It might be a good idea to generalize the concept of a position to a
       multi-positional element

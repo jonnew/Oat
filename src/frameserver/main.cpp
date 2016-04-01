@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     std::string sink;
     std::string type;
     std::string file_path;
-    double frames_per_second = 30;
+    double frames_per_second = 1000000.0; // High number
     size_t index = 0;
     std::vector<std::string> config_fk;
     bool config_used = false;
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
         }
         case 'd':
         {
-            server = std::make_shared<oat::TestFrame>(sink, file_path);
+            server = std::make_shared<oat::TestFrame>(sink, file_path, frames_per_second);
             break;
         }
         default:

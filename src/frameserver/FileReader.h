@@ -50,7 +50,7 @@ private:
     cv::VideoCapture file_reader_;
 
     // Playback speed
-    double frame_rate_in_hz_;
+    double frames_per_second_;
     void calculateFramePeriod(void);
 
     // frame generation clock

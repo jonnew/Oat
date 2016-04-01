@@ -36,7 +36,7 @@ FileReader::FileReader(const std::string &image_sink_address,
   FrameServer(image_sink_address)
 , file_name_(file_name)
 , file_reader_(file_name)
-, frame_rate_in_hz_(frames_per_second)
+, frames_per_second_(frames_per_second)
 {
 
     // Default config
@@ -75,7 +75,6 @@ bool FileReader::serveFrame() {
     // Wait for sources to read
     frame_sink_.wait();
 
-
     // Crop if necessary
     if (!use_roi_) {
             
@@ -100,7 +99,7 @@ bool FileReader::serveFrame() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Enforce the correct frame rate
+
     std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
     tick_ = clock_.now();
 
@@ -129,7 +128,7 @@ void FileReader::configure(const std::string& config_file,
         oat::config::checkKeys(options, this_config);
 
         // Set the frame rate
-        oat::config::getValue(this_config, "fps", frame_rate_in_hz_, 0.0);
+        oat::config::getValue(this_config, "fps", frames_per_second_, 0.0);
         calculateFramePeriod();
 
         // Set the ROI
@@ -155,7 +154,7 @@ void FileReader::configure(const std::string& config_file,
 
 void FileReader::calculateFramePeriod() {
 
-    std::chrono::duration<double> frame_period {1.0 / frame_rate_in_hz_};
+    std::chrono::duration<double> frame_period {1.0 / frames_per_second_};
 
     // Automatic conversion
     frame_period_in_sec_ = frame_period;

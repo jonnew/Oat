@@ -31,19 +31,29 @@ class TestFrame : public FrameServer {
 public:
 
     TestFrame(const std::string &file_name,
-              const std::string &image_sink_name);
+              const std::string &image_sink_name,
+              const double frames_per_second);
 
     // Implement FrameServer interface
     void configure(void) override;
-    void configure(const std::string &config_file, 
+    void configure(const std::string &config_file,
                    const std::string &config_key) override;
     void connectToNode(void) override;
     bool serveFrame(void) override;
 
 private:
 
-    // Image file 
+    // Image file
     std::string file_name_;
+
+    // Frame speed
+    double frames_per_second_;
+    void calculateFramePeriod(void);
+
+    // frame generation clock
+    std::chrono::high_resolution_clock clock_;
+    std::chrono::duration<double> frame_period_in_sec_;
+    std::chrono::high_resolution_clock::time_point tick_;
 
     // Sample count specification
     int64_t num_samples_ {std::numeric_limits<int64_t>::max()};
@@ -52,5 +62,3 @@ private:
 
 }       /* namespace oat */
 #endif	/* OAT_TESTFRAME_H */
-
-

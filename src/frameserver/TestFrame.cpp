@@ -18,6 +18,7 @@
 //******************************************************************************
 
 #include <string>
+#include <thread>
 #include <opencv2/core/core.hpp>
 #include <cpptoml.h>
 
@@ -29,11 +30,15 @@
 namespace oat {
 
 TestFrame::TestFrame(const std::string &image_sink_address,
-                     const std::string &file_name) :
+                     const std::string &file_name,
+                     const double frames_per_second) :
   FrameServer(image_sink_address)
 , file_name_(file_name)
+, frames_per_second_(frames_per_second)
 {
-    // Nothing
+    // Default config
+    calculateFramePeriod();
+    tick_ = clock_.now();
 }
 
 void TestFrame::configure(void) { }
@@ -42,7 +47,8 @@ void TestFrame::configure(const std::string &config_file,
                           const std::string &config_key) {
 
     // Available options
-    std::vector<std::string> options {"num-samples"};
+    std::vector<std::string> options {"num-samples",
+                                      "fps"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -58,6 +64,10 @@ void TestFrame::configure(const std::string &config_file,
         oat::config::checkKeys(options, this_config);
 
         oat::config::getValue(this_config, "num-samples", num_samples_, 0);
+
+        // Set the frame rate
+        oat::config::getValue(this_config, "fps", frames_per_second_, 0.0);
+        calculateFramePeriod();
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -79,8 +89,8 @@ void TestFrame::connectToNode() {
     // Static image, never changes
     example_frame.copyTo(shared_frame_);
 
-    // Put a dummy rate in the shared frame
-    shared_frame_.sample().set_rate_hz(1000000.0);
+    // Put the sample rate in the shared frame
+    shared_frame_.sample().set_rate_hz(1.0 / frame_period_in_sec_.count());
 }
 
 bool TestFrame::serveFrame() {
@@ -93,13 +103,6 @@ bool TestFrame::serveFrame() {
         // Wait for sources to read
         frame_sink_.wait();
 
-        // TODO: Enforce sample period
-        //if (enforce_sample_clock_) {
-        //    auto tock = clock_.now();
-        //    std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick_));
-        //    tick_ = clock_.now();
-        //}
-
         // Increment sample count
         shared_frame_.sample().incrementCount();
 
@@ -108,13 +111,24 @@ bool TestFrame::serveFrame() {
 
         ////////////////////////////
         //  END CRITICAL SECTION  //
-        
+
         it_++;
+
+        std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
+        tick_ = clock_.now();
 
         return false;
     }
 
     return true;
+}
+
+void TestFrame::calculateFramePeriod() {
+
+    std::chrono::duration<double> frame_period {1.0 / frames_per_second_};
+
+    // Automatic conversion
+    frame_period_in_sec_ = frame_period;
 }
 
 } /* namespace oat */
