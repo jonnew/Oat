@@ -1669,3 +1669,7 @@ RJ45 ------------
     - User supplied frame rotation occurs in a separate step from un-distortion.
       Very inefficient. Should be able to combine rotation with camera matrix
       to make this a lot faster.
+- [ ] It would be nice if PURE SINKs (e.g. `oat frameserve`) could have their 
+  sample clock reset via user input, without having to restart the program. 
+- [ ] It would be nice to be able to re-aquire the background image in 
+  `oat-framefilt bsub` without have to restart the program.
