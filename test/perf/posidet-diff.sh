@@ -1,3 +1,3 @@
 oat posidet diff raw pos &
 sleep 1
-time oat frameserve test raw -f ./earth.jpg -c test.toml test
+time oat frameserve test raw -f $1 -c test.toml test

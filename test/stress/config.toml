@@ -1,0 +1,20 @@
+# Example configuration file for the posidet component
+# Configuration options for each component TYPE are shown
+# To use them:
+#
+# ``` bash
+# oat posidet TYPE SOURCE SINK -c config.toml TYPE
+# ```
+
+[hsv1]
+tune = false                             # Provide sliders for tuning hsv parameters
+erode = 1                               # Pixels, candidate object erosion kernel size
+dilate = 5                              # Pixels, candidate object dilation kernel size
+v_thresholds = {min = 234, max = 256}   # Value pass band
+
+[hsv2]
+tune = false                             # Provide sliders for tuning hsv parameters
+erode = 8                               # Pixels, candidate object erosion kernel size
+dilate = 50                              # Pixels, candidate object dilation kernel size
+v_thresholds = {min = 242, max = 256}   # Value pass band
+

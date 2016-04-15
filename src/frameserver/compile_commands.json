@@ -1,0 +1,22 @@
+[
+{
+  "directory": "/home/jon/public/Oat/src/frameserver",
+  "command": "/usr/bin/g++    -I/home/jon/public/Oat/src/frameserver  -g3 -gdwarf-2   -o CMakeFiles/oat-frameserve.dir/TestFrame.o -c /home/jon/public/Oat/src/frameserver/TestFrame.cpp",
+  "file": "/home/jon/public/Oat/src/frameserver/TestFrame.cpp"
+},
+{
+  "directory": "/home/jon/public/Oat/src/frameserver",
+  "command": "/usr/bin/g++    -I/home/jon/public/Oat/src/frameserver  -g3 -gdwarf-2   -o CMakeFiles/oat-frameserve.dir/WebCam.o -c /home/jon/public/Oat/src/frameserver/WebCam.cpp",
+  "file": "/home/jon/public/Oat/src/frameserver/WebCam.cpp"
+},
+{
+  "directory": "/home/jon/public/Oat/src/frameserver",
+  "command": "/usr/bin/g++    -I/home/jon/public/Oat/src/frameserver  -g3 -gdwarf-2   -o CMakeFiles/oat-frameserve.dir/FileReader.o -c /home/jon/public/Oat/src/frameserver/FileReader.cpp",
+  "file": "/home/jon/public/Oat/src/frameserver/FileReader.cpp"
+},
+{
+  "directory": "/home/jon/public/Oat/src/frameserver",
+  "command": "/usr/bin/g++    -I/home/jon/public/Oat/src/frameserver  -g3 -gdwarf-2   -o CMakeFiles/oat-frameserve.dir/main.o -c /home/jon/public/Oat/src/frameserver/main.cpp",
+  "file": "/home/jon/public/Oat/src/frameserver/main.cpp"
+}
+]

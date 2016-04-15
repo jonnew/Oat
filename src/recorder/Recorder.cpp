@@ -147,7 +147,8 @@ void Recorder::connectToNodes() {
     double ts {-1.0}, ts_last {-1.0};
 
     // TODO: The following procedure may be appropriate for all multi source
-    // components
+    // components. Seems like a function template somewhere would be a good bet
+    // for handling all comers
 
     // Frame sources
     for (auto &fs: frame_sources_) {

@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
                     oat::printInteractiveUsage(std::cout);
                     rc = oat::controlRecorder(std::cin, std::cout, *recorder, file_name, true);
 
-                    // Interupt and join threads
+                    // Interrupt and join threads
                     cleanup(process);
 
                     break;
