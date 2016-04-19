@@ -26,19 +26,19 @@ extern volatile sig_atomic_t quit;
 
 namespace oat {
 
-/** 
+/**
  * @brief Control a recorder.
- * 
+ *
  * Allows user to control a recorder object via a simple message interface.
  *
  * @param in Input command stream.
  * @param out Output stream for command confirmations.
  * @param recorder Recorder to control.
  * @param pretty_cmd Format IO for console usage.
- * 
+ *
  * @return Code:
  * 0. Normal exit.
- * 1. Create new recorder and re-enter.
+ * 1. Create new recorder (with new file name) and re-enter.
  */
 int controlRecorder(std::istream &in,
                     std::ostream &out,
@@ -77,8 +77,7 @@ int controlRecorder(std::istream &in,
             case 'q' :
             {
                 interactive_quit = true;
-                out << "Received quit signal.";
-                out << std::endl;
+                out << "Received quit signal." << std::endl;
                 break;
             }
             case 'h' :
@@ -91,7 +90,6 @@ int controlRecorder(std::istream &in,
             {
                 recorder.set_record_on(true);
                 out << "Recording started." << std::endl;
-                out.flush();
                 break;
             }
             case 'p' :
@@ -102,16 +100,25 @@ int controlRecorder(std::istream &in,
             }
             case 'n' :
             {
-                if (recorder.record_on()) {
-                    std::cerr << "Recording must be paused to create new file.\n";
-                } else {
-                    out << "Enter new file name. Enter nothing to keep the same." << std::endl;
-                    std::string fn;
-                    std::getline(in, fn);
-                    file_name = fn.empty() ? file_name : fn; 
-                    out << "File name set to " + file_name << std::endl;
-                    return 1; // Signal new file
-                }
+                recorder.set_record_on(false);
+                out << "Creating new file." << std::endl;
+                return 1;
+
+                // TODO: This is for renameing the file with something else.
+                // Also there is too much state consideration here. Don't be a
+                // nanny. If they want a new file, make one.
+                //if (recorder.record_on()) {
+                //    std::cerr << "Recording must be paused to create new file.\n";
+                //} else {
+                //    out << "Enter new file name. Enter nothing to keep the same." << std::endl;
+                //    std::string fn;
+                //    std::getline(in, fn);
+                //    file_name = fn.empty() ? file_name : fn;
+                //    out << "File name set to " + file_name << std::endl;
+                //    return 1; // Signal new file
+                //}
+
+                // Fallthrough
             }
             default :
             {
