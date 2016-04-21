@@ -77,17 +77,10 @@ __Contributors__
     - [Clean](#clean)
         - [Usage](#usage-13)
         - [Example](#example-10)
-- [Installation](#installation)
-    - [Dependencies](#dependencies)
-        - [Flycapture SDK](#flycapture-sdk)
-        - [Boost](#boost)
-        - [OpenCV](#opencv)
-        - [RapidJSON, cpptoml, and Catch](#rapidjson-cpptoml-and-catch)
-        - [Setting up a Point-grey PGE camera in Linux](#setting-up-a-point-grey-pge-camera-in-linux)
-            - [Camera IP Address Configuration](#camera-ip-address-configuration)
-            - [Point Greg GigE Host Adapter Card Configuration](#point-greg-gige-host-adapter-card-configuration)
-            - [Multiple Cameras](#multiple-cameras)
-            - [Example](#example-camera-configuration)
+    - [Installation](#installation)
+        - [Dependencies](#dependencies)
+    - [Performance](#performance)
+    - [Setting up a Point-grey PGE camera in Linux](#setting-up-a-point-grey-pge-camera-in-linux)
 - [TODO](#todo)
 
 \newpage
@@ -1194,7 +1187,7 @@ This makes Oat commands available within your user profile (once you start a new
 
 ```bash
 # Make Oat commands available to user
-eval "$(path/to/Oat/oat/bin/oat init -)"
+eval "$(<path/to/Oat>/oat/bin/oat init -)"
 ```
 
 ### Dependencies
@@ -1423,6 +1416,77 @@ Oat components:
 
 [Catch](https://github.com/philsquared/Catch) is required to make and run tests
 using `make test`
+
+## Performance
+Oat is designed for use in real-time video processing scenarios. This boils
+down the following definition
+
+> The average execution time for an Oat dataflow network must not exceed the
+> camera(s) image transfer period
+
+If this condition is not met, then frames will eventually be dropped. There is
+no way around this. The guts of Oat consist of a simple, but very efficient
+[message passing library](src/lib/shmemdf) that links together processing
+routines taken from a variety of sources (some written by me, some by third
+party projects such as OpenCV). The speed of each processing step is determined
+both by its computational complexity and deftness of implementation, both of
+which can vary quite a lot for different components. To see some rudimentary
+performance numbers for Oat components in isolation, have a look at [these
+numbers](test/perf/results.md). There is definitely room for optimization for
+some components. And, several components that are ripe for GPU implementation
+do not have one yet. This comes down to free time. If anyone wants to try there
+hand at making some of the bottleneck components faster, please get in touch.
+
+Outside of code optimization, there are a few things a user should be aware of
+to make efficient use of Oat, which are listed below.
+
+### Frames are slow
+The first thing to know is that working with `frames` is orders of magnitude
+slower than working with `positions`. Therefore, minimizing the number of
+processing steps operating on `frames` is a good way to reduce computational
+requirements. Processing on `positions` is in the noise in comparison.
+
+### Parallelism
+Increasing the number of components in your chain does not necessarily cause an
+appreciable an increase in processing time because Oat components run in
+parallel.  Instead, up to the limit of the number of hyperthreads/GPU resources
+your computer supports, the slowest component in a dataflow network will
+largely determine the speed of the processing network, rather than the number
+of components within the processing network.
+
+### Resolution
+Do you really need that 10 MP camera? Recall that increases in sensor
+resolution cause a power 2 increase in then number of pixels you need to smash
+into RAM, process, write to disk, and, probably, post process. Its really best
+to use the lowest resolution camera that suites your needs, both for the sake
+of real-time processing in Oat and your future sanity when trying to deal with
+those 30 GB video files. 
+
+### Hard-disk
+If you are saving video, then the write speed of your hard disk can become the
+limiting factor in a processing network. I will just quote my response [this
+issue](https://github.com/jonnew/Oat/issues/14):
+
+> I also ran into an issue with RAM and encoding. I have 8 GB, and they fill up
+> within about 20 seconds, then goes into swap. 
+
+> I suspect the following is the issue:
+>
+> (22 FPS * 5 MP * 24 bits/pixel) / ( 8 bits/ byte) = 330 MB/sec
+>
+> This (minus compression, which I'm admittedly ignoring, but is probably made
+> up for by the time it takes to do the compression...) is the requisite write
+> speed (in actuality, not theoretically) of your hard disk in order not to get
+> memory overflow.
+>
+> 8 GB / 0.330 GB =~ 24 seconds.
+>
+> The RAM is filling because your hard disk writes are not occurring fast
+> enough. Oat is pushing frames to be written into a FIFO in main memory that
+> the recorder threads are desperately trying to write to disk. Getting more
+> RAM will just make the process persist for a bit longer before failing . I
+> would get an SSD for streaming video to and then transfer those videos to
+> a slower long term storage after recording. 
 
 ##  Setting up a Point-grey PGE camera in Linux
 `oat-frameserve` supports using Point Grey GIGE cameras to collect frames. I
