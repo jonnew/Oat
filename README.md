@@ -1257,9 +1257,15 @@ wget http://sourceforge.net/projects/boost/files/latest/download?source=files -O
 tar -xf tarboost
 cd ./boost*
 ./bootstrap.sh
-./b2 --with-program_options --with-system --with-thread
+./b2 --with-program_options --with-system --with-thread --with-filesystem
 cd ..
 sudo mv boost* /opt
+```
+
+Finally, if you are getting runtime linking errors, you will need to place the
+following in `.bashrc`
+```bash
+export LD_LIBRARY_PATH=<path to boost root directory>/stage/lib:$LD_LIBRARY_PATH
 ```
 
 #### OpenCV
@@ -1393,7 +1399,25 @@ Oat components:
 - `oat-record`
 - `oat-posisock`
 
-TODO
+Download, compile, and install ZeroMQ as follows:
+
+```bash
+wget http://download.zeromq.org/zeromq-4.1.4.tar.gz -O tarzmq
+tar -xf tarzmq
+cd ./zeromq*
+./configure --without-libsodium
+make
+sudo make install
+sudo ldconfig
+```
+
+Additionally, you will need to download the ZeroMQ C++ binding (this is just a
+single header file) and place it somewhere that your compiler will find it.
+
+```bash
+wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp
+sudo mv zmq.hpp /usr/local/include/
+```
 
 #### RapidJSON, cpptoml, and Catch
 These libraries are installed automatically by cmake during the build process.
@@ -1451,7 +1475,7 @@ Increasing the number of components in your chain does not necessarily cause an
 appreciable an increase in processing time because Oat components run in
 parallel.  Instead, up to the limit of the number of hyperthreads/GPU resources
 your computer supports, the slowest component in a dataflow network will
-largely determine the speed of the processing network, rather than the number
+largely determine the speed of the processing rather than the number
 of components within the processing network.
 
 ### Resolution
@@ -1460,17 +1484,17 @@ resolution cause a power 2 increase in then number of pixels you need to smash
 into RAM, process, write to disk, and, probably, post process. Its really best
 to use the lowest resolution camera that suites your needs, both for the sake
 of real-time processing in Oat and your future sanity when trying to deal with
-those 30 GB video files. 
+those 30 GB video files.
 
 ### Hard-disk
 If you are saving video, then the write speed of your hard disk can become the
-limiting factor in a processing network. I will just quote my response [this
-issue](https://github.com/jonnew/Oat/issues/14):
+limiting factor in a processing network. To elaborate, I'm just quoting my
+response to [this issue](https://github.com/jonnew/Oat/issues/14):
 
-> I also ran into an issue with RAM and encoding. I have 8 GB, and they fill up
-> within about 20 seconds, then goes into swap. 
+> __Q:__ I also ran into an issue with RAM and encoding. I have 8 GB, and they fill up
+> within about 20 seconds, then goes into swap.
 
-> I suspect the following is the issue:
+> __A:__ I suspect the following is the issue:
 >
 > (22 FPS * 5 MP * 24 bits/pixel) / ( 8 bits/ byte) = 330 MB/sec
 >
@@ -1486,7 +1510,7 @@ issue](https://github.com/jonnew/Oat/issues/14):
 > the recorder threads are desperately trying to write to disk. Getting more
 > RAM will just make the process persist for a bit longer before failing . I
 > would get an SSD for streaming video to and then transfer those videos to
-> a slower long term storage after recording. 
+> a slower long term storage after recording.
 
 ##  Setting up a Point-grey PGE camera in Linux
 `oat-frameserve` supports using Point Grey GIGE cameras to collect frames. I
