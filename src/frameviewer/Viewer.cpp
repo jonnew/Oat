@@ -110,11 +110,9 @@ bool Viewer::showImage() {
     // If the minimum update period has passed, and display thread is not busy,
     // show frame on the display thread. This prevents frame display from
     // holding up more important upstream processing.
-    if (duration > MIN_UPDATE_PERIOD_MS && display_complete_) {
-        std::cout << "Duration: " << duration.count() << std::endl;
-        display_complete_ = false;
+    if (duration > MIN_UPDATE_PERIOD_MS && display_complete_) 
         display_cv_.notify_one();
-    }
+
 
     // Sink was not at END state
     return false;
@@ -138,7 +136,8 @@ void Viewer::display() {
 
         std::unique_lock<std::mutex> lk(display_mutex_);
         display_cv_.wait(lk); 
-
+        display_complete_ = false;
+        
         if (internal_frame_.rows == 0 || internal_frame_.cols == 0)
             continue;
         
