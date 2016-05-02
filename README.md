@@ -1707,6 +1707,7 @@ RJ45 ------------
 - [ ] It would be good to warn people if the inputs to a multisource component
   have different sample rates because the output rate will be enforced by the
   slowest source.
+    - See `oat-record` for how to accomplish since it already does this.
 - [x] Something is wrong with sample synchronization
     - When working with Jennie's data, we found that position samples were
       being recorded multiple times - they had the same sample number and
@@ -1728,6 +1729,11 @@ RJ45 ------------
     - `oat-posigen`
     - `oat-posicom`
     - `oat-posidet`
+    - NOTE: A way to do this is to create (or maybe find) and factory that
+      generates a dictionary of possible parameters in key/value pairs for a
+      given component. This dictionary is then modified first by the file-based
+      configuration method and then by command line switch input. Component
+      behavior is determined by dictioary values after these two steps.
 - [ ] For (all?) most components, `configure` is pure abstract in the
   component's base class. This doesn't make too much sense because options are
   often common to many components. For instance, in `oat-posigen`, the sample
@@ -1761,5 +1767,5 @@ RJ45 ------------
       to make this a lot faster.
 - [ ] It would be nice if PURE SINKs (e.g. `oat frameserve`) could have their
   sample clock reset via user input, without having to restart the program.
-- [ ] It would be nice to be able to re-aquire the background image in
+- [ ] It would be nice to be able to re-acquire the background image in
   `oat-framefilt bsub` without have to restart the program.
