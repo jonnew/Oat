@@ -292,6 +292,7 @@ void Recorder::writePositionFileHeader(const std::string& date,
 
 }
 
+// TODO: Should be done before first frame is available
 void Recorder::initializeVideoWriter(cv::VideoWriter& writer,
                                 const std::string  &file_name,
                                 const oat::Frame &image) {
@@ -301,42 +302,36 @@ void Recorder::initializeVideoWriter(cv::VideoWriter& writer,
     writer.open(file_name, fourcc, sample_rate_hz_, image.size());
 }
 
-void Recorder::initializeRecording(const std::string &save_directory,
-                                   const std::string &file_name,
-                                   const bool prepend_timestamp,
-                                   const bool prepend_source,
-                                   const bool allow_overwrite,
-                                   const bool concise_file) {
+void Recorder::initializeRecording() { 
 
     // Generate timestamp for headers and potentially for file names
     std::string timestamp = oat::createTimeStamp();
-
-    verbose_file_ = !concise_file;
 
     if (!position_sources_.empty()) {
 
         // Create a single position file
         std::string posi_fid;
         std::string base_fid;
-        if (prepend_source || file_name.empty())
-           base_fid = position_sources_[0].first;
-        if (!file_name.empty() && base_fid.empty())
-           base_fid = file_name;
-        else if (!file_name.empty() && !base_fid.empty())
-           base_fid += "_" + file_name;
+        if (prepend_source_ || file_name_.empty())
+            base_fid = position_sources_[0].first;
+        if (!file_name_.empty() && base_fid.empty())
+            base_fid = file_name_;
+        else if (!file_name_.empty() && !base_fid.empty())
+            base_fid += "_" + file_name_;
         base_fid += ".json";
 
         int err = oat::createSavePath(posi_fid,
-                                      save_directory,
+                                      save_path_,
                                       base_fid,
                                       timestamp + "_",
-                                      prepend_timestamp,
-                                      allow_overwrite);
+                                      prepend_timestamp_,
+                                      allow_overwrite_);
         if (err) {
             throw std::runtime_error("Recording file initialization exited "
                                      "with error " + std::to_string(err));
         }
 
+        // Position file 
         position_fp_ = fopen(posi_fid.c_str(), "wb");
 
         file_stream_.reset(new rapidjson::FileWriteStream(position_fp_,
@@ -346,7 +341,7 @@ void Recorder::initializeRecording(const std::string &save_directory,
         // Main object, end this object before write flush
         json_writer_.StartObject();
 
-        // Coordinate system
+        // Oat version in header 
         char version[255];
         strcpy (version, Oat_VERSION_MAJOR);
         strcat (version, ".");
@@ -379,20 +374,20 @@ void Recorder::initializeRecording(const std::string &save_directory,
             // Create a single position file
             std::string frame_fid;
             std::string base_fid;
-            if (prepend_source || file_name.empty())
-               base_fid = s.first;
-            if (!file_name.empty() && base_fid.empty())
-               base_fid = file_name;
-            else if (!file_name.empty() && !base_fid.empty())
-               base_fid += "_" + file_name;
+            if (prepend_source_ || file_name_.empty())
+                base_fid = s.first;
+            if (!file_name_.empty() && base_fid.empty())
+                base_fid = file_name_;
+            else if (!file_name_.empty() && !base_fid.empty())
+                base_fid += "_" + file_name_;
             base_fid += ".avi";
 
             int err = oat::createSavePath(frame_fid,
-                                          save_directory,
+                                          save_path_,
                                           base_fid,
                                           timestamp + "_",
-                                          prepend_timestamp,
-                                          allow_overwrite);
+                                          prepend_timestamp_,
+                                          allow_overwrite_);
             if (err) {
                 throw std::runtime_error("Recording file initialization exited "
                                          "with error " + std::to_string(err));
@@ -402,6 +397,8 @@ void Recorder::initializeRecording(const std::string &save_directory,
             video_writers_.push_back(std::make_unique<cv::VideoWriter>());
         }
     }
+
+    recording_initialized_ = true;
 }
 
 } /* namespace oat */

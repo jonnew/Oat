@@ -30,7 +30,6 @@ namespace oat {
     int controlRecorder(std::istream &in,
                         std::ostream &out,
                         oat::Recorder &recorder,
-                        std::string &file_name,
                         bool pretty_cmd = false);
 
     void printInteractiveUsage(std::ostream &out);

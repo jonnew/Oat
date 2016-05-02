@@ -74,8 +74,10 @@ public:
 
     /**
      * Position and frame recorder.
-     * @param position_source_addresses Addresses specifying position SOURCES to record
-     * @param frame_source_addresses Addresses specifying frame SOURCES to record
+     * @param position_source_addresses Addresses specifying position SOURCES
+     * to record
+     * @param frame_source_addresses Addresses specifying frame SOURCES to
+     * record
      */
     Recorder(const std::vector<std::string> &position_source_addresses,
              const std::vector<std::string> &frame_source_addresses);
@@ -83,21 +85,11 @@ public:
     ~Recorder();
 
     /** 
-     * @brief Create and initialize recording file(s). Must be called before writeStreams.
+     * @brief Create and initialize recording file(s). Must be called
+     * before writeStreams.
      * 
-     * @param save_directory Requested save directory
-     * @param file_name Requested base file name. Extension should be included.
-     * @param prepend_timestamp Should a timestamp be prepended to the file name?
-     * @param prepend_source Should the (first) SOURCE name be appended to the file name?
-     * @param allow_overwrite Should existing files with the same name be overwritten?
-     * @param concise_file Should indeterminate data fields be excluded from file?
      */
-    void initializeRecording(const std::string &save_directory = ".",
-                             const std::string &file_name = "",
-                             const bool prepend_timestamp = false,
-                             const bool prepend_source = false,
-                             const bool allow_overwrite = false,
-                             const bool concise_file = false);
+    void initializeRecording(void);
 
     /**
      * Recorder SOURCEs must be able to connect to a NODEs from
@@ -105,9 +97,10 @@ public:
      */
     void connectToNodes(void);
 
-    /**
-     * Collect frames and positions from SOURCES. Write frames and positions to file.
-     * @return SOURCE end-of-stream signal. If true, this component should exit.
+    /** Collect frames and positions from SOURCES. Write frames and positions
+     * to file.  
+     * @return SOURCE end-of-stream signal. If true, this component should
+     * exit.
      */
     bool writeStreams(void);
 
@@ -121,6 +114,13 @@ public:
     bool record_on(void) const { return record_on_; }
     void set_record_on(const bool value) { record_on_ = value; }
     bool source_eof(void) const { return source_eof_; }
+    bool recording_initialized(void) const { return recording_initialized_; }
+    void set_save_path(const std::string &value) { save_path_ = value; }
+    void set_file_name(const std::string &value) { file_name_ = value; }
+    void set_prepend_timestamp(const bool value) { prepend_timestamp_ = value; }
+    void set_prepend_source(const bool value) { prepend_source_ = value; }
+    void set_allow_overwrite(const bool value) { allow_overwrite_ = value; } 
+    void set_verbose_file(const bool value) {verbose_file_ = value; };
 
 private:
 
@@ -140,10 +140,28 @@ private:
     // are sychronized. User will be warned if SOURCE sample rates differ.
     double sample_rate_hz_ {0.0};
 
-    // Should indeterminate position data fields be written in spite of being
-    // indeterminate for sample parsing ease? e.g. Should we write pos_xy when
-    // the pos_ok = false?
+    // Folder in which files will be saved
+    std::string save_path_ {"."};
+
+    // Base file name
+    std::string file_name_ {""};
+
+    // Determines if should file_name be prepended with a timestamp
+    bool prepend_timestamp_ {false};
+
+    // Determines if the (first) SOURCE name should be appended to the file name
+    bool prepend_source_ {false};
+
+    // Determines if existing file will be overwritten
+    bool allow_overwrite_ {false};
+
+    // Determines if indeterminate position data fields should be written in
+    // spite of being indeterminate for sample parsing ease? e.g. Should we
+    // write pos_xy when pos_ok = false?
     bool verbose_file_ {true};
+
+    // Determines if the recording machinary is ready to use.
+    bool recording_initialized_ {false};
 
     // Source end of file flag
     bool source_eof_ {false};
@@ -177,6 +195,7 @@ private:
     std::vector<oat::Position2D> positions_;
     std::vector<uint64_t> position_write_number_;
     std::vector<PositionSource> position_sources_;
+    std::string position_file_name_;
 
     void initializeVideoWriter(cv::VideoWriter& writer,
                                const std::string &file_name,
@@ -187,6 +206,7 @@ private:
     void writePositionFileHeader(const std::string& date,
                                  const double sample_rate,
                                  const std::vector<std::string>& sources);
+
 };
 
 }      /* namespace oat */

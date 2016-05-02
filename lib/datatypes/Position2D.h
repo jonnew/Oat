@@ -51,10 +51,13 @@ public:
      * @brief JSON Serializer
      *
      * @param writer Writer to use for serialization
-     * @param verbose Should fields be serialed even though they contain
-     * indeterminate data? This is useful for ease of sample alignment during
-     * post processing of saved files.
+     * @param verbose If true, specifies that fields be serialized even though
+     * they contain indeterminate data? This is useful for ease of sample
+     * alignment during post processing of saved files.
      */
+    // TODO: Should this just return a rapidjson::Document which is redily
+    // transformed into other formats such as msgpack, etc, instead of doing the 
+    // writing right here?
     template <typename Writer>
     void Serialize(Writer& writer, bool verbose = false) const {
 

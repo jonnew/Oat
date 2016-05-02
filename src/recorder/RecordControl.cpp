@@ -43,7 +43,6 @@ namespace oat {
 int controlRecorder(std::istream &in,
                     std::ostream &out,
                     oat::Recorder &recorder,
-                    std::string &file_name,
                     bool pretty_cmd) {
 
     // Command map
@@ -53,6 +52,7 @@ int controlRecorder(std::istream &in,
     cmd_map["start"] = 's';
     cmd_map["pause"] = 'p';
     cmd_map["new"] = 'n';
+    cmd_map["ping"] = 'i';
 
     // User control loop
     std::string cmd;
@@ -88,6 +88,8 @@ int controlRecorder(std::istream &in,
             }
             case 's' :
             {
+                if (!recorder.recording_initialized())
+                    recorder.initializeRecording();
                 recorder.set_record_on(true);
                 out << "Recording started." << std::endl;
                 break;
@@ -103,22 +105,11 @@ int controlRecorder(std::istream &in,
                 recorder.set_record_on(false);
                 out << "Creating new file." << std::endl;
                 return 1;
-
-                // TODO: This is for renameing the file with something else.
-                // Also there is too much state consideration here. Don't be a
-                // nanny. If they want a new file, make one.
-                //if (recorder.record_on()) {
-                //    std::cerr << "Recording must be paused to create new file.\n";
-                //} else {
-                //    out << "Enter new file name. Enter nothing to keep the same." << std::endl;
-                //    std::string fn;
-                //    std::getline(in, fn);
-                //    file_name = fn.empty() ? file_name : fn;
-                //    out << "File name set to " + file_name << std::endl;
-                //    return 1; // Signal new file
-                //}
-
-                // Fallthrough
+            }
+            case 'i' :
+            {
+                out << "Ping received." << std::endl;
+                break;
             }
             default :
             {

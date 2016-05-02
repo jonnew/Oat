@@ -94,14 +94,6 @@ void run(std::shared_ptr<oat::Recorder>& recorder) {
 
         recorder->connectToNodes();
 
-        // Initialize recording
-        recorder->initializeRecording(save_path,
-                                      file_name,
-                                      prepend_timestamp,
-                                      prepend_source,
-                                      allow_overwrite,
-                                      concise_file);
-
         while (!quit && !source_eof) {
             source_eof = recorder->writeStreams();
         }
@@ -311,12 +303,19 @@ int main(int argc, char *argv[]) {
             std::cout << oat::whoMessage(recorder->name(),
                     "Press CTRL+C to exit.\n");
 
+            // Set recording parameters
+            recorder->set_save_path(save_path);
+            recorder->set_file_name(file_name);
+            recorder->set_prepend_timestamp(prepend_timestamp);
+            recorder->set_allow_overwrite(allow_overwrite);
+            recorder->set_verbose_file(!concise_file);
 
             switch (control_mode)
             {
                 case ControlMode::NONE :
                 {
                     // Start the recorder w/o controls
+                    recorder->initializeRecording();
                     run(recorder);
                     rc = 0;
 
@@ -332,7 +331,7 @@ int main(int argc, char *argv[]) {
 
                     // Interact using stdin
                     oat::printInteractiveUsage(std::cout);
-                    rc = oat::controlRecorder(std::cin, std::cout, *recorder, file_name, true);
+                    rc = oat::controlRecorder(std::cin, std::cout, *recorder, true);
 
                     // Interrupt and join threads
                     cleanup(process);
@@ -354,7 +353,7 @@ int main(int argc, char *argv[]) {
                         zmq_istream_t in(ctx, sock);
                         zmq_ostream_t out(ctx, sock);
                         oat::printRemoteUsage(std::cout);
-                        rc = oat::controlRecorder(in, out, *recorder, file_name, false);
+                        rc = oat::controlRecorder(in, out, *recorder, false);
                     } catch (const zmq::error_t &ex) {
                         std::cerr << oat::whoError(recorder->name(), "zeromq error: "
                                 + std::string(ex.what())) << "\n";
