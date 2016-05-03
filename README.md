@@ -1375,7 +1375,7 @@ sudo apt-get install # OpenGL support [TODO]
 sudo ldconfig -v
 
 # Get OpenCV
-wget https://github.com/Itseez/opencv/archive/3.0.0-rc1.zip -O opencv.zip
+wget https://github.com/Itseez/opencv/archive/3.1.0.zip -O opencv.zip
 unzip opencv.zip -d opencv
 
 # Build OpenCV
