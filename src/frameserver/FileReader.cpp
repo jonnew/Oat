@@ -46,8 +46,6 @@ FileReader::FileReader(const std::string &image_sink_address,
 
 void FileReader::connectToNode() {
 
-    // TODO: bind without using example frame from video stream. See PGGigECam.cpp
-    // for example
     cv::Mat example_frame;
     file_reader_ >> example_frame;
 
