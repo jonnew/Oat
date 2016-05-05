@@ -51,6 +51,10 @@ private:
     // The webcam object
     int64_t index_;
     std::unique_ptr<cv::VideoCapture> cv_camera_;
+
+    // frame generation clock
+    std::chrono::steady_clock clock_;
+    std::chrono::steady_clock::time_point start_;
 };
 
 }      /* namespace oat */
