@@ -45,6 +45,8 @@ BackgroundSubtractorMOG::BackgroundSubtractorMOG(
   FrameFilter(frame_source_address, frame_sink_address) {
 
 #ifdef HAVE_CUDA
+    cv::cuda::GpuMat gm; // Create context. This can take an extremely long time
+    gm.create(1, 1, CV_8U);
     configureGPU(0);
     background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
 #else
@@ -115,6 +117,7 @@ void BackgroundSubtractorMOG::filter(cv::Mat &frame) {
 #ifdef HAVE_CUDA
     current_frame_.upload(frame);
     background_subtractor_->apply(current_frame_, background_mask_, learning_coeff_);
+    //TODO: Add hard mask operation here to increase performance
     cv::cuda::bitwise_not(background_mask_, background_mask_);
     current_frame_.setTo(0, background_mask_);
     current_frame_.download(frame);
