@@ -84,13 +84,12 @@ void BackgroundSubtractor::filter(cv::Mat& frame) {
     // Throws cv::Exception if there is a size mismatch between frames,
     // or in any case where cv assertions fail.
 
-    // Only proceed with processing if we are getting a valid frame
-    if (background_set)
-        frame = frame - background_frame;
-    else
-        // First image is always used as the default background image if one is
-        // not provided in a configuration file
+    // First image is always used as the default background image if one is
+    // not provided in a configuration file
+    if (!background_set)
         setBackgroundImage(frame);
+
+    frame = frame - background_frame;
 }
 
 } /* namespace oat */

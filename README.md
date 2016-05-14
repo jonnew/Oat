@@ -1190,6 +1190,14 @@ This makes Oat commands available within your user profile (once you start a new
 eval "$(<path/to/Oat>/oat/bin/oat init -)"
 ```
 
+If you get runtime link errors when you try to run an Oat program such as
+>error while loading shared libraries: libboost_program_options.so.1.60.0
+then you need to ad the following entry to your `.bashrc`
+
+```bash
+export LD_LIBRARY_PATH=</path/to/boost>/stage/lib:$LD_LIBRARY_PATH
+```
+
 ### Dependencies
 #### License compatibility
 
@@ -1200,7 +1208,7 @@ licenses are shown below:
 - Flycapture SDK: NON-FREE specialized license (This is an optional package. If
   you compile without Flycapture support, you can get around this. Also, see
   the `GigE interface cleanup` entry in the TODO section for a potentially free
-  alternative.
+  alternative.)
 - OpenCV: BSD
 - ZeroMQ: LGPLv3.0
 - Boost: Boost software license
