@@ -1643,7 +1643,7 @@ RJ45 ------------
 
 ## TODO
 - [ ] ~~Mac, Windows builds?~~
-  - EDIT: Wait till someobody cares enough to do it.
+  - EDIT: Wait till somebody cares enough to do it.
 - [ ] Unit and stress testing
     - Unit tests for `libshmemdf`
         - ~~Nominal data types, `T`~~
@@ -1673,8 +1673,8 @@ RJ45 ------------
       great pieces of code, but I should at least use them for inspiration.
     - `oat-frameserve gige` lacks the ability to set FPS in free running
       (non-triggered mode)
-    - ~~Configuration of the camera can get into impossible states if oat is used
-      in combo with other programs that mess with the camera's registers.
+    - ~~Configuration of the camera can get into impossible states if oat is
+      used in combo with other programs that mess with the camera's registers.
       Configuration via Oat should start with a clean slate by setting the
       camera to a default register state.~~
       - ~~See flycap --> advanced camera settings --> restor default memory
@@ -1729,8 +1729,8 @@ RJ45 ------------
       multisource components are dealing with sychonized sample numbers when
       pull-based sychornization strategy is enforced (no external clock driving
       acqusition, so no chance for buffer overrun).
-- [ ] Command line switches should take precedence over TOML file options.  This is
-  standard practice, but is not how Oat works currently.
+- [ ] Command line switches should take precedence over TOML file options.
+  This is standard practice, but is not how Oat works currently.
     - `oat-frameserve`
     - `oat-framefilt`
     - `oat-posifilt`

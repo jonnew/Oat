@@ -20,45 +20,77 @@
 #ifndef OAT_IOFORMAT_H
 #define OAT_IOFORMAT_H
 
-#include <string>
 #include <iomanip>
 #include <iostream>
+#include <string>
+#include <unistd.h>
+
+#define RST  "\x1B[0m"
+
+#define FRED(x) "\x1B[31m" + x + RST
+#define FGRN(x) "\x1B[32m" + x + RST
+#define FYEL(x) "\x1B[33m" + x + RST
+#define FBLU(x) "\x1B[34m" + x + RST
+#define FMAG(x) "\x1B[35m" + x + RST
+#define FCYN(x) "\x1B[36m" + x + RST
+#define FWHT(x) "\x1B[37m" + x + RST
+
+#define BOLD(x) "\x1B[1m" + x + RST
+#define UNDL(x) "\x1B[4m" + x + RST
+
+#define HAZ_COLOR isatty(fileno(stdout)) 
 
 namespace oat {
 
-inline std::string bold(const std::string& message) {
+inline std::string bold(const std::string &message) {
 
-    return "\033[1m" + message + "\033[0m";
+    return HAZ_COLOR ? BOLD(message) : message; 
 }
 
-inline std::string sourceText(const std::string& source_name) {
+inline std::string sourceText(const std::string &source_name) {
 
-    return "\033[32m" + source_name + "\033[0m";
+    return HAZ_COLOR ? FGRN(source_name) : source_name; 
 }
 
 inline std::string sinkText(const std::string& sink_name) {
 
-    return "\033[31m" + sink_name + "\033[0m";
+    return HAZ_COLOR ? FRED(sink_name) : sink_name; 
 }
 
 inline std::string whoMessage(const std::string& source, const std::string& message) {
 
-    return "\033[1m" + source + ": \033[0m" + message;
-}
-
-inline std::string whoWarn(const std::string& source, const std::string& message) {
-
-    return "\033[1m" + source + ": \033[0m\033[33m" + message + "\033[0m";
+    return (HAZ_COLOR ? BOLD(source) : source) + ": " + message; 
 }
 
 inline std::string Warn(const std::string& message) {
 
-    return "\033[0m\033[33m" + message + "\033[0m";
+    return HAZ_COLOR ? FYEL(message) : message; 
+}
+
+inline std::string Error(const std::string& message) {
+
+    return HAZ_COLOR ? FRED(message) : message; 
+}
+
+inline std::string dbgMessage(const std::string& message) {
+
+    return HAZ_COLOR ? FMAG(message) : message; 
+}
+
+inline std::string whoWarn(const std::string& source, const std::string& message) {
+
+    return HAZ_COLOR ? 
+        BOLD(source) + ": " + FYEL(message) 
+        : 
+        source +  ": " + message; 
 }
 
 inline std::string whoError(const std::string& source, const std::string& message) {
 
-    return "\033[1m" + source + ": \033[0m\033[31m" + message + "\033[0m";
+    return HAZ_COLOR ? 
+        BOLD(source) + ": " + FRED(message) 
+        : 
+        source +  ": " + message; 
 }
 
 inline std::string configNoTableError(const std::string& table_name,
@@ -74,21 +106,6 @@ inline std::string configValueError(const std::string& entry_name,
                                     const std::string& message) {
 
     return "'" + entry_name + "' in '" + table_name + "' in '" + config_file + "' " + message;
-}
-
-inline std::string Error(const std::string& message) {
-
-    return "\033[31m" + message + "\033[0m";
-}
-
-inline std::string dbgMessage(const std::string& message) {
-
-    return "\033[35mdebug: " + message + "\033[0m";
-}
-
-inline std::string dbgColor(const std::string& message) {
-
-    return "\033[35m" + message + "\033[0m";
 }
 
 }      /* namespace oat */
