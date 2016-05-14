@@ -22,6 +22,8 @@
 
 #include <iomanip>
 #include <iostream>
+#include <stdlib.h>
+#include <string.h>
 #include <string>
 #include <unistd.h>
 
@@ -38,59 +40,158 @@
 #define BOLD(x) "\x1B[1m" + x + RST
 #define UNDL(x) "\x1B[4m" + x + RST
 
-#define HAZ_COLOR isatty(fileno(stdout)) 
-
 namespace oat {
+
+/**
+ * @brief List of terminal names known to support VT100 color escape sequences.
+ * Taken from https://github.com/Kitware/CMake/tree/master/Source/kwsys
+ */
+static const char * vt100_term_names[] =
+{
+  "Eterm",
+  "ansi",
+  "color-xterm",
+  "con132x25",
+  "con132x30",
+  "con132x43",
+  "con132x60",
+  "con80x25",
+  "con80x28",
+  "con80x30",
+  "con80x43",
+  "con80x50",
+  "con80x60",
+  "cons25",
+  "console",
+  "cygwin",
+  "dtterm",
+  "eterm-color",
+  "gnome",
+  "gnome-256color",
+  "konsole",
+  "konsole-256color",
+  "kterm",
+  "linux",
+  "msys",
+  "linux-c",
+  "mach-color",
+  "mlterm",
+  "putty",
+  "putty-256color",
+  "rxvt",
+  "rxvt-256color",
+  "rxvt-cygwin",
+  "rxvt-cygwin-native",
+  "rxvt-unicode",
+  "rxvt-unicode-256color",
+  "screen",
+  "screen-256color",
+  "screen-256color-bce",
+  "screen-bce",
+  "screen-w",
+  "screen.linux",
+  "vt100",
+  "xterm",
+  "xterm-16color",
+  "xterm-256color",
+  "xterm-88color",
+  "xterm-color",
+  "xterm-debian",
+  "xterm-termite",
+  0
+};
+
+/**
+ * @brief Detect whether a stream is displayed in a VT100-compatible terminal.
+ * Taken from https://github.com/Kitware/CMake/tree/master/Source/kwsys
+ *
+ * @param stream Stream to check.
+ * @param default_vt100 Assum VT100 is supported.
+ * @param default_ttyi Assume that we are on a tty interface.
+ *
+ * @return 1 if VT100-compatible terminal is detected and 0 Otherwise.
+ */
+static int terminalStreamIsVT100(FILE * stream, int default_vt100=1, int default_tty=1) {
+
+    // Force color according to http://bixense.com/clicolors/ convention.
+    const char * clicolor_force = getenv("CLICOLOR_FORCE");
+    if (clicolor_force && *clicolor_force && strcmp(clicolor_force, "0") != 0)
+        return 1;
+
+    // If running inside emacs the terminal is not VT100. Some emacs seem to
+    // claim the TERM is xterm even though they do not support VT100 escapes.
+    const char * emacs = getenv("EMACS");
+    if(emacs && *emacs == 't')
+        return 0;
+
+    // Check for a valid terminal.
+    if (!default_vt100) {
+
+        const char ** t = 0;
+        const char * term = getenv("TERM");
+        if(term)
+            for (t = vt100_term_names; *t && strcmp(term, *t) != 0; ++t) {}
+
+        if (!(t && *t))
+            return 0;
+    }
+
+    // Make sure the stream is a tty.
+    (void)default_tty;
+    return isatty(fileno(stream)) ? 1 : 0;
+}
+
+#define HAZ_COLOR terminalStreamIsVT100(stdout)
 
 inline std::string bold(const std::string &message) {
 
-    return HAZ_COLOR ? BOLD(message) : message; 
+    return HAZ_COLOR ? BOLD(message) : message;
 }
 
 inline std::string sourceText(const std::string &source_name) {
 
-    return HAZ_COLOR ? FGRN(source_name) : source_name; 
+    return HAZ_COLOR ? FGRN(source_name) : source_name;
 }
 
 inline std::string sinkText(const std::string& sink_name) {
 
-    return HAZ_COLOR ? FRED(sink_name) : sink_name; 
+    return HAZ_COLOR ? FRED(sink_name) : sink_name;
 }
 
 inline std::string whoMessage(const std::string& source, const std::string& message) {
 
-    return (HAZ_COLOR ? BOLD(source) : source) + ": " + message; 
+    return (HAZ_COLOR ? BOLD(source) : source) + ": " + message;
 }
 
 inline std::string Warn(const std::string& message) {
 
-    return HAZ_COLOR ? FYEL(message) : message; 
+    return HAZ_COLOR ? FYEL(message) : message;
 }
 
 inline std::string Error(const std::string& message) {
 
-    return HAZ_COLOR ? FRED(message) : message; 
+    return HAZ_COLOR ? FRED(message) : message;
 }
 
 inline std::string dbgMessage(const std::string& message) {
 
-    return HAZ_COLOR ? FMAG(message) : message; 
+    return HAZ_COLOR ? FMAG(message) : message;
 }
 
 inline std::string whoWarn(const std::string& source, const std::string& message) {
 
-    return HAZ_COLOR ? 
-        BOLD(source) + ": " + FYEL(message) 
-        : 
-        source +  ": " + message; 
+    return HAZ_COLOR ?
+        BOLD(source) + ": " + FYEL(message)
+        :
+        source +  ": " + message;
 }
 
 inline std::string whoError(const std::string& source, const std::string& message) {
 
-    return HAZ_COLOR ? 
-        BOLD(source) + ": " + FRED(message) 
-        : 
-        source +  ": " + message; 
+    return HAZ_COLOR ?
+        BOLD(source) + ": " + FRED(message)
+        :
+        source +  ": " + message;
 }
 
 inline std::string configNoTableError(const std::string& table_name,

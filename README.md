@@ -1705,13 +1705,6 @@ RJ45 ------------
       press a key and those tuning paramters to be injected into the current
       `config.toml` file so that they don't have to write them down and
       manually edit the file later
-- [ ] Colors
-    - ~~Should visual ID information (e.g. color) be integrated into the
-      `position` type.~~
-        - EDIT: No. What does position have to do with color? Sound? Touch? or
-          ...
-    - All this output color formatting might be very stupid because it screws
-      up log files when stdout or stderr are piped to file.
 - [ ] It would be good to warn people if the inputs to a multisource component
   have different sample rates because the output rate will be enforced by the
   slowest source.
