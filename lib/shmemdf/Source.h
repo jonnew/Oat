@@ -84,7 +84,7 @@ protected:
     T * sh_object_ {nullptr};
     Node * node_ {nullptr};
     std::string address_, node_address_, obj_address_;
-    size_t slot_index_;
+    size_t slot_index_ {0};
     std::atomic<SourceState> state_ {SourceState::VIRGIN};
     bool touched_ {false};
     bool connected_ {false};

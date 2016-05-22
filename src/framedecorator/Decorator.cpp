@@ -20,7 +20,6 @@
 #include <cmath>
 #include <exception>
 #include <string>
-#include <tuple>
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include <ctime>
@@ -44,12 +43,13 @@ Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
         for (auto &addr : position_source_addresses) {
 
             oat::Position2D pos(addr);
-
-            auto t = std::make_tuple(std::move(addr),
-                                     std::move(pos),
-                                     new oat::Source<oat::Position2D>());
-
-            position_sources_.push_back(t);
+            positions_.push_back(std::move(pos));
+            position_sources_.push_back(
+                oat::NamedSource<oat::Position2D>(
+                    addr,
+                    std::make_unique<oat::Source< oat::Position2D>>()
+                )
+            );
         }
     } else {
         decorate_position_ = false;
@@ -58,9 +58,10 @@ Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
 
 Decorator::~Decorator() {
 
+    // TODO: What is this?
     // Delete the memory pointed to by `new oat::Source<oat::Position2D>()`
-    for (auto &pos : position_sources_)
-        delete std::get<2>(pos);
+    //for (auto &ps : position_sources_)
+    //    delete std::get<2>(pos);
 }
 
 void Decorator::connectToNodes() {
@@ -76,12 +77,27 @@ void Decorator::connectToNodes() {
             frame_source_.parameters();
 
     // Connect to position source nodes
-    for (auto &pos : position_sources_)
-        std::get<2>(pos)->touch(std::get<0>(pos));
+    for (auto &ps : position_sources_)
+        ps.source->touch(ps.name);
 
-    // Verify connections to position source nodes
-    for (auto &pos : position_sources_)
-        std::get<2>(pos)->connect();
+    // Examine sample period of sources to make sure they are the same
+    double sample_rate_hz;
+    std::vector<double> all_ts;
+
+    // Position sources
+    for (auto &ps : position_sources_) {
+        ps.source->connect();
+        all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
+    }
+
+    if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
+        std::cerr << oat::Warn(
+                     "Warning: sample rates of sources are inconsistent.\n"
+                     "This component forces synchronization at the lowest source sample rate.\n"
+                     "You should probably use separate recorders to capture these sources.\n"
+                     "specified sample rate set to: " + std::to_string(sample_rate_hz_) + "\n"
+                     );
+    }
 
     // Bind to sink sink node and create a shared cv::Mat
     frame_sink_.bind(frame_sink_address_, param.bytes);
@@ -89,9 +105,9 @@ void Decorator::connectToNodes() {
 
     // Set drawing parameters based on frame dimensions
     size_t min_size = (param.rows < param.cols) ? param.rows : param.cols;
-    position_circle_radius_ =  std::ceil(static_cast<float>(min_size)/100.0);
-    heading_line_length_ =  std::ceil(static_cast<float>(min_size)/100.0);
-    encode_bit_size_  =  
+    position_circle_radius_ = std::ceil(static_cast<float>(min_size)/100.0);
+    heading_line_length_ = std::ceil(static_cast<float>(min_size)/100.0);
+    encode_bit_size_  =
         std::ceil(param.cols / 3 / sizeof(internal_frame_.sample().count()) / 8);
 }
 
@@ -102,7 +118,7 @@ bool Decorator::decorateFrame() {
     ////////////////////////////
 
     // Wait for sink to write to node
-    if (frame_source_.wait() == oat::NodeState::END )
+    if (frame_source_.wait() == oat::NodeState::END)
         return true;
 
     // Clone the shared frame
@@ -114,17 +130,16 @@ bool Decorator::decorateFrame() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // 2. Get positions
-    for (auto &pos : position_sources_) {
+    for (pvec_size_t i = 0; i !=  position_sources_.size(); i++) {
 
         // START CRITICAL SECTION //
         ////////////////////////////
-        if (std::get<2>(pos)->wait() == oat::NodeState::END )
+        if (position_sources_[i].source->wait() == oat::NodeState::END)
             return true;
 
-        std::get<1>(pos) = std::get<2>(pos)->clone();
+        positions_[i] = position_sources_[i].source->clone();
 
-        std::get<2>(pos)->post();
+        position_sources_[i].source->post();
         ////////////////////////////
         //  END CRITICAL SECTION  //
     }
@@ -153,7 +168,7 @@ bool Decorator::decorateFrame() {
 void Decorator::drawOnFrame() {
 
     if (decorate_position_) {
-        
+
         drawPosition();
 
         if (print_region_)
@@ -175,7 +190,7 @@ void Decorator::invertHomography(oat::Position2D &p) {
     if (p.position_valid) {
 
         cv::Matx33d inv_homo = p.homography().inv();
-        
+
         std::vector<oat::Point2D> in_positions;
         std::vector<oat::Point2D> out_positions;
         in_positions.push_back(p.position);
@@ -214,7 +229,7 @@ void Decorator::drawPosition() {
 
     size_t i = 0;
     for (auto pos : position_sources_) {
-        
+
         oat::Position2D p = std::get<1>(pos);
 
         if (p.unit_of_length() != oat::DistanceUnit::PIXELS)
@@ -230,7 +245,7 @@ void Decorator::drawPosition() {
 
             if (p.velocity_valid) {
 
-                cv::Point2d end = 
+                cv::Point2d end =
                     p.position + (velocity_scale_factor_ * p.velocity);
                 cv::line(internal_frame_,
                          p.position,

@@ -27,6 +27,8 @@
 #include <cmath>
 
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/make_unique.h"
 
 #include "Decorator.h"
 
@@ -44,23 +46,17 @@ Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
         for (auto &addr : position_source_addresses) {
 
             oat::Position2D pos(addr);
-
-            auto t = std::make_tuple(std::move(addr),
-                                     std::move(pos),
-                                     new oat::Source<oat::Position2D>());
-
-            position_sources_.push_back(t);
+            positions_.push_back(std::move(pos));
+            position_sources_.push_back(
+                oat::NamedSource<oat::Position2D>(
+                    addr,
+                    std::make_unique<oat::Source<oat::Position2D>>()
+                )
+            );
         }
     } else {
         decorate_position_ = false;
     }
-}
-
-Decorator::~Decorator() {
-
-    // Delete the memory pointed to by `new oat::Source<oat::Position2D>()`
-    for (auto &pos : position_sources_)
-        delete std::get<2>(pos);
 }
 
 void Decorator::connectToNodes() {
@@ -76,14 +72,32 @@ void Decorator::connectToNodes() {
             frame_source_.parameters();
 
     // Connect to position source nodes
-    for (auto &pos : position_sources_)
-        std::get<2>(pos)->touch(std::get<0>(pos));
+    for (auto &ps : position_sources_)
+        ps.source->touch(ps.name);
 
-    // Verify connections to position source nodes
-    for (auto &pos : position_sources_)
-        std::get<2>(pos)->connect();
+    // Examine sample period of sources to make sure they are the same
+    double sample_rate_hz;
+    std::vector<double> all_ts;
 
-    // Bind to sink sink node and create a shared cv::Mat
+    // Position sources
+    for (auto &ps : position_sources_) {
+        ps.source->connect();
+        all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
+    }
+
+    for (auto &a : all_ts)
+        std::cout << a << std::endl;
+
+    if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
+        std::cerr << oat::Warn(
+                     "Warning: sample rates of sources are inconsistent.\n"
+                     "This component forces synchronization at the lowest source sample rate.\n"
+                     "You should probably use separate recorders to capture these sources.\n"
+                     "specified sample rate set to: " + std::to_string(sample_rate_hz) + "\n"
+                     );
+    }
+
+    // Bind to sink sink node and create a shared frame
     frame_sink_.bind(frame_sink_address_, param.bytes);
     shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
 
@@ -115,16 +129,16 @@ bool Decorator::decorateFrame() {
     //  END CRITICAL SECTION  //
 
     // 2. Get positions
-    for (auto &pos : position_sources_) {
+    for (pvec_size_t i = 0; i !=  position_sources_.size(); i++) {
 
         // START CRITICAL SECTION //
         ////////////////////////////
-        if (std::get<2>(pos)->wait() == oat::NodeState::END )
+        if (position_sources_[i].source->wait() == oat::NodeState::END)
             return true;
 
-        std::get<1>(pos) = std::get<2>(pos)->clone();
+        positions_[i] = position_sources_[i].source->clone();
 
-        std::get<2>(pos)->post();
+        position_sources_[i].source->post();
         ////////////////////////////
         //  END CRITICAL SECTION  //
     }
@@ -194,7 +208,6 @@ void Decorator::invertHomography(oat::Position2D &p) {
             p.velocity = out_velocities[0];
         }
 
-        // TODO: Requires homography treatment like velocity and position
         if (p.heading_valid) {
 
             std::vector<oat::UnitVector2D> in_heading;
@@ -213,10 +226,8 @@ void Decorator::invertHomography(oat::Position2D &p) {
 void Decorator::drawPosition() {
 
     size_t i = 0;
-    for (auto pos : position_sources_) {
+    for (auto &p : positions_) {
         
-        oat::Position2D p = std::get<1>(pos);
-
         if (p.unit_of_length() == oat::DistanceUnit::WORLD)
             invertHomography(p);
 
@@ -258,7 +269,7 @@ void Decorator::drawPosition() {
 void Decorator::printRegion() {
 
     // Create display string
-    std::string reg_text ;
+    std::string reg_text;
 
     if (position_sources_.size() == 1)
         reg_text = "Region:";
@@ -275,11 +286,11 @@ void Decorator::printRegion() {
 
     // Add ID: region information
     size_t i = 0;
-    for (auto pos : position_sources_) {
-        if (std::get<1>(pos).region_valid)
-            reg_text = std::get<0>(pos) + ": " + std::string(std::get<1>(pos).region);
+    for (auto &ps : position_sources_) {
+        if (positions_[i].region_valid)
+            reg_text = ps.name + ": " + std::string(positions_[i].region);
         else
-            reg_text = std::get<0>(pos) + ": ?";
+            reg_text = ps.name + ": ?";
 
         text_origin.y += reg_text_size.height + 2;
         cv::putText(internal_frame_,
@@ -318,17 +329,17 @@ void Decorator::printSampleNumber() {
                 font_color_);
 }
 
-/**
- * Encode the current sample number into the first row of the matrix
+/** 
+ * @brief Encode the current sample number into the first row of the matrix
  */
 void Decorator::encodeSampleNumber() {
 
     uint64_t sample_count = internal_frame_.sample().count();
-
     int column = internal_frame_.cols - 64 * encode_bit_size_;
 
     if (column < 0)
-        throw std::runtime_error("Binary counter bar is too large for frame.");
+        throw std::runtime_error("Binary counter bar is too large for frame."
+                                 "Use more x-dim pixels or turn binary counter off.");
 
     for (int shift = 0; shift < 64; shift++) {
 

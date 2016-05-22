@@ -30,11 +30,11 @@ namespace bip = boost::interprocess;
   * memory.
   *
   * This class contains everything required to pass Frames through shared
-  * memory without a copy. Basically, this class contains two critical shmem
-  * handles: data_ and sample_. These objects provide cross-process pointer
-  * access to two blocks of shared memory, one for matrix data and other for
-  * sample count and rate information. Non-pointer members allow construction
-  * of Frames at source and sink end contain this data and sample information.
+  * memory without a copy. Basically, this class contains two shmem handles:
+  * data_ and sample_. These handles provide cross-process pointer access to
+  * two blocks of shared memory, one for matrix data and other for sample count
+  * and rate information. Non-pointer members allow construction of Frames at
+  * source and sink end contain this data and sample information.
   */
 class SharedFrameHeader {
 
@@ -91,6 +91,6 @@ private :
     std::atomic<handle_t> sample_;
 };
 
-}
+}       /* namespace oat */
 #endif	/* OAT_SHAREDCVMAT_H */
 

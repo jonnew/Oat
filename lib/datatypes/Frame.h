@@ -49,7 +49,7 @@ public:
         // Nothing
     }
 
-    Frame(const double ts_sec) :
+    explicit Frame(const double ts_sec) :
       cv::Mat()
     , sample_(ts_sec)
     , sample_ptr_(&sample_)

@@ -59,9 +59,11 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
             oat::Position2D pos(addr);
             positions_.push_back(std::move(pos));
             position_write_number_.push_back(0);
-            position_sources_.push_back(std::make_pair(
-                addr,
-                std::make_unique<oat::Source < oat::Position2D >>())
+            position_sources_.push_back(
+                oat::NamedSource<oat::Position2D>(
+                    addr,
+                    std::make_unique<oat::Source< oat::Position2D>>()
+                )
             );
         }
     }
@@ -82,8 +84,9 @@ Recorder::Recorder(const std::vector<std::string> &position_source_addresses,
             frame_write_buffers_.push_back(std::make_unique<FrameQueue>());
 
             frame_sources_.push_back(
-                std::make_pair(
-                    addr, std::make_unique<oat::Source<oat::SharedFrameHeader>>()
+                oat::NamedSource<oat::SharedFrameHeader>(
+                    addr,
+                    std::make_unique<oat::Source<oat::SharedFrameHeader>>()
                 )
             );
 
@@ -134,54 +137,33 @@ void Recorder::connectToNodes() {
 
     // Connect to frame source nodes
     for (auto &fs: frame_sources_)
-        fs.second->touch(fs.first);
+        fs.source->touch(fs.name);
 
     // Connect to position source nodes
     for (auto &ps : position_sources_)
-        ps.second->touch(ps.first);
+        ps.source->touch(ps.name);
 
-    // Verify connections and check sample rates If sample rates are variable,
-    // the user should be using multiple recorders instead of just one, which
-    // enforces sample synchronization
-    bool ts_consistent = true;
-    double ts {-1.0}, ts_last {-1.0};
-
-    // TODO: The following procedure may be appropriate for all multi source
-    // components. Seems like a function template somewhere would be a good bet
-    // for handling all comers
+    // Examine sample period of sources to make sure they are the same
+    std::vector<double> all_ts;
 
     // Frame sources
     for (auto &fs: frame_sources_) {
-        fs.second->connect();
-        ts = fs.second->retrieve().sample().period_sec().count();
-        if (ts_last != -1.0 && ts != ts_last) {
-            ts = ts > ts_last ? ts : ts_last;
-            ts_consistent = false;
-        } else {
-            ts_last = ts;
-        }
+        fs.source->connect();
+        all_ts.push_back(fs.source->retrieve().sample().period_sec().count());
     }
 
     // Position sources
     for (auto &ps : position_sources_) {
-        ps.second->connect();
-        ts = ps.second->retrieve()->sample().period_sec().count();
-        if (ts_last != -1.0 && ts != ts_last) {
-            ts = ts > ts_last ? ts : ts_last;
-            ts_consistent = false;
-        } else {
-            ts_last = ts;
-        }
+        ps.source->connect();
+        all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
     }
 
-    sample_rate_hz_ = 1.0 / ts;
-
-    if (!ts_consistent) {
+    if (!oat::checkSamplePeriods(all_ts, sample_rate_hz_)) {
         std::cerr << oat::Warn(
-                     "Warning: Sample rates of SOURCEs are inconsistent.\n"
-                     "This recorder forces synchronization at the lowest SOURCE sample rate.\n"
-                     "You should probably use separate recorders to capture these SOURCEs.\n"
-                     "Specified sample rate set to: " + std::to_string(sample_rate_hz_) + "\n"
+                     "Warning: sample rates of sources are inconsistent.\n"
+                     "This recorder forces synchronization at the lowest source sample rate.\n"
+                     "You should probably use separate recorders to capture these sources.\n"
+                     "specified sample rate set to: " + std::to_string(sample_rate_hz_) + "\n"
                      );
     }
 }
@@ -193,11 +175,11 @@ bool Recorder::writeStreams() {
 
          // START CRITICAL SECTION //
         ////////////////////////////
-        source_eof_ |= (frame_sources_[i].second->wait() == oat::NodeState::END);
+        source_eof_ |= (frame_sources_[i].source->wait() == oat::NodeState::END);
 
         // Push newest frame into client N's queue
         if (record_on_) {
-            if (!frame_write_buffers_[i]->push(frame_sources_[i].second->clone())) {
+            if (!frame_write_buffers_[i]->push(frame_sources_[i].source->clone())) {
                 throw (std::runtime_error("Frame buffer overrun. Decrease the frame "
                                           "rate or get a faster hard-disk."));
             }
@@ -206,22 +188,22 @@ bool Recorder::writeStreams() {
         // Notify a writer thread that there might be new data in the queue
         frame_write_condition_variables_[i]->notify_one();
 
-        frame_sources_[i].second->post();
+        frame_sources_[i].source->post();
         ////////////////////////////
         //  END CRITICAL SECTION  //
     }
 
     // Read positions
-    for (psvec_size_t i = 0; i !=  position_sources_.size(); i++) {
+    for (pvec_size_t i = 0; i !=  position_sources_.size(); i++) {
 
         // START CRITICAL SECTION //
         ////////////////////////////
-        source_eof_ |= (position_sources_[i].second->wait() == oat::NodeState::END);
+        source_eof_ |= (position_sources_[i].source->wait() == oat::NodeState::END);
 
-        position_write_number_[i] = position_sources_[i].second->write_number();
-        positions_[i] = position_sources_[i].second->clone();
+        position_write_number_[i] = position_sources_[i].source->write_number();
+        positions_[i] = position_sources_[i].source->clone();
 
-        position_sources_[i].second->post();
+        position_sources_[i].source->post();
         ////////////////////////////
         //  END CRITICAL SECTION  //
     }
@@ -313,7 +295,7 @@ void Recorder::initializeRecording() {
         std::string posi_fid;
         std::string base_fid;
         if (prepend_source_ || file_name_.empty())
-            base_fid = position_sources_[0].first;
+            base_fid = position_sources_[0].name;
         if (!file_name_.empty() && base_fid.empty())
             base_fid = file_name_;
         else if (!file_name_.empty() && !base_fid.empty())
@@ -352,11 +334,8 @@ void Recorder::initializeRecording() {
         // Complete header object
         json_writer_.String("header");
         std::vector<std::string> pos_addrs;
-        pos_addrs.reserve(std::distance(position_sources_.begin(),position_sources_.end()));
-        std::transform(position_sources_.begin(),
-                       position_sources_.end(),
-                       std::back_inserter(pos_addrs),
-                       [](PositionSource& p){ return p.first; });
+        for (auto &p: position_sources_)
+            pos_addrs.push_back(p.name);
 
         writePositionFileHeader(timestamp, sample_rate_hz_, pos_addrs);
 
@@ -375,7 +354,7 @@ void Recorder::initializeRecording() {
             std::string frame_fid;
             std::string base_fid;
             if (prepend_source_ || file_name_.empty())
-                base_fid = s.first;
+                base_fid = s.name;
             if (!file_name_.empty() && base_fid.empty())
                 base_fid = file_name_;
             else if (!file_name_.empty() && !base_fid.empty())

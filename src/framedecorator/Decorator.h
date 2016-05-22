@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "../../lib/datatypes/Frame.h"
+#include "../../lib/shmemdf/Helpers.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/SharedFrameHeader.h"
@@ -39,11 +40,9 @@ static const constexpr double PI {3.141592653589793238463};
  */
 class Decorator {
 
-public:
+    using pvec_size_t = oat::NamedSourceList<oat::Position2D>::size_type;
 
-    using PositionSource = std::tuple< std::string,
-                                       oat::Position2D,
-                                       oat::Source<oat::Position2D>* >;
+public:
 
     /**
      * Frame decorator.
@@ -96,7 +95,8 @@ private:
     oat::Sink<SharedFrameHeader> frame_sink_;
 
     // Positions to be added to the image stream
-    std::vector<PositionSource> position_sources_;
+    std::vector<oat::Position2D> positions_;
+    oat::NamedSourceList<oat::Position2D> position_sources_;
 
     // Drawing constants
     // TODO: These may need to become a bit more sophisticated or user defined
@@ -130,10 +130,9 @@ private:
      */
     void invertHomography(oat::Position2D &pos);
 
-    // TODO: Look at these glorious type signatures
+    // TODO: Look at these glorious type signatures. These are 'subroutines'
+    // rather than functions...
     void drawPosition(void);
-    //void drawHeading(void);
-    //void drawVelocity(void);
     void printRegion(void);
     void drawOnFrame(void);
     void printTimeStamp(void);

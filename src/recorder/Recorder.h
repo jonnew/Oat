@@ -31,6 +31,7 @@
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 
+#include "../../lib/shmemdf/Helpers.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/datatypes/Frame.h"
@@ -51,26 +52,32 @@ class SharedFrameHeader;
  */
 class Recorder {
 
-    // The control recorder routine needs access to Recorder's privates
+    // The controlRecorder routine needs access to Recorder's private members
     friend int controlRecorder(std::istream &in,
                                oat::Recorder &recorder,
                                bool print_cmd);
 
 public:
 
-    using PositionSource = std::pair < std::string, std::unique_ptr
-                                     < oat::Source
-                                     < oat::Position2D > > >;
+    //using PositionSource = std::pair < std::string, std::unique_ptr
+    //                                 < oat::Source
+    //                                 < oat::Position2D > > >;
 
-    using FrameSource = std::pair < std::string, std::unique_ptr
-                                  < oat::Source<oat::SharedFrameHeader > > >;
+    //using FrameSource = std::pair < std::string, std::unique_ptr
+    //                              < oat::Source<oat::SharedFrameHeader > > >;
 
-    using FrameQueue =  blf::spsc_queue < oat::Frame, boost::lockfree::capacity
-                                        < FRAME_WRITE_BUFFER_SIZE > >;
+    using FrameQueue = 
+        blf::spsc_queue<
+            oat::Frame, boost::lockfree::capacity<FRAME_WRITE_BUFFER_SIZE>
+        >;
 
-    using psvec_size_t = std::vector<PositionSource>::size_type;
-    using pvec_size_t = std::vector<oat::Position2D>::size_type;
-    using fvec_size_t = std::vector<FrameSource>::size_type;
+    using pvec_size_t =
+        std::vector<oat::NamedSource<oat::Position2D>>::size_type; 
+    using fvec_size_t =
+        std::vector<oat::NamedSource<oat::SharedFrameHeader>>::size_type;
+
+    //using pvec_size_t = std::vector<oat::Position2D>::size_type;
+    //using fvec_size_t = std::vector<FrameSource>::size_type;
 
     /**
      * Position and frame recorder.
@@ -178,7 +185,7 @@ private:
     rapidjson::PrettyWriter<rapidjson::FileWriteStream> json_writer_ {*file_stream_};
 
     // Frame sources
-    std::vector<FrameSource> frame_sources_;
+    oat::NamedSourceList<oat::SharedFrameHeader> frame_sources_;
     boost::dynamic_bitset<> frame_read_required_;
 
     // Multi video writer multi-threading
@@ -194,7 +201,7 @@ private:
     // Position sources
     std::vector<oat::Position2D> positions_;
     std::vector<uint64_t> position_write_number_;
-    std::vector<PositionSource> position_sources_;
+    oat::NamedSourceList<oat::Position2D> position_sources_;
     std::string position_file_name_;
 
     void initializeVideoWriter(cv::VideoWriter& writer,

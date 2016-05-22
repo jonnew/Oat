@@ -1,4 +1,4 @@
-
+//******************************************************************************
 //* File:   Position2D.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*

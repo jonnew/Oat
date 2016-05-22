@@ -1,5 +1,4 @@
 //******************************************************************************
-//
 //* File:   PositionGenerator.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
@@ -104,7 +103,7 @@ protected:
     std::chrono::high_resolution_clock::time_point tick_;
 
     // Periodic boundaries in which simulated particle resides.
-    cv::Rect_<double> room_ {0, 0, 728, 728};
+    cv::Rect_<double> room_ {0, 0, 100, 100};
     
     // Sample count specification
     int64_t num_samples_ {std::numeric_limits<int64_t>::max()};

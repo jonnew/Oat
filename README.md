@@ -1700,15 +1700,15 @@ RJ45 ------------
       stateless detection. However, it would make the concept of position
       combining hard to define (although that is even true now is just a design
       choice, really).
-- [ ] Saving tuning parameters
+- [ ] ~~Saving tuning parameters~~
     - Components that have a `--tune` option should also allow for the user to
       press a key and those tuning paramters to be injected into the current
       `config.toml` file so that they don't have to write them down and
       manually edit the file later
-- [ ] It would be good to warn people if the inputs to a multisource component
-  have different sample rates because the output rate will be enforced by the
-  slowest source.
-    - See `oat-record` for how to accomplish since it already does this.
+    - EDIT: Counter argument: thinking about correct implementation brings to
+      mind GUI file dialogs or more command line switches to configure save
+      path. This makes me want to barf a little so maybe lets put this on hold
+      until its a big issue.
 - [x] Something is wrong with sample synchronization
     - When working with Jennie's data, we found that position samples were
       being recorded multiple times - they had the same sample number and

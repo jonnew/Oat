@@ -104,6 +104,7 @@ void PositionGenerator<T>::connectToNode() {
     // Bind to sink sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
+    shared_position_->sample().set_rate_hz(1.0 / sample_period_in_sec_.count());
 }
 
 template<typename T>
@@ -142,11 +143,9 @@ template<typename T>
 void PositionGenerator<T>::generateSamplePeriod(const double samples_per_second) {
 
     oat::Sample::Seconds period(1.0 / samples_per_second);
-    //std::chrono::duration<double> period {1.0 / samples_per_second};
 
     // Automatic conversion
     sample_period_in_sec_ = period;
-    internal_position_.sample().set_rate_hz(1.0 / period.count());
 }
 
 // Explicit declaration to get around link errors due to this being in its own

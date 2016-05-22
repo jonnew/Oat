@@ -25,6 +25,7 @@
 #include <vector>
 #include <utility>
 
+#include "../../lib/shmemdf/Helpers.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/datatypes/Position2D.h"
@@ -39,10 +40,7 @@ class PositionCombiner {
 
 public:
 
-    using PositionSource =
-        std::pair< std::string, std::unique_ptr<oat::Source<oat::Position2D> > >;
-
-    using pvec_size_t = std::vector<PositionSource>::size_type;
+    using pvec_size_t = oat::NamedSourceList<oat::Position2D>::size_type;
 
     /**
      * Abstract position combiner.
@@ -100,13 +98,13 @@ private:
 
     // Position SOURCES object for un-combined positions
     std::vector<oat::Position2D> positions_;
-    std::vector<PositionSource> position_sources_;
+    oat::NamedSourceList<oat::Position2D> position_sources_;
 
     // Combined position
     oat::Position2D internal_position_ {"internal"};
 
     // Position SINK object for publishing combined position
-    oat::Position2D * shared_position_;
+    oat::Position2D * shared_position_ {nullptr};
     const std::string position_sink_address_;
     oat::Sink<oat::Position2D> position_sink_;
 };

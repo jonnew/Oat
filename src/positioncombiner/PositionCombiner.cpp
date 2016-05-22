@@ -27,6 +27,7 @@
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/make_unique.h"
 
 #include "PositionCombiner.h"
@@ -44,20 +45,39 @@ PositionCombiner::PositionCombiner(
 
         oat::Position2D pos(addr);
         positions_.push_back(std::move(pos));
-        position_sources_.push_back(std::make_pair(addr,
-                std::make_unique<oat::Source< oat::Position2D >>() ));
+        position_sources_.push_back(
+            oat::NamedSource<oat::Position2D>(
+                addr,
+                std::make_unique<oat::Source< oat::Position2D>>()
+            )
+        );
     }
 }
 
 void PositionCombiner::connectToNodes() {
 
-    // Establish our slot in each node 
-    for (auto &pos : position_sources_)
-        pos.second->touch(pos.first);
+    // Establish our slot in each node
+    for (auto &ps : position_sources_)
+        ps.source->touch(ps.name);
+
+    // Examine sample period of sources to make sure they are the same
+    double sample_rate_hz;
+    std::vector<double> all_ts;
 
     // Wait for sychronous start with sink when it binds the node
-    for (auto &pos : position_sources_)
-        pos.second->connect();
+    for (auto &ps : position_sources_) {
+        ps.source->connect();
+        all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
+    }
+
+    if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
+        std::cerr << oat::Warn(
+                     "Warning: sample rates of sources are inconsistent.\n"
+                     "This component forces synchronization at the lowest source sample rate.\n"
+                     "You should probably use separate recorders to capture these sources.\n"
+                     "specified sample rate set to: " + std::to_string(sample_rate_hz) + "\n"
+                     );
+    }
 
     // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
@@ -70,12 +90,12 @@ bool PositionCombiner::process() {
 
         // START CRITICAL SECTION //
         ////////////////////////////
-        if (position_sources_[i].second->wait() == oat::NodeState::END)
+        if (position_sources_[i].source->wait() == oat::NodeState::END)
             return true;
 
-        positions_[i] = position_sources_[i].second->clone();
+        positions_[i] = position_sources_[i].source->clone();
 
-        position_sources_[i].second->post();
+        position_sources_[i].source->post();
         ////////////////////////////
         //  END CRITICAL SECTION  //
     }
