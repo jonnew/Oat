@@ -27,8 +27,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
 #ifdef HAVE_CUDA
-#include <opencv2/cudabgsegm.hpp>
-#include <opencv2/cudaarithm.hpp>
+ #include <opencv2/cudabgsegm.hpp>
+ #include <opencv2/cudaarithm.hpp>
 #endif
 
 #include <cpptoml.h>

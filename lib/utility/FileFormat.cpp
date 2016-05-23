@@ -111,4 +111,4 @@ bool checkWritePermission(const std::string &file_path) {
     return  can_write;
 }
 
-}      /* namespace oat */
+} /* namespace oat */

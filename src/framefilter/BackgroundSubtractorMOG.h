@@ -20,13 +20,12 @@
 #ifndef OAT_BACKGROUNDSUBTRACTORMOG_H
 #define	OAT_BACKGROUNDSUBTRACTORMOG_H
 
-
 #include <opencv2/cvconfig.h>
 
 #ifdef HAVE_CUDA
-#include <opencv2/cudabgsegm.hpp>
+ #include <opencv2/cudabgsegm.hpp>
 #else
-#include <opencv2/video.hpp>
+ #include <opencv2/video.hpp>
 #endif
 
 #include "FrameFilter.h"

@@ -7,7 +7,7 @@ set (oat-view_SOURCE Viewer.cpp main.cpp)
 # Target
 add_executable (oat-view ${oat-view_SOURCE})
 target_link_libraries (oat-view
-                       oatutility
+                       oat-utility
                        ${OatCommon_LIBS})
 
 # Installation

@@ -1,1 +1,1 @@
-add_library(oatutility ZMQStream.cpp FileFormat.cpp)
+add_library(oat-utility ZMQStream.cpp FileFormat.cpp)

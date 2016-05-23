@@ -20,6 +20,12 @@
 #ifndef OAT_BACKGROUNDSUBTRACTOR_H
 #define	OAT_BACKGROUNDSUBTRACTOR_H
 
+#include <opencv2/cvconfig.h>
+
+#ifdef HAVE_CUDA
+ #include <opencv2/core/cuda.hpp>
+#endif
+
 #include "FrameFilter.h"
 
 namespace oat {
@@ -57,7 +63,11 @@ private:
     bool background_set = false;
 
     // The background frame
+#ifndef HAVE_CUDA
     cv::Mat background_frame;
+#else
+    cv::cuda::GpuMat background_frame;
+#endif
 
     // Set the background frame
     void setBackgroundImage(const cv::Mat&);

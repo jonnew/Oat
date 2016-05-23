@@ -54,6 +54,7 @@ configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
 include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 
 # Build options
+# TODO: build CUDA kernels
 option (USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
 option (BUILD_TESTS "Build and run tests." ON)
 option (BUILD_DOCS "Build doxygen documentation." OFF)
@@ -89,18 +90,23 @@ endif ()
 
 if (OpenCV_CUDA_VERSION)
     message (STATUS "   OpenCV has CUDA support.")
-    set (OAT_USE_CUDA ON)
 else ()
-    message (STATUS "   CUDA support not enabled.")
-    set (OAT_USE_CUDA OFF)
+    message (STATUS "   OpenCV CUDA support not enabled.")
 endif ()
 
-#find_library (ZMQ_LIB libzmq)
-#if ()
-#    message (STATUS "Found OpenCV")
-#else (OpenCV_FOUND)
-#    message (FATAL_ERROR "OpenCV not found")
-#endif ()
+# CUDA
+find_package (CUDA)
+# TODO: 'and" does not work in this if statement.
+if (CUDA_FOUND)
+    if(OpenCV_CUDA_VERSION)
+        # TODO: Need a way of finding the arch values (openCV does this using ${OPENCV_CUDA_ARCH_BIN}
+        # TODO: For some reason CXX_STR above does not parse correctly (maybe missing ; or has extra...)
+        string (REPLACE " " ";" CXX_STR "${FULL_CXX_FLAG_LIST}")
+        set (CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -std=c++11; -gencode arch=compute_30,code=sm_30)
+        set (USE_CUDA_KERNELS ON)
+        message (STATUS "   Compile/link Oat CUDA kenels.")
+    endif ()
+endif ()
 
 # Flycapture
 if (${USE_FLYCAP})
@@ -130,6 +136,9 @@ include_directories (${RAPIDJSON_INCLUDE_DIR})
 # Include local libs
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/utility)
+if (USE_CUDA_KERNELS)
+    add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/cv-cuda)
+endif ()
 
 # Common libraries for all Oat components
 set (OatCommon_LIBS ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Thread_LIBS})

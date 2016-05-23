@@ -22,3 +22,4 @@
 
 // Use Point Grey's Fly Capture API
 #cmakedefine USE_FLYCAP
+#cmakedefine USE_CUDA_KERNELS
