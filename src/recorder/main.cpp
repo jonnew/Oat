@@ -328,12 +328,15 @@ int main(int argc, char *argv[]) {
 
                     // Start recording in background
                     std::thread process(run, std::ref(recorder));
-
-                    // Interact using stdin
-                    oat::printInteractiveUsage(std::cout);
-                    rc = oat::controlRecorder(std::cin, std::cout, *recorder, true);
-
-                    // Interrupt and join threads
+                    try {
+                      // Interact using stdin
+                      oat::printInteractiveUsage(std::cout);
+                      rc = oat::controlRecorder(std::cin, std::cout, *recorder, true);
+                    } catch (...) {
+                      // Interrupt and join threads
+                      cleanup(process);
+                      throw;
+                    }
                     cleanup(process);
 
                     break;
