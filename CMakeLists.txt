@@ -95,30 +95,12 @@ else ()
     set (OAT_USE_CUDA OFF)
 endif ()
 
-<<<<<<< Updated upstream
 #find_library (ZMQ_LIB libzmq)
 #if ()
 #    message (STATUS "Found OpenCV")
 #else (OpenCV_FOUND)
 #    message (FATAL_ERROR "OpenCV not found")
 #endif ()
-=======
-# CUDA
-# TODO: HACK and Redundant. USE_CUDA_KERNELS should be independent of
-# Then CUDA_FOUND
-find_package (CUDA)
-# TODO: 'and" does not work in this if statement.
-if (CUDA_FOUND)
-    if(OpenCV_CUDA_VERSION)
-        # TODO: Need a way of finding the arch values (openCV does this using ${OPENCV_CUDA_ARCH_BIN}
-        # TODO: For some reason CXX_STR above does not parse correctly (maybe missing ; or has extra...)
-        string (REPLACE " " ";" CXX_STR "${FULL_CXX_FLAG_LIST}")
-        set (CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -std=c++11; -gencode arch=compute_30,code=sm_30)
-        set (USE_CUDA_KERNELS ON)
-        message (STATUS "   Compile/link Oat CUDA kenels.")
-    endif ()
-endif ()
->>>>>>> Stashed changes
 
 # Flycapture
 if (${USE_FLYCAP})
