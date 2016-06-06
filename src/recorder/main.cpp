@@ -259,7 +259,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-
     // Reserve name
     std::string name;
 

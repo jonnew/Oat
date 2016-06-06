@@ -1685,8 +1685,8 @@ RJ45 ------------
 - [ ] Position type generalization
     - It might be a good idea to generalize the concept of a position to a
       multi-positional element
-    - For things like the decorator, position combiner, and potentially
-      detector, this could increase performance and decrease user script
+    - For things like the `oat-decorate`, `oat-posicom`, and potentially
+      `oat-detect`, this could increase performance and decrease user script
       complexity if multiple targets common detection features needed to be
       tracked at once.
     - Down side is that it potentially increases code complexity and would
@@ -1766,7 +1766,12 @@ RJ45 ------------
     - User supplied frame rotation occurs in a separate step from un-distortion.
       Very inefficient. Should be able to combine rotation with camera matrix
       to make this a lot faster.
-- [ ] It would be nice if PURE SINKs (e.g. `oat frameserve`) could have their
-  sample clock reset via user input, without having to restart the program.
-- [ ] It would be nice to be able to re-acquire the background image in
-  `oat-framefilt bsub` without have to restart the program.
+- [ ] Should components always involve a user IO thread?
+    - For instance, some generalization of `oat-record ... --interactive`
+    - For instance, it would be nice if PURE SINKs (e.g. `oat frameserve`)
+      could have their sample clock reset via user input, without having to
+      restart the program.
+    - For instance, it would be nice to be able to re-acquire the background
+      image in `oat-framefilt bsub` without have to restart the program.
+    - Where should this come from? Command line input?
+- [ ] Add past position line toggle in `oat-decorate`
