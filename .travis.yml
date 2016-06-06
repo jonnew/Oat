@@ -38,7 +38,7 @@ before_script:
 
   # Get zeromq
   - cd $TRAVIS_BUILD_DIR
-  - wget http://download.zeromq.org/zeromq-4.1.4.tar.gz -O tarzmq
+  - wget https://github.com/zeromq/zeromq4-1/releases/download/v4.1.4/zeromq-4.1.4.tar.gz -O tarzmq
   - tar -xf tarzmq
   - cd ./zeromq*
   - ./configure --without-libsodium
