@@ -66,6 +66,10 @@ int controlRecorder(std::istream &in,
             out << ">>> " << std::flush;
 
         std::getline(in, cmd);
+	if (in.eof()) {
+	  out << "Input command stream closed." << std::endl;
+	  break;
+	}
 
         if (cmd.empty()) {
             out << "No command...\n";
