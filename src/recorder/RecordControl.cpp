@@ -73,7 +73,7 @@ int controlRecorder(std::istream &in,
 
         if (cmd.empty()) {
             out << "No command...\n";
-            out << "source_eof: " << recorder.source_eof() << std:endl;
+            out << "source_eof: " << recorder.source_eof() << std::endl;
             continue;
         }
 
