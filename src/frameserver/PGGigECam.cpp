@@ -33,7 +33,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "../../lib/utility/make_unique.h"
-#include "../../lib/utility/OatTOMLSanitize.h"
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 namespace oat {

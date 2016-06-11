@@ -31,7 +31,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include <cpptoml.h>
-#include "../../lib/utility/OatTOMLSanitize.h"
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOUtility.h"
 #include "../../lib/utility/IOFormat.h"
 

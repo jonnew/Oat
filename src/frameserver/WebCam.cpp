@@ -25,7 +25,7 @@
 
 #include <cpptoml.h>
 
-#include "../../lib/utility/OatTOMLSanitize.h"
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/make_unique.h"
 

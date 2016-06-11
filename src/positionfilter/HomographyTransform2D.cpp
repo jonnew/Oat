@@ -20,7 +20,7 @@
 #include <string>
 #include <cpptoml.h>
 
-#include "../../lib/utility/OatTOMLSanitize.h"
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "HomographyTransform2D.h"

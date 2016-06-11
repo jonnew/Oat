@@ -23,7 +23,7 @@
 #include <cpptoml.h>
 
 #include "../../lib/utility/IOFormat.h"
-#include "../../lib/utility/OatTOMLSanitize.h"
+#include "../../lib/utility/TOMLSanitize.h"
 
 #include "MeanPosition.h"
 

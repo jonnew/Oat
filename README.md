@@ -1642,8 +1642,6 @@ RJ45 ------------
 \newpage
 
 ## TODO
-- [ ] ~~Mac, Windows builds?~~
-  - EDIT: Wait till somebody cares enough to do it.
 - [ ] Unit and stress testing
     - Unit tests for `libshmemdf`
         - ~~Nominal data types, `T`~~

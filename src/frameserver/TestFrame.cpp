@@ -22,7 +22,7 @@
 #include <opencv2/core/core.hpp>
 #include <cpptoml.h>
 
-#include "../../lib/utility/OatTOMLSanitize.h"
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "TestFrame.h"

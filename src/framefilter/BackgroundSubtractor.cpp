@@ -25,7 +25,7 @@
 #include <opencv2/highgui.hpp>
 
 #include <cpptoml.h>
-#include "../../lib/utility/OatTOMLSanitize.h"
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "BackgroundSubtractor.h"

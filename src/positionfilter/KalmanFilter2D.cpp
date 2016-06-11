@@ -21,7 +21,7 @@
 #include <opencv2/opencv.hpp>
 #include <cpptoml.h>
 
-#include "../../lib/utility/OatTOMLSanitize.h"
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
 #include "KalmanFilter2D.h"
