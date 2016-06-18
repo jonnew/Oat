@@ -64,6 +64,7 @@ private:
     int64_t heading_anchor_idx_ {0};
 };
 
+
 }      /* namespace oat */
 #endif /* OAT_MEANPOSITION_H */
 

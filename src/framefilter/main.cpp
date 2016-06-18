@@ -42,7 +42,7 @@ namespace po = boost::program_options;
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
-void printUsage(po::options_description options){
+void printUsage(const po::options_description &options){
     std::cout << "Usage: framefilt [INFO]\n"
               << "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
               << "Filter frames from SOURCE and published filtered frames "
@@ -57,7 +57,7 @@ void printUsage(po::options_description options){
               << "from (e.g. raw).\n\n"
               << "SINK:\n"
               << "  User-supplied name of the memory segment to publish frames "
-              << "to (e.g. filt).\n\n"
+              << "to (e.g. filt).\n"
               << options << "\n";
 }
 
@@ -90,47 +90,52 @@ int main(int argc, char *argv[]) {
 
     std::signal(SIGINT, sigHandler);
 
+    // Results of command line input
     std::string type;
     std::string source;
     std::string sink;
     std::vector<std::string> config_fk;
     bool config_used = false;
-    po::options_description visible_options("OPTIONS");
 
+    // Component specializations
     std::unordered_map<std::string, char> type_hash;
     type_hash["bsub"] = 'a';
     type_hash["mask"] = 'b';
     type_hash["mog"] = 'c';
     type_hash["undistort"] = 'd';
 
+    // The component itself
+    std::string comp_name = "framefilt";
+    std::shared_ptr<oat::FrameFilter> filter;
+
+    // Program options
+    po::options_description visible_options;
+
     try {
 
-        po::options_description options("INFO");
-        options.add_options()
+        // Program metadata
+        po::options_description info_opt_desc("INFO");
+        info_opt_desc.add_options()
                 ("help", "Produce help message.")
                 ("version,v", "Print version information.")
                 ;
 
-        po::options_description config("CONFIGURATION");
-        config.add_options()
+        // Component configuration
+        po::options_description config_opt_desc("CONFIGURATION");
+        config_opt_desc.add_options()
                 ("config,c", po::value<std::vector<std::string> >()->multitoken(),
                 "Configuration file/key pair.")
                 ;
 
-        po::options_description hidden("HIDDEN OPTIONS");
-        hidden.add_options()
-                ("type", po::value<std::string>(&type),
-                "Type of frame filter to use.\n\n"
-                "Values:\n"
-                "  bsub: Background subtractor.\n"
-                "  mask: Binary mask.\n"
-                "  mog: Mixture of Gaussians background segmentation.\n"
-                "  undistort: Compensate for lens distortion using distortion model.\n")
-                ("source", po::value<std::string>(&source),
-                "The name of the SOURCE that supplies images on which to perform background subtraction."
-                "The server must be of type SMServer<SharedCVMatHeader>\n")
-                ("sink", po::value<std::string>(&sink),
-                "The name of the SINK to which background subtracted images will be served.")
+        // Required positional options
+        po::options_description positional_opt_desc("POSITIONAL");
+        positional_opt_desc.add_options()
+                ("type", po::value<std::string>(&type)->required(),
+                "Type of frame filter to use.")
+                ("source", po::value<std::string>(&source)->required(),
+                 "User-supplied name of the memory segment to receive frames.")
+                ("sink", po::value<std::string>(&sink)->required(),
+                 "User-supplied name of the memory segment to publish frames.")
                 ;
 
         po::positional_options_description positional_options;
@@ -138,26 +143,26 @@ int main(int argc, char *argv[]) {
         positional_options.add("source", 1);
         positional_options.add("sink", 1);
 
-        visible_options.add(options).add(config);
+        // Visible options for help message
+        visible_options.add(info_opt_desc).add(config_opt_desc);
 
-        po::options_description all_options("All options");
-        all_options.add(options).add(config).add(hidden);
+        // All options, including positional
+        po::options_description options;
+        options.add(info_opt_desc).add(config_opt_desc).add(positional_opt_desc);
 
-        po::variables_map variable_map;
+        po::variables_map option_vm;
         po::store(po::command_line_parser(argc, argv)
-                .options(all_options)
+                .options(options)
                 .positional(positional_options)
                 .run(),
-                variable_map);
-        po::notify(variable_map);
+                option_vm);
 
-        // Use the parsed options
-        if (variable_map.count("help")) {
+        if (option_vm.count("help")) {
             printUsage(visible_options);
             return 0;
         }
 
-        if (variable_map.count("version")) {
+        if (option_vm.count("version")) {
             std::cout << "Oat Frame Filter version "
                       << Oat_VERSION_MAJOR
                       << "."
@@ -168,27 +173,13 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        if (!variable_map.count("type")) {
-            printUsage(visible_options);
-            std::cout << oat::Error("A TYPE must be specified.\n");
-            return -1;
-        }
+        // Check options for errors (must be after help and version checks)
+        po::notify(option_vm);
 
-        if (!variable_map.count("source")) {
-            printUsage(visible_options);
-            std::cout << oat::Error("A SOURCE must be specified.\n");
-            return -1;
-        }
+        // Check for configuration file and key
+        if (!option_vm["config"].empty()) {
 
-        if (!variable_map.count("sink")) {
-            printUsage(visible_options);
-            std::cerr << oat::Error("A SINK name must be specified.\n");
-            return -1;
-        }
-
-        if (!variable_map["config"].empty()) {
-
-            config_fk = variable_map["config"].as<std::vector<std::string> >();
+            config_fk = option_vm["config"].as<std::vector<std::string> >();
 
             if (config_fk.size() == 2) {
                 config_used = true;
@@ -199,89 +190,84 @@ int main(int argc, char *argv[]) {
             }
         }
 
-    } catch (std::exception& e) {
-        std::cerr << oat::Error(e.what()) << "\n";
-        return -1;
-    } catch (...) {
-        std::cerr << oat::Error("Exception of unknown type.\n");
-        return -1;
-    }
+        // Refine component type
+        switch (type_hash[type]) {
+            case 'a':
+            {
+                filter = std::make_shared<oat::BackgroundSubtractor>(source, sink);
+                break;
+            }
+            case 'b':
+            {
+                filter = std::make_shared<oat::FrameMasker>(source, sink);
+                if (!config_used)
+                     std::cerr << oat::whoWarn(comp_name,
+                             "No mask configuration was provided."
+                             " This filter does nothing but waste CPU cycles.\n");
+                break;
+            }
+            case 'c':
+            {
+                filter = std::make_shared<oat::BackgroundSubtractorMOG>(source, sink);
+                break;
+            }
+            case 'd':
+            {
+                filter = std::make_shared<oat::Undistorter>(source, sink);
+                if (!config_used)
+                     std::cerr << oat::whoWarn(comp_name,
+                             "No undistortion configuration was provided."
+                             " This filter does nothing but waste CPU cycles.\n");
+                break;
+            }
+            default:
+            {
+                printUsage(visible_options);
+                std::cerr << oat::Error("Invalid TYPE specified.\n");
+                return -1;
+            }
+        }
 
-    // Create component
-    std::shared_ptr<oat::FrameFilter> filter;
+        // Get specialized component name
+        comp_name = filter->name(); 
 
-    // Refine component type
-    switch (type_hash[type]) {
-        case 'a':
-        {
-            filter = std::make_shared<oat::BackgroundSubtractor>(source, sink);
-            break;
-        }
-        case 'b':
-        {
-            filter = std::make_shared<oat::FrameMasker>(source, sink);
-            if (!config_used)
-                 std::cerr << oat::whoWarn(filter->name(),
-                         "No mask configuration was provided."
-                         " This filter does nothing but waste CPU cycles.\n");
-            break;
-        }
-        case 'c':
-        {
-            filter = std::make_shared<oat::BackgroundSubtractorMOG>(source, sink);
-            break;
-        }
-        case 'd':
-        {
-            filter = std::make_shared<oat::Undistorter>(source, sink);
-            if (!config_used)
-                 std::cerr << oat::whoWarn(filter->name(),
-                         "No undistortion configuration was provided."
-                         " This filter does nothing but waste CPU cycles.\n");
-            break;
-        }
-        default:
-        {
-            printUsage(visible_options);
-            std::cerr << oat::Error("Invalid TYPE specified.\n");
-            return -1;
-        }
-    }
-
-    // The business
-    try {
-
+        // Process configuration file if provided
         if (config_used)
             filter->configure(config_fk[0], config_fk[1]);
 
         // Tell user
-        std::cout << oat::whoMessage(filter->name(),
+        std::cout << oat::whoMessage(comp_name,
                 "Listening to source " + oat::sourceText(source) + ".\n")
-                << oat::whoMessage(filter->name(),
+                << oat::whoMessage(comp_name,
                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(filter->name(),
+                << oat::whoMessage(comp_name,
                 "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
         run(filter);
 
         // Tell user
-        std::cout << oat::whoMessage(filter->name(), "Exiting.\n");
+        std::cout << oat::whoMessage(comp_name, "Exiting.")
+                  << std::endl;
 
         // Exit success
         return 0;
 
+    } catch (const po::error &ex) {
+        printUsage(visible_options);
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(filter->name(),
+        std::cerr << oat::whoError(comp_name,
                      "Failed to parse configuration file " + config_fk[0] + "\n")
-                  << oat::whoError(filter->name(), ex.what())
-                  << "\n";
+                  << oat::whoError(comp_name, ex.what())
+                  << std::endl;
     } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(filter->name(),ex.what()) << "\n";
+        std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(filter->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
-        std::cerr << oat::whoError(filter->name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(comp_name, "Unknown exception.")
+                  << std::endl;
     }
 
     // Exit failure

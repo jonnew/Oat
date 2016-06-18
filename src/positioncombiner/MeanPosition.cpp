@@ -39,7 +39,7 @@ MeanPosition::MeanPosition(const std::vector<std::string> &position_source_addre
 void MeanPosition::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {"heading_anchor"};
+    const std::vector<std::string> options {"heading_anchor"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided

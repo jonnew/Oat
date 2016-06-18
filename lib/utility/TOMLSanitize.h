@@ -17,18 +17,14 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OAT_CONFIG_TOMLSANATIZE_H
-#define OAT_CONFIG_TOMLSANATIZE_H
+#ifndef OAT_TOMLSANATIZE_H
+#define OAT_TOMLSANATIZE_H
 
 #include <string>
 #include <typeinfo>
 #include <boost/type_index.hpp>
 
 #include "cpptoml.h"
-
-// TODO: Add a second template argument to getX functions that provides an explicit type comparison. 
-// usage should be something like getValue<U>(...), and within function body, must pass
-// typeid(U) == typeid(value extracted from toml table).
 
 namespace oat{
 namespace config {
@@ -236,4 +232,4 @@ inline bool getArray(const Table table, const std::string& key, Array& array_out
 
 }      /* namespace config */
 }      /* namespace oat */
-#endif /* OAT_CONFIG_TOMLSANATIZE_H */
+#endif /* OAT_TOMLSANATIZE_H */
