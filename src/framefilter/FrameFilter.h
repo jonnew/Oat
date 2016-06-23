@@ -21,10 +21,13 @@
 #define	OAT_FRAMEFILT_H
 
 #include <string>
+#include <boost/program_options.hpp>
 
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
+
+namespace po = boost::program_options;
 
 namespace oat {
 
@@ -39,8 +42,9 @@ class FrameFilter {
 public:
 
     /**
-     * Abstract frame filter.
+     * @brief Abstract frame filter.
      * All concrete frame filter types implement this ABC.
+     *
      * @param frame_source_address Frame SOURCE node address
      * @param frame_sink_address Frame SINK node address
      */
@@ -50,25 +54,42 @@ public:
     virtual ~FrameFilter() { };
 
     /**
-     * FrameServers must be able to connect to a Source and Sink
-     * Nodes in shared memory
+     * @brief FrameServers must be able to connect to a Source and Sink Nodes
+     *
+     * in shared memory
      */
     virtual void connectToNode(void);
 
     /**
-     * Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
+     * @breif Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
+     *
      * filtered frame to SINK.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
     virtual bool processFrame(void);
 
     /**
-     * Configure filter parameters.
+     * @brief Configure filter parameters.
+     *
      * @param config_file configuration file path
      * @param config_key configuration key
      */
     virtual void configure(const std::string &config_file,
                            const std::string &config_key) = 0;
+
+    
+    /** 
+     * @brief Specialize a program options for a particular filter TYPE 
+     *
+     * @param opt program options to specialize
+     */
+    virtual void updateProgramOptions(po::options_description &opt) 
+    {
+        // Dummy test variable 
+        opt.add_options()
+            ("dummy,d", po::value<std::string>(), "Dummy option")
+                ;
+    };
 
     /**
      * Get frame filter name

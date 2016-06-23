@@ -150,12 +150,67 @@ int main(int argc, char *argv[]) {
         po::options_description options;
         options.add(info_opt_desc).add(config_opt_desc).add(positional_opt_desc);
 
+        // Parse options, including unrecongized options which may be TYPE-specific
+        po::command_line_parser parser{argc, argv};
+        parser.options(options).positional(positional_options).allow_unregistered();
+        auto parsed_opt = parser.run();
+
         po::variables_map option_vm;
-        po::store(po::command_line_parser(argc, argv)
-                .options(options)
-                .positional(positional_options)
-                .run(),
-                option_vm);
+        po::store(parsed_opt, option_vm);
+
+        // If a TYPE was provided, then specialize the filter and coresponding
+        // program options
+        if (option_vm.count("type")) { 
+
+            // TODO: Remove
+            std::cout << "Type set to: " + type << "\n";
+
+            // Refine component type
+            switch (type_hash[type]) {
+                case 'a':
+                {
+                    filter = std::make_shared<oat::BackgroundSubtractor>(source, sink);
+                    break;
+                }
+                case 'b':
+                {
+                    filter = std::make_shared<oat::FrameMasker>(source, sink);
+                    // TODO: Remove. Let the component worry about reporting
+                    // this if the mask is not set when it starts
+                    if (!config_used)
+                         std::cerr << oat::whoWarn(comp_name,
+                                 "No mask configuration was provided."
+                                 " This filter does nothing but waste CPU cycles.\n");
+                    break;
+                }
+                case 'c':
+                {
+                    filter = std::make_shared<oat::BackgroundSubtractorMOG>(source, sink);
+                    break;
+                }
+                case 'd':
+                {
+                    filter = std::make_shared<oat::Undistorter>(source, sink);
+                    // TODO: Remove. Let the component worry about reporting
+                    // this if matricies are not defined when it starts
+                    if (!config_used)
+                         std::cerr << oat::whoWarn(comp_name,
+                                 "No undistortion configuration was provided."
+                                 " This filter does nothing but waste CPU cycles.\n");
+                    break;
+                }
+                default:
+                {
+                    printUsage(visible_options);
+                    std::cerr << oat::Error("Invalid TYPE specified.\n");
+                    return -1;
+                }
+            }
+
+            // Specialize program options for the selected TYPE
+            filter->updateProgramOptions(config_opt_desc);
+            visible_options.add(info_opt_desc).add(config_opt_desc);
+        }
 
         if (option_vm.count("help")) {
             printUsage(visible_options);
@@ -175,6 +230,8 @@ int main(int argc, char *argv[]) {
 
         // Check options for errors (must be after help and version checks)
         po::notify(option_vm);
+        // Get specialized component name
+        comp_name = filter->name(); 
 
         // Check for configuration file and key
         if (!option_vm["config"].empty()) {
@@ -190,46 +247,35 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        // Refine component type
-        switch (type_hash[type]) {
-            case 'a':
-            {
-                filter = std::make_shared<oat::BackgroundSubtractor>(source, sink);
-                break;
-            }
-            case 'b':
-            {
-                filter = std::make_shared<oat::FrameMasker>(source, sink);
-                if (!config_used)
-                     std::cerr << oat::whoWarn(comp_name,
-                             "No mask configuration was provided."
-                             " This filter does nothing but waste CPU cycles.\n");
-                break;
-            }
-            case 'c':
-            {
-                filter = std::make_shared<oat::BackgroundSubtractorMOG>(source, sink);
-                break;
-            }
-            case 'd':
-            {
-                filter = std::make_shared<oat::Undistorter>(source, sink);
-                if (!config_used)
-                     std::cerr << oat::whoWarn(comp_name,
-                             "No undistortion configuration was provided."
-                             " This filter does nothing but waste CPU cycles.\n");
-                break;
-            }
-            default:
-            {
-                printUsage(visible_options);
-                std::cerr << oat::Error("Invalid TYPE specified.\n");
-                return -1;
-            }
-        }
+        // Collect remaining command line options
+        auto special_opt = po::collect_unrecognized(parsed_opt.options, po::exclude_positional);
 
-        // Get specialized component name
-        comp_name = filter->name(); 
+        // TODO: remove
+        std::copy(special_opt.begin(), special_opt.end(), std::ostream_iterator<std::string>{std::cout, "\n"});
+
+        
+        //// Add specialized options and reparse if needed
+        //if (filter->updateProgramOptions(config_opt_desc)) {
+
+        //    // Visible options for help message
+        //    visible_options.add(info_opt_desc).add(config_opt_desc);
+
+        //    // All options, including positional
+        //    po::options_description options;
+        //    options.add(info_opt_desc).add(config_opt_desc).add(positional_opt_desc);
+
+        //    po::variables_map option_vm;
+        //    po::store(po::command_line_parser(argc, argv)
+        //            .options(options)
+        //            .positional(positional_options)
+        //            .run(),
+        //            option_vm);
+
+        //    // Check options for errors (must be after help and version checks)
+        //    po::notify(option_vm);
+
+        //}
+
 
         // Process configuration file if provided
         if (config_used)
