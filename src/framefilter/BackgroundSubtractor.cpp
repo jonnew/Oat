@@ -42,8 +42,7 @@ BackgroundSubtractor::BackgroundSubtractor(
 
 void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
 
-    // Available options
-    std::vector<std::string> options {"background"};
+    const std::vector<std::string> options {"background"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -72,6 +71,14 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
+}
+
+void BackgroundSubtractor::updateProgramOptions(po::options_description &opt) {
+     
+    // Dummy test variable 
+    opt.add_options()
+        ("background", po::value<std::string>(), "Path to background image used for subtraction.")
+        ;
 }
 
 void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {

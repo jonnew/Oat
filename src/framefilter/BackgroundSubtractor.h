@@ -44,6 +44,8 @@ public:
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
 
+    void updateProgramOptions(po::options_description &opt) override;
+
 private:
 
     /**
@@ -61,6 +63,7 @@ private:
 
     // Set the background frame
     void setBackgroundImage(const cv::Mat&);
+
 };
 
 }      /* namespace oat */

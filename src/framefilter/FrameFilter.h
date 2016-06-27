@@ -83,13 +83,7 @@ public:
      *
      * @param opt program options to specialize
      */
-    virtual void updateProgramOptions(po::options_description &opt) 
-    {
-        // Dummy test variable 
-        opt.add_options()
-            ("dummy,d", po::value<std::string>(), "Dummy option")
-                ;
-    };
+    virtual void updateProgramOptions(po::options_description &opt) { };
 
     /**
      * Get frame filter name

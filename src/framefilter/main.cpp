@@ -42,23 +42,35 @@ namespace po = boost::program_options;
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
-void printUsage(const po::options_description &options){
-    std::cout << "Usage: framefilt [INFO]\n"
-              << "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
-              << "Filter frames from SOURCE and published filtered frames "
-              << "to SINK.\n\n"
-              << "TYPE\n"
-              << "  bsub: Background subtraction\n"
-              << "  mask: Binary mask\n"
-              << "  mog: Mixture of Gaussians background segmentation.\n"
-              << "  undistort: Compensate for lens distortion using distortion model.\n\n"
-              << "SOURCE:\n"
-              << "  User-supplied name of the memory segment to receive frames "
-              << "from (e.g. raw).\n\n"
-              << "SINK:\n"
-              << "  User-supplied name of the memory segment to publish frames "
-              << "to (e.g. filt).\n"
-              << options << "\n";
+void printUsage(const po::options_description &options, 
+                const std::string &type="") {
+
+    if (type.empty()) {
+
+        std::cout << "Usage: framefilt [INFO]\n"
+                  << "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
+                  << "Filter frames from SOURCE and published filtered frames "
+                  << "to SINK.\n\n"
+                  << "TYPE\n"
+                  << "  bsub: Background subtraction\n"
+                  << "  mask: Binary mask\n"
+                  << "  mog: Mixture of Gaussians background segmentation.\n"
+                  << "  undistort: Compensate for lens distortion using distortion model.\n\n";
+    } else {
+
+        std::cout << "Usage: framefilt " << type << " TYPE SOURCE SINK [CONFIGURATION]\n"
+                  << "Filter frames from SOURCE and published filtered frames "
+                  << "to SINK.\n\n"
+                  << "SOURCE:\n"
+                  << "  User-supplied name of the memory segment to receive frames "
+                  << "from (e.g. raw).\n\n"
+                  << "SINK:\n"
+                  << "  User-supplied name of the memory segment to publish frames "
+                  << "to (e.g. filt).\n";
+    }
+    
+    // Generated options
+    std::cout << options << "\n";
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
@@ -130,11 +142,11 @@ int main(int argc, char *argv[]) {
         // Required positional options
         po::options_description positional_opt_desc("POSITIONAL");
         positional_opt_desc.add_options()
-                ("type", po::value<std::string>(&type)->required(),
-                "Type of frame filter to use.")
-                ("source", po::value<std::string>(&source)->required(),
+                ("type", po::value<std::string>(&type),
+                 "Type of frame filter to use.")
+                ("source", po::value<std::string>(&source),
                  "User-supplied name of the memory segment to receive frames.")
-                ("sink", po::value<std::string>(&sink)->required(),
+                ("sink", po::value<std::string>(&sink),
                  "User-supplied name of the memory segment to publish frames.")
                 ;
 
@@ -152,18 +164,21 @@ int main(int argc, char *argv[]) {
 
         // Parse options, including unrecongized options which may be TYPE-specific
         po::command_line_parser parser{argc, argv};
-        parser.options(options).positional(positional_options).allow_unregistered();
+        parser.options(options).positional(positional_options); //.allow_unregistered();
         auto parsed_opt = parser.run();
 
         po::variables_map option_vm;
         po::store(parsed_opt, option_vm);
+
+        // Check options for errors and bind options to local variables 
+        po::notify(option_vm);
 
         // If a TYPE was provided, then specialize the filter and coresponding
         // program options
         if (option_vm.count("type")) { 
 
             // TODO: Remove
-            std::cout << "Type set to: " + type << "\n";
+            std::cout << "Type set to: " << type << "\n";
 
             // Refine component type
             switch (type_hash[type]) {
@@ -213,7 +228,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (option_vm.count("help")) {
-            printUsage(visible_options);
+            printUsage(visible_options, type);
             return 0;
         }
 
@@ -228,8 +243,24 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        // Check options for errors (must be after help and version checks)
-        po::notify(option_vm);
+        if (!option_vm.count("type")) {
+            printUsage(visible_options);
+            std::cout << oat::Error("A TYPE must be specified.\n");
+            return -1;
+        }
+
+        if (!option_vm.count("source")) {
+            printUsage(visible_options);
+            std::cout << oat::Error("A SOURCE must be specified.\n");
+            return -1;
+        }
+
+        if (!option_vm.count("sink")) {
+            printUsage(visible_options);
+            std::cerr << oat::Error("A SINK must be specified.\n");
+            return -1;
+        }
+
         // Get specialized component name
         comp_name = filter->name(); 
 
