@@ -33,11 +33,11 @@ namespace oat {
  * @param timestamp String to be prepended to the base file name. For example, a timestamp created with oat::createTimeStamp.
  * @param use_prepend_str Should the prepend_str be used?
  * @param allow_overwrite In case of conflict, should file be overwritten?
- * @return Errorcode: -1 : Unspecified failure
- *                     0 : Success
- *                     1 : Requested save directory does not exist
- *                     2 : User does not have write permissions to the file.
- *                     3 : File name was empty
+ * @return Error code: -1 : Unspecified failure
+ *                      0 : Success
+ *                      1 : Requested save directory does not exist
+ *                      2 : User does not have write permissions to the file.
+ *                      3 : File name was empty
  */
 int createSavePath(std::string &save_path_result,
                    const std::string &save_directory,
@@ -61,7 +61,7 @@ std::string createTimeStamp();
  * @return The number of interations the file_path was modified due to a
  * conflict. 0 indicates no modification.
  */
-int ensureUniquePath(std::string& file_path);
+int ensureUniquePath(std::string &file_path);
 
 /**
  * Check if we have write access to a file.
