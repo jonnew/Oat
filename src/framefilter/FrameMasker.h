@@ -44,7 +44,6 @@ public:
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
 
-
 private:
 
     /**

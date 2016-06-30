@@ -44,7 +44,21 @@ BackgroundSubtractorMOG::BackgroundSubtractorMOG(
         const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address) {
 
+    // TYPE-specific program options
+    component_options_.add_options()
+        ("learning-coeff", po::value<double>(), 
+         "Value, 0 to 1.0, specifying how quickly the statistical model "
+         "of the background image should be updated. "
+         "Default is 0, specifying no adaptation.")
+        ;
+
 #ifdef HAVE_CUDA
+
+    component_options_.add_options()
+        ("gpu-index", po::value<int64_t>(), 
+         "Index of GPU card to use for performing MOG segmentation.")
+        ;
+
     cv::cuda::GpuMat gm; // Create context. This can take an extremely long time
     gm.create(1, 1, CV_8U);
     configureGPU(0);
@@ -57,8 +71,8 @@ BackgroundSubtractorMOG::BackgroundSubtractorMOG(
 void BackgroundSubtractorMOG::configure(const std::string &config_file, const std::string &config_key) {
 
     // Available options
-    std::vector<std::string> options {"gpu_index",
-                                      "learning_coeff"};
+    std::vector<std::string> options {"gpu-index",
+                                      "learning-coeff"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -76,13 +90,13 @@ void BackgroundSubtractorMOG::configure(const std::string &config_file, const st
 #ifdef HAVE_CUDA
         // GPU index
         int64_t index;
-        if (oat::config::getValue(this_config, "gpu_index", index, 0)) {
+        if (oat::config::getValue(this_config, "gpu-index", index, 0)) {
             configureGPU(index);
-            background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
+            background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*TODO: defaults OK?*/);
         }
 #endif
         // Learning coefficient
-        oat::config::getValue(this_config, "learning_coeff", learning_coeff_, 0.0, 1.0);
+        oat::config::getValue(this_config, "learning-coeff", learning_coeff_, 0.0, 1.0);
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));

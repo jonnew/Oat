@@ -33,7 +33,13 @@ FrameMasker::FrameMasker(const std::string &frame_source_address,
                          const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address)
 {
-    // Nothing
+    component_options_.add_options()
+        ("mask", po::value<std::string>(), 
+         "Path to a binary image used to mask frames from SOURCE. SOURCE frame "
+         "pixels with indices corresponding to non-zero value pixels in the mask "
+         "image will be unaffected. Others will be set to zero. This image must "
+         "have the same dimensions as frames from SOURCE.")
+        ;
 }
 
 void FrameMasker::configure(const std::string &config_file, 

@@ -366,10 +366,10 @@ __TYPE = `mask`__
 
 __TYPE = `mog`__
 
-- __`learning_coeff`__=`+float` Value, 0 to 1.0, specifying how quickly the
+- __`learning-coeff`__=`+float` Value, 0 to 1.0, specifying how quickly the
   statistical model of the background image should be updated. Default is 0,
   specifying no adaptation.
-- __`gpu_index`__=`+int` Index of the GPU to use for performing background
+- __`gpu-index`__=`+int` Index of the GPU to use for performing background
   subtraction if Oat was compiled with CUDA support.
 
 __TYPE = `undistort`__

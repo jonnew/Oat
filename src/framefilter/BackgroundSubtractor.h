@@ -44,7 +44,7 @@ public:
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
 
-    void updateProgramOptions(po::options_description &opt) override;
+    //void appendOptions(po::options_description &opt) override;
 
 private:
 

@@ -34,7 +34,14 @@ namespace oat {
 Undistorter::Undistorter(const std::string& source_name, const std::string& sink_name) :
   FrameFilter(source_name, sink_name)
 {
-    // Nothing
+    // TYPE-specific program options
+    component_options_.add_options()
+        ("mask", po::value<std::string>(), 
+         "Path to a binary image used to mask frames from SOURCE. SOURCE frame "
+         "pixels with indices corresponding to non-zero value pixels in the mask "
+         "image will be unaffected. Others will be set to zero. This image must "
+         "have the same dimensions as frames from SOURCE.")
+        ;
 }
 
 void Undistorter::configure(const std::string &config_file,

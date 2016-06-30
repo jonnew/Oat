@@ -21,6 +21,7 @@
 #include <opencv2/cvconfig.h>
 #include <opencv2/core/mat.hpp>
 
+#include "../../lib/utility/make_unique.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/SharedFrameHeader.h"
@@ -35,7 +36,11 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
-    // Nothing
+    // TYPE-specific program options
+    component_options_.add_options()
+        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+        "Configuration file/key pair.")
+        ;
 }
 
 void FrameFilter::connectToNode() {

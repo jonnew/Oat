@@ -34,8 +34,8 @@ namespace oat {
 // Forward decl.
 class SharedFrameHeader;
 
-/**
- * Abstract frame filter.
+/** 
+ * @brief Abstract frame filter.
  * All concrete frame filter types implement this ABC.
  */
 class FrameFilter {
@@ -77,16 +77,14 @@ public:
     virtual void configure(const std::string &config_file,
                            const std::string &config_key) = 0;
 
-    
     /** 
-     * @brief Specialize a program options for a particular filter TYPE 
-     *
-     * @param opt program options to specialize
+     * @brief Get internal component options.
+     * @return Pointer to internal component options.
      */
-    virtual void updateProgramOptions(po::options_description &opt) { };
+    po::options_description component_options() const { return component_options_; }
 
     /**
-     * Get frame filter name
+     * @breif Get frame filter name
      * @return name
      */
     std::string name(void) const { return name_; }
@@ -99,9 +97,12 @@ protected:
      */
     virtual void filter(cv::Mat& frame) = 0;
 
+    // Filter program options
+    po::options_description component_options_ {"CONFIGURATION"};
+
 private:
 
-    // Filter name.
+    // Filter name
     const std::string name_;
 
     // Currently processed frame

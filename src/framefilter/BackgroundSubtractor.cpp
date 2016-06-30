@@ -37,7 +37,11 @@ BackgroundSubtractor::BackgroundSubtractor(
             const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address)
 {
-    // Nothing
+    // TYPE-specific program options
+    component_options_.add_options()
+        ("background", po::value<std::string>(), 
+         "Path to background image used for subtraction.")
+        ;
 }
 
 void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
@@ -73,13 +77,13 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
     }
 }
 
-void BackgroundSubtractor::updateProgramOptions(po::options_description &opt) {
-     
-    // Dummy test variable 
-    opt.add_options()
-        ("background", po::value<std::string>(), "Path to background image used for subtraction.")
-        ;
-}
+//void BackgroundSubtractor::appendOptions(po::options_description &opt) {
+//     
+//    opt.add_options()
+//        ("background", po::value<std::string>(), 
+//         "Path to background image used for subtraction.")
+//        ;
+//}
 
 void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
 

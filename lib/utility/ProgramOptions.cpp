@@ -22,6 +22,7 @@
 #include "ProgramOptions.h"
 
 #include <boost/program_options.hpp>
+#include "make_unique.h"
 
 namespace oat {
 
@@ -29,10 +30,10 @@ namespace po = boost::program_options;
 
 ComponentInfo * ComponentInfo::inst = nullptr;
 
-ComponentInfo::ComponentInfo() {
-
-    po::options_description desc("INFO");
-    desc.add_options()
+ComponentInfo::ComponentInfo() :
+  desc(std::make_unique<po::options_description>("INFO")) 
+{
+    desc->add_options()
         ("help", "Produce help message.")
         ("version,v", "Print version information.")
         ;
@@ -42,6 +43,21 @@ ComponentInfo * ComponentInfo::instance() {
 
     inst = new ComponentInfo();
     return inst;
+}
+
+std::vector<std::string> extractConfigFileKey(const po::variables_map map) {
+
+    std::vector<std::string> ret;
+
+    if (!map["config"].empty()) {
+
+        ret = map["config"].as<std::vector<std::string> >();
+
+        if (ret.size() != 2)
+           throw std::runtime_error("Configuration must be supplied as file key pair.\n"); 
+    }
+
+    return ret;
 }
 
 } /* namespace oat */

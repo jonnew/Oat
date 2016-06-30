@@ -44,7 +44,7 @@ volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
 const char usage_string[] =
-    "Usage: framefilt [INFO]\n"                                                  
+    "Usage: framefilt [INFO]\n"
     "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
     "Filter frames from SOURCE and published filtered frames "
     "to SINK.\n\n"
@@ -58,8 +58,7 @@ const char usage_string[] =
     "from (e.g. raw).\n\n"
     "SINK:\n"
     "  User-supplied name of the memory segment to publish frames "
-    "to (e.g. filt).\n";
-
+    "to (e.g. filt).";
 
 const char usage_string_special[] =
     "Filter frames from SOURCE and published filtered frames "
@@ -69,9 +68,7 @@ const char usage_string_special[] =
     "from (e.g. raw).\n\n"
     "SINK:\n"
     "  User-supplied name of the memory segment to publish frames "
-    "to (e.g. filt).\n";
-
-
+    "to (e.g. filt).";
 
 void printUsage(const po::options_description &options,
                 const std::string &type="") {
@@ -79,7 +76,7 @@ void printUsage(const po::options_description &options,
     if (type.empty())
         std::cout << usage_string;
     else
-        std::cout << "Usage: framefilt " << type << " SOURCE SINK [CONFIGURATION]\n" 
+        std::cout << "Usage: framefilt " << type << " SOURCE SINK [CONFIGURATION]\n"
                   << usage_string_special;
 
     // Generated options
@@ -138,15 +135,6 @@ int main(int argc, char *argv[]) {
 
     try {
 
-        // Component configuration
-        // TODO: config file/key is actually type-specific and should be
-        // removed from this...
-        po::options_description config_opt_desc("CONFIGURATION");
-        config_opt_desc.add_options()
-                ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-                "Configuration file/key pair.")
-                ;
-
         // Required positional options
         po::options_description positional_opt_desc("POSITIONAL");
         positional_opt_desc.add_options()
@@ -156,7 +144,7 @@ int main(int argc, char *argv[]) {
                  "User-supplied name of the memory segment to receive frames.")
                 ("sink", po::value<std::string>(&sink),
                  "User-supplied name of the memory segment to publish frames.")
-                ("type-args", po::value<std::vector<std::string> >(), 
+                ("type-args", po::value<std::vector<std::string> >(),
                  "type-specifuc arguments.")
                 ;
 
@@ -168,11 +156,12 @@ int main(int argc, char *argv[]) {
         positional_options.add("type-args", -1);
 
         // Visible options for help message
-        visible_options.add(oat::ComponentInfo::instance()->get()); 
+        visible_options.add(oat::ComponentInfo::instance()->get());
 
         // All options, including positional
         po::options_description options;
-        options.add(config_opt_desc).add(positional_opt_desc).add(oat::ComponentInfo::instance()->get());
+        options.add(positional_opt_desc)
+               .add(oat::ComponentInfo::instance()->get());
 
         // Parse options, including unrecongized options which may be TYPE-specific
         auto parsed_opt = po::command_line_parser(argc, argv)
@@ -201,12 +190,6 @@ int main(int argc, char *argv[]) {
                 case 'b':
                 {
                     filter = std::make_shared<oat::FrameMasker>(source, sink);
-                    // TODO: Remove. Let the component worry about reporting
-                    // this if the mask is not set when it starts
-                    if (!config_used)
-                         std::cerr << oat::whoWarn(comp_name,
-                                 "No mask configuration was provided."
-                                 " This filter does nothing but waste CPU cycles.\n");
                     break;
                 }
                 case 'c':
@@ -217,12 +200,6 @@ int main(int argc, char *argv[]) {
                 case 'd':
                 {
                     filter = std::make_shared<oat::Undistorter>(source, sink);
-                    // TODO: Remove. Let the component worry about reporting
-                    // this if matricies are not defined when it starts
-                    if (!config_used)
-                         std::cerr << oat::whoWarn(comp_name,
-                                 "No undistortion configuration was provided."
-                                 " This filter does nothing but waste CPU cycles.\n");
                     break;
                 }
                 default:
@@ -234,10 +211,10 @@ int main(int argc, char *argv[]) {
             }
 
             // Specialize program options for the selected TYPE
-            filter->updateProgramOptions(config_opt_desc);
-            visible_options.add(config_opt_desc);
+            visible_options.add(filter->component_options());
         }
 
+        // Check INFO arguments
         if (option_map.count("help")) {
             printUsage(visible_options, type);
             return 0;
@@ -248,78 +225,73 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
+        // Check IO arguments
+        bool io_error {false};
+        std::string io_error_msg;
+
         if (!option_map.count("type")) {
-            printUsage(visible_options);
-            std::cout << oat::Error("A TYPE must be specified.\n");
-            return -1;
+            io_error_msg += "A TYPE must be specified.\n";
+            io_error = true;
         }
 
         if (!option_map.count("source")) {
-            printUsage(visible_options);
-            std::cout << oat::Error("A SOURCE must be specified.\n");
-            return -1;
+            io_error_msg += "A SOURCE must be specified.\n";
+            io_error = true;
         }
 
         if (!option_map.count("sink")) {
+            io_error_msg += "A SINK must be specified.\n";
+            io_error = true;
+        }
+
+        if (io_error) {
             printUsage(visible_options);
-            std::cerr << oat::Error("A SINK must be specified.\n");
+            std::cerr << oat::Error(io_error_msg);
             return -1;
         }
 
         // Get specialized component name
         comp_name = filter->name();
 
-        // Check for configuration file and key
-        // TODO: To library routine
-        if (!option_map["config"].empty()) {
-
-            config_fk = option_map["config"].as<std::vector<std::string> >();
-
-            if (config_fk.size() == 2) {
-                config_used = true;
-            } else {
-                printUsage(visible_options);
-                std::cerr << oat::Error("Configuration must be supplied as file key pair.\n");
-                return -1;
-            }
-        }
-
-        auto special_opt = 
+        // Reparse specialized component  options
+        auto special_opt =
             po::collect_unrecognized(parsed_opt.options, po::include_positional);
         special_opt.erase(special_opt.begin(),special_opt.begin() + REQ_POSITIONAL_ARGS);
 
-        po::store(parsed_opt, option_map);
+        po::store(po::command_line_parser(special_opt)
+                .options(filter->component_options())
+                .run(), option_map);
         po::notify(option_map);
 
-        // TODO
-        //filter->configure(special_opt);
-        
-        //// Add specialized options and reparse if needed
-        //if (filter->updateProgramOptions(config_opt_desc)) {
+        // TODO: Bring start/end into configure method of each component
+        // specialzation
+        // filter->configure(option_map);
 
-        //    // Visible options for help message
-        //    visible_options.add(info_opt_desc).add(config_opt_desc);
+        // **************** START
 
-        //    // All options, including positional
-        //    po::options_description options;
-        //    options.add(info_opt_desc).add(config_opt_desc).add(positional_opt_desc);
-
-        //    po::variables_map option_map;
-        //    po::store(po::command_line_parser(argc, argv)
-        //            .options(options)
-        //            .positional(positional_options)
-        //            .run(),
-        //            option_map);
-
-        //    // Check options for errors (must be after help and version checks)
-        //    po::notify(option_map);
-
-        //}
-
+        // Check for configuration file and key options
+        config_fk = oat::extractConfigFileKey(option_map);
+        config_used = !config_fk.empty();
 
         // Process configuration file if provided
         if (config_used)
             filter->configure(config_fk[0], config_fk[1]);
+
+        //// TODO: Remove. Let the component worry about reporting
+        //// this if matricies are not defined when it starts
+        //if (!config_used)
+        //     std::cerr << oat::whoWarn(comp_name,
+        //             "No undistortion configuration was provided."
+        //             " This filter does nothing but waste CPU cycles.\n");
+
+        //// TODO: Remove. Let the component worry about reporting
+        //// this if matricies are not defined when it starts
+        //if (!config_used)
+        //     std::cerr << oat::whoWarn(comp_name,
+        //             "No mask configuration was provided."
+        //             " This filter does nothing but waste CPU cycles.\n");
+
+        // **************** END
 
         // Tell user
         std::cout << oat::whoMessage(comp_name,
@@ -329,7 +301,7 @@ int main(int argc, char *argv[]) {
                 << oat::whoMessage(comp_name,
                 "Press CTRL+C to exit.\n");
 
-        // Infinite loop until ctrl-c or end of stream signal
+        // Infinite loop until ctrl-c or end of messages signal
         run(filter);
 
         // Tell user
@@ -358,5 +330,4 @@ int main(int argc, char *argv[]) {
 
     // Exit failure
     return -1;
-
 }
