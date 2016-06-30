@@ -356,7 +356,9 @@ __TYPE = `bsub`__
 - __`background`__=`string` Path to a background image to be subtracted from the
   SOURCE frames. This image must have the same dimensions as frames from
   SOURCE.
-
+- __`adaption-coeff`__=`+float` Value, 0 to 1.0, specifying how quickly the new
+  frames are used to update the backgound image. Default is 0, specifying no
+  adaptation and a static background image that is never updated.
 __TYPE = `mask`__
 
 - __`mask`__=`string` Path to a binary image used to mask frames from SOURCE.

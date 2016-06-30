@@ -54,10 +54,14 @@ private:
     void filter(cv::Mat& frame) override;
 
     // Is the background frame set?
-    bool background_set = false;
+    bool background_set_ {false};
 
-    // The background frame
-    cv::Mat background_frame;
+    // The background frame(s)
+    cv::Mat background_frame_;
+    cv::Mat background_frame_f_;
+    
+    // Background update rate
+    double alpha_ {0.0};
 
     // Set the background frame
     void setBackgroundImage(const cv::Mat&);

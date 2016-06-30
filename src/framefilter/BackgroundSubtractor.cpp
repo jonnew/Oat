@@ -1,4 +1,4 @@
-//******************************************************************************
+
 //* File:   BackgroundSubtractor.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
@@ -23,6 +23,7 @@
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <cpptoml.h>
 #include "../../lib/utility/TOMLSanitize.h"
@@ -43,7 +44,7 @@ BackgroundSubtractor::BackgroundSubtractor(
 void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {"background"};
+    std::vector<std::string> options {"background", "adaption-coeff"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -60,14 +61,17 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
 
         std::string background_img_path;
         if (oat::config::getValue(this_config, "background", background_img_path)) {
-            background_frame = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
+            background_frame_ = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
 
-            if (background_frame.data == NULL) {
+            if (background_frame_.data == NULL) {
                 throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
             }
 
-            background_set = true;
+            background_set_ = true;
         }
+
+        // Learning coefficient
+        oat::config::getValue(this_config, "adaption-coeff", alpha_, 0.0, 1.0);
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -76,20 +80,24 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
 
 void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
 
-    background_frame = frame.clone();
-    background_set = true;
+    background_frame_ = frame.clone();
+    frame.clone().convertTo(background_frame_f_, CV_32F);
+    background_set_ = true;
 }
 
 void BackgroundSubtractor::filter(cv::Mat& frame) {
-    // Throws cv::Exception if there is a size mismatch between frames,
-    // or in any case where cv assertions fail.
 
     // First image is always used as the default background image if one is
     // not provided in a configuration file
-    if (!background_set)
+    if (!background_set_)
         setBackgroundImage(frame);
 
-    frame = frame - background_frame;
+    if (alpha_ > 0.0) {
+       cv::accumulateWeighted(frame, background_frame_f_, alpha_); 
+       background_frame_f_.convertTo(background_frame_, CV_8U);
+    }
+        
+    frame = frame - background_frame_;
 }
 
 } /* namespace oat */
