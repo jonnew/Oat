@@ -73,6 +73,8 @@ public:
     void set_print_timestamp(bool value) { print_timestamp_ = value; }
     void set_print_sample_number(bool value) { print_sample_number_ = value; }
     void set_encode_sample_number(bool value) { encode_sample_number_ = value; }
+    void set_show_position_history(bool value) { show_position_history_ = value; }
+
     std::string name(void) const { return name_; }
 
 private:
@@ -125,6 +127,13 @@ private:
                                       CV_RGB(153, 255,  51),
                                       CV_RGB( 51, 153, 255),
                                       CV_RGB(153,  51, 255)};
+
+    // TODO: Make option 
+    // Path of plotted positions
+    bool first_frame_ {true};
+    bool show_position_history_ {false};
+    std::vector<oat::Point2D> previous_positions_;
+    std::vector<cv::Mat> position_histories_;
 
     /**
      * Project Positions into oat::PIXEL coordinates.

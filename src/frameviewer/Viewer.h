@@ -91,7 +91,6 @@ private:
     std::mutex display_mutex_;
     std::condition_variable display_cv_;
     std::unique_ptr<std::thread> display_thread_;
-    //std::future<void> display_future_;
 
     void display(void);
 };

@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
     bool print_timestamp = false;
     bool print_sample_number = false;
     bool encode_sample_number = false;
+    bool show_position_history = false;
 
     try {
 
@@ -108,6 +109,7 @@ int main(int argc, char *argv[]) {
                 ("sample-code,S", "Write the binary encoded sample on the corner of each frame.\n")
                 ("region,R", "Write region information on each frame "
                 "if there is a position stream that contains it.\n")
+                ("history,h", "Display position history.\n")
                 ;
 
         po::options_description hidden("POSITIONAL OPTIONS");
@@ -189,6 +191,9 @@ int main(int argc, char *argv[]) {
             print_region = true;
         }
 
+        if (variable_map.count("history")) {
+            show_position_history = true;
+        }
     } catch (std::exception& e) {
         std::cerr << oat::Error(e.what()) << "\n";
         return -1;
@@ -203,6 +208,7 @@ int main(int argc, char *argv[]) {
     decorator->set_print_sample_number(print_sample_number);
     decorator->set_encode_sample_number(encode_sample_number);
     decorator->set_print_region(print_region);
+    decorator->set_show_position_history(show_position_history);
 
      // Tell user
     std::cout << oat::whoMessage(decorator->name(),

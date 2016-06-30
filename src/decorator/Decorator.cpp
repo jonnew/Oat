@@ -85,9 +85,6 @@ void Decorator::connectToNodes() {
         all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
     }
 
-    for (auto &a : all_ts)
-        std::cout << a << std::endl;
-
     if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
         std::cerr << oat::Warn(
                      "Warning: sample rates of sources are inconsistent.\n"
@@ -102,11 +99,17 @@ void Decorator::connectToNodes() {
     shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
 
     // Set drawing parameters based on frame dimensions
-    size_t min_size = (param.rows < param.cols) ? param.rows : param.cols;
+    const size_t min_size = (param.rows < param.cols) ? param.rows : param.cols;
     position_circle_radius_ =  std::ceil(static_cast<float>(min_size)/100.0);
     heading_line_length_ =  std::ceil(static_cast<float>(min_size)/100.0);
     encode_bit_size_  =  
         std::ceil(param.cols / 3 / sizeof(internal_frame_.sample().count()) / 8);
+            
+    // Set history buffer size based on sample period
+    if (show_position_history_) {
+        previous_positions_.push_back(oat::Point2D(0,0));
+        position_histories_.push_back(cv::Mat::zeros(shared_frame_.size(), shared_frame_.type()));// std::vector<cv::Point2i>(num_points));
+    }
 }
 
 bool Decorator::decorateFrame() {
@@ -169,7 +172,7 @@ void Decorator::drawOnFrame() {
     if (decorate_position_) {
         
         drawPosition();
-
+    
         if (print_region_)
             printRegion();
     }
@@ -182,6 +185,8 @@ void Decorator::drawOnFrame() {
 
     if (encode_sample_number_)
         encodeSampleNumber();
+
+    first_frame_ = false;
 }
 
 void Decorator::invertHomography(oat::Position2D &p) {
@@ -239,6 +244,18 @@ void Decorator::drawPosition() {
                        pos_colors_[i],
                        line_thickness_);
 
+            if (show_position_history_ && ! first_frame_) {
+               
+                previous_positions_[i] = p.position;
+
+                cv::line(position_histories_[i],
+                         p.position,
+                         previous_positions_[i],
+                         pos_colors_[i],
+                         1);
+
+            }
+
             if (p.velocity_valid) {
 
                 cv::Point2d end = 
@@ -259,7 +276,11 @@ void Decorator::drawPosition() {
 
                 cv::line(internal_frame_, start, end, font_color_, line_thickness_);
             }
+            
         }
+
+        if (show_position_history_)
+            internal_frame_ += position_histories_[i];
 
         (i > position_sources_.size() - 1) ? i = 0 : i++;
     }

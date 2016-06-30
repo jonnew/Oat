@@ -306,6 +306,7 @@ int main(int argc, char *argv[]) {
             recorder->set_save_path(save_path);
             recorder->set_file_name(file_name);
             recorder->set_prepend_timestamp(prepend_timestamp);
+            recorder->set_prepend_source(prepend_source);
             recorder->set_allow_overwrite(allow_overwrite);
             recorder->set_verbose_file(!concise_file);
 
