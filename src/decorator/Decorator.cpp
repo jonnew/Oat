@@ -106,10 +106,10 @@ void Decorator::connectToNodes() {
         std::ceil(param.cols / 3 / sizeof(internal_frame_.sample().count()) / 8);
             
     // Set history buffer size based on sample period
-    if (show_position_history_) {
-        previous_positions_.push_back(oat::Point2D(0,0));
-        position_histories_.push_back(cv::Mat::zeros(shared_frame_.size(), shared_frame_.type()));// std::vector<cv::Point2i>(num_points));
-    }
+    previous_positions_.push_back(oat::Point2D(0,0));
+    positions_found_.push_back(false);
+    if (show_position_history_)
+        position_histories_.push_back(cv::Mat::zeros(shared_frame_.size(), shared_frame_.type()));
 }
 
 bool Decorator::decorateFrame() {
@@ -185,8 +185,6 @@ void Decorator::drawOnFrame() {
 
     if (encode_sample_number_)
         encodeSampleNumber();
-
-    first_frame_ = false;
 }
 
 void Decorator::invertHomography(oat::Position2D &p) {
@@ -244,16 +242,16 @@ void Decorator::drawPosition() {
                        pos_colors_[i],
                        line_thickness_);
 
-            if (show_position_history_ && !first_frame_) {
+            if (show_position_history_ && positions_found_[i]) {
                
                 cv::line(position_histories_[i],
                          p.position,
                          previous_positions_[i],
                          pos_colors_[i],
                          1);
+            } 
 
-                previous_positions_[i] = p.position;
-            }
+            previous_positions_[i] = p.position;
 
             if (p.velocity_valid) {
 
@@ -275,7 +273,10 @@ void Decorator::drawPosition() {
 
                 cv::line(internal_frame_, start, end, font_color_, line_thickness_);
             }
-            
+
+            positions_found_[i] = true;            
+        } else {
+            positions_found_[i] = false;            
         }
 
         if (show_position_history_)

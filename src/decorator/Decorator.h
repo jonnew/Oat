@@ -130,8 +130,8 @@ private:
 
     // TODO: Make option 
     // Path of plotted positions
-    bool first_frame_ {true};
     bool show_position_history_ {false};
+    std::vector<bool> positions_found_;
     std::vector<oat::Point2D> previous_positions_;
     std::vector<cv::Mat> position_histories_;
 
