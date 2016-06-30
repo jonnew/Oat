@@ -244,16 +244,15 @@ void Decorator::drawPosition() {
                        pos_colors_[i],
                        line_thickness_);
 
-            if (show_position_history_ && ! first_frame_) {
+            if (show_position_history_ && !first_frame_) {
                
-                previous_positions_[i] = p.position;
-
                 cv::line(position_histories_[i],
                          p.position,
                          previous_positions_[i],
                          pos_colors_[i],
                          1);
 
+                previous_positions_[i] = p.position;
             }
 
             if (p.velocity_valid) {
