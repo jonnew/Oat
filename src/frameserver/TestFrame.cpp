@@ -90,7 +90,7 @@ void TestFrame::connectToNode() {
     example_frame.copyTo(shared_frame_);
 
     // Put the sample rate in the shared frame
-    shared_frame_.sample().set_rate_hz(1.0 / frame_period_in_sec_.count());
+    internal_sample_.set_rate_hz(1.0 / frame_period_in_sec_.count());
 }
 
 bool TestFrame::serveFrame() {
@@ -103,14 +103,17 @@ bool TestFrame::serveFrame() {
         // Wait for sources to read
         frame_sink_.wait();
 
-        // Increment sample count
-        shared_frame_.sample().incrementCount();
+        // Zero frame copy
+        shared_frame_.sample() = internal_sample_;
 
         // Tell sources there is new data
         frame_sink_.post();
 
         ////////////////////////////
         //  END CRITICAL SECTION  //
+
+        // Pure SINKs increment sample count 
+        internal_sample_.incrementCount();
 
         it_++;
 

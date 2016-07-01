@@ -54,7 +54,6 @@ void WebCam::connectToNode() {
     shared_frame_ = frame_sink_.retrieve(
             example_frame.rows, example_frame.cols, example_frame.type());
 
-    shared_frame_.sample().set_rate_hz(0);
 }
 
 bool WebCam::serveFrame() {
@@ -79,19 +78,23 @@ bool WebCam::serveFrame() {
         to_crop.copyTo(shared_frame_);
     }
 
-    // Increment sample count
-    if (shared_frame_.sample().count() == 0)
-        start_ = clock_.now();
-
-    auto period = 
-        std::chrono::duration_cast<Sample::Microseconds>(clock_.now() - start_);
-    shared_frame_.sample().incrementCount(period);
+    // Update sample count
+    shared_frame_.sample() = internal_sample_;
 
     // Tell sources there is new data
     frame_sink_.post();
 
     ////////////////////////////
     //  END CRITICAL SECTION  //
+
+    // Pure SINKs increment sample count
+    // NOTE: webcams have unctrolled sample period, so it must be calculated.
+    if (internal_sample_.count() == 0)
+        start_ = clock_.now();
+
+    auto runtime = 
+        std::chrono::duration_cast<Sample::Microseconds>(clock_.now() - start_);
+    internal_sample_.incrementCount(runtime);
 
     return frame_empty_;
 }

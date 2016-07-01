@@ -991,7 +991,6 @@ void PGGigECam::connectToNode() {
     frame_sink_.bind(frame_sink_address_, bytes);
 
     shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
-    //shared_frame_.sample().set_rate_hz(frames_per_second_);
     internal_sample_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
@@ -1038,7 +1037,9 @@ bool PGGigECam::serveFrame() {
         ////////////////////////////
         //  END CRITICAL SECTION  //
 
+        // Pure SINKs increment sample count 
         internal_sample_.incrementCount(tick_);
+
     } while (i++ < rc);
 
     return false;

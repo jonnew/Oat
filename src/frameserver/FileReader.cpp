@@ -62,7 +62,7 @@ void FileReader::connectToNode() {
     file_reader_.set(CV_CAP_PROP_POS_AVI_RATIO, 0);
 
     // Put the sample rate in the shared frame
-    shared_frame_.sample().set_rate_hz(1.0 / frame_period_in_sec_.count());
+    internal_sample_.set_rate_hz(1.0 / frame_period_in_sec_.count());
 }
 
 bool FileReader::serveFrame() {
@@ -88,8 +88,8 @@ bool FileReader::serveFrame() {
         to_crop.copyTo(shared_frame_);
     }
 
-    // Increment sample count
-    shared_frame_.sample().incrementCount();
+    // Update sample count
+    shared_frame_.sample() = internal_sample_;
 
     // Tell sources there is new data
     frame_sink_.post();
@@ -97,6 +97,8 @@ bool FileReader::serveFrame() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
+    // Pure SINKs increment sample count 
+    internal_sample_.incrementCount();
 
     std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
     tick_ = clock_.now();

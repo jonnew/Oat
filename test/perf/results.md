@@ -1,39 +1,40 @@
 # Performance testing
-
-These rough tests give an idea about which components will hold up a real-time processing chain and which components are good targets for optimization. Only frame processing components are tested because they are orders of magnitude slower than position processing components.
+These rough tests give an idea about which components will hold up a real-time
+processing chain and which components are good targets for optimization. Only
+frame processing components are tested because they are orders of magnitude
+slower than position processing components.
 
 ## Machine
-Custom Desktop
-Intel Core i7-5820K CPU @ 3.30GHz
+Custom Desktop<br /> 
+Intel Core i7-5820K CPU @ 3.30GHz<br />
 GeForce GTX 970 GPU with CUDA 7.5
 
 ### Task
 1000x 1MP frames served using `oat-frameserve test` which has
 the following runtime characteristics with no listening
 components:
-
-- real	0m0.077s
-- user	0m0.038s
-- sys	0m0.041s
+- real	0m0.073s
+- user	0m0.049s
+- sys	0m0.026s
 
 ### Results
 
 #### oat-framefilt
 
--`bsub`
-  - real	0m1.047s
-  - user	0m0.047s
-  - sys	    0m0.064s
+- `bsub`
+  - real	0m0.881s
+  - user	0m0.079s
+  - sys	    0m0.037s
 
 - `mask`
-  - real	0m1.390s
-  - user	0m0.039s
-  - sys	    0m0.075s
+  - real	0m1.300s
+  - user	0m0.074s
+  - sys	    0m0.041s
 
 - `mog`
-  - real	0m2.133s
-  - user	0m0.060s
-  - sys	    0m0.056s
+  - real	0m1.744s
+  - user	0m0.077s
+  - sys	    0m0.039s
 
 - `undistort`
   - real	0m29.946s
@@ -46,20 +47,18 @@ components:
 #### oat-posidet
 
 - `diff`
-  - real	0m3.983s
-  - user	0m0.063s
-  - sys	    0m0.062s
-  - Note: slower than laptop...
+  - real	0m2.835s
+  - user	0m0.064s
+  - sys	    0m0.056s
 
 - `hsv`
-  - real	0m9.286s
-  - user	0m0.057s
-  - sys	    0m0.066s
-  - Note: slower than laptop...
+  - real	0m4.683s
+  - user	0m0.071s
+  - sys	    0m0.067s
 
 ## Machine
-Lenovo ThinkPad X1 Carbon 3rd
-Intel Core i7-5600U CPU @ 2.60GHz
+Lenovo ThinkPad X1 Carbon 3rdi<br />
+Intel Core i7-5600U CPU @ 2.60GHzi
 
 ### Task
 1000x 1MP frames served using `oat-frameserve test` which has the following

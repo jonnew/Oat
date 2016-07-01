@@ -84,7 +84,7 @@ private:
     int64_t white_bal_red_ {0};
     int64_t white_bal_blue_ {0};
     double frames_per_second_ {30.0};
-    bool use_frame_buffer_ {false};
+    //bool use_frame_buffer_ {false};
     //unsigned int num_transmit_retries_ {0};
     int64_t strobe_output_pin_ {1};
 
