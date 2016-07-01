@@ -175,6 +175,12 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
+        if (variable_map.count("fps")) {
+            if (frames_per_second <= 0)  {
+                std::cerr << oat::Error("Frames per second must be greater than 0. Exiting.\n");
+                return -1;
+            }
+        }
         if (!variable_map["config"].empty()) {
 
             config_fk = variable_map["config"].as<std::vector<std::string> >();

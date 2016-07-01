@@ -53,6 +53,8 @@ void WebCam::connectToNode() {
 
     shared_frame_ = frame_sink_.retrieve(
             example_frame.rows, example_frame.cols, example_frame.type());
+
+    shared_frame_.sample().set_rate_hz(0);
 }
 
 bool WebCam::serveFrame() {

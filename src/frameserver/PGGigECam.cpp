@@ -991,7 +991,8 @@ void PGGigECam::connectToNode() {
     frame_sink_.bind(frame_sink_address_, bytes);
 
     shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
-    shared_frame_.sample().set_rate_hz(frames_per_second_);
+    //shared_frame_.sample().set_rate_hz(frames_per_second_);
+    internal_sample_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
     // rbg_image's data buffer. When changes are made to rgb_image_, this is
@@ -1029,7 +1030,7 @@ bool PGGigECam::serveFrame() {
         frame_sink_.wait();
 
         raw_image_.Convert(pg::PIXEL_FORMAT_BGR, rgb_image_.get());
-        shared_frame_.sample().incrementCount(tick_);
+        shared_frame_.sample() = internal_sample_;
 
         // Tell sources there is new data
         frame_sink_.post();
@@ -1037,6 +1038,7 @@ bool PGGigECam::serveFrame() {
         ////////////////////////////
         //  END CRITICAL SECTION  //
 
+        internal_sample_.incrementCount(tick_);
     } while (i++ < rc);
 
     return false;

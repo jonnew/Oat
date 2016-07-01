@@ -169,6 +169,13 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
+        if (variable_map.count("rate-hz")) {
+            if (samples_per_second <= 0)  {
+                std::cerr << oat::Error("Samples per second must be greater than 0. Exiting.\n");
+                return -1;
+            }
+        }
+
         if (variable_map.count("num-samples")) {
             num_samples = static_cast<uint64_t>(num_samples_st);
         }
