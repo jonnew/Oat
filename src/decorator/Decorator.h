@@ -105,7 +105,7 @@ private:
     bool print_timestamp_ {false};
     bool print_sample_number_ {false};
     bool encode_sample_number_ {false};
-    float position_circle_radius_ {8.0};
+    float position_circle_radius_ {2.0};
     float heading_line_length_ {8.0};
     const float velocity_scale_factor_ {0.15};
     const double font_scale_ {1.0};
@@ -114,6 +114,10 @@ private:
     const cv::Scalar font_color_ {255, 255, 255};
     const int font_type_ {cv::FONT_HERSHEY_SIMPLEX};
     int encode_bit_size_ {5};
+    bool show_position_history_ {false};
+    std::vector<bool> positions_found_;
+    std::vector<oat::Point2D> previous_positions_;
+    std::vector<cv::Mat> position_histories_;
 
     const cv::Scalar pos_colors_[12] {CV_RGB(255,  51,  51),
                                       CV_RGB( 51, 255,  51),
@@ -127,14 +131,6 @@ private:
                                       CV_RGB(153, 255,  51),
                                       CV_RGB( 51, 153, 255),
                                       CV_RGB(153,  51, 255)};
-
-    // TODO: Make option 
-    // Path of plotted positions
-    bool show_position_history_ {false};
-    std::vector<bool> positions_found_;
-    std::vector<oat::Point2D> previous_positions_;
-    std::vector<cv::Mat> position_histories_;
-
     /**
      * Project Positions into oat::PIXEL coordinates.
      * @param pos Position with unit_of_length != oat::PIXEL to be converted to

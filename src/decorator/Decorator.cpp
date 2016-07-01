@@ -350,9 +350,6 @@ void Decorator::printSampleNumber() {
                 font_color_);
 }
 
-/** 
- * @brief Encode the current sample number into the first row of the matrix
- */
 void Decorator::encodeSampleNumber() {
 
     uint64_t sample_count = internal_frame_.sample().count();

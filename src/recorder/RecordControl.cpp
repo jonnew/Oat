@@ -128,23 +128,12 @@ int controlRecorder(std::istream &in,
 
 void printInteractiveUsage(std::ostream &out) {
 
-    out << "COMMANDS\n"
-        << "CMD         FUNCTION\n"
-        << " help       Print this information.\n"
-        << " start      Start recording. This will append the file if it\n"
-        << "            already exists. It will create a new one if it doesn't.\n"
-        << " pause      Pause recording. This will pause the recording\n"
-        << "            without creating a new file.\n"
-        << " new ARG    Start new file. User will be prompted for new file\n"
-        << "            name.\n"
-        << " quit       Exit the program.\n";
+    out << interactive_record_control_usage_string;
 }
 
 void printRemoteUsage(std::ostream &out) {
 
-    out << "Recorder is under remote control.\n"
-        << "Commands provided through STDIN have no effect\n"
-        << "except Ctrl+C to quit.\n";
+    out << remote_record_control_usage_string;
 }
 
 } /* namespace oat */
