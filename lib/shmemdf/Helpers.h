@@ -21,15 +21,16 @@
 #define	OAT_SHMEMDFHELPERS_H
 
 #include <algorithm>
+#include <cassert>
 
 #include "Source.h"
 
-namespace oat { 
+namespace oat {
 
 template<typename T>
 struct NamedSource {
 
-    explicit NamedSource(const std::string &name, 
+    explicit NamedSource(const std::string &name,
                          std::unique_ptr<oat::Source<T>> &&source) :
       name(name),
       source(std::move(source))
@@ -44,12 +45,13 @@ struct NamedSource {
 template<typename T>
 using NamedSourceList = std::vector<NamedSource<T>>;
 
-inline bool checkSamplePeriods(const std::vector<double> &periods, 
-                               double &min_rate) { 
+inline bool checkSamplePeriods(const std::vector<double> &periods,
+                               double &min_rate) {
 
+    assert(periods.size() > 0);
     min_rate = 1.0 / *std::max_element(std::begin(periods), std::end(periods));
 
-    if (periods.size() > 1 && 
+    if (periods.size() > 1 &&
         !std::equal(periods.begin() + 1, periods.end(), periods.begin())) {
         return false;
     } else {

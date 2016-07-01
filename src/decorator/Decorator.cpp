@@ -85,6 +85,11 @@ void Decorator::connectToNodes() {
         all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
     }
 
+    // Bind to sink sink node and create a shared frame
+    frame_sink_.bind(frame_sink_address_, param.bytes);
+    shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
+    all_ts.push_back(shared_frame_.sample().period_sec().count());
+
     if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
         std::cerr << oat::Warn(
                      "Warning: sample rates of sources are inconsistent.\n"
@@ -93,10 +98,6 @@ void Decorator::connectToNodes() {
                      "specified sample rate set to: " + std::to_string(sample_rate_hz) + "\n"
                      );
     }
-
-    // Bind to sink sink node and create a shared frame
-    frame_sink_.bind(frame_sink_address_, param.bytes);
-    shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
 
     // Set drawing parameters based on frame dimensions
     const size_t min_size = (param.rows < param.cols) ? param.rows : param.cols;
@@ -109,7 +110,7 @@ void Decorator::connectToNodes() {
     previous_positions_.push_back(oat::Point2D(0,0));
     positions_found_.push_back(false);
     if (show_position_history_)
-        position_histories_.push_back(cv::Mat::zeros(shared_frame_.size(), shared_frame_.type()));
+        position_histories_.push_back(cv::Mat::zeros(shared_frame_.size(), CV_8UC1));
 }
 
 bool Decorator::decorateFrame() {
@@ -247,8 +248,7 @@ void Decorator::drawPosition() {
                 cv::line(position_histories_[i],
                          p.position,
                          previous_positions_[i],
-                         pos_colors_[i],
-                         1);
+                         1,1);
             } 
 
             previous_positions_[i] = p.position;
@@ -280,7 +280,7 @@ void Decorator::drawPosition() {
         }
 
         if (show_position_history_)
-            internal_frame_ += position_histories_[i];
+            internal_frame_.setTo(pos_colors_[i], position_histories_[i] == 1);
 
         (i > position_sources_.size() - 1) ? i = 0 : i++;
     }
