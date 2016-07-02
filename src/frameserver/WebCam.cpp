@@ -19,6 +19,7 @@
 
 #include "WebCam.h"
 
+#include <chrono>
 #include <string>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/videoio.hpp>
@@ -42,8 +43,16 @@ void WebCam::connectToNode() {
 
     cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
 
+    // FPS must be calculated manually for webcams to be remotely accurate
     cv::Mat example_frame;
-    *cv_camera_ >> example_frame;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    const int n = 10;
+    for (int i = 0; i < n; i++)
+        *cv_camera_ >> example_frame;
+
+    std::chrono::duration<double> frame_period_in_sec = 
+        (std::chrono::high_resolution_clock::now() - start) / static_cast<double>(n);
 
     if (use_roi_)
         example_frame = example_frame(region_of_interest_);
@@ -54,6 +63,7 @@ void WebCam::connectToNode() {
     shared_frame_ = frame_sink_.retrieve(
             example_frame.rows, example_frame.cols, example_frame.type());
 
+    internal_sample_.set_rate_hz(1.0 / frame_period_in_sec.count());
 }
 
 bool WebCam::serveFrame() {

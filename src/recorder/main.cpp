@@ -125,11 +125,18 @@ int main(int argc, char *argv[]) {
 
         po::options_description configuration("CONFIGURATION");
         configuration.add_options()
+                ("frame-sources,s", po::value< std::vector<std::string> >()->multitoken(),
+                "The names of the FRAME SOURCES that supply images to save to video.")
+                ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
+                "The names of the POSITION SOURCES that supply object positions "
+                "to be recorded.")
                 ("filename,n", po::value<std::string>(&file_name),
-                "The base file name to which to source name will be appended")
+                "The base file name. If not specified, defaults to the SOURCE "
+                "name.")
                 ("folder,f", po::value<std::string>(&save_path),
                 "The path to the folder to which the video stream and position "
-                "information will be saved.")
+                "data will be saved. If not specified, defaults to the "
+                "current directory.")
                 ("date,d",
                 "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the "
                 "filename.")
@@ -138,26 +145,21 @@ int main(int argc, char *argv[]) {
                 "filename, after the data, if selected")
                 ("allow-overwrite,o",
                 "If set and save path matches and existing file, the file will "
-                "be overwritten instead of a numerical index being added to "
-                "the file path.")
+                "be overwritten instead of a incremental numerical index being "
+                "appended to the file name.")
                 ("concise-file,c",
                  "If set, indeterminate position data fields will not be written "
-                 "e.g. pos_xy will not be be written even when pos_ok = false. This "
+                 "e.g. pos_xy will not be written even when pos_ok = false. This "
                  "means that position objects will be of variable size depending on the "
                  "validity on whether a position was detected or not, potentially "
                  "complicating file parsing.")
-                ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
-                "The names of the POSITION SOURCES that supply object positions "
-                "to be recorded.")
                 ("interactive", "Start recorder with interactive controls enabled.")
                 ("rpc-endpoint", po::value<std::string>(&rpc_endpoint),
                  "Yield interactive control of the recorder to a remote ZMQ REQ "
                  "socket using an interal REP socket with ZMQ style endpoint "
                  "specifier: '<transport>://<host>:<port>'. For instance, "
                  "'tcp://*:5555' or 'ipc://*:5556' specify TCP and interprocess "
-                 "communication on ports 5555 or 5556, respectively")
-                ("frame-sources,s", po::value< std::vector<std::string> >()->multitoken(),
-                "The names of the FRAME SOURCES that supply images to save to video.")
+                 "communication on ports 5555 or 5556, respectively.")
                 ;
 
         po::options_description all_options("OPTIONS");
@@ -195,12 +197,10 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("folder")) {
             save_path = ".";
-            std::cerr << oat::Warn("Warning: Saving files to the current directory.\n");
         }
 
         if (!variable_map.count("filename")) {
             file_name = "";
-            std::cerr << oat::Warn("Warning: No base filename was provided.\n");
         }
 
         if (variable_map.count("interactive") && variable_map.count("rpc-endpoint")) {
