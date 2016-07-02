@@ -101,16 +101,17 @@ void Decorator::connectToNodes() {
 
     // Set drawing parameters based on frame dimensions
     const size_t min_size = (param.rows < param.cols) ? param.rows : param.cols;
-    position_circle_radius_ =  std::ceil(static_cast<float>(min_size)/100.0);
-    heading_line_length_ =  std::ceil(static_cast<float>(min_size)/100.0);
-    encode_bit_size_  =  
+    position_circle_radius_ = std::ceil(symbol_scale_ * min_size);
+    heading_line_length_ = std::ceil(symbol_scale_ * min_size);
+    encode_bit_size_  =
         std::ceil(param.cols / 3 / sizeof(internal_frame_.sample().count()) / 8);
-            
-    // Set history buffer size based on sample period
-    previous_positions_.push_back(oat::Point2D(0,0));
-    positions_found_.push_back(false);
-    if (show_position_history_)
-        position_histories_.push_back(cv::Mat::zeros(shared_frame_.size(), CV_8UC1));
+
+    // If we are drawing positions, get ready for that
+    if (decorate_position_) {
+        previous_positions_.push_back(oat::Point2D(0,0));
+        positions_found_.push_back(false);
+        history_frame_ = cv::Mat::zeros(shared_frame_.size(), shared_frame_.type());
+    }
 }
 
 bool Decorator::decorateFrame() {
@@ -171,9 +172,9 @@ bool Decorator::decorateFrame() {
 void Decorator::drawOnFrame() {
 
     if (decorate_position_) {
-        
+
         drawPosition();
-    
+
         if (print_region_)
             printRegion();
     }
@@ -193,7 +194,7 @@ void Decorator::invertHomography(oat::Position2D &p) {
     if (p.position_valid) {
 
         cv::Matx33d inv_homo = p.homography().inv();
-        
+
         std::vector<oat::Point2D> in_positions;
         std::vector<oat::Point2D> out_positions;
         in_positions.push_back(p.position);
@@ -230,34 +231,37 @@ void Decorator::invertHomography(oat::Position2D &p) {
 void Decorator::drawPosition() {
 
     size_t i = 0;
+
+    cv::Mat symbol_frame = cv::Mat::zeros(internal_frame_.size(), internal_frame_.type());
+
     for (auto &p : positions_) {
-        
+
         if (p.unit_of_length() == oat::DistanceUnit::WORLD)
             invertHomography(p);
 
         if (p.position_valid) {
 
-            cv::circle(internal_frame_,
+            cv::circle(symbol_frame,
                        p.position,
                        position_circle_radius_,
                        pos_colors_[i],
                        line_thickness_);
 
             if (show_position_history_ && positions_found_[i]) {
-               
-                cv::line(position_histories_[i],
+
+                cv::line(history_frame_,
                          p.position,
                          previous_positions_[i],
-                         1,1);
-            } 
+                         pos_colors_[i],1);
+            }
 
             previous_positions_[i] = p.position;
 
             if (p.velocity_valid) {
 
-                cv::Point2d end = 
+                cv::Point2d end =
                     p.position + (velocity_scale_factor_ * p.velocity);
-                cv::line(internal_frame_,
+                cv::line(symbol_frame,
                          p.position,
                          end,
                          pos_colors_[i],
@@ -266,23 +270,40 @@ void Decorator::drawPosition() {
 
             if (p.heading_valid) {
 
-                cv::Point2d start =
-                        p.position - (heading_line_length_ * p.heading);
-                cv::Point2d end =
-                        p.position + (heading_line_length_ * p.heading);
+                cv::Point2d start = 
+                    p.position - (heading_line_length_ * p.heading);
+                cv::Point2d end = 
+                    p.position + (1.5 * heading_line_length_ * p.heading);
 
-                cv::line(internal_frame_, start, end, font_color_, line_thickness_);
+                cv::arrowedLine(symbol_frame,
+                                start,
+                                end, 
+                                font_color_, 
+                                line_thickness_);
             }
 
-            positions_found_[i] = true;            
+            positions_found_[i] = true;
         } else {
-            positions_found_[i] = false;            
+            positions_found_[i] = false;
         }
 
-        if (show_position_history_)
-            internal_frame_.setTo(pos_colors_[i], position_histories_[i] == 1);
-
         (i > position_sources_.size() - 1) ? i = 0 : i++;
+    }
+
+    cv::addWeighted(internal_frame_,
+                    1 - symbol_alpha_,
+                    symbol_frame,
+                    symbol_alpha_,
+                    0.0,
+                    internal_frame_);
+
+    if (show_position_history_) {
+        cv::addWeighted(internal_frame_,
+                        1 - history_alpha_,
+                        history_frame_,
+                        history_alpha_,
+                        0.0,
+                        internal_frame_);
     }
 }
 

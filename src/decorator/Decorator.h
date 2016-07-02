@@ -98,27 +98,25 @@ private:
     std::vector<oat::Position2D> positions_;
     oat::NamedSourceList<oat::Position2D> position_sources_;
 
-    // Drawing constants
-    // TODO: These may need to become a bit more sophisticated or user defined
+    // Options
     bool decorate_position_ {true};
     bool print_region_ {false};
     bool print_timestamp_ {false};
     bool print_sample_number_ {false};
     bool encode_sample_number_ {false};
-    float position_circle_radius_ {2.0};
-    float heading_line_length_ {8.0};
-    const float velocity_scale_factor_ {0.15};
-    const double font_scale_ {1.0};
-    const int font_thickness_ {1};
-    const int line_thickness_ {2};
-    const cv::Scalar font_color_ {255, 255, 255};
-    const int font_type_ {cv::FONT_HERSHEY_SIMPLEX};
-    int encode_bit_size_ {5};
+
+    // TODO: These may need to become a bit more sophisticated or user defined
+    // Position drawing
+    const double symbol_scale_ {0.01};
+    const double velocity_scale_factor_ {0.15};
+    double position_circle_radius_ {2.0};
+    double heading_line_length_ {8.0};
     bool show_position_history_ {false};
     std::vector<bool> positions_found_;
     std::vector<oat::Point2D> previous_positions_;
-    std::vector<cv::Mat> position_histories_;
-
+    cv::Mat history_frame_;
+    const double symbol_alpha_ {0.4};
+    const double history_alpha_ {0.2};
     const cv::Scalar pos_colors_[12] {CV_RGB(255,  51,  51),
                                       CV_RGB( 51, 255,  51),
                                       CV_RGB( 51,  51, 255),
@@ -131,6 +129,17 @@ private:
                                       CV_RGB(153, 255,  51),
                                       CV_RGB( 51, 153, 255),
                                       CV_RGB(153,  51, 255)};
+
+    // Font
+    const double font_scale_ {1.0};
+    const int font_thickness_ {1};
+    const int line_thickness_ {2};
+    const cv::Scalar font_color_ {255, 255, 255};
+    const int font_type_ {cv::FONT_HERSHEY_SIMPLEX};
+
+    // Sample number encoding
+    int encode_bit_size_ {5};
+
     /**
      * Project Positions into oat::PIXEL coordinates.
      * @param pos Position with unit_of_length != oat::PIXEL to be converted to
