@@ -92,8 +92,6 @@ int controlRecorder(std::istream &in,
             }
             case 's' :
             {
-                if (!recorder.recording_initialized())
-                    recorder.initializeRecording();
                 recorder.set_record_on(true);
                 out << "Recording started." << std::endl;
                 break;

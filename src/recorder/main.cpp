@@ -67,7 +67,7 @@ enum class ControlMode : int16_t
 void printUsage(std::ostream& out, po::options_description options) {
     out << "Usage: record [INFO]\n"
         << "   or: record [CONFIGURATION]\n"
-        << "Record frame and/or position streams.\n\n"
+        << "Record frame and/or position streams.\n"
         << options << "\n";
 }
 
@@ -93,6 +93,7 @@ void run(std::shared_ptr<oat::Recorder>& recorder) {
     try {
 
         recorder->connectToNodes();
+        recorder->initializeRecording();
 
         while (!quit && !source_eof) {
             source_eof = recorder->writeStreams();
@@ -142,7 +143,7 @@ int main(int argc, char *argv[]) {
                 "filename.")
                 ("prepend-source,a",
                 "If specified, the source name will be prepended to the "
-                "filename, after the data, if selected")
+                "filename, after the date, if -d is specified.")
                 ("allow-overwrite,o",
                 "If set and save path matches and existing file, the file will "
                 "be overwritten instead of a incremental numerical index being "
@@ -162,7 +163,7 @@ int main(int argc, char *argv[]) {
                  "communication on ports 5555 or 5556, respectively.")
                 ;
 
-        po::options_description all_options("OPTIONS");
+        po::options_description all_options("");
         all_options.add(options).add(configuration);
 
         po::variables_map variable_map;
@@ -315,7 +316,6 @@ int main(int argc, char *argv[]) {
                 case ControlMode::NONE :
                 {
                     // Start the recorder w/o controls
-                    recorder->initializeRecording();
                     run(recorder);
                     rc = 0;
 
