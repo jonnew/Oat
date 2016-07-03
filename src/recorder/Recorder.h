@@ -121,13 +121,12 @@ public:
     bool record_on(void) const { return record_on_; }
     void set_record_on(const bool value) { record_on_ = value; }
     bool source_eof(void) const { return source_eof_; }
-    bool recording_initialized(void) const { return recording_initialized_; }
     void set_save_path(const std::string &value) { save_path_ = value; }
     void set_file_name(const std::string &value) { file_name_ = value; }
     void set_prepend_timestamp(const bool value) { prepend_timestamp_ = value; }
     void set_prepend_source(const bool value) { prepend_source_ = value; }
     void set_allow_overwrite(const bool value) { allow_overwrite_ = value; } 
-    void set_verbose_file(const bool value) {verbose_file_ = value; };
+    void set_verbose_file(const bool value) { verbose_file_ = value; };
 
 private:
 
@@ -167,8 +166,8 @@ private:
     // write pos_xy when pos_ok = false?
     bool verbose_file_ {true};
 
-    // Determines if the recording machinary is ready to use.
-    bool recording_initialized_ {false};
+    // Files must be initialized before first write
+    bool initialization_required_ {true};
 
     // Source end of file flag
     bool source_eof_ {false};

@@ -93,7 +93,6 @@ void run(std::shared_ptr<oat::Recorder>& recorder) {
     try {
 
         recorder->connectToNodes();
-        recorder->initializeRecording();
 
         while (!quit && !source_eof) {
             source_eof = recorder->writeStreams();

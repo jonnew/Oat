@@ -170,6 +170,11 @@ void Recorder::connectToNodes() {
 
 bool Recorder::writeStreams() {
 
+    if (record_on_ && initialization_required_) {
+        initializeRecording();
+        initialization_required_ = false;
+    }
+
     // Read frames
     for (fvec_size_t i = 0; i !=  frame_sources_.size(); i++) {
 
@@ -379,8 +384,6 @@ void Recorder::initializeRecording() {
             video_writers_.push_back(std::make_unique<cv::VideoWriter>());
         }
     }
-
-    recording_initialized_ = true;
 }
 
 } /* namespace oat */
