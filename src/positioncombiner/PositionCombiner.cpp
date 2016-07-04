@@ -71,12 +71,7 @@ void PositionCombiner::connectToNodes() {
     }
 
     if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
-        std::cerr << oat::Warn(
-                     "Warning: sample rates of sources are inconsistent.\n"
-                     "This component forces synchronization at the lowest source sample rate.\n"
-                     "You should probably use separate recorders to capture these sources.\n"
-                     "specified sample rate set to: " + std::to_string(sample_rate_hz) + "\n"
-                     );
+        std::cerr << oat::Warn(oat::inconsistentSampleRateWarning(sample_rate_hz));
     }
 
     // Bind to sink node and create a shared position

@@ -145,13 +145,12 @@ void Recorder::connectToNodes() {
 
     std::vector<double> all_ts;
 
-    // Frame sources
+    // Connect to frame and position sources
     for (auto &fs: frame_sources_) {
         fs.source->connect();
         all_ts.push_back(fs.source->retrieve().sample().period_sec().count());
     }
 
-    // Position sources
     for (auto &ps : position_sources_) {
         ps.source->connect();
         all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
@@ -159,12 +158,7 @@ void Recorder::connectToNodes() {
 
     // Examine sample period of sources to make sure they are the same
     if (!oat::checkSamplePeriods(all_ts, sample_rate_hz_)) {
-        std::cerr << oat::Warn(
-                     "Warning: sample rates of sources are inconsistent.\n"
-                     "This recorder forces synchronization at the lowest source sample rate.\n"
-                     "You should probably use separate recorders to capture these sources.\n"
-                     "specified sample rate set to: " + std::to_string(sample_rate_hz_) + "\n"
-                     );
+        std::cerr << oat::Warn(oat::inconsistentSampleRateWarning(sample_rate_hz_));
     }
 }
 

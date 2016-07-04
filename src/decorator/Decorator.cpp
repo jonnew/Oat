@@ -61,29 +61,27 @@ Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
 
 void Decorator::connectToNodes() {
 
-    // Establish our a slot in the node
-    frame_source_.touch(frame_source_address_);
-
-    // Wait for synchronous start with sink when it binds the node
-    frame_source_.connect();
-
-    // Get frame meta data to format sink
-    oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
-            frame_source_.parameters();
-
-    // Connect to position source nodes
-    for (auto &ps : position_sources_)
-        ps.source->touch(ps.name);
-
     // Examine sample period of sources to make sure they are the same
     double sample_rate_hz;
     std::vector<double> all_ts;
 
-    // Position sources
+    // Establish our a slots in the frame and positions sources
+    frame_source_.touch(frame_source_address_);
+
+    for (auto &ps : position_sources_)
+        ps.source->touch(ps.name);
+
+    // Wait for synchronous start with sink when it binds the node
+    frame_source_.connect();
+
     for (auto &ps : position_sources_) {
         ps.source->connect();
         all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
     }
+
+    // Get frame meta data to format sink
+    oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
+            frame_source_.parameters();
 
     // Bind to sink sink node and create a shared frame
     frame_sink_.bind(frame_sink_address_, param.bytes);
@@ -91,12 +89,7 @@ void Decorator::connectToNodes() {
     all_ts.push_back(shared_frame_.sample().period_sec().count());
 
     if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
-        std::cerr << oat::Warn(
-                     "Warning: sample rates of sources are inconsistent.\n"
-                     "This component forces synchronization at the lowest source sample rate.\n"
-                     "You should probably use separate recorders to capture these sources.\n"
-                     "specified sample rate set to: " + std::to_string(sample_rate_hz) + "\n"
-                     );
+        std::cerr << oat::Warn(oat::inconsistentSampleRateWarning(sample_rate_hz));
     }
 
     // Set drawing parameters based on frame dimensions
@@ -121,7 +114,7 @@ bool Decorator::decorateFrame() {
     ////////////////////////////
 
     // Wait for sink to write to node
-    if (frame_source_.wait() == oat::NodeState::END )
+    if (frame_source_.wait() == oat::NodeState::END)
         return true;
 
     // Clone the shared frame

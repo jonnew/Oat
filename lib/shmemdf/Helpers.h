@@ -54,9 +54,10 @@ using NamedSourceList = std::vector<NamedSource<T>>;
  * @return True if maximum difference between periods is within epsilon. False
  * otherwise.
  */
-inline bool checkSamplePeriods(const std::vector<double> &periods_sec,
-                               double &min_rate,
-                               double const epsilon=1e-6) {
+inline 
+bool checkSamplePeriods(const std::vector<double> &periods_sec,
+                        double &min_rate,
+                        double const epsilon=1e-6) {
 
     assert(periods_sec.size() > 0);
 
@@ -71,6 +72,17 @@ inline bool checkSamplePeriods(const std::vector<double> &periods_sec,
     }
 
     return true;
+}
+
+inline 
+std::string inconsistentSampleRateWarning(double min_rate) {
+
+    return 
+        "WARNING: sample rates of sources are inconsistent.\n"
+        " (1) This component forces synchronization at the lowest\n"
+        "     source sample rate, which is " + std::to_string(min_rate) + "\n"
+        " (2) You should probably use separate components to\n" 
+        "     process these sources if you want independent rates.\n";
 }
 
 }       /* namespace oat */
