@@ -17,6 +17,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include <chrono>
 #include <csignal>
 #include <unordered_map>
 
@@ -45,6 +46,8 @@ int controlRecorder(std::istream &in,
                     oat::Recorder &recorder,
                     bool pretty_cmd) {
 
+    in.sync_with_stdio(false);
+
     // Command map
     std::unordered_map<std::string, char> cmd_map;
     cmd_map["quit"] = 'q';
@@ -60,12 +63,18 @@ int controlRecorder(std::istream &in,
     // Means to exit via user input
     bool interactive_quit = false;
 
+    if (pretty_cmd)
+        out << ">>> " << std::flush;
+
     while (!interactive_quit && !::quit && !recorder.source_eof()) {
 
-        if (pretty_cmd)
-            out << ">>> " << std::flush;
+        if (in.rdbuf()->in_avail() == 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
 
         std::getline(in, cmd);
+
         if (in.eof()) {
             out << "Input command stream closed." << std::endl;
             break;
@@ -119,6 +128,9 @@ int controlRecorder(std::istream &in,
                 break;
             }
         }
+
+        if (pretty_cmd)
+            out << ">>> " << std::flush;
     }
 
     return 0;
