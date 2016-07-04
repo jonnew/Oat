@@ -116,7 +116,6 @@ private:
     std::vector<oat::Point2D> previous_positions_;
     cv::Mat history_frame_;
     const double symbol_alpha_ {0.4};
-    const double history_alpha_ {0.2};
     const cv::Scalar pos_colors_[12] {CV_RGB(255,  51,  51),
                                       CV_RGB( 51, 255,  51),
                                       CV_RGB( 51,  51, 255),

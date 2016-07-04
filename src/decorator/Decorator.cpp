@@ -232,7 +232,8 @@ void Decorator::drawPosition() {
 
     size_t i = 0;
 
-    cv::Mat symbol_frame = cv::Mat::zeros(internal_frame_.size(), internal_frame_.type());
+    cv::Mat symbol_frame = 
+        cv::Mat::zeros(internal_frame_.size(), internal_frame_.type());
 
     for (auto &p : positions_) {
 
@@ -290,21 +291,25 @@ void Decorator::drawPosition() {
         (i > position_sources_.size() - 1) ? i = 0 : i++;
     }
 
+    // TODO: Following routine feels pretty inefficient
+    if (show_position_history_)
+        symbol_frame += history_frame_;
+
+    cv::Mat result_frame = 
+        cv::Mat::zeros(internal_frame_.size(), internal_frame_.type());
     cv::addWeighted(internal_frame_,
                     1 - symbol_alpha_,
                     symbol_frame,
                     symbol_alpha_,
                     0.0,
-                    internal_frame_);
+                    result_frame);
 
-    if (show_position_history_) {
-        cv::addWeighted(internal_frame_,
-                        1 - history_alpha_,
-                        history_frame_,
-                        history_alpha_,
-                        0.0,
-                        internal_frame_);
-    }
+    cv::Mat mask;
+    cv::Scalar zero;
+    cv::inRange(symbol_frame, zero, zero, mask);
+    internal_frame_.setTo(zero, mask == 0); 
+    result_frame.setTo(zero, mask); 
+    internal_frame_ += result_frame;
 }
 
 
