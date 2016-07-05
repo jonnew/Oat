@@ -44,6 +44,7 @@ components:
   - Note: replace open-cv implementation with shader. There are lots of
     tutorials on this.
 
+
 #### oat-posidet
 
 - `diff`
@@ -73,9 +74,9 @@ runtime characteristics with no listening components:
 #### oat-framefilt
 
 - `bsub`
-  - real   0m1.278s
-  - user   0m0.080s
-  - sys    0m0.008s
+  - real    0m1.278s
+  - user    0m0.080s
+  - sys     0m0.008s
 
 - `mask`
   - real    0m2.049s
@@ -83,14 +84,27 @@ runtime characteristics with no listening components:
   - sys     0m0.020s
 
 - `mog`
-  - real   0m13.213s
-  - user   0m0.056s
-  - sys    0m0.068s
+  - real    0m13.213s
+  - user    0m0.056s
+  - sys     0m0.068s
+  - Note: no CUDA support
 
 - `undistort`
-  - real   0m24.106s
-  - user   0m0.096s
-  - sys    0m0.060s
+  - real    0m24.106s
+  - user    0m0.096s
+  - sys     0m0.060s
+
+#### oat-decorate
+
+- No position source, just date and sample added to frame.
+  - real    0m0.934s
+  - user	0m0.064s
+  - sys	    0m0.024s
+
+- Single position source with all display options turned on.
+  - real	0m6.274s
+  - user	0m0.132s
+  - sys	    0m0.040s
 
 #### oat-posidet
 

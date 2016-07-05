@@ -284,7 +284,7 @@ void Decorator::drawPosition() {
         (i > position_sources_.size() - 1) ? i = 0 : i++;
     }
 
-    // TODO: Following routine feels pretty inefficient
+    // TODO: Following is inefficient and it shows in the performance testing
     if (show_position_history_)
         symbol_frame += history_frame_;
 
@@ -298,7 +298,7 @@ void Decorator::drawPosition() {
                     result_frame);
 
     cv::Mat mask;
-    cv::Scalar zero;
+    const cv::Scalar zero(0);
     cv::inRange(symbol_frame, zero, zero, mask);
     internal_frame_.setTo(zero, mask == 0); 
     result_frame.setTo(zero, mask); 
