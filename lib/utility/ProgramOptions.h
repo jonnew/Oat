@@ -57,11 +57,12 @@ private:
 
 /** 
  * @brief Extract a file/key pair from a variable map. 
- * Arguement must be eactly 'config'.
  * @param map Variable map to search for config file/key option.
+ * @param key Key specifying location of file/key pair within the variable map. 
  * @return Extracted config file/key pair. 
  */
-std::vector<std::string> extractConfigFileKey(po::variables_map map);
+std::vector<std::string> 
+extractConfigFileKey(po::variables_map map, const char *key="config");
 
 }      /* namespace oat */
 #endif /* OAT_PROGRAM_OPTIONS */

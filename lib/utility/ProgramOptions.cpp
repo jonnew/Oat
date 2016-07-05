@@ -45,13 +45,14 @@ ComponentInfo * ComponentInfo::instance() {
     return inst;
 }
 
-std::vector<std::string> extractConfigFileKey(const po::variables_map map) {
+std::vector<std::string> extractConfigFileKey(const po::variables_map map,
+                                              const char *key) {
 
     std::vector<std::string> ret;
 
-    if (!map["config"].empty()) {
+    if (!map[key].empty()) {
 
-        ret = map["config"].as<std::vector<std::string> >();
+        ret = map[key].as<std::vector<std::string> >();
 
         if (ret.size() != 2)
            throw std::runtime_error("Configuration must be supplied as file key pair.\n"); 
