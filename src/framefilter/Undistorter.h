@@ -43,6 +43,8 @@ public:
     Undistorter(const std::string &frame_souce_address,
                 const std::string &frame_sink_address);
 
+    void connectToNode(void) override;
+
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
 
@@ -53,7 +55,6 @@ public:
 private:
 
     // Camera model to use for calibration
-    // TODO: Declared/defined in oat-calibrate as well. Common header?
     enum class CameraModel
     {
         NA      = -1,  //!< Not applicable
@@ -72,9 +73,7 @@ private:
     cv::Matx33d camera_matrix_  {cv::Matx33d::eye()};
     std::vector<double> distortion_coefficients_ {0,0,0,0,0,0,0,0};
 
-    // Negative implied no rotation
-    double rotation_deg_ = 0.0;
-    cv::Matx23d rotation_matrix_; 
+    double rotation_deg_ {0.0};
 };
 
 }      /* namespace oat */

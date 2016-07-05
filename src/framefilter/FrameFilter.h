@@ -34,7 +34,7 @@ namespace oat {
 // Forward decl.
 class SharedFrameHeader;
 
-/** 
+/**
  * @brief Abstract frame filter.
  * All concrete frame filter types implement this ABC.
  */
@@ -44,7 +44,6 @@ public:
     /**
      * @brief Abstract frame filter.
      * All concrete frame filter types implement this ABC.
-     *
      * @param frame_source_address Frame SOURCE node address
      * @param frame_sink_address Frame SINK node address
      */
@@ -55,39 +54,44 @@ public:
 
     /**
      * @brief FrameServers must be able to connect to a Source and Sink Nodes
-     *
      * in shared memory
      */
     virtual void connectToNode(void);
 
     /**
      * @breif Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
-     *
      * filtered frame to SINK.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
-    virtual bool processFrame(void);
+    bool processFrame(void);
 
     /**
      * @brief Configure filter parameters.
-     *
      * @param config_file configuration file path
      * @param config_key configuration key
      */
     virtual void configure(const std::string &config_file,
                            const std::string &config_key) = 0;
 
-    /** 
+    /**
      * @brief Get internal component options.
      * @return Pointer to internal component options.
      */
-    po::options_description component_options() const { return component_options_; }
+    po::options_description
+    component_options() const { return component_options_; }
 
     /**
      * @breif Get frame filter name
      * @return name
      */
     std::string name(void) const { return name_; }
+
+    /**
+     * @brief Get parameters of frames being processed by this component
+     * @return Frame parameters
+     */
+    oat::Source<oat::SharedFrameHeader>::ConnectionParameters
+    frame_parameters(void) const { return frame_parameters_; }
 
 protected:
 
@@ -105,9 +109,6 @@ private:
     // Filter name
     const std::string name_;
 
-    // Currently processed frame
-    oat::Frame internal_frame_;
-
     // Frame source
     const std::string frame_source_address_;
     oat::Source<oat::SharedFrameHeader> frame_source_;
@@ -116,10 +117,13 @@ private:
     const std::string frame_sink_address_;
     oat::Sink<oat::SharedFrameHeader> frame_sink_;
 
+    // Currently processed frame
+    oat::Frame internal_frame_;
+
     // Currently acquired, shared frame
     oat::Frame shared_frame_;
+    oat::Source<oat::SharedFrameHeader>::ConnectionParameters frame_parameters_;
 };
 
 }      /* namespace oat */
 #endif /* OAT_FRAMEFILT_H */
-

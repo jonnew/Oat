@@ -36,7 +36,7 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
-    // TYPE-specific program options
+    // type-specific program options
     component_options_.add_options()
         ("config,c", po::value<std::vector<std::string> >()->multitoken(),
         "Configuration file/key pair.")
@@ -45,19 +45,20 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
 
 void FrameFilter::connectToNode() {
 
-    // Establish our a slot in the node
+    // Establish our a slot in the source node
     frame_source_.touch(frame_source_address_);
 
-    // Wait for sychronous start with sink when it binds the node
+    // Wait for synchronous start with sink when it binds its node
     frame_source_.connect();
 
     // Get frame meta data to format sink
-    oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
-            frame_source_.parameters();
+    frame_parameters_ = frame_source_.parameters();
 
-    // Bind to sink node and create a shared cv::Mat
-    frame_sink_.bind(frame_sink_address_, param.bytes);
-    shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
+    // Bind to sink node and create a shared frame
+    frame_sink_.bind(frame_sink_address_, frame_parameters_.bytes);
+    shared_frame_ = frame_sink_.retrieve(frame_parameters_.rows,
+                                         frame_parameters_.cols,
+                                         frame_parameters_.type);
 }
 
 bool FrameFilter::processFrame() {
@@ -78,7 +79,7 @@ bool FrameFilter::processFrame() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Mess with internal frame
+    // Filter internal frame
     filter(internal_frame_);
 
     // START CRITICAL SECTION //

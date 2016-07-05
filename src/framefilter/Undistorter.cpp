@@ -41,7 +41,32 @@ Undistorter::Undistorter(const std::string& source_name, const std::string& sink
          "pixels with indices corresponding to non-zero value pixels in the mask "
          "image will be unaffected. Others will be set to zero. This image must "
          "have the same dimensions as frames from SOURCE.")
+        ("rotation", po::value<double>(&rotation_deg_),
+         "Degrees to rotate undistorted image about its center.") 
         ;
+}
+
+void Undistorter::connectToNode() {
+
+    FrameFilter::connectToNode();
+
+    // Combine camera matrix and rotation matrix
+    cv::Point center = cv::Point(frame_parameters().cols/2, 
+                                 frame_parameters().rows/2);
+    cv::Mat rm = cv::getRotationMatrix2D(center, rotation_deg_, 1.0);
+
+    cv::Matx33d R;
+    R(0, 0) = rm.at<double>(0, 0);
+    R(0, 1) = rm.at<double>(0, 1);
+    R(0, 2) = rm.at<double>(0, 2);
+    R(1, 0) = rm.at<double>(1, 0);
+    R(1, 1) = rm.at<double>(1, 1);
+    R(1, 2) = rm.at<double>(1, 2);
+    R(2, 0) = 0;
+    R(2, 1) = 0;
+    R(2, 2) = 1;
+
+    camera_matrix_ = R * camera_matrix_;
 }
 
 void Undistorter::configure(const std::string &config_file,
@@ -106,18 +131,8 @@ void Undistorter::configure(const std::string &config_file,
 
         }
 
-        if (oat::config::getValue(this_config, "rotation", rotation_deg_, 0.0, 360.0)) {
-            // TODO: modify camera matrix to encapuslate rotation operation
-            //cv::Matx33d R;
-            //cv::Point center = cv::Point(frame.cols/2, frame.rows/2 );
-            //cv::Mat rm = cv::getRotationMatrix2D(center, rotation_deg_, 1.0);
-            //R(0, 2) = 0;
-            //R(2, 0) = 0;
-            //R(2, 2) = 1;
-            //rm.copyTo(R(cv::Rect(0,0,2,2)));
-            //std::cout << "Rotation matrix: " << R;
-            //camera_matrix_ = camera_matrix_ * R;
-        }
+        // Rotation
+        oat::config::getValue(this_config, "rotation", rotation_deg_, 0.0, 360.0);
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
@@ -145,13 +160,6 @@ void Undistorter::filter(cv::Mat& frame) {
             throw std::runtime_error("Invalid camera model selection.\n");
         }
     }
-
-    if (rotation_deg_ != 0.0) {
-        cv::Point center = cv::Point(frame.cols/2, frame.rows/2 );
-        rotation_matrix_ = cv::getRotationMatrix2D(center, rotation_deg_, 1.0);
-        cv::warpAffine(frame, frame, rotation_matrix_, frame.size());
-    }
-
 }
 
 } /* namespace oat */
