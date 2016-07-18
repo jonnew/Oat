@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     switch (type_hash[type]) {
         case 'a':
         {
-            server = std::make_shared<oat::WebCam>(sink);
+            server = std::make_shared<oat::WebCam>(sink, index);
             break;
         }
         case 'b':

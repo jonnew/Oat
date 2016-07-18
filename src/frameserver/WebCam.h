@@ -34,7 +34,8 @@ class WebCam : public FrameServer {
 
 public:
 
-    explicit WebCam(const std::string &frame_sink_address_);
+    explicit WebCam(const std::string &frame_sink_address_, 
+                    const size_t index);
 
     // Implement FrameServer interface
     void configure(void) override;
@@ -49,7 +50,7 @@ public:
 private:
 
     // The webcam object
-    int64_t index_;
+    size_t index_;
     std::unique_ptr<cv::VideoCapture> cv_camera_;
 
     // frame generation clock

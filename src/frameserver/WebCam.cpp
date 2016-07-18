@@ -32,9 +32,9 @@
 
 namespace oat {
 
-WebCam::WebCam(const std::string &frame_sink_name) :
+WebCam::WebCam(const std::string &frame_sink_name, size_t index) :
   FrameServer(frame_sink_name)
-, index_(0)
+, index_(index)
 {
     // Nothing
 }
@@ -130,7 +130,9 @@ void WebCam::configure(const std::string& config_file, const std::string& config
         oat::config::checkKeys(options, this_config);
 
         // Set the camera index
-        oat::config::getValue(this_config, "index", index_, MIN_INDEX);
+        int64_t idx;
+        oat::config::getValue(this_config, "index", idx, MIN_INDEX);
+        index_ = (size_t)idx;
         //cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
 
         // Set the ROI
