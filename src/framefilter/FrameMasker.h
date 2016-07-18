@@ -31,15 +31,17 @@ class FrameMasker : public FrameFilter {
 public:
 
     /**
-     * A frame masker.
-     * A frame masker to isolate one or more regions of interest in a frame stream using
-     * a mask frame. Pixels of the input frames that correspond to non-zero pixels in
-     * the mask frame will be unchanged. All other pixels will be set to 0.
+     * @brief A frame masker to isolate one or more regions of interest in a
+     * frame stream using a mask frame. Pixels of the input frames that
+     * correspond to non-zero pixels in the mask frame will be unchanged. All
+     * other pixels will be set to 0.
      * @param frame_source_address raw frame source address
      * @param frame_sink_address filtered frame sink address
      */
     FrameMasker(const std::string &frame_souce_address,
                 const std::string &frame_sink_address);
+
+    void configure(const po::variables_map &vm) override;
 
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
@@ -47,16 +49,13 @@ public:
 private:
 
     /**
-     * Apply frame mask.
-     * @param frame unfiltered frame
-     * @return filtered frame
+     * @brief Apply binary frame mask.
+     * @param frame Frame to filter.
      */
     void filter(cv::Mat& frame) override;
 
-    // Do we have a mask to work with
-    bool mask_set_ = false;
-
     // Mask frames with an arbitrary ROI
+    bool mask_set_ = false;
     cv::Mat roi_mask_;
 };
 

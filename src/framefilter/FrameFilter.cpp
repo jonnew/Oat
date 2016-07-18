@@ -36,8 +36,17 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
+    //// type-specific program options
+    //component_options_.add_options()
+    //    ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+    //    "Configuration file/key pair.")
+    //    ;
+}
+
+void FrameFilter::appendOptions(po::options_description &opts) {
+
     // type-specific program options
-    component_options_.add_options()
+    opts.add_options()
         ("config,c", po::value<std::vector<std::string> >()->multitoken(),
         "Configuration file/key pair.")
         ;

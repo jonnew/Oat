@@ -65,20 +65,29 @@ public:
      */
     bool processFrame(void);
 
-    /**
+
+    virtual void appendOptions(po::options_description &opts); 
+
+    /** 
      * @brief Configure filter parameters.
-     * @param config_file configuration file path
-     * @param config_key configuration key
+     * @param vm Previously parsed program option value map.
      */
+    virtual void configure(const po::variables_map &vm) { };//= 0;
+
+    ///**
+    // * @brief Configure filter parameters.
+    // * @param config_file configuration file path
+    // * @param config_key configuration key
+    // */
     virtual void configure(const std::string &config_file,
                            const std::string &config_key) = 0;
 
-    /**
-     * @brief Get internal component options.
-     * @return Pointer to internal component options.
-     */
-    po::options_description
-    component_options() const { return component_options_; }
+    ///**
+    // * @brief Get internal component options.
+    // * @return Copy of internal component options.
+    // */
+    //po::options_description
+    //component_options() const { return component_options_; }
 
     /**
      * @breif Get frame filter name
@@ -101,9 +110,10 @@ protected:
      */
     virtual void filter(cv::Mat& frame) = 0;
 
-    // Filter program options
-    po::options_description component_options_ {"CONFIGURATION"};
-
+    // List of allowed configuration options, including those 
+    // specified only via config file
+    static const char *ALL_CONFIG_OPTS;
+po::options_description component_options_;
 private:
 
     // Filter name

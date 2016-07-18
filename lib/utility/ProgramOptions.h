@@ -26,6 +26,7 @@
 #include <boost/program_options.hpp>
 
 namespace oat {
+namespace config {
 
 namespace po = boost::program_options;
 
@@ -64,5 +65,6 @@ private:
 std::vector<std::string> 
 extractConfigFileKey(po::variables_map map, const char *key="config");
 
+}      /* namespace config */
 }      /* namespace oat */
 #endif /* OAT_PROGRAM_OPTIONS */

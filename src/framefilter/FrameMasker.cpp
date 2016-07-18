@@ -19,13 +19,14 @@
 
 #include "FrameMasker.h"
 
+#include <cpptoml.h>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
-#include <cpptoml.h>
-#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/ProgramOptions.h"
+#include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {
 
@@ -35,7 +36,7 @@ FrameMasker::FrameMasker(const std::string &frame_source_address,
 {
     // TYPE-specific program options
     component_options_.add_options()
-        ("mask", po::value<std::string>(), 
+        ("mask", po::value<std::string>(),
          "Path to a binary image used to mask frames from SOURCE. SOURCE frame "
          "pixels with indices corresponding to non-zero value pixels in the mask "
          "image will be unaffected. Others will be set to zero. This image must "
@@ -43,7 +44,13 @@ FrameMasker::FrameMasker(const std::string &frame_source_address,
         ;
 }
 
-void FrameMasker::configure(const std::string &config_file, 
+void FrameMasker::configure(const po::variables_map &vm) {
+
+    auto config_fk = oat::config::extractConfigFileKey(vm);
+    bool config_used = !config_fk.empty();
+}
+
+void FrameMasker::configure(const std::string &config_file,
                             const std::string &config_key) {
 
     // Available options

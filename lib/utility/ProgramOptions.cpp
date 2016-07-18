@@ -25,6 +25,7 @@
 #include "make_unique.h"
 
 namespace oat {
+namespace config {
 
 namespace po = boost::program_options;
 
@@ -61,4 +62,5 @@ std::vector<std::string> extractConfigFileKey(const po::variables_map map,
     return ret;
 }
 
+} /* namespace config */
 } /* namespace oat */

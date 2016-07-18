@@ -36,6 +36,24 @@ using Array = std::shared_ptr<cpptoml::array>;
 
 using boost::typeindex::type_id_with_cvr;
 
+//inline void checkKeys(const char *options, const Table user_config) {
+//
+//    auto it = user_config->begin();
+//
+//    // Look through user-provided config options and make sure each matches an
+//    // actual configuration key ID
+//    while (it != user_config->end()) {
+//
+//        auto key = it->first;
+//
+//        if (std::find(std::begin(options), std::end(options), key) == options.end()) {
+//            throw (std::runtime_error("Unknown configuration key '" + key + "'.\n"));
+//        }
+//
+//        it++;
+//    }
+//}
+
 inline void checkKeys(const std::vector<std::string>& options, const Table user_config) {
 
     auto it = user_config->begin();
@@ -202,7 +220,11 @@ inline bool getArray(const Table table, const std::string& key, Array& array_out
 }
 
 // TOML array from table, required size
-inline bool getArray(const Table table, const std::string& key, Array& array_out, size_t size, bool required = false) {
+inline bool getArray(const Table table, 
+                     const std::string& key, 
+                     Array& array_out, 
+                     size_t size, 
+                     bool required = false) {
 
     // If the key is in the table,
     if (table->contains(key)) {

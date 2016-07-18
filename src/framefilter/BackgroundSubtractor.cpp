@@ -21,31 +21,52 @@
 
 #include <string>
 #include <iostream>
+#include <cpptoml.h>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
-#include <cpptoml.h>
-#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/ProgramOptions.h"
+#include "../../lib/utility/TOMLSanitize.h"
 
 #include "BackgroundSubtractor.h"
 
 namespace oat {
+
+static const char conf_opts_data[] = {"background"};
+const char *FrameFilter::ALL_CONFIG_OPTS = conf_opts_data;
 
 BackgroundSubtractor::BackgroundSubtractor(
             const std::string &frame_source_address,
             const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address)
 {
-    // TYPE-specific program options
-    component_options_.add_options()
-        ("background", po::value<std::string>(), 
+    //// Type-specific program options
+    //component_options_.add_options()
+    //    (&ALL_CONFIG_OPTS[0], po::value<std::string>(),
+    //     "Path to background image used for subtraction.")
+    //    ;
+}
+
+void BackgroundSubtractor::appendOptions(po::options_description &opts) {
+
+    // type-specific program options
+    FrameFilter::appendOptions(opts);
+    opts.add_options()
+        (&ALL_CONFIG_OPTS[0], po::value<std::string>(),
          "Path to background image used for subtraction.")
         ;
 }
 
+void BackgroundSubtractor::configure(const po::variables_map &vm) {
+
+    auto config_fk = oat::config::extractConfigFileKey(vm);
+    bool config_used = !config_fk.empty();
+}
+
 void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
 
+    // TODO: replace with CONFIG_OPTS
     const std::vector<std::string> options {"background"};
 
     // This will throw cpptoml::parse_exception if a file
@@ -63,13 +84,13 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
 
         std::string background_img_path;
         if (oat::config::getValue(this_config, "background", background_img_path)) {
-            background_frame = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
+            background_frame_ = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
 
-            if (background_frame.data == NULL) {
+            if (background_frame_.data == NULL) {
                 throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
             }
 
-            background_set = true;
+            background_set_ = true;
         }
 
     } else {
@@ -77,30 +98,19 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
     }
 }
 
-//void BackgroundSubtractor::appendOptions(po::options_description &opt) {
-//     
-//    opt.add_options()
-//        ("background", po::value<std::string>(), 
-//         "Path to background image used for subtraction.")
-//        ;
-//}
+void BackgroundSubtractor::setBackgroundImage(const cv::Mat &frame) {
 
-void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
-
-    background_frame = frame.clone();
-    background_set = true;
+    background_frame_ = frame.clone();
+    background_set_ = true;
 }
 
 void BackgroundSubtractor::filter(cv::Mat& frame) {
-    // Throws cv::Exception if there is a size mismatch between frames,
-    // or in any case where cv assertions fail.
 
-    // First image is always used as the default background image if one is
-    // not provided in a configuration file
-    if (!background_set)
+    // First frame used if not provided in config
+    if (!background_set_)
         setBackgroundImage(frame);
 
-    frame = frame - background_frame;
+    frame = frame - background_frame_;
 }
 
 } /* namespace oat */

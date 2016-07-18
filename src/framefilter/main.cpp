@@ -43,44 +43,44 @@ namespace po = boost::program_options;
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
-const char usage_string[] =
-    "Usage: framefilt [INFO]\n"
-    "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
-    "Filter frames from SOURCE and published filtered frames "
-    "to SINK.\n\n"
+const char usage_type[] =
     "TYPE\n"
     "  bsub: Background subtraction\n"
     "  mask: Binary mask\n"
     "  mog: Mixture of Gaussians background segmentation.\n"
-    "  undistort: Compensate for lens distortion using distortion model.\n\n"
-    "SOURCE:\n"
-    "  User-supplied name of the memory segment to receive frames "
-    "from (e.g. raw).\n\n"
-    "SINK:\n"
-    "  User-supplied name of the memory segment to publish frames "
-    "to (e.g. filt).";
+    "  undistort: Compensate for lens distortion using distortion model.\n";
 
-const char usage_string_special[] =
-    "Filter frames from SOURCE and published filtered frames "
-    "to SINK.\n\n"
+const char usage_io[] =
     "SOURCE:\n"
     "  User-supplied name of the memory segment to receive frames "
     "from (e.g. raw).\n\n"
     "SINK:\n"
     "  User-supplied name of the memory segment to publish frames "
-    "to (e.g. filt).";
+    "to (e.g. filt).\n";
 
 void printUsage(const po::options_description &options,
                 const std::string &type="") {
 
-    if (type.empty())
-        std::cout << usage_string;
-    else
-        std::cout << "Usage: framefilt " << type << " SOURCE SINK [CONFIGURATION]\n"
-                  << usage_string_special;
+    if (type.empty()) {
+        std::cout <<
+        "Usage: framefilt [INFO]\n"
+        "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
+        "Filter frames from SOURCE and published filtered frames "
+        "to SINK.\n\n";
 
-    // Generated options
-    std::cout << options << "\n";
+        std::cout << options << "\n";
+        std::cout << usage_type << "\n";
+        std::cout << usage_io << "\n";
+
+    } else {
+        std::cout <<
+        "Usage: framefilt " << type << " SOURCE SINK [CONFIGURATION]\n"
+        "Filter frames from SOURCE and published filtered frames "
+        "to SINK.\n";
+
+        std::cout << usage_io << "\n";
+        std::cout << options << "\n";
+    }
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
@@ -156,14 +156,14 @@ int main(int argc, char *argv[]) {
         positional_options.add("type-args", -1);
 
         // Visible options for help message
-        visible_options.add(oat::ComponentInfo::instance()->get());
+        visible_options.add(oat::config::ComponentInfo::instance()->get());
 
         // All options, including positional
         po::options_description options;
         options.add(positional_opt_desc)
-               .add(oat::ComponentInfo::instance()->get());
+               .add(oat::config::ComponentInfo::instance()->get());
 
-        // Parse options, including unrecongized options which may be TYPE-specific
+        // Parse options, including unrecongized options which may be type-specific
         auto parsed_opt = po::command_line_parser(argc, argv)
             .options(options)
             .positional(positional_options)
@@ -211,7 +211,10 @@ int main(int argc, char *argv[]) {
             }
 
             // Specialize program options for the selected TYPE
-            visible_options.add(filter->component_options());
+            po::options_description detail_opts {"CONFIGURATION"};
+            filter->appendOptions(detail_opts);
+            visible_options.add(detail_opts);
+            options.add(detail_opts);
         }
 
         // Check INFO arguments
@@ -221,7 +224,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (option_map.count("version")) {
-            std::cout << oat::VERSION_STRING;
+            std::cout << oat::config::VERSION_STRING;
             return 0;
         }
 
@@ -253,24 +256,24 @@ int main(int argc, char *argv[]) {
         // Get specialized component name
         comp_name = filter->name();
 
-        // Reparse specialized component  options
+        // Reparse specialized component options
         auto special_opt =
             po::collect_unrecognized(parsed_opt.options, po::include_positional);
         special_opt.erase(special_opt.begin(),special_opt.begin() + REQ_POSITIONAL_ARGS);
 
         po::store(po::command_line_parser(special_opt)
-                .options(filter->component_options())
-                .run(), option_map);
+                 .options(options)
+                 .run(), option_map);
         po::notify(option_map);
 
         // TODO: Bring start/end into configure method of each component
         // specialzation
-        // filter->configure(option_map);
+        //filter->configure(option_map);
 
         // **************** START
 
         // Check for configuration file and key options
-        config_fk = oat::extractConfigFileKey(option_map);
+        config_fk = oat::config::extractConfigFileKey(option_map);
         config_used = !config_fk.empty();
 
         // Process configuration file if provided

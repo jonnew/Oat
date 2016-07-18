@@ -41,10 +41,19 @@ public:
     BackgroundSubtractor(const std::string &frame_souce_address,
                          const std::string &frame_sink_address);
 
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
     void configure(const std::string &config_file,
                    const std::string &config_key) override;
 
 private:
+
+    // Background frame
+    bool background_set_= false;
+    cv::Mat background_frame_;
+
+    // Set the background frame
+    void setBackgroundImage(const cv::Mat &background);
 
     /**
      * Apply background subtraction.
@@ -52,16 +61,6 @@ private:
      * @return filtered frame
      */
     void filter(cv::Mat& frame) override;
-
-    // Is the background frame set?
-    bool background_set = false;
-
-    // The background frame
-    cv::Mat background_frame;
-
-    // Set the background frame
-    void setBackgroundImage(const cv::Mat&);
-
 };
 
 }      /* namespace oat */
