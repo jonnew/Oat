@@ -1,7 +1,7 @@
 //******************************************************************************
-//* File:   oat posidet main.cpp
+//* File:   oat framecom main.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
-//*
+//
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Oat project.
@@ -31,11 +31,8 @@
 
 #include "../../lib/utility/IOFormat.h"
 
-#include "Aruco.h"
-#include "PositionDetector.h"
-#include "HSVDetector.h"
-#include "DifferenceDetector.h"
-#include "SimpleThreshold.h"
+#include "FrameCombiner.h"
+#include "MaskSubtractor.h"
 
 namespace po = boost::program_options;
 
@@ -43,21 +40,16 @@ volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
 void printUsage(po::options_description options) {
-    std::cout << "Usage: posidet [INFO]\n"
-              << "   or: posidet TYPE SOURCE SINK [CONFIGURATION]\n"
-              << "Perform TYPE object detection on frames from SOURCE.\n"
-              << "Publish detected object positions to SINK.\n\n"
+    std::cout << "Usage: framecom [INFO]\n"
+              << "   or: framecom TYPE SOURCES SINK [CONFIGURATION]\n"
+              << "Combine frames from two or more SOURCES.\n"
+              << "Publish combined frame to SINK.\n\n"
               << "TYPE\n"
-              << "  diff: Difference detector (grey-scale, motion)\n"
-              << "  hsv : HSV detector (color)\n"
-              << "  thresh : Intensity range detector (color)\n"
-              << "  aruco : Aruco marker tracking\n\n"
-              << "SOURCE:\n"
-              << "  User-supplied name of the memory segment to receive frames "
-              << "from (e.g. raw).\n\n"
+              << "  mask: Apply SOURCE[0] as a mask to SOURCE[1].\n\n"
+              << "SOURCES:\n"
+              << "  User-supplied frame source names (e.g. raw, msk, ...).\n\n"
               << "SINK:\n"
-              << "  User-supplied name of the memory segment to publish detected "
-              << "positions to (e.g. pos).\n\n"
+              << "  User-supplied frame sink name (e.g. com).\n\n"
               << options << "\n";
 }
 
@@ -67,14 +59,14 @@ void sigHandler(int) {
 }
 
 // Processing loop
-void run(const std::shared_ptr<oat::PositionDetector>& detector) {
+void run(const std::shared_ptr<oat::FrameCombiner>& combiner) {
 
     try {
 
-        detector->connectToNode();
+        combiner->connectToNodes();
 
         while (!quit && !source_eof) {
-            source_eof = detector->process();
+            source_eof = combiner->process();
         }
 
     } catch (const boost::interprocess::interprocess_exception &ex) {
@@ -90,19 +82,15 @@ int main(int argc, char *argv[]) {
 
     std::signal(SIGINT, sigHandler);
 
-    std::string source;
+    std::vector<std::string> sources;
     std::string sink;
     std::string type;
-    bool tuning_on = false;
     std::vector<std::string> config_fk;
     bool config_used = false;
     po::options_description visible_options("OPTIONS");
 
     std::unordered_map<std::string, char> type_hash;
-    type_hash["diff"] = 'a';
-    type_hash["hsv"] = 'b';
-    type_hash["thresh"] = 'c';
-    type_hash["aruco"] = 'd';
+    type_hash["mask"] = 'a';
 
     try {
 
@@ -114,34 +102,28 @@ int main(int argc, char *argv[]) {
 
         po::options_description config("CONFIGURATION");
         config.add_options()
-                ("tune", "Use GUI to tune detection parameters at the cost of performance.")
                 ("config,c", po::value<std::vector<std::string> >()->multitoken(),
                 "Configuration file/key pair.")
                 ;
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("type,t", po::value<std::string>(&type), "Detector type.\n\n"
-                "Values:\n"
-                "  diff: Difference detector (motion).\n"
-                "  hsv: HSV detector (color).")
-                ("source", po::value<std::string>(&source),
-                "The name of the SOURCE that supplies images on which hsv-filter object detection will be performed."
-                "The server must be of type SMServer<SharedCVMatHeader>\n")
+                ("type", po::value<std::string>(&type),
+                "Type of frame combiner to use.")
+                ("sources", po::value< std::vector<std::string> >(),
+                "The names the SOURCES supplying frames to be combined.")
                 ("sink", po::value<std::string>(&sink),
-                "The name of the SINK to which position background subtracted images will be served.")
+                "The name of the SINK to which combined frames will be published.")
                 ;
 
         po::positional_options_description positional_options;
         positional_options.add("type", 1);
-        positional_options.add("source", 1);
-        positional_options.add("sink", 1);
+        positional_options.add("sources", -1); // If not overridden by explicit --sink, last positional argument is sink.
 
-        po::options_description visible_options("OPTIONS");
-        visible_options.add(options).add(config);
-
-        po::options_description all_options("ALL OPTIONS");
+        po::options_description all_options("OPTIONS");
         all_options.add(options).add(config).add(hidden);
+
+        visible_options.add(options).add(config);
 
         po::variables_map variable_map;
         po::store(po::command_line_parser(argc, argv)
@@ -158,7 +140,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (variable_map.count("version")) {
-            std::cout << "Oat Object Position Detector version "
+            std::cout << "Oat Frame Combiner version "
                       << Oat_VERSION_MAJOR
                       << "."
                       << Oat_VERSION_MINOR
@@ -174,20 +156,25 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if (!variable_map.count("source")) {
+        if (!variable_map.count("sources")) {
             printUsage(visible_options);
-            std::cerr << oat::Error("A SOURCE must be specified.\n");
+            std::cerr << oat::Error("At least two SOURCES and a SINK must be specified.\n");
+            return -1;
+        }
+
+        sources = variable_map["sources"].as< std::vector<std::string> >();
+        if (sources.size() < 3) {
+            printUsage(visible_options);
+            std::cerr << oat::Error("At least two SOURCES and a SINK must be specified.\n");
             return -1;
         }
 
         if (!variable_map.count("sink")) {
-            printUsage(visible_options);
-            std::cerr << oat::Error("A SINK name must be specified.\n");
-            return -1;
-        }
 
-        if (variable_map.count("tune"))
-            tuning_on = true;
+            // If not overridden by explicit --sink, last positional argument is the sink.
+            sink = sources.back();
+            sources.pop_back();
+        }
 
         if (!variable_map["config"].empty()) {
 
@@ -211,28 +198,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Create component
-    std::shared_ptr<oat::PositionDetector> detector;
+    std::shared_ptr<oat::FrameCombiner> combiner;
 
     // Refine component type
     switch (type_hash[type]) {
         case 'a':
         {
-            detector = std::make_shared<oat::DifferenceDetector>(source, sink);
-            break;
-        }
-        case 'b':
-        {
-            detector = std::make_shared<oat::HSVDetector>(source, sink);
-            break;
-        }
-        case 'c':
-        {
-            detector = std::make_shared<oat::SimpleThreshold>(source, sink);
-            break;
-        }
-        case 'd':
-        {
-            detector = std::make_shared<oat::Aruco>(source, sink);
+            combiner = std::make_shared<oat::MaskSubtractor>(sources, sink);
             break;
         }
         default:
@@ -247,44 +219,41 @@ int main(int argc, char *argv[]) {
     try {
 
         if (config_used)
-            detector->configure(config_fk[0], config_fk[1]);
-
-        detector->tuning_on(tuning_on);
+            combiner->configure(config_fk[0], config_fk[1]);
 
         // Tell user
-        std::cout << oat::whoMessage(detector->name(),
-                "Listening to source " + oat::sourceText(source) + ".\n")
-                << oat::whoMessage(detector->name(),
+        std::cout << oat::whoMessage(combiner->name(), "Listening to sources ");
+        for (auto s : sources)
+            std::cout << oat::sourceText(s) << " ";
+        std::cout << ".\n"
+                << oat::whoMessage(combiner->name(),
                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(detector->name(),
+                << oat::whoMessage(combiner->name(),
                 "Press CTRL+C to exit.\n");
 
-        // Infinite loop until ctrl-c or end of stream signal
-        run(detector);
+        // Infinite loop until ctrl-c or server end-of-stream signal
+        run(combiner);
 
         // Tell user
-        std::cout << oat::whoMessage(detector->name(), "Exiting.\n");
+        std::cout << oat::whoMessage(combiner->name(), "Exiting.\n");
 
         // Exit
         return 0;
 
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(detector->name(),
+        std::cerr << oat::whoError(combiner->name(),
                      "Failed to parse configuration file " + config_fk[0] + "\n")
-                  << oat::whoError(detector->name(), ex.what())
-                  << "\n";
+                  << oat::whoError(combiner->name(), ex.what()) << "\n";
     } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(detector->name(), ex.what())
-                  << "\n";
+        std::cerr << oat::whoError(combiner->name(), ex.what()) << "\n";
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(detector->name(), ex.what())
-                  << "\n";
+        std::cerr << oat::whoError(combiner->name(), ex.what()) << "\n";
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(combiner->name(), ex.what()) << "\n";
     } catch (...) {
-        std::cerr << oat::whoError(detector->name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(combiner->name(), "Unknown exception.\n");
     }
 
     // Exit failure
     return -1;
 }
-
-

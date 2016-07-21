@@ -35,8 +35,13 @@ void siftContours(cv::Mat &frame, Position2D &position,
     std::vector<std::vector <cv::Point> > contours;
 
     // NOTE: This function will modify the frame
+    // NOTE: Faster to use cv::RETR_EXTERNAL, but this excludes inner contours
+    // that might be ruled in because they meet area requirements. Would be
+    // best to go back to this once we have a proper framecom that can be used
+    // as dynamic mask, since this would define the outer region that should be
+    // considered...
     cv::findContours(frame, contours, 
-                     cv::RETR_EXTERNAL, 
+                     cv::RETR_LIST, 
                      cv::CHAIN_APPROX_SIMPLE);
 
     double object_area = 0;

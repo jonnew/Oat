@@ -1,0 +1,12 @@
+# Example configuration file for the posicom component
+# Configuration options for each component TYPE are shown
+# To use them:
+#
+# ``` bash
+# oat posicom TYPE SOURCES SINK -c config.toml TYPE
+# ```
+
+[mean]
+heading_anchor = 0 	# Position used has anchor when calculating
+			# mean vector to other SOURCE positions.
+			# If left unspecified, no heading will be generated.

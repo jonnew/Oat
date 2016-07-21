@@ -3,11 +3,13 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create a SOURCE variable containing all required .cpp filesj
 set (oat-framefilt_SOURCE
-     FrameFilter.cpp
      BackgroundSubtractor.cpp
      BackgroundSubtractorMOG.cpp
+     ColorConvert.cpp
+     FrameFilter.cpp
      FrameMasker.cpp
      Undistorter.cpp
+     Threshold.cpp
      main.cpp)
 
 # Target

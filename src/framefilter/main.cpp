@@ -34,8 +34,10 @@
 #include "FrameFilter.h"
 #include "BackgroundSubtractor.h"
 #include "BackgroundSubtractorMOG.h"
+#include "ColorConvert.h"
 #include "FrameMasker.h"
 #include "Undistorter.h"
+#include "Threshold.h"
 
 namespace po = boost::program_options;
 
@@ -49,9 +51,11 @@ void printUsage(const po::options_description &options){
               << "to SINK.\n\n"
               << "TYPE\n"
               << "  bsub: Background subtraction\n"
+              << "  color: Color conversion\n"
               << "  mask: Binary mask\n"
               << "  mog: Mixture of Gaussians background segmentation.\n"
               << "  undistort: Compensate for lens distortion using distortion model.\n\n"
+              << "  thresh: Min/max intensity thresholding.\n\n"
               << "SOURCE:\n"
               << "  User-supplied name of the memory segment to receive frames "
               << "from (e.g. raw).\n\n"
@@ -103,6 +107,8 @@ int main(int argc, char *argv[]) {
     type_hash["mask"] = 'b';
     type_hash["mog"] = 'c';
     type_hash["undistort"] = 'd';
+    type_hash["color"] = 'e';
+    type_hash["thresh"] = 'f';
 
     // The component itself
     std::string comp_name = "framefilt";
@@ -218,6 +224,16 @@ int main(int argc, char *argv[]) {
                      std::cerr << oat::whoWarn(comp_name,
                              "No undistortion configuration was provided."
                              " This filter does nothing but waste CPU cycles.\n");
+                break;
+            }
+            case 'e':
+            {
+                filter = std::make_shared<oat::ColorConvert>(source, sink);
+                break;
+            }
+            case 'f':
+            {
+                filter = std::make_shared<oat::Threshold>(source, sink);
                 break;
             }
             default:

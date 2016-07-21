@@ -20,6 +20,8 @@
 #ifndef OAT_DETECTORFUNC
 #define	OAT_DETECTORFUNC
 
+#define OAT_POSIDET_MAX_OBJ_AREA_PIX 100000
+
 // Forward decl.
 namespace cv { class Mat; }
 

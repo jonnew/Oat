@@ -93,4 +93,3 @@ private :
 
 }       /* namespace oat */
 #endif	/* OAT_SHAREDCVMAT_H */
-

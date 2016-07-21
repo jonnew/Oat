@@ -36,6 +36,10 @@ class SharedFrameHeader;
  * All concrete frame filter types implement this ABC.
  */
 class FrameFilter {
+
+// HACK!
+friend class ColorConvert;
+
 public:
 
     /**

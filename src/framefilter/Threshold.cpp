@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   BackgroundSubtractor.cpp
+//* File:   Threshold.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -29,26 +29,28 @@
 #include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
-#include "BackgroundSubtractor.h"
+#include "Threshold.h"
 
 namespace oat {
 
-BackgroundSubtractor::BackgroundSubtractor(
-            const std::string &frame_source_address,
-            const std::string &frame_sink_address) :
+Threshold::Threshold(const std::string &frame_source_address,
+                     const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address)
 {
     // Nothing
 }
 
-void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
+// TODO: Tuning
+void Threshold::configure(const std::string& config_file,
+                             const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {"background", "adaption-coeff"};
+    std::vector<std::string> options {"min-intensity",
+                                      "max-intensity"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
+   auto config = cpptoml::parse_file(config_file);
 
     // See if a camera configuration was provided
     if (config->contains(config_key)) {
@@ -59,45 +61,45 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
         // Check for unknown options in the table and throw if you find them
         oat::config::checkKeys(options, this_config);
 
-        std::string background_img_path;
-        if (oat::config::getValue(this_config, "background", background_img_path)) {
-            background_frame_ = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
+        // Intensity min, max
+        {
+            int64_t min, max;
+            oat::config::getValue(this_config, "min-intensity", min, 256);
+            min_intensity_bound_ = min;
 
-            if (background_frame_.data == NULL) {
-                throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
-            }
-
-            background_set_ = true;
+            oat::config::getValue(this_config, "max-intensity", max, 256);
+            max_intensity_bound_ = max;
         }
-
-        // Learning coefficient
-        oat::config::getValue(this_config, "adaption-coeff", alpha_, 0.0, 1.0);
 
     } else {
         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
+
 }
 
-void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
+void Threshold::filter(cv::Mat& frame) {
 
-    background_frame_ = frame.clone();
-    frame.clone().convertTo(background_frame_f_, CV_32F);
-    background_set_ = true;
-}
+    cv::Mat frame_copy = frame.clone();
 
-void BackgroundSubtractor::filter(cv::Mat& frame) {
+    if (frame.type() != CV_8UC1)
+        cv::cvtColor(frame, frame_copy, cv::COLOR_BGR2GRAY);
 
-    // First image is always used as the default background image if one is
-    // not provided in a configuration file
-    if (!background_set_)
-        setBackgroundImage(frame);
+    cv::inRange(frame_copy, 
+                min_intensity_bound_, 
+                max_intensity_bound_, 
+                threshold_frame_);
 
-    if (alpha_ > 0.0) {
-       cv::accumulateWeighted(frame, background_frame_f_, alpha_); 
-       background_frame_f_.convertTo(background_frame_, CV_8U);
-    }
-        
-    frame = frame - background_frame_;
+    std::vector<std::vector <cv::Point> > contours;
+
+    cv::findContours(threshold_frame_, 
+                     contours, 
+                     cv::RETR_EXTERNAL,
+                     cv::CHAIN_APPROX_SIMPLE);
+
+    cv::drawContours(frame, contours, -1, cv::Scalar(255, 255, 255));
+    //frame.setTo(cv::Scalar(0, 0, 0), threshold_frame_ == 0);
 }
 
 } /* namespace oat */
+
+

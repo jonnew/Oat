@@ -42,7 +42,7 @@ HSVDetector::HSVDetector(const std::string &frame_source_address,
     // Cannot use initializer because if these are set to 0, erode_on or
     // dilate_on must be set to false
     set_erode_size(0);
-    set_dilate_size(10);
+    set_dilate_size(0);
 }
 
 void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
@@ -50,7 +50,7 @@ void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
     // Transform frame to HSV
     // (Extremely expensive operation)
     cv::cvtColor(frame, frame, cv::COLOR_BGR2HSV);
-
+    
     // Threshold HSV channels
     // (Very expensive operation)
     cv::inRange(frame,
@@ -217,9 +217,9 @@ void HSVDetector::createTuningWindows() {
     cv::createTrackbar("S MAX", tuning_image_title_, &s_max_, 256);
     cv::createTrackbar("V MIN", tuning_image_title_, &v_min_, 256);
     cv::createTrackbar("V MAX", tuning_image_title_, &v_max_, 256);
-    cv::createTrackbar("MIN AREA", tuning_image_title_, &dummy0_, 10000,
+    cv::createTrackbar("MIN AREA", tuning_image_title_, &dummy0_, OAT_POSIDET_MAX_OBJ_AREA_PIX,
             &hsvDetectorMinAreaSliderChangedCallback, this);
-    cv::createTrackbar("MAX AREA", tuning_image_title_, &dummy1_, 10000,
+    cv::createTrackbar("MAX AREA", tuning_image_title_, &dummy1_, OAT_POSIDET_MAX_OBJ_AREA_PIX,
             &hsvDetectorMaxAreaSliderChangedCallback, this);
     cv::createTrackbar("ERODE", tuning_image_title_, &erode_px_, 50,
             &hsvDetectorErodeSliderChangedCallback, this);
