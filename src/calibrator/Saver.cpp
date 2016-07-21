@@ -71,12 +71,12 @@ void Saver::visit(CameraCalibrator* cc) {
     auto cam = cpptoml::make_array();
     cv::MatConstIterator_<double> it, end;
     for (it = _cam.begin<double>(), end = _cam.end<double>(); it != end; ++it)
-        cam->get().push_back(cpptoml::make_value<double>(*it));
+        cam->get().push_back(cpptoml::make_value<double>(static_cast<double>(*it)));
 
     auto _dc = cc->distortion_coefficients(); // Have to make copy or iterator does not work
     auto dc = cpptoml::make_array();
     for (it = _dc.begin<double>(), end = _dc.end<double>(); it != end; it++)
-        dc->get().push_back(cpptoml::make_value<double>(*it));
+        dc->get().push_back(cpptoml::make_value<double>(static_cast<double>(*it)));
 
     // Insert camera matrix and distortion coeffs into sub table
     auto camera = cpptoml::make_table();
@@ -113,7 +113,7 @@ void Saver::visit(HomographyGenerator* hg) {
     auto arr = cpptoml::make_array();
     cv::MatConstIterator_<double> it, end;
     for (it = _hg.begin<double>(), end = _hg.end<double>(); it != end; ++it)
-        arr->get().push_back(cpptoml::make_value<double>(*it));
+        arr->get().push_back(cpptoml::make_value<double>(static_cast<double>(*it)));
 
     // Insert the array into the calibration table
     auto homography = cpptoml::make_table();
