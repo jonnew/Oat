@@ -21,6 +21,8 @@
 #define OAT_WEBCAM_H
 
 #include <string>
+#include <limits>
+
 #include "FrameServer.h"
 
 // Forward declaration
@@ -35,7 +37,8 @@ class WebCam : public FrameServer {
 public:
 
     explicit WebCam(const std::string &frame_sink_address_, 
-                    const size_t index);
+                    const size_t index, 
+                    const double frames_per_second = std::numeric_limits<double>::max());
 
     // Implement FrameServer interface
     void configure(void) override;
@@ -53,8 +56,13 @@ private:
     size_t index_;
     std::unique_ptr<cv::VideoCapture> cv_camera_;
 
-    // frame generation clock
+    // Frame clock
+    double frames_per_second_;
+    void calculateFramePeriod(void);
+
+    // Frame clock
     std::chrono::steady_clock clock_;
+    std::chrono::duration<double> frame_period_in_sec_;
     std::chrono::steady_clock::time_point start_;
 };
 

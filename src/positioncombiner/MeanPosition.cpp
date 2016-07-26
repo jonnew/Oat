@@ -113,7 +113,6 @@ void MeanPosition::combine(const std::vector<oat::Position2D> &sources,
             else
                 combined_position.heading_valid = false;
         }
-
     }
 
     // Renormalize head-direction unit vector

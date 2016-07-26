@@ -76,8 +76,10 @@ void PositionGenerator<T>::configure(const std::string &config_file,
 
         // Sample generation period
         double rate_hz;
-        if (oat::config::getValue(this_config, "rate-hz", rate_hz, 0))
-             generateSamplePeriod(rate_hz);
+        if (oat::config::getValue(this_config, "rate-hz", rate_hz, 0)) {
+            enforce_sample_clock_ = true;
+            generateSamplePeriod(rate_hz);
+        }
 
         // Number of position samples
         oat::config::getValue(this_config, "num-samples", num_samples_, 0);
@@ -104,9 +106,6 @@ void PositionGenerator<T>::connectToNode() {
     // Bind to sink sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
-
-    // Setup sample rate info on internal copy
-    internal_position_.sample().set_rate_hz(1.0 / sample_period_in_sec_.count());
 }
 
 template<typename T>
@@ -148,6 +147,9 @@ void PositionGenerator<T>::generateSamplePeriod(const double samples_per_second)
 
     // Automatic conversion
     sample_period_in_sec_ = period;
+
+    // Setup sample rate info on internal copy
+    internal_position_.sample().set_rate_hz(1.0 / sample_period_in_sec_.count());
 }
 
 // Explicit declaration to get around link errors due to this being in its own

@@ -32,9 +32,12 @@
 
 namespace oat {
 
-WebCam::WebCam(const std::string &frame_sink_name, size_t index) :
+WebCam::WebCam(const std::string &frame_sink_name, 
+               const size_t index,
+               const double frames_per_second):
   FrameServer(frame_sink_name)
 , index_(index)
+, frames_per_second_(frames_per_second)
 {
     // Nothing
 }
@@ -43,11 +46,17 @@ void WebCam::connectToNode() {
 
     cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
 
-    // FPS must be calculated manually for webcams to be remotely accurate
+    // TODO: Put into calculateFramePeriod() routine 
+    // Warmup to adapt exposure
     cv::Mat example_frame;
+    const int n = 20;
+    for (int i = 0; i < n; i++)
+        *cv_camera_ >> example_frame;
+
+    // FPS must be calculated manually for webcams to be remotely accurate
     auto start = std::chrono::high_resolution_clock::now();
 
-    const int n = 10;
+    // Sample frames to get FPS
     for (int i = 0; i < n; i++)
         *cv_camera_ >> example_frame;
 
@@ -64,6 +73,7 @@ void WebCam::connectToNode() {
             example_frame.rows, example_frame.cols, example_frame.type());
 
     internal_sample_.set_rate_hz(1.0 / frame_period_in_sec.count());
+    std::cout << "FPS: " << frame_period_in_sec.count();
 }
 
 bool WebCam::serveFrame() {
@@ -114,7 +124,7 @@ void WebCam::configure() { }
 void WebCam::configure(const std::string& config_file, const std::string& config_key) {
 
     // Available options
-    std::vector<std::string> options {"index", "roi"};
+    std::vector<std::string> options {"index", "fps", "roi"};
 
     // This will throw cpptoml::parse_exception if a file
     // with invalid TOML is provided
@@ -134,6 +144,10 @@ void WebCam::configure(const std::string& config_file, const std::string& config
         oat::config::getValue(this_config, "index", idx, MIN_INDEX);
         index_ = (size_t)idx;
         //cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
+
+        // Set the frame rate
+        oat::config::getValue(this_config, "fps", frames_per_second_, 0.0);
+        //calculateFramePeriod();
 
         // Set the ROI
         oat::config::Table roi;
@@ -157,4 +171,11 @@ void WebCam::configure(const std::string& config_file, const std::string& config
     }
 }
 
+//void WebCam::calculateFramePeriod() {
+//
+//    std::chrono::duration<double> frame_period {1.0 / frames_per_second_};
+//
+//    // Automatic conversion
+//    frame_period_in_sec_ = frame_period;
+//}
 } /* namespace oat */

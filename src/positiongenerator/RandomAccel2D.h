@@ -51,7 +51,8 @@ private:
 
     // Random number generator
     std::default_random_engine accel_generator_ {std::random_device{}()};
-    std::normal_distribution<double> accel_distribution_ {0.0, 100.0};
+    // TODO: Add program option
+    std::normal_distribution<double> accel_distribution_ {0.0, 0.1};
 
     // Simulated position
     cv::Matx41d state_ {0.0, 0.0, 0.0, 0.0}; // Should be center of bounding region
@@ -69,4 +70,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_RANDOMACCEL2D_H */
-

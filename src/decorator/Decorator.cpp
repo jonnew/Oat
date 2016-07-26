@@ -267,12 +267,12 @@ void Decorator::drawPosition() {
                 cv::Point2d start = 
                     p.position - (heading_line_length_ * p.heading);
                 cv::Point2d end = 
-                    p.position + (1.5 * heading_line_length_ * p.heading);
+                    p.position + (5 * heading_line_length_ * p.heading);
 
                 cv::arrowedLine(symbol_frame,
                                 start,
                                 end, 
-                                font_color_, 
+                                heading_color_, 
                                 line_thickness_);
             }
 

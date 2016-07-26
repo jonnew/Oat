@@ -282,6 +282,8 @@ void Recorder::initializeVideoWriter(cv::VideoWriter& writer,
                                 const oat::Frame &image) {
 
     // Initialize writer using the first frame taken from server
+    // TODO: Program option for ('D', 'I', 'B', ' ') vs ('H', '2', '6', '4')
+    //int fourcc = CV_FOURCC('H', 'F', 'Y', 'U');
     int fourcc = CV_FOURCC('H', '2', '6', '4');
     writer.open(file_name, fourcc, sample_rate_hz_, image.size());
 }

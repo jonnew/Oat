@@ -17,6 +17,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
+#include <cmath>
 #include <string>
 #include <opencv2/opencv.hpp>
 
@@ -29,7 +30,8 @@ namespace oat {
 RandomAccel2D::RandomAccel2D(const std::string &position_sink_address,
                              const double samples_per_second,
                              const int64_t num_samples) :
-  PositionGenerator<oat::Position2D>(position_sink_address, samples_per_second, num_samples)
+  PositionGenerator<oat::Position2D>(position_sink_address, 
+                                     samples_per_second, num_samples)
 {
     createStaticMatracies();
 }
@@ -50,6 +52,13 @@ bool RandomAccel2D::generatePosition(oat::Position2D &position) {
         position.velocity_valid = true;
         position.velocity.x = state_(1);
         position.velocity.y = state_(3);
+
+        // Make heading the same as velocity
+        auto vel_mag = std::sqrt(std::pow(position.velocity.x, 2) +
+                                 std::pow(position.velocity.y, 2));
+        position.heading_valid = true;
+        position.heading.x = position.velocity.x / vel_mag; 
+        position.heading.y = position.velocity.y / vel_mag; 
 
         it_++;
 

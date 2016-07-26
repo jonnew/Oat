@@ -60,18 +60,19 @@ void HomographyTransform2D::filter(oat::Position2D& position) {
             position.velocity = out_velocities[0];
         }
 
+        // TODO: Move to general transform
         // Heading transform
-        if (position.heading_valid) {
-            std::vector<oat::UnitVector2D> in_heading;
-            std::vector<oat::UnitVector2D> out_heading;
-            cv::Matx33d head_homo = homography_;
-            head_homo(0, 2) = 0.0; // offsets do not apply to heading
-            head_homo(1, 2) = 0.0; // offsets do not apply to heading
-            in_heading.push_back(position.heading);
-            cv::perspectiveTransform(in_heading, out_heading, head_homo);
-            cv::normalize(out_heading, out_heading);
-            position.heading = out_heading[0];
-        }
+        //if (position.heading_valid) {
+        //    std::vector<oat::UnitVector2D> in_heading;
+        //    std::vector<oat::UnitVector2D> out_heading;
+        //    cv::Matx33d head_homo = homography_;
+        //    head_homo(0, 2) = 0.0; // offsets do not apply to heading
+        //    head_homo(1, 2) = 0.0; // offsets do not apply to heading
+        //    in_heading.push_back(position.heading);
+        //    cv::perspectiveTransform(in_heading, out_heading, head_homo);
+        //    cv::normalize(out_heading, out_heading);
+        //    position.heading = out_heading[0];
+        //}
 
         // Update outgoing position's coordinate system
         position.setCoordSystem(oat::DistanceUnit::WORLD, homography_);

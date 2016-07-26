@@ -1,4 +1,5 @@
-//****************************************************************************** * File:   Aruco.h
+//******************************************************************************
+//* File:   ArucoBoard.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -16,11 +17,10 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef OAT_ARUCO_H
-#define	OAT_ARUCO_H
+#ifndef OAT_ARUCOBOARD_H
+#define	OAT_ARUCOBOARD_H
 
 #include <string>
-#include <opencv2/aruco.hpp>
 #include <opencv2/core/mat.hpp>
 
 #include "PositionDetector.h"
@@ -30,26 +30,19 @@ namespace oat {
 // Forward decl.
 class Position2D;
 
-enum class HeadingDirection {
-    NW = 0,
-    NE,
-    SE,
-    SW
-};
-
 /**
- * Aruco marker tracking.
+ * Aruco marker board marker tracking.
  */
-class Aruco : public PositionDetector {
+class ArucoBoard : public PositionDetector {
 public:
 
     /**
-     * Aruco marker tracking.
+     * ArucoBoard marker tracking.
      * @param frame_source_address Frame SOURCE node address
      * @param position_sink_address Position SINK node address
      */
-    Aruco(const std::string &frame_source_address,
-          const std::string &position_sink_address);
+    ArucoBoard(const std::string &frame_source_address,
+               const std::string &position_sink_address);
 
     /**
      * Perform aruco marker code detection
@@ -63,23 +56,41 @@ public:
 
 private:
 
+    // TODO: User defined dict
     /// Marker ID to look for
-    int marker_id_ {1};
-    cv::Ptr<cv::aruco::Dictionary> marker_dict_;
+    cv::Ptr<cv::aruco::Board> board_;
     cv::Ptr<cv::aruco::DetectorParameters> detection_params_;
 
-    /// TODO: Option for Marker dictionary to use
-    cv::aruco::PREDEFINED_DICTIONARY_NAME 
-        marker_dict_id_ {cv::aruco::DICT_6X6_250};
+    // TODO: If not done via program option, the calculated on the fly
+    cv::Matx33d camera_matrix_  {cv::Matx33d::eye()};
+    std::vector<double> distortion_coefficients_ {0,0,0,0,0,0,0,0};
 
-    /// TODO: Option for Heading direction
-    oat::HeadingDirection 
-        heading_dir_ {oat::HeadingDirection::NW};
+    // TODO: program option
+    cv::aruco::PREDEFINED_DICTIONARY_NAME
+        marker_dict_id_ {cv::aruco::DICT_4X4_50};
 
-    // TODO: Add dectection parameters
-    
-    // TODO: helper mode to print markers
+    /// Board origin
+    cv::Point3f origin_ {0, 0, 0};
+
+    /// Board corner
+    cv::Point3f corner_ {0, 0, 0};
+
+    // TODO: For plotting, remove
+    std::vector<cv::Point3f> ref_pts_; 
+
+    // TODO: program option
+    // Grid parameters
+    float marker_length_ {1.0};
+    float marker_separation_ {0.25};
+    int n_x_ {3};
+    int n_y_ {3};
+
+    /// TODO: Heading direction
+    //oat::HeadingDirection heading_dir_ {oat::HeadingDirection::NW};
+    // TODO: Add options for dectection parameters
+    // TODO: helper mode to print board
+    //void printBoard(int board_id);
 };
 
 }       /* namespace oat */
-#endif	/* OAT_ARUCO_H */
+#endif	/* OAT_ARUCOBOARD_H */

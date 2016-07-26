@@ -134,6 +134,7 @@ private:
     const int font_thickness_ {1};
     const int line_thickness_ {2};
     const cv::Scalar font_color_ {255, 255, 255};
+    const cv::Scalar heading_color_ {0, 255, 0};
     const int font_type_ {cv::FONT_HERSHEY_SIMPLEX};
 
     // Sample number encoding

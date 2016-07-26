@@ -39,41 +39,23 @@ Aruco::Aruco(const std::string &frame_source_address,
              const std::string &position_sink_address) :
   PositionDetector(frame_source_address, position_sink_address)
 {
-    // Nothing
-    // HACK HACK HACK
-    //auto dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
-    //for (int i = 0; i < 250; i++) {
-    //    cv::Mat markerImage;
-    //    cv::aruco::drawMarker(dictionary, i, 50, markerImage, 1);
-    //    cv::imshow("test", markerImage);
-    //    cv::waitKey(0);
-    //}
+    detection_params_ = cv::aruco::DetectorParameters::create(); 
+    marker_dict_ = cv::aruco::getPredefinedDictionary(marker_dict_id_);
 }
 
 void Aruco::detectPosition(cv::Mat &frame, oat::Position2D &position) {
 
-    cv::Mat imageCopy;
-    frame.copyTo(imageCopy);
-
-    // TODO: Add dectection parameters
-    // TODO: Add position_loc_
-    // TODO: cv::aruco::DICT_6X6_250 should be parameter
-
-    // TODO: Sould be a frame filter
-    //cv::equalizeHist(frame, frame);
-
     std::vector<int> marker_ids;
     std::vector< std::vector<cv::Point2f> > marker_corners;
-    auto parameters = cv::aruco::DetectorParameters::create();
-    auto dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
-    cv::aruco::detectMarkers(frame, dictionary, marker_corners, marker_ids, parameters);
-
-    //cv::aruco::drawDetectedMarkers(imageCopy, marker_corners, marker_ids);
-    //cv::imshow("out", imageCopy);
-    //cv::waitKey(1);
+    cv::aruco::detectMarkers(frame, 
+                             marker_dict_, 
+                             marker_corners, 
+                             marker_ids, 
+                             detection_params_);
 
     for (std::vector<int>::size_type i = 0; i < marker_ids.size(); i++) {
 
+        // Get position if correct marker is found
         if (marker_ids[i] == marker_id_) {
 
             position.position_valid = true;
@@ -82,8 +64,9 @@ void Aruco::detectPosition(cv::Mat &frame, oat::Position2D &position) {
             oat::Point2D center =  
                 0.5 * (marker_corners[i][0] + marker_corners[i][2]);           
             position.position = center;
-            // TODO: for some reason, I cannot subrract cv::Point2d -
-            // cv::Point2f directly
+
+            // For some reason, I cannot subtract 
+            // cv::Point2d - cv::Point2f directly
             position.heading.x = center.x - 
                 marker_corners[i][static_cast<size_t>(heading_dir_)].x;
             position.heading.y = center.y - 
@@ -122,7 +105,7 @@ void Aruco::configure(const std::string& config_file,
         // Marker ID to look for
         {
             int64_t val;
-            oat::config::getValue(this_config, "marker-id", val, (int64_t)0, (int64_t)250);
+            oat::config::getValue(this_config, "marker-id", val, (int64_t)0);
             marker_id_ = val;
         }
 

@@ -32,6 +32,7 @@
 #include "../../lib/utility/IOFormat.h"
 
 #include "Aruco.h"
+#include "ArucoBoard.h"
 #include "PositionDetector.h"
 #include "HSVDetector.h"
 #include "DifferenceDetector.h"
@@ -52,6 +53,7 @@ void printUsage(po::options_description options) {
               << "  hsv : HSV detector (color)\n"
               << "  thresh : Intensity range detector (color)\n"
               << "  aruco : Aruco marker tracking\n\n"
+              << "  board: Aruco marker board tracking\n\n"
               << "SOURCE:\n"
               << "  User-supplied name of the memory segment to receive frames "
               << "from (e.g. raw).\n\n"
@@ -103,6 +105,7 @@ int main(int argc, char *argv[]) {
     type_hash["hsv"] = 'b';
     type_hash["thresh"] = 'c';
     type_hash["aruco"] = 'd';
+    type_hash["board"] = 'e';
 
     try {
 
@@ -233,6 +236,11 @@ int main(int argc, char *argv[]) {
         case 'd':
         {
             detector = std::make_shared<oat::Aruco>(source, sink);
+            break;
+        }
+        case 'e':
+        {
+            detector = std::make_shared<oat::ArucoBoard>(source, sink);
             break;
         }
         default:
