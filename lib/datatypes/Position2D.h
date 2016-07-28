@@ -110,7 +110,7 @@ public:
             writer.EndArray(2);
         }
 
-        // Head direction
+        // Categorical region 
         writer.String("reg_ok");
         writer.Bool(region_valid);
 

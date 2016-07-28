@@ -110,4 +110,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_FRAMEFILT_H */
-

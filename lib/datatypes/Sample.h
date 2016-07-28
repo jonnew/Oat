@@ -121,7 +121,6 @@ private:
     Seconds period_sec_ {0.0};
     Microseconds period_microseconds_ {0};
     double rate_hz_ {0.0};
-
 };
 
 }      /* namespace oat */

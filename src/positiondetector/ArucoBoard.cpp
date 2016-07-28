@@ -70,12 +70,12 @@ ArucoBoard::ArucoBoard(const std::string &frame_source_address,
     //grid_board->draw(cv::Size(600, 500), board_img, 10, 1 );
     //cv::imwrite("board.jpg", board_img);
 
-    //cv::namedWindow("Track", cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+    cv::namedWindow("Track", cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
 }
 
 void ArucoBoard::detectPosition(cv::Mat &frame, oat::Position2D &position) {
 
-    //auto fc = frame.clone();
+    auto fc = frame.clone();
 
     // First detect markers
     std::vector<int> marker_ids;
@@ -91,7 +91,7 @@ void ArucoBoard::detectPosition(cv::Mat &frame, oat::Position2D &position) {
     if (marker_ids.size() > 0) {
         
         // TODO: Remove
-        //cv::aruco::drawDetectedMarkers(fc, marker_corners, marker_ids);
+        cv::aruco::drawDetectedMarkers(fc, marker_corners, marker_ids);
 
         cv::Vec3d rvec, tvec;
         int valid = cv::aruco::estimatePoseBoard(marker_corners,
@@ -117,9 +117,9 @@ void ArucoBoard::detectPosition(cv::Mat &frame, oat::Position2D &position) {
                               xy);
 
 
-            //// TODO: Remove
-            //cv::circle(fc, xy[0], 10, cv::Scalar(0, 255, 0), 2);
-            //cv::aruco::drawAxis(fc, camera_matrix_, distortion_coefficients_, rvec, tvec, 1);
+            // TODO: Remove
+            cv::circle(fc, xy[0], 10, cv::Scalar(0, 255, 0), 2);
+            cv::aruco::drawAxis(fc, camera_matrix_, distortion_coefficients_, rvec, tvec, 1);
 
             //Gererate position
             position.position_valid = true;
@@ -143,8 +143,8 @@ void ArucoBoard::detectPosition(cv::Mat &frame, oat::Position2D &position) {
     }
 
     // TODO: Remove
-    //cv::imshow("Track", fc);
-    //cv::waitKey(1);
+    cv::imshow("Track", fc);
+    cv::waitKey(1);
 }
 
 void ArucoBoard::configure(const std::string& config_file,

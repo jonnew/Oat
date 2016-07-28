@@ -24,66 +24,113 @@
 
 namespace oat {
 
-typedef cv::Point3d Point3D;
-typedef cv::Point3d Velocity3D;
-typedef cv::Point3d UnitVector3D;
+using Point3D = cv::Point3d;
+using Velocity3D = cv::Point3d;
+using UnitVector3D = cv::Point3d;
 
 class Position3D : public Position {
 
 public:
-    // Unless manually changed, we are using pixels as our unit of measure
-    int coord_system = PIXELS;
-
-    // Used to get world coordinates from image
-    bool homography_valid = false;
-    cv::Matx44d homography;
-
-    bool position_valid = false;
-    Point3D position;
-
-    bool velocity_valid = false;
-    Velocity3D velocity;
-
-    bool head_direction_valid = false;
-    UnitVector3D head_direction;
-
-    Position3D convertToWorldCoordinates() {
-
-        if (coord_system == PIXELS && homography_valid) {
-            Position2D world_position = *this;
-
-            // Position transforms
-            std::vector<Point3D> in_positions;
-            std::vector<Point3D> out_positions;
-            in_positions.push_back(position);
-            // TODO: 3D Transform??
-            //cv::perspectiveTransform(in_positions, out_positions, homography);
-            //world_position.position = out_positions[0];
-
-            // Velocity transform
-            std::vector<Velocity3D> in_velocities;
-            std::vector<Velocity3D> out_velocities;
-            cv::Matx44d vel_homo = homography;
-            vel_homo(0,2) = 0.0; // offsets to not apply to velocity
-            vel_homo(1,2) = 0.0; // offsets to not apply to velocity
-            in_velocities.push_back(velocity);
-
-            // TODO: 3D Transform??
-            //cv::perspectiveTransform(in_velocities, out_velocities, vel_homo);
-            //world_position.velocity = out_velocities[0];
-
-            // Head direction is normalized and unit-free, and therefore
-            // does not require conversion
-
-            // Return value uses world coordinates
-            world_position.coord_system = WORLD;
-
-            return world_position;
-
-        } else {
-            return *this;
-        }
+    explicit Position2D(const std::string &label) :
+      Position(label)
+    {
+        // Nothing
     }
+
+    // 2D position primatives
+    Point3D position;
+    Velocity3D velocity;
+    UnitVector3D heading;
+
+    /**
+     * @brief JSON Serializer
+     *
+     * @param writer Writer to use for serialization
+     * @param verbose If true, specifies that fields be serialized even though
+     * they contain indeterminate data? This is useful for ease of sample
+     * alignment during post processing of saved files.
+     */
+    // TODO: Should this just return a rapidjson::Document which is redily
+    // transformed into other formats such as msgpack, etc, instead of doing the 
+    // writing right here?
+    template <typename Writer>
+    void Serialize(Writer& writer, bool verbose = false) const {
+
+        writer.StartObject();
+
+        // Sample number
+        writer.String("tick");
+        writer.Int(sample_.count());
+
+        writer.String("usec");
+        writer.Int64(sample_.microseconds().count());
+
+        // Coordinate system
+        writer.String("unit");
+        writer.Int(static_cast<int>(unit_of_length_));
+
+        // Position
+        writer.String("pos_ok");
+        writer.Bool(position_valid || verbose);
+
+        if (position_valid || verbose) {
+            writer.String("pos");
+            writer.StartArray();
+            writer.Double(position.x);
+            writer.Double(position.y);
+            writer.Double(position.z);
+            writer.EndArray(2);
+        }
+
+        // Velocity
+        writer.String("vel_ok");
+        writer.Bool(velocity_valid || verbose);
+
+        if (velocity_valid || verbose) {
+            writer.String("vel");
+            writer.StartArray();
+            writer.Double(velocity.x);
+            writer.Double(velocity.y);
+            writer.Double(velocity.z);
+            writer.EndArray(2);
+        }
+
+        // Head direction
+        writer.String("head_ok");
+        writer.Bool(heading_valid);
+
+        if (heading_valid || verbose) {
+            writer.String("head");
+            writer.StartArray();
+            writer.Double(heading.x);
+            writer.Double(heading.y);
+            writer.Double(heading.z);
+            writer.EndArray(2);
+        }
+
+        // Categorical region 
+        writer.String("reg_ok");
+        writer.Bool(region_valid);
+
+        if (region_valid || verbose) {
+            writer.String("reg");
+            writer.String(region);
+        }
+
+        writer.EndObject();
+    }
+
+    void setCoordSystem(const DistanceUnit value,
+                        const cv::Matx33d homography) {
+        unit_of_length_ = value;
+        homography_ = homography;
+    }
+
+    cv::Matx33d homography() const { return homography_; }
+
+private:
+
+    cv::Matx33d homography_ {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
 };
 
 }      /* namespace datatypes */

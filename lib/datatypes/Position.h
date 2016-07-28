@@ -20,11 +20,11 @@
 #ifndef OAT_POSITION_H
 #define	OAT_POSITION_H
 
-
 #include "Sample.h"
 
 namespace oat {
 
+// TODO: World is not a unit. Should be, e.g. meters, cm, etc..
 /**
  * Unit of length used to specify position.
  */
@@ -34,6 +34,11 @@ enum class DistanceUnit
     WORLD = 1     //!< Position measured in units specified via homography
 };
 
+/** 
+ * @brief Generic position. Positions are defined in terms of a 3D cartesian
+ * coordinate system along with the information required to map back to the
+ * reference frame of the image used to deduce that position.
+ */
 class Position {
 
 public:
@@ -79,7 +84,35 @@ public:
     // Validity booleans
     bool position_valid {false};
     bool velocity_valid {false};
-    bool heading_valid {false};
+    bool heading_valid {false}; // TODO: Replace with rvec, tvec
+
+    //! Rotation vector
+    /*!
+      Rotation vector used for mapping the position, with respect to its
+      coordinate frame, back to pixels with respect to the camera's coordinate
+      frame. Apply transform using `cv::Affine3f`.
+    */
+    std::vector<double> rotation_vec {0, 0, 0};
+
+    //! Translation vector
+    /*!
+      Translation vector used for mapping the position, with respect to its
+      coordinate frame, back to pixels with respect to the camera's coordinate
+      frame. Apply transform using `cv::Affine3f`.
+    */
+    std::vector<double> translation_vec {0, 0, 0};
+
+    //! Camera Matrix 
+    /*!
+      Camera matrixCatrix Transform.
+    */
+    cv::Matx33d camera_ {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
+
+    //! Distortion Coefficients
+    /*! 
+      Camera lens distortion coefficients       
+    */
+    std::vector<double> distortion_coefficients_ {0, 0, 0, 0, 0};
 
 protected:
     
@@ -91,4 +124,3 @@ protected:
 
 }      /* namespace oat */
 #endif /* OAT_POSITION_H */
-

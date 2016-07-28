@@ -26,7 +26,7 @@ namespace oat {
 
 template <typename T>
 TokenBuffer<T>::TokenBuffer(const std::string &source_address,
-                         const std::string &sink_address) :
+                            const std::string &sink_address) :
   Buffer(source_address, sink_address)
 {
   // Nothing
