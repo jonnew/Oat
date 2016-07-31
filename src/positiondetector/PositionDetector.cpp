@@ -49,6 +49,14 @@ void PositionDetector::connectToNode() {
     // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
+
+    // Get frame meta data to format sink
+    oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
+            frame_source_.parameters();
+
+    // Bind to sink node and create a shared cv::Mat
+    frame_sink_.bind("posidet-image", param.bytes);
+    shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
 }
 
 bool PositionDetector::process() {
@@ -86,6 +94,14 @@ bool PositionDetector::process() {
 
     ////////////////////////////
     //  END CRITICAL SECTION  //
+
+    // Wait for sources to read
+    frame_sink_.wait();
+
+    internal_frame_.copyTo(shared_frame_);
+
+    // Tell sources there is new data
+    frame_sink_.post();
 
     // Sink was not at END state
     return false;

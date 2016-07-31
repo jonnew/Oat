@@ -106,6 +106,13 @@ private:
     const std::string position_sink_address_;
     oat::Sink<oat::Position2D> position_sink_;
 
+    // HACK
+    // Frame sink
+    const std::string frame_sink_address_;
+    oat::Sink<oat::SharedFrameHeader> frame_sink_;
+
+    // Currently acquired, shared frame
+    oat::Frame shared_frame_;
 };
 
 }      /* namespace oat */
