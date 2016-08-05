@@ -27,11 +27,12 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
 #ifdef HAVE_CUDA
-#include <opencv2/cudabgsegm.hpp>
-#include <opencv2/cudaarithm.hpp>
+ #include <opencv2/cudabgsegm.hpp>
+ #include <opencv2/cudaarithm.hpp>
 #endif
 
 #include <cpptoml.h>
+
 #include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
@@ -44,67 +45,50 @@ BackgroundSubtractorMOG::BackgroundSubtractorMOG(
         const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address) {
 
-    // TYPE-specific program options
-    component_options_.add_options()
-        ("learning-coeff", po::value<double>(), 
+    config_keys_ = {"learning-coeff", "gpu-index"};
+}
+
+void BackgroundSubtractorMOG::appendOptions(po::options_description &opts) const {
+
+    // Accepts a config file
+    FrameFilter::appendOptions(opts);
+
+    // Update CLI options
+    opts.add_options()
+        ("learning-coeff", po::value<double>(),
          "Value, 0 to 1.0, specifying how quickly the statistical model "
          "of the background image should be updated. "
          "Default is 0, specifying no adaptation.")
+#ifdef HAVE_CUDA
+        ("gpu-index", po::value<int64_t>(),
+         "Index of GPU card to use for performing MOG segmentation.")
+#endif
         ;
+}
+
+void BackgroundSubtractorMOG::configure(const po::variables_map &vm) {
+
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
 
 #ifdef HAVE_CUDA
-
-    component_options_.add_options()
-        ("gpu-index", po::value<int64_t>(), 
-         "Index of GPU card to use for performing MOG segmentation.")
-        ;
-
+    // GPU index
+    int64_t index {0};
+    oat::config::getNumericValue(vm, config_table, "gpu-index", index, 0);
     cv::cuda::GpuMat gm; // Create context. This can take an extremely long time
-    gm.create(1, 1, CV_8U);
-    configureGPU(0);
-    background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*defaults OK?*/);
+    configureGPU(index);
+    background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*TODO: defaults OK?*/);
 #else
     background_subtractor_ = cv::createBackgroundSubtractorMOG2(/*defaults OK?*/);
 #endif
-}
 
-void BackgroundSubtractorMOG::configure(const std::string &config_file, const std::string &config_key) {
-
-    // Available options
-    std::vector<std::string> options {"gpu-index",
-                                      "learning-coeff"};
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
-
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-#ifdef HAVE_CUDA
-        // GPU index
-        int64_t index;
-        if (oat::config::getValue(this_config, "gpu-index", index, 0)) {
-            configureGPU(index);
-            background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*TODO: defaults OK?*/);
-        }
-#endif
-        // Learning coefficient
-        oat::config::getValue(this_config, "learning-coeff", learning_coeff_, 0.0, 1.0);
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
+    // Learning coefficient
+    oat::config::getNumericValue(vm, config_table, "learning-coeff", learning_coeff_, 0.0, 1.0);
 }
 
 #ifdef HAVE_CUDA
-void BackgroundSubtractorMOG::configureGPU(int64_t index) {
+void BackgroundSubtractorMOG::configureGPU(size_t index) {
 
     // Determine if a compatible device is available
     int num_devices = cv::cuda::getCudaEnabledDeviceCount();

@@ -25,5 +25,3 @@ distortion-coeffs = [-53.7430, 20443.3, 0.437918, -0.178999, 51.4270]
 camera-matrix = [7473.00, 0.00000, 408.433,
                  0.00000, 8828.00, 260.437,
                  0.00000, 0.00000, 1.00000]
-rotation = 72.0                    # CCW degrees that frame should be rotated. 
-                                    # Frame size is preserved.

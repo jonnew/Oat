@@ -35,16 +35,15 @@ public:
      * frame stream using a mask frame. Pixels of the input frames that
      * correspond to non-zero pixels in the mask frame will be unchanged. All
      * other pixels will be set to 0.
+     *
      * @param frame_source_address raw frame source address
      * @param frame_sink_address filtered frame sink address
      */
     FrameMasker(const std::string &frame_souce_address,
                 const std::string &frame_sink_address);
 
+    void appendOptions(po::options_description &opts) const override;
     void configure(const po::variables_map &vm) override;
-
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
 
 private:
 
@@ -61,4 +60,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_FRAMEMASKER_H */
-

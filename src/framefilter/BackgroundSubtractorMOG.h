@@ -20,13 +20,12 @@
 #ifndef OAT_BACKGROUNDSUBTRACTORMOG_H
 #define	OAT_BACKGROUNDSUBTRACTORMOG_H
 
-
 #include <opencv2/cvconfig.h>
 
 #ifdef HAVE_CUDA
-#include <opencv2/cudabgsegm.hpp>
+ #include <opencv2/cudabgsegm.hpp>
 #else
-#include <opencv2/video.hpp>
+ #include <opencv2/video.hpp>
 #endif
 
 #include "FrameFilter.h"
@@ -47,8 +46,8 @@ public:
     BackgroundSubtractorMOG(const std::string &frame_souce_address,
                             const std::string &frame_sink_address);
 
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
+    void appendOptions(po::options_description &opts) const override;
+    void configure(const po::variables_map &vm) override;
 
 private:
 
@@ -79,4 +78,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_BACKGROUNDSUBTRACTORMOG_H */
-

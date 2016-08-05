@@ -26,31 +26,24 @@ namespace oat {
 
 /**
  * Lens distortion compensation.
- *
- * Uses the results of oat-calibrate.
  */
 class Undistorter : public FrameFilter {
 public:
 
     /**
-     * Lens distortion compensation.
+     * @breif Lens distortion compensation. Uses the results of oat-calibrate.
+     * To reverse radial and tangential distortion introduced by the camera
+     * lens and CMOS array mounting imperfections.  Typically uses the results
+     * of oat-calibrate.
      *
-     * Uses the results of oat-calibrate. To reverse radial and tangential distortion
-     * introduced by the camera lens and array mounting imperfections.
      * @param frame_source_address raw frame source address
      * @param frame_sink_address filtered frame sink address
      */
     Undistorter(const std::string &frame_souce_address,
                 const std::string &frame_sink_address);
 
-    void connectToNode(void) override;
-
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
-
-    // Accessors
-    void set_camera_matrix(const cv::Matx33d& value) { camera_matrix_ = value; }
-    void set_distortion_coefficients(const cv::Mat& value) { distortion_coefficients_ = value.clone(); }
+    void appendOptions(po::options_description &opts) const override;
+    void configure(const po::variables_map &vm) override;
 
 private:
 
@@ -70,12 +63,9 @@ private:
     void filter(cv::Mat& frame) override;
 
     CameraModel camera_model_ {CameraModel::PINHOLE};
-    cv::Matx33d camera_matrix_  {cv::Matx33d::eye()};
+    cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
     std::vector<double> distortion_coefficients_ {0,0,0,0,0,0,0,0};
-
-    double rotation_deg_ {0.0};
 };
 
 }      /* namespace oat */
 #endif /* OAT_UNDISTORTER_H */
-

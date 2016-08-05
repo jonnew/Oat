@@ -56,14 +56,17 @@ private:
     std::unique_ptr<po::options_description> desc;
 };
 
-/** 
- * @brief Extract a file/key pair from a variable map. 
- * @param map Variable map to search for config file/key option.
- * @param key Key specifying location of file/key pair within the variable map. 
- * @return Extracted config file/key pair. 
- */
-std::vector<std::string> 
-extractConfigFileKey(po::variables_map map, const char *key="config");
+///** 
+// * @brief Extract a configuration file/key pair for a set of program options. File must be a
+// * path to a valid TOML file. Entries under key parameter within the TOML file
+// * can be used within inidividual components to specify runtime parameters, and
+// * should be checked against valid program options prior to use.
+// * @param map Variable map in which file/key configuration might be located.
+// * @param key Program option indicating a config file path.
+// * @return Extracted file/key pair if present. Empty otherwise.
+// */
+//std::vector<std::string> 
+//extractConfigFileKey(po::variables_map map, const char *key="config");
 
 }      /* namespace config */
 }      /* namespace oat */

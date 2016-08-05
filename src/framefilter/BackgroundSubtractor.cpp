@@ -33,68 +33,43 @@
 
 namespace oat {
 
-static const char conf_opts_data[] = {"background"};
-const char *FrameFilter::ALL_CONFIG_OPTS = conf_opts_data;
-
 BackgroundSubtractor::BackgroundSubtractor(
             const std::string &frame_source_address,
             const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address)
 {
-    //// Type-specific program options
-    //component_options_.add_options()
-    //    (&ALL_CONFIG_OPTS[0], po::value<std::string>(),
-    //     "Path to background image used for subtraction.")
-    //    ;
+    config_keys_ = {"background"};
 }
 
-void BackgroundSubtractor::appendOptions(po::options_description &opts) {
+void BackgroundSubtractor::appendOptions(po::options_description &opts) const {
 
-    // type-specific program options
+    // Accepts a config file
     FrameFilter::appendOptions(opts);
+
+    // Update CLI options
     opts.add_options()
-        (&ALL_CONFIG_OPTS[0], po::value<std::string>(),
+        ("background", po::value<std::string>(),
          "Path to background image used for subtraction.")
         ;
 }
 
 void BackgroundSubtractor::configure(const po::variables_map &vm) {
 
-    auto config_fk = oat::config::extractConfigFileKey(vm);
-    bool config_used = !config_fk.empty();
-}
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
 
-void BackgroundSubtractor::configure(const std::string& config_file, const std::string& config_key) {
+    // Background image path
+    std::string img_path;
+    if (oat::config::getValue(vm, config_table, "background", img_path)) {
 
-    // TODO: replace with CONFIG_OPTS
-    const std::vector<std::string> options {"background"};
+        // TODO: Color image only?
+        background_frame_ = cv::imread(img_path, CV_LOAD_IMAGE_COLOR);
 
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
+        if (background_frame_.data == NULL)
+            throw (std::runtime_error("File \"" + img_path + "\" could not be read."));
 
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        std::string background_img_path;
-        if (oat::config::getValue(this_config, "background", background_img_path)) {
-            background_frame_ = cv::imread(background_img_path, CV_LOAD_IMAGE_COLOR);
-
-            if (background_frame_.data == NULL) {
-                throw (std::runtime_error("File \"" + background_img_path + "\" could not be read."));
-            }
-
-            background_set_ = true;
-        }
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
+        background_set_ = true;
     }
 }
 

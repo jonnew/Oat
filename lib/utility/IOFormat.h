@@ -194,20 +194,6 @@ inline std::string whoError(const std::string& source, const std::string& messag
         source +  ": " + message;
 }
 
-inline std::string configNoTableError(const std::string& table_name,
-                                      const std::string& config_file) {
-
-    return  "No configuration table named '" + table_name +
-            "' was provided in the configuration file '" + config_file + "'";
-}
-
-inline std::string configValueError(const std::string& entry_name,
-                                    const std::string& table_name,
-                                    const std::string& config_file,
-                                    const std::string& message) {
-
-    return "'" + entry_name + "' in '" + table_name + "' in '" + config_file + "' " + message;
-}
 
 }      /* namespace oat */
 #endif /* OAT_IOFORMAT_H */

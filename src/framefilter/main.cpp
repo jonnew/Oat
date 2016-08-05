@@ -23,9 +23,11 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include <cpptoml.h>
 #include <boost/program_options.hpp>
 #include <boost/interprocess/exceptions.hpp>
-#include <cpptoml.h>
+#include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
@@ -56,7 +58,7 @@ const char usage_io[] =
     "from (e.g. raw).\n\n"
     "SINK:\n"
     "  User-supplied name of the memory segment to publish frames "
-    "to (e.g. filt).\n";
+    "to (e.g. filt).";
 
 void printUsage(const po::options_description &options,
                 const std::string &type="") {
@@ -65,21 +67,21 @@ void printUsage(const po::options_description &options,
         std::cout <<
         "Usage: framefilt [INFO]\n"
         "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
-        "Filter frames from SOURCE and published filtered frames "
-        "to SINK.\n\n";
+        "Filter frames from SOURCE and publish filtered frames "
+        "to SINK.\n";
 
         std::cout << options << "\n";
         std::cout << usage_type << "\n";
-        std::cout << usage_io << "\n";
+        std::cout << usage_io << std::endl;
 
     } else {
         std::cout <<
         "Usage: framefilt " << type << " SOURCE SINK [CONFIGURATION]\n"
         "Filter frames from SOURCE and published filtered frames "
-        "to SINK.\n";
+        "to SINK.\n\n";
 
         std::cout << usage_io << "\n";
-        std::cout << options << "\n";
+        std::cout << options;
     }
 }
 
@@ -117,7 +119,6 @@ int main(int argc, char *argv[]) {
     std::string source;
     std::string sink;
     std::vector<std::string> config_fk;
-    bool config_used = false;
 
     // Component specializations
     std::unordered_map<std::string, char> type_hash;
@@ -268,41 +269,35 @@ int main(int argc, char *argv[]) {
 
         // TODO: Bring start/end into configure method of each component
         // specialzation
-        //filter->configure(option_map);
+        filter->configure(option_map);
 
         // **************** START
 
         // Check for configuration file and key options
-        config_fk = oat::config::extractConfigFileKey(option_map);
-        config_used = !config_fk.empty();
+        //config_fk = oat::config::extractConfigFileKey(option_map);
+        //config_used = !config_fk.empty();
 
         // Process configuration file if provided
-        if (config_used)
-            filter->configure(config_fk[0], config_fk[1]);
+        //if (config_used)
+            //filter->configure(config_fk[0], config_fk[1]);
 
         //// TODO: Remove. Let the component worry about reporting
         //// this if matricies are not defined when it starts
         //if (!config_used)
-        //     std::cerr << oat::whoWarn(comp_name,
-        //             "No undistortion configuration was provided."
-        //             " This filter does nothing but waste CPU cycles.\n");
 
         //// TODO: Remove. Let the component worry about reporting
         //// this if matricies are not defined when it starts
         //if (!config_used)
-        //     std::cerr << oat::whoWarn(comp_name,
-        //             "No mask configuration was provided."
-        //             " This filter does nothing but waste CPU cycles.\n");
 
         // **************** END
 
         // Tell user
         std::cout << oat::whoMessage(comp_name,
-                "Listening to source " + oat::sourceText(source) + ".\n")
-                << oat::whoMessage(comp_name,
-                "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(comp_name,
-                "Press CTRL+C to exit.\n");
+                     "Listening to source " + oat::sourceText(source) + ".\n")
+                  << oat::whoMessage(comp_name,
+                     "Steaming to sink " + oat::sinkText(sink) + ".\n")
+                  << oat::whoMessage(comp_name,
+                      "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of messages signal
         run(filter);

@@ -34,8 +34,16 @@ FrameMasker::FrameMasker(const std::string &frame_source_address,
                          const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address)
 {
-    // TYPE-specific program options
-    component_options_.add_options()
+    config_keys_ = {"mask"};
+}
+
+void FrameMasker::appendOptions(po::options_description &opts) const {
+
+    // Accepts a config file
+    FrameFilter::appendOptions(opts);
+
+    // Update CLI options
+    opts.add_options()
         ("mask", po::value<std::string>(),
          "Path to a binary image used to mask frames from SOURCE. SOURCE frame "
          "pixels with indices corresponding to non-zero value pixels in the mask "
@@ -46,40 +54,20 @@ FrameMasker::FrameMasker(const std::string &frame_source_address,
 
 void FrameMasker::configure(const po::variables_map &vm) {
 
-    auto config_fk = oat::config::extractConfigFileKey(vm);
-    bool config_used = !config_fk.empty();
-}
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
 
-void FrameMasker::configure(const std::string &config_file,
-                            const std::string &config_key) {
+    // Background image path
+    std::string img_path;
+    if (oat::config::getValue(vm, config_table, "mask", img_path, true)) {
 
-    // Available options
-    std::vector<std::string> options {"mask"};
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
-
-    // See if a configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        std::string mask_path;
-        oat::config::getValue(this_config, "mask", mask_path, true);
-        roi_mask_ = cv::imread(mask_path, CV_LOAD_IMAGE_GRAYSCALE);
+        roi_mask_ = cv::imread(img_path, CV_LOAD_IMAGE_GRAYSCALE);
 
         if (roi_mask_.data == NULL)
-            throw (std::runtime_error("File \"" + mask_path + "\" could not be read."));
+            throw (std::runtime_error("File \"" + img_path + "\" could not be read."));
 
         mask_set_ = true;
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
     }
 }
 

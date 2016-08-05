@@ -56,7 +56,7 @@ public:
      * @brief FrameServers must be able to connect to a Source and Sink Nodes
      * in shared memory
      */
-    virtual void connectToNode(void);
+    void connectToNode(void);
 
     /**
      * @breif Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
@@ -66,28 +66,13 @@ public:
     bool processFrame(void);
 
 
-    virtual void appendOptions(po::options_description &opts); 
+    virtual void appendOptions(po::options_description &opts) const;
 
-    /** 
+    /**
      * @brief Configure filter parameters.
      * @param vm Previously parsed program option value map.
      */
-    virtual void configure(const po::variables_map &vm) { };//= 0;
-
-    ///**
-    // * @brief Configure filter parameters.
-    // * @param config_file configuration file path
-    // * @param config_key configuration key
-    // */
-    virtual void configure(const std::string &config_file,
-                           const std::string &config_key) = 0;
-
-    ///**
-    // * @brief Get internal component options.
-    // * @return Copy of internal component options.
-    // */
-    //po::options_description
-    //component_options() const { return component_options_; }
+    virtual void configure(const po::variables_map &vm) = 0;
 
     /**
      * @breif Get frame filter name
@@ -104,20 +89,20 @@ public:
 
 protected:
 
+    // Filter name
+    const std::string name_;
+
     /**
      * Perform frame filtering.
      * @param frame to be filtered
      */
     virtual void filter(cv::Mat& frame) = 0;
 
-    // List of allowed configuration options, including those 
+    // List of allowed configuration options, including those
     // specified only via config file
-    static const char *ALL_CONFIG_OPTS;
-po::options_description component_options_;
-private:
+    std::vector<std::string> config_keys_;
 
-    // Filter name
-    const std::string name_;
+private:
 
     // Frame source
     const std::string frame_source_address_;

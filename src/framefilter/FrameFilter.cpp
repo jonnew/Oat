@@ -36,19 +36,16 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
-    //// type-specific program options
-    //component_options_.add_options()
-    //    ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-    //    "Configuration file/key pair.")
-    //    ;
+    // Nothing
 }
 
-void FrameFilter::appendOptions(po::options_description &opts) {
+void FrameFilter::appendOptions(po::options_description &opts) const {
 
-    // type-specific program options
+    // Common program options
     opts.add_options()
         ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.")
+        "Configuration file/key pair.\n"
+        "e.g. 'config.toml mykey'")
         ;
 }
 

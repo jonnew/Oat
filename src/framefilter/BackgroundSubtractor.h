@@ -41,10 +41,8 @@ public:
     BackgroundSubtractor(const std::string &frame_souce_address,
                          const std::string &frame_sink_address);
 
-    void appendOptions(po::options_description &opts) override;
+    void appendOptions(po::options_description &opts) const override;
     void configure(const po::variables_map &vm) override;
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
 
 private:
 

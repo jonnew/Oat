@@ -20,41 +20,88 @@
 #ifndef OAT_TOMLSANATIZE_H
 #define OAT_TOMLSANATIZE_H
 
+#include <iostream>
+#include <limits>
 #include <string>
 #include <typeinfo>
+#include <type_traits>
+#include <boost/program_options.hpp>
 #include <boost/type_index.hpp>
 
-#include "cpptoml.h"
+#include <cpptoml.h>
 
 namespace oat{
 namespace config {
 
+namespace po = boost::program_options;
+
 // Aliases for TOML table and array types
 using Value = std::shared_ptr<cpptoml::base>;
-using Table = std::shared_ptr<cpptoml::table>;
+using OptionTable = std::shared_ptr<cpptoml::table>;
 using Array = std::shared_ptr<cpptoml::array>;
 
+using OptionMap = boost::program_options::variables_map;
 using boost::typeindex::type_id_with_cvr;
 
-//inline void checkKeys(const char *options, const Table user_config) {
-//
-//    auto it = user_config->begin();
-//
-//    // Look through user-provided config options and make sure each matches an
-//    // actual configuration key ID
-//    while (it != user_config->end()) {
-//
-//        auto key = it->first;
-//
-//        if (std::find(std::begin(options), std::end(options), key) == options.end()) {
-//            throw (std::runtime_error("Unknown configuration key '" + key + "'.\n"));
-//        }
-//
-//        it++;
-//    }
-//}
+inline std::string
+noTableError(const std::string& table_name,
+             const std::string& config_file) {
 
-inline void checkKeys(const std::vector<std::string>& options, const Table user_config) {
+    return  "No configuration table named '" + table_name +
+            "' was provided in the configuration file '" + config_file + "'";
+}
+
+inline std::string
+valueError(const std::string& entry_name,
+           const std::string& table_name,
+           const std::string& config_file,
+           const std::string& message) {
+
+    return "'" + entry_name + "' in '" + table_name + "' in '" + config_file + "' " + message;
+}
+
+/** @brief Extract a configuration table from a config file. The OptionMap must
+ * contain an entry specifying a file/key pair. File must be a path to a valid
+ * TOML file. Entries under key parameter within the TOML file can be used
+ * within inidividual components to specify runtime parameters but should be
+ * checked against valid program options prior to use.
+ *
+ * @param map Program option map extacted form CLI input @param key Key within
+ * option map specifying file/key pair of config file.
+ */
+// TODO: Implementation file
+inline const OptionTable
+getConfigTable(const OptionMap map, const char *key="config") {
+
+    std::vector<std::string> fk_pair;
+
+    if (!map[key].empty()) {
+
+        fk_pair = map[key].as<std::vector<std::string> >();
+
+        if (fk_pair.size() != 2)
+           throw std::runtime_error("Configuration must be supplied as file key pair.");
+    }
+
+    if (fk_pair.empty())
+        return cpptoml::make_table();
+
+    // Will throw if file contains bad syntax
+    auto config = cpptoml::parse_file(fk_pair[0]);
+
+    if (!config->contains(fk_pair[1])) {
+        throw (std::runtime_error(
+            oat::config::noTableError(fk_pair[1], fk_pair[0])
+        ));
+    }
+
+    // Get this components configuration table
+    return config->get_table(fk_pair[1]);
+}
+
+inline void
+checkKeys(const std::vector<std::string> &options,
+          const OptionTable user_config) {
 
     auto it = user_config->begin();
 
@@ -65,17 +112,27 @@ inline void checkKeys(const std::vector<std::string>& options, const Table user_
         auto key = it->first;
 
         if (std::find(std::begin(options), std::end(options), key) == options.end()) {
-            throw (std::runtime_error("Unknown configuration key '" + key + "'.\n"));
+            throw (std::runtime_error("Unknown configuration key '" + key + "'."));
         }
 
         it++;
     }
 }
 
-// Nested table with unspecified number of elements
-inline bool getTable(const Table table,
-                const std::string& key,
-                Table& nested_table) {
+/**
+ * @brief Retrieve nested table with and unspecified number of elements from an
+ * exsiting table.
+ *
+ * @param table Parent table
+ * @param key Key of child table.
+ * @param nested_table Child table.
+ *
+ * @return True if child table was successfully assigned.
+ */
+inline bool
+getTable(const OptionTable table,
+         const std::string& key,
+         OptionTable& nested_table) {
 
     // If the key is in the table,
     if (table->contains(key)) {
@@ -88,7 +145,7 @@ inline bool getTable(const Table table,
             return true;
 
         } else {
-            throw (std::runtime_error("'" + key + "' must be a TOML table.\n"));
+            throw (std::runtime_error("'" + key + "' must be a TOML table."));
         }
 
     } else {
@@ -96,15 +153,33 @@ inline bool getTable(const Table table,
     }
 }
 
-// Single value type sanitization
+/**
+ * @brief Retrieve program option either from command line map or from config
+ * file. Preference is given to command line. Additionally, perform type
+ * sanitation.
+ *
+ * @param vm Program option variable map obtained from command line input.
+ * @param table Potentially empty table generated from a TOML config file.
+ * @param key OptionTable key of value to retrieve.
+ * @param value Resulting value.
+ * @param required Specifies whether a value must be specified either via
+ * command line or config file.
+ *
+ * @return True if value was successfully defined.
+ */
 template <typename T>
-bool getValue(const Table table,
-        const std::string& key,
-        T& value, bool
-        required = false) {
+bool getValue(const po::variables_map &vm,
+              const OptionTable table,
+              const std::string& key,
+              T& value,
+              bool required = false) {
 
-    // If the key is in the table,
-    if (table->contains(key)) {
+    if (vm.count(key)) {
+
+        value = vm[key].as<T>();
+        return true;
+
+    } else if (table->contains(key)) {
 
         // Make sure the key points to a value (and not a table, array, or table-array)
         if (table->get(key)->is_value()) {
@@ -115,90 +190,98 @@ bool getValue(const Table table,
 
         } else {
             throw (std::runtime_error("'" + key + "' must be a TOML value of type "
-                    + type_id_with_cvr<T>().pretty_name() + ".\n"));
+                    + type_id_with_cvr<T>().pretty_name() + "."));
         }
 
     } else if (required) {
-         throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
+         throw (std::runtime_error("Required configuration value '" + key + "' was not specified."));
     } else {
         return false;
     }
 }
 
-
-// Single bounded value type sanitization
+/**
+ * @brief Retrieve program option either from command line map or from config
+ * file. Preference is given to command line. Additionally, perform type
+ * sanitation.
+ *
+ * @param vm Program option variable map obtained from command line input.
+ * @param table Potentially empty table generated from a TOML config file.
+ * @param key OptionTable key of value to retrieve.
+ * @param value Resulting value.
+ * @param required Specifies whether a value must be specified either via
+ * command line or config file.
+ *
+ * @return True if value was successfully defined.
+ */
 template <typename T>
-bool getValue(const Table table,
-        const std::string& key,
-        T& value, const T lower,
-        bool required = false) {
+bool
+getNumericValue(const po::variables_map &vm,
+                const OptionTable table,
+                const std::string &key,
+                T &value,
+                const T lower = std::numeric_limits<T>::min(),
+                const T upper = std::numeric_limits<T>::max(),
+                bool required = false)
+{
 
-    // If the key is in the table,
-    if (table->contains(key)) {
+    static_assert (std::is_integral<T>::value ||
+                   std::is_floating_point<T>::value, "Numeric type required.");
+
+    if (vm.count(key)) {
+
+        value = vm[key].as<T>();
+
+        // Get value, check range
+        if (value < lower || value > upper) {
+            throw (std::runtime_error("Configuration key '" + key +
+                    "' specifies a value that is out of bounds."));
+        }
+
+        return true;
+
+    } else if (table->contains(key)) {
 
         // Make sure the key points to a value (and not a table, array, or table-array)
         if (table->get(key)->is_value()) {
 
-            // Get value, check type
-            auto val = *(table->get_as<T>(key));
-            if (val < lower) {
-                 throw (std::runtime_error("Configuration key '" + key +
-                         "' specifies a value that is out of bounds.\n"));
+            // CPP TOML only works with int64_t
+            if (std::is_integral<T>::value) {
+                auto val = *(table->get_as<int64_t>(key));
+                value = static_cast<T>(val);
+            } else if (std::is_floating_point<T>::value) {
+                auto val = *(table->get_as<double>(key));
+                value = static_cast<T>(val);
+            } else {
+                value = *(table->get_as<double>(key));
             }
 
-            value = val;
-            return true;
-
-        } else {
-            throw (std::runtime_error("'" + key + "' must be a TOML value of type "
-                    + type_id_with_cvr<T>().pretty_name() + ".\n"));
-        }
-    } else if (required) {
-         throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
-    } else {
-        return false;
-    }
-}
-
-// Single bounded value type sanitization
-template <typename T>
-bool getValue(const Table table,
-              const std::string& key,
-              T& value, 
-              const T lower,
-              const T upper,
-              bool required = false) {
-
-    // If the key is in the table,
-    if (table->contains(key)) {
-
-        // Make sure the key points to a value (and not a table, array, or table-array)
-        if (table->get(key)->is_value()) {
-
-            // Get value, check type
-            auto val = *(table->get_as<T>(key));
-            if (val < lower || val > upper) {
+            // Get value, check range
+            if (value < lower || value > upper) {
                 throw (std::runtime_error("Configuration key '" + key +
-                        "' specifies a value that is out of bounds.\n"));
+                        "' specifies a value that is out of bounds."));
             }
 
-            value = val;
             return true;
 
         } else {
             throw (std::runtime_error("'" + key + "' must be a TOML value of type "
-                    +  type_id_with_cvr<T>().pretty_name() +  ".\n"));
+                    + type_id_with_cvr<T>().pretty_name() + "."));
         }
+
     } else if (required) {
-         throw (std::runtime_error("Required configuration value '" 
-                                    + key + "' was not specified.\n"));
+         throw (std::runtime_error("Required configuration value '" + key + "' was not specified."));
     } else {
         return false;
     }
 }
 
 // TOML array from table, any size
-inline bool getArray(const Table table, const std::string& key, Array& array_out, bool required = false) {
+inline bool
+getArray(const OptionTable table,
+         const std::string& key,
+         Array& array_out,
+         bool required = false) {
 
     // If the key is in the table,
     if (table->contains(key)) {
@@ -210,21 +293,22 @@ inline bool getArray(const Table table, const std::string& key, Array& array_out
             return true;
 
         } else {
-            throw (std::runtime_error("'" + key + "' must be a TOML array.\n"));
+            throw (std::runtime_error("'" + key + "' must be a TOML array."));
         }
     } else if (required) {
-         throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
+         throw (std::runtime_error("Required configuration value '" + key + "' was not specified."));
     } else {
         return false;
     }
 }
 
 // TOML array from table, required size
-inline bool getArray(const Table table, 
-                     const std::string& key, 
-                     Array& array_out, 
-                     size_t size, 
-                     bool required = false) {
+inline bool
+getArray(const OptionTable table,
+         const std::string& key,
+         Array& array_out,
+         size_t size,
+         bool required = false) {
 
     // If the key is in the table,
     if (table->contains(key)) {
@@ -236,17 +320,17 @@ inline bool getArray(const Table table,
 
             if (array_out->get().size() != size) {
                 throw (std::runtime_error("'" + key + "' must be a TOML vector "
-                        "containing " + std::to_string(size) + " elements.\n"));
+                        "containing " + std::to_string(size) + " elements."));
             }
 
             return true;
 
         } else {
             throw (std::runtime_error("'" + key + "' must be a TOML vector "
-                    "containing " + std::to_string(size) + " elements.\n"));
+                    "containing " + std::to_string(size) + " elements."));
         }
     } else if (required) {
-        throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
+        throw (std::runtime_error("Required configuration value '" + key + "' was not specified."));
     } else {
         return false;
     }
