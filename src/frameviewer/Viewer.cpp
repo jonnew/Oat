@@ -155,15 +155,16 @@ void Viewer::display() {
             int err = oat::createSavePath(fid,
                     snapshot_folder_,
                     snapshot_base_file_ + ".png",
-                    timestamp + "_",
-                    true);
+                    timestamp + "_");
 
-            if (!err) {
-                cv::imwrite(fid, internal_frame_, compression_params_);
-                std::cout << "Snapshot saved to " << fid << "\n";
-            } else {
+            if (err) {
                 std::cerr << oat::Error("Snapshop file creation exited "
                         "with error " + std::to_string(err) + "\n");
+            } else {
+                
+                oat::ensureUniquePath(fid);
+                cv::imwrite(fid, internal_frame_, compression_params_);
+                std::cout << "Snapshot saved to " << fid << "\n";
             }
         }
 

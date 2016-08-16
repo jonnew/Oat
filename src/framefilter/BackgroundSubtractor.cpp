@@ -1,4 +1,4 @@
-
+//******************************************************************************
 //* File:   BackgroundSubtractor.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
@@ -78,14 +78,14 @@ void BackgroundSubtractor::configure(const std::string& config_file, const std::
     }
 }
 
-void BackgroundSubtractor::setBackgroundImage(const cv::Mat& frame) {
+void BackgroundSubtractor::setBackgroundImage(const cv::Mat &frame) {
 
     background_frame_ = frame.clone();
     frame.clone().convertTo(background_frame_f_, CV_32F);
     background_set_ = true;
 }
 
-void BackgroundSubtractor::filter(cv::Mat& frame) {
+void BackgroundSubtractor::filter(cv::Mat &frame) {
 
     // First image is always used as the default background image if one is
     // not provided in a configuration file

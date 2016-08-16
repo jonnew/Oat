@@ -48,7 +48,6 @@ std::string file_name;
 std::string save_path;
 bool allow_overwrite = false;
 bool prepend_timestamp = false;
-bool prepend_source = false;
 bool concise_file = false;
 
 // ZMQ stream
@@ -140,9 +139,6 @@ int main(int argc, char *argv[]) {
                 ("date,d",
                 "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the "
                 "filename.")
-                ("prepend-source,a",
-                "If specified, the source name will be prepended to the "
-                "filename, after the date, if -d is specified.")
                 ("allow-overwrite,o",
                 "If set and save path matches and existing file, the file will "
                 "be overwritten instead of a incremental numerical index being "
@@ -242,9 +238,6 @@ int main(int argc, char *argv[]) {
         if (variable_map.count("date"))
             prepend_timestamp = true;
 
-        if (variable_map.count("prepend-source"))
-            prepend_source = true;
-
         if (variable_map.count("allow-overwrite"))
             allow_overwrite = true;
 
@@ -306,7 +299,6 @@ int main(int argc, char *argv[]) {
             recorder->set_save_path(save_path);
             recorder->set_file_name(file_name);
             recorder->set_prepend_timestamp(prepend_timestamp);
-            recorder->set_prepend_source(prepend_source);
             recorder->set_allow_overwrite(allow_overwrite);
             recorder->set_verbose_file(!concise_file);
 

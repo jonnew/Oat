@@ -20,16 +20,14 @@
 #ifndef OAT_RECORDER_H
 #define OAT_RECORDER_H
 
+#include "FrameWriter.h"
+#include "PositionWriter.h"
+
 #include <atomic>
 #include <condition_variable>
 #include <string>
 #include <thread>
-#include <boost/dynamic_bitset.hpp>
-#include <boost/lockfree/spsc_queue.hpp>
-#include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
-#include <rapidjson/filewritestream.h>
-#include <rapidjson/prettywriter.h>
+#include <boost/any.hpp>
 
 #include "../../lib/shmemdf/Helpers.h"
 #include "../../lib/shmemdf/Source.h"
@@ -38,11 +36,6 @@
 #include "../../lib/datatypes/Position2D.h"
 
 namespace oat {
-namespace blf = boost::lockfree;
-
-// Constants
-static constexpr int FRAME_WRITE_BUFFER_SIZE {1000};
-static constexpr int POSITION_WRITE_BUFFER_SIZE {65536};
 
 // Forward decl.
 class SharedFrameHeader;
@@ -53,31 +46,16 @@ class SharedFrameHeader;
 class Recorder {
 
     // The controlRecorder routine needs access to Recorder's private members
-    friend int controlRecorder(std::istream &in,
-                               oat::Recorder &recorder,
-                               bool print_cmd);
-
+    friend 
+    int controlRecorder(std::istream &in,
+                        oat::Recorder &recorder,
+                        bool print_cmd);
 public:
-
-    //using PositionSource = std::pair < std::string, std::unique_ptr
-    //                                 < oat::Source
-    //                                 < oat::Position2D > > >;
-
-    //using FrameSource = std::pair < std::string, std::unique_ptr
-    //                              < oat::Source<oat::SharedFrameHeader > > >;
-
-    using FrameQueue = 
-        blf::spsc_queue<
-            oat::Frame, boost::lockfree::capacity<FRAME_WRITE_BUFFER_SIZE>
-        >;
 
     using pvec_size_t =
         std::vector<oat::NamedSource<oat::Position2D>>::size_type; 
     using fvec_size_t =
         std::vector<oat::NamedSource<oat::SharedFrameHeader>>::size_type;
-
-    //using pvec_size_t = std::vector<oat::Position2D>::size_type;
-    //using fvec_size_t = std::vector<FrameSource>::size_type;
 
     /**
      * Position and frame recorder.
@@ -91,18 +69,18 @@ public:
 
     ~Recorder();
 
+    /**
+     * Recorder SOURCEs must be able to connect to a NODEs from
+     * which to receive positions and frames.
+     */
+    void connectToNodes(void);
+
     /** 
      * @brief Create and initialize recording file(s). Must be called
      * before writeStreams.
      * 
      */
     void initializeRecording(void);
-
-    /**
-     * Recorder SOURCEs must be able to connect to a NODEs from
-     * which to receive positions and frames.
-     */
-    void connectToNodes(void);
 
     /** Collect frames and positions from SOURCES. Write frames and positions
      * to file.  
@@ -124,7 +102,6 @@ public:
     void set_save_path(const std::string &value) { save_path_ = value; }
     void set_file_name(const std::string &value) { file_name_ = value; }
     void set_prepend_timestamp(const bool value) { prepend_timestamp_ = value; }
-    void set_prepend_source(const bool value) { prepend_source_ = value; }
     void set_allow_overwrite(const bool value) { allow_overwrite_ = value; } 
     void set_verbose_file(const bool value) { verbose_file_ = value; };
 
@@ -155,9 +132,6 @@ private:
     // Determines if should file_name be prepended with a timestamp
     bool prepend_timestamp_ {false};
 
-    // Determines if the (first) SOURCE name should be appended to the file name
-    bool prepend_source_ {false};
-
     // Determines if existing file will be overwritten
     bool allow_overwrite_ {false};
 
@@ -172,47 +146,30 @@ private:
     // Source end of file flag
     bool source_eof_ {false};
 
-    // Video files
-    std::vector< std::string > video_file_names_;
-    std::vector< std::unique_ptr
-               < cv::VideoWriter > > video_writers_;
+    // Executed by writer_thread_
+    void writeLoop(void);
 
-    // Position file
-    FILE * position_fp_ {nullptr};
-    char position_write_buffer[POSITION_WRITE_BUFFER_SIZE];
-    std::unique_ptr<rapidjson::FileWriteStream> file_stream_;
-    rapidjson::PrettyWriter<rapidjson::FileWriteStream> json_writer_ {*file_stream_};
+    // TODO: Somehow make list of generic Writers
+    // File writers
+    std::vector< std::unique_ptr
+               < oat::PositionWriter > > position_writers_;
+    std::vector< std::unique_ptr
+               < oat::FrameWriter > > frame_writers_;
+
+    // File-writer threading
+    std::thread writer_thread_;
+    std::mutex writer_mutex_;
+    std::condition_variable writer_condition_variable_;
 
     // Frame sources
     oat::NamedSourceList<oat::SharedFrameHeader> frame_sources_;
-    boost::dynamic_bitset<> frame_read_required_;
-
-    // Multi video writer multi-threading
-    std::vector< std::unique_ptr
-               < std::thread > > frame_write_threads_;
-    std::vector< std::unique_ptr
-               < std::mutex > > frame_write_mutexes_;
-    std::vector< std::unique_ptr
-               < std::condition_variable > > frame_write_condition_variables_;
-    std::vector< std::unique_ptr
-               < FrameQueue > > frame_write_buffers_;
 
     // Position sources
-    std::vector<oat::Position2D> positions_;
-    std::vector<uint64_t> position_write_number_;
     oat::NamedSourceList<oat::Position2D> position_sources_;
-    std::string position_file_name_;
 
-    void initializeVideoWriter(cv::VideoWriter& writer,
-                               const std::string &file_name,
-                               const oat::Frame &image);
-
-    void writeFramesToFileFromBuffer(uint32_t writer_idx);
-    void writePositionsToFile(void);
-    void writePositionFileHeader(const std::string& date,
-                                 const double sample_rate,
-                                 const std::vector<std::string>& sources);
-
+    std::string generateFileName(const std::string timestamp, 
+                                 const std::string &source_name,
+                                 const std::string &extension); 
 };
 
 }      /* namespace oat */

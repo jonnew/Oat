@@ -105,14 +105,13 @@ public:
         period_sec_ = Seconds(1.0 / value);
         period_microseconds_ = 
             std::chrono::duration_cast<Microseconds>(period_sec_);
-
     }
 
     uint64_t count() const { return count_; }
     Microseconds microseconds() const { return microseconds_; }
     Seconds period_sec() const { return period_sec_; }
     Microseconds period_microseconds() const { return period_microseconds_; }
-    double rate_hz() const { return 1.0 / period_sec_.count(); }
+    double rate_hz() const { return rate_hz_; }
 
 private:
 
@@ -121,7 +120,6 @@ private:
     Seconds period_sec_ {0.0};
     Microseconds period_microseconds_ {0};
     double rate_hz_ {0.0};
-
 };
 
 }      /* namespace oat */
