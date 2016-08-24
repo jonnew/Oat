@@ -67,7 +67,7 @@ void FrameFilter::connectToNode() {
                                          frame_parameters_.type);
 }
 
-bool FrameFilter::processFrame() {
+bool FrameFilter::process() {
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -77,7 +77,8 @@ bool FrameFilter::processFrame() {
         return true;
 
     // Clone the shared frame
-    frame_source_.copyTo(internal_frame_);
+    oat::Frame internal_frame;
+    frame_source_.copyTo(internal_frame);
 
     // Tell sink it can continue
     frame_source_.post();
@@ -86,7 +87,7 @@ bool FrameFilter::processFrame() {
     //  END CRITICAL SECTION  //
 
     // Filter internal frame
-    filter(internal_frame_);
+    filter(internal_frame);
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -94,7 +95,7 @@ bool FrameFilter::processFrame() {
     // Wait for sources to read
     frame_sink_.wait();
 
-    internal_frame_.copyTo(shared_frame_);
+    internal_frame.copyTo(shared_frame_);
 
     // Tell sources there is new data
     frame_sink_.post();

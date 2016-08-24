@@ -21,36 +21,83 @@
 
 #include <csignal>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
+#include <boost/interprocess/exceptions.hpp>
+#include <boost/variant.hpp>
+#include <opencv2/core.hpp>
+
+#include <cpptoml.h>
 #include <boost/program_options.hpp>
 #include <boost/interprocess/exceptions.hpp>
 #include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/ProgramOptions.h"
+#include "../../lib/utility/IOFormat.h"
 
+#include "ViewerBase.h"
 #include "Viewer.h"
+#include "FrameViewer.h"
+
+#define REQ_POSITIONAL_ARGS 2
 
 namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
 
+using GenericViewer =
+    boost::variant<oat::FrameViewer>;
+
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
+
+const char usage_type[] =
+    "TYPE\n"
+    "  frame: Display frames in a GUI\n";
+
+const char usage_io[] =
+    "SOURCE:\n"
+    "  User-supplied name of the memory segment to receive frames "
+    "from (e.g. raw).";
+
+void printUsage(const po::options_description &options,
+                const std::string &type="") {
+
+    if (type.empty()) {
+        std::cout <<
+        "Usage: view [INFO]\n"
+        "   or: view TYPE SOURCE [CONFIGURATION]\n"
+        "Graphical visualization of SOURCE stream.\n";
+
+        std::cout << options << "\n";
+        std::cout << usage_type << "\n";
+        std::cout << usage_io << std::endl;
+
+    } else {
+        std::cout <<
+        "Usage: view " << type << " SOURCE [CONFIGURATION]\n"
+        "Graphical visualization of SOURCE stream.\n\n";
+
+        std::cout << usage_io << "\n";
+        std::cout << options;
+    }
+}
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int) {
     quit = 1;
 }
 
-void run(std::shared_ptr<oat::Viewer>& viewer) {
+void run(const std::shared_ptr<oat::ViewerBase> viewer) {
 
     try {
 
         viewer->connectToNode();
 
-        while (!quit && !source_eof) {
-            source_eof = viewer->showImage();
-        }
+        while (!quit && !source_eof)
+            source_eof = viewer->process();
 
     } catch (const boost::interprocess::interprocess_exception &ex) {
 
@@ -61,132 +108,183 @@ void run(std::shared_ptr<oat::Viewer>& viewer) {
     }
 }
 
-void printUsage(po::options_description options) {
-    std::cout << "Usage: view [INFO]\n"
-              << "   or: view SOURCE [CONFIGURATION]\n"
-              << "Display frame SOURCE on a monitor.\n\n"
-              << "SOURCE:\n"
-              << "  User-supplied name of the memory segment to receive frames "
-              << "from (e.g. raw).\n\n"
-              << options << "\n";
-}
 
 int main(int argc, char *argv[]) {
 
     std::signal(SIGINT, sigHandler);
 
+    std::string type;
     std::string source;
-    std::string snapshot_path;
-    po::options_description visible_options("OPTIONS");
+    std::vector<std::string> config_fk;
+
+    // Component specializations
+    std::unordered_map<std::string, char> type_hash;
+    type_hash["frame"] = 'a';
+    type_hash["position"] = 'b';
+
+    // The component itself
+    std::string comp_name = "viewer";
+    std::shared_ptr<oat::ViewerBase> viewer;
+
+    // Program options
+    po::options_description visible_options;
 
     try {
 
-        po::options_description options("INFO");
-        options.add_options()
-                ("help", "Produce help message.")
-                ("version,v", "Print version information.")
-                ;
-
-        po::options_description config("CONFIGURATION");
-        config.add_options()
-                ("snapshot-path,f", po::value<std::string>(&snapshot_path),
-                "The path to which in which snapshots will be saved. "
-                "If a folder is designated, the base file name will be SOURCE. "
-                "The timestamp of the snapshot will be prepended to the file name. "
-                "Defaults to the current directory.")
-                ;
-
-        po::options_description hidden("HIDDEN OPTIONS");
-        hidden.add_options()
+        // Required positional options
+        po::options_description positional_opt_desc("POSITIONAL");
+        positional_opt_desc.add_options()
+                ("type", po::value<std::string>(&type),
+                 "Type of frame filter to use.")
                 ("source", po::value<std::string>(&source),
-                "The name of the frame SOURCE that supplies frames to view.\n")
+                 "User-supplied name of the memory segment to receive frames.")
+                ("type-args", po::value<std::vector<std::string> >(),
+                 "type-specific arguments.")
                 ;
 
+        // Required positional arguments and type-specific configuration
         po::positional_options_description positional_options;
-        positional_options.add("source", -1);
+        positional_options.add("type", 1);
+        positional_options.add("source", 1);
+        positional_options.add("type-args", -1);
 
-        po::options_description all_options("ALL OPTIONS");
-        all_options.add(options).add(config).add(hidden);
+        // Visible options for help message
+        visible_options.add(oat::config::ComponentInfo::instance()->get());
 
-        visible_options.add(options).add(config);
+        // All options, including positional
+        po::options_description options;
+        options.add(positional_opt_desc)
+               .add(oat::config::ComponentInfo::instance()->get());
 
-        po::variables_map variable_map;
-        po::store(po::command_line_parser(argc, argv)
-                .options(all_options)
-                .positional(positional_options)
-                .run(),
-                variable_map);
-        po::notify(variable_map);
+        // Parse options, including unrecognized options which may be
+        // type-specific
+        auto parsed_opt = po::command_line_parser(argc, argv)
+            .options(options)
+            .positional(positional_options)
+            .allow_unregistered()
+            .run();
 
-        // Use the parsed options
-        if (variable_map.count("help")) {
-            printUsage(visible_options);
+        po::variables_map option_map;
+        po::store(parsed_opt, option_map);
+
+        // Check options for errors and bind options to local variables
+        po::notify(option_map);
+
+        // If a TYPE was provided, then specialize the filter and corresponding
+        // program options
+        if (option_map.count("type")) {
+
+            // Refine component type
+            switch (type_hash[type]) {
+                case 'a':
+                {
+                    viewer = std::make_shared<oat::ViewerBase>(
+                        oat::in_place<oat::FrameViewer>(), source
+                    );
+                    break;
+                }
+                // TODO
+                //case 'b':
+                //{
+                //    viewer = std::make_shared<oat::ViewerBase>(
+                //      oat::in_place<oat::Position>(), source
+                //    );
+                //    break;
+                //}
+                default:
+                {
+                    printUsage(visible_options);
+                    std::cerr << oat::Error("Invalid TYPE specified.\n");
+                    return -1;
+                }
+            }
+
+            // Specialize program options for the selected TYPE
+            po::options_description detail_opts {"CONFIGURATION"};
+            viewer->appendOptions(detail_opts);
+            visible_options.add(detail_opts);
+            options.add(detail_opts);
+        }
+
+        // Check INFO arguments
+        if (option_map.count("help")) {
+            printUsage(visible_options, type);
             return 0;
         }
 
-        if (variable_map.count("version")) {
-            std::cout << "Oat Frame Viewer version "
-                      << Oat_VERSION_MAJOR
-                      << "."
-                      << Oat_VERSION_MINOR
-                      << "\n";
-            std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
-            std::cout << "Licensed under the GPL3.0.\n";
+        if (option_map.count("version")) {
+            std::cout << oat::config::VERSION_STRING;
             return 0;
         }
 
-        if (!variable_map.count("source")) {
+        // Check IO arguments
+        bool io_error {false};
+        std::string io_error_msg;
+
+        if (!option_map.count("type")) {
+            io_error_msg += "A TYPE must be specified.\n";
+            io_error = true;
+        }
+
+        if (!option_map.count("source")) {
+            io_error_msg += "A SOURCE must be specified.\n";
+            io_error = true;
+        }
+
+        if (io_error) {
             printUsage(visible_options);
-            std::cerr << oat::Error("A SOURCE must be specified. Exiting.\n");
+            std::cerr << oat::Error(io_error_msg);
             return -1;
         }
 
-        if (!variable_map.count("snapshot-path")) {
-            snapshot_path = bfs::current_path().string();
-        }
+        // Get specialized component name
+        comp_name = viewer->name();
 
-    } catch (std::exception& e) {
-        std::cerr << oat::Error(e.what()) << "\n";
-        return -1;
-    } catch (...) {
-        std::cerr << oat::Error("Exception of unknown type.\n");
-        return -1;
-    }
+        // Reparse specialized component options
+        auto special_opt =
+            po::collect_unrecognized(parsed_opt.options, po::include_positional);
+        special_opt.erase(special_opt.begin(),special_opt.begin() + REQ_POSITIONAL_ARGS);
 
-    // Create component
-    std::shared_ptr<oat::Viewer> viewer =
-            std::make_shared<oat::Viewer>(source);
+        po::store(po::command_line_parser(special_opt)
+                 .options(options)
+                 .run(), option_map);
+        po::notify(option_map);
 
-    try {
-
-        // Create a path to save snapshots
-        viewer->storeSnapshotPath(snapshot_path);
+        viewer->configure(option_map);
 
         // Tell user
-        std::cout << oat::whoMessage(viewer->name(),
-                  "Listening to source " + oat::sourceText(source) + ".\n")
-                  << oat::whoMessage(viewer->name(),
-                  "Press 's' on the viewer window to take a snapshot.\n")
-                  << oat::whoMessage(viewer->name(),
-                  "Press CTRL+C to exit.\n");
+        std::cout << oat::whoMessage(comp_name,
+                     "Listening to source " + oat::sourceText(source) + ".\n")
+                  << oat::whoMessage(comp_name,
+                      "Press CTRL+C to exit.\n");
 
-        // Infinite loop until ctrl-c or end of stream signal
+        // Infinite loop until ctrl-c or end of messages signal
         run(viewer);
 
         // Tell user
-        std::cout << oat::whoMessage(viewer->name(), "Exiting.\n");
+        std::cout << oat::whoMessage(comp_name, "Exiting.")
+                  << std::endl;
 
-        // Exit
+        // Exit success
         return 0;
 
+    } catch (const po::error &ex) {
+        printUsage(visible_options);
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
+    } catch (const cpptoml::parse_exception &ex) {
+        std::cerr << oat::whoError(comp_name,
+                     "Failed to parse configuration file " + config_fk[0] + "\n")
+                  << oat::whoError(comp_name, ex.what())
+                  << std::endl;
     } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(viewer->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(viewer->name(), ex.msg) << "\n";
+        std::cerr << oat::whoError(comp_name, ex.msg) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
-        std::cerr << oat::whoError(viewer->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
-        std::cerr << oat::whoError(viewer->name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(comp_name, "Unknown exception.")
+                  << std::endl;
     }
 
     // Exit failure

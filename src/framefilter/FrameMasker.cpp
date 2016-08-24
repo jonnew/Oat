@@ -68,13 +68,15 @@ void FrameMasker::configure(const po::variables_map &vm) {
             throw (std::runtime_error("File \"" + img_path + "\" could not be read."));
 
         mask_set_ = true;
+    } else {
+        std::cerr << oat::whoWarn(name_, 
+                "No mask file provided. " 
+                "This filter does nothing but waste CPU cycles.\n");
     }
 }
 
 void FrameMasker::filter(cv::Mat &frame) {
 
-    // Throws cv::Exception if there is a size mismatch between mask and frames
-    // received from SOURCE or in any case where setTo() assertions fail.
     if (mask_set_)
         frame.setTo(0, roi_mask_ == 0);
 }

@@ -49,6 +49,20 @@ public:
         source_read_required_.reset();
     }
 
+    // Nodes are movable
+    Node(Node&&) = default;
+    Node & operator=(Node&&) = default;
+
+    //Node(Node&& n) :
+    //  sink_state_(std::move(n.sink_state_.load()))
+    //, source_slots_(std::move(n.source_slots_))
+    //, source_read_required_(std::move(n.source_read_required_))
+    //, source_ref_count_(std::move(n.source_ref_count_))
+    //, write_number_(std::move(n.write_number_))
+    //{
+    //    // Nothing
+    //}
+
     // Nodes are not copyable
     Node(const Node &) = delete;
     Node & operator=(const Node &) = delete;
@@ -74,9 +88,9 @@ public:
             if (source_slots_[i])
                 read_barrier(i).post();
 
-        mutex_.post();
-
         ++write_number_;
+
+        mutex_.post();
     }
 
     // SOURCE read counting
@@ -187,12 +201,12 @@ public:
 private:
 
     std::atomic<NodeState> sink_state_ {oat::NodeState::UNDEFINED}; //!< SINK state
-    std::atomic<size_t> source_read_count_ {0}; //!< Number SOURCE reads that have occured since last sink reset
+    //std::atomic<size_t> source_read_count_ {0}; //!< Number SOURCE reads that have occured since last sink reset
     std::bitset<NUM_SLOTS> source_slots_;
     std::bitset<NUM_SLOTS> source_read_required_;
 
-    std::atomic<size_t> source_ref_count_ {0}; //!< Number of SOURCES sharing this node
-    std::atomic<uint64_t> write_number_ {0}; //!< Number of writes to shmem that have been facilited by this node
+    size_t source_ref_count_ {0}; //!< Number of SOURCES sharing this node
+    uint64_t write_number_ {0}; //!< Number of writes to shmem that have been facilited by this node
 
     // Unfortunately, must manually maintain the number of rbx_'s to match NUM_SLOTS
     semaphore mutex_ {1}; //!< mutex governing exclusive acces to the read_barrier_

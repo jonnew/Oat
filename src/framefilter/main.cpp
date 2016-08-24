@@ -91,15 +91,14 @@ void sigHandler(int) {
 }
 
 // Processing loop
-void run(const std::shared_ptr<oat::FrameFilter> &filter) {
+void run(const std::shared_ptr<oat::FrameFilter> filter) {
 
     try {
 
         filter->connectToNode();
 
-        while (!quit && !source_eof) {
-            source_eof = filter->processFrame();
-        }
+        while (!quit && !source_eof)
+            source_eof = filter->process();
 
     } catch (const boost::interprocess::interprocess_exception &ex) {
 
@@ -164,7 +163,8 @@ int main(int argc, char *argv[]) {
         options.add(positional_opt_desc)
                .add(oat::config::ComponentInfo::instance()->get());
 
-        // Parse options, including unrecongized options which may be type-specific
+        // Parse options, including unrecognized options which may be
+        // type-specific
         auto parsed_opt = po::command_line_parser(argc, argv)
             .options(options)
             .positional(positional_options)
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
         // Check options for errors and bind options to local variables
         po::notify(option_map);
 
-        // If a TYPE was provided, then specialize the filter and coresponding
+        // If a TYPE was provided, then specialize the filter and corresponding
         // program options
         if (option_map.count("type")) {
 
@@ -267,29 +267,7 @@ int main(int argc, char *argv[]) {
                  .run(), option_map);
         po::notify(option_map);
 
-        // TODO: Bring start/end into configure method of each component
-        // specialzation
         filter->configure(option_map);
-
-        // **************** START
-
-        // Check for configuration file and key options
-        //config_fk = oat::config::extractConfigFileKey(option_map);
-        //config_used = !config_fk.empty();
-
-        // Process configuration file if provided
-        //if (config_used)
-            //filter->configure(config_fk[0], config_fk[1]);
-
-        //// TODO: Remove. Let the component worry about reporting
-        //// this if matricies are not defined when it starts
-        //if (!config_used)
-
-        //// TODO: Remove. Let the component worry about reporting
-        //// this if matricies are not defined when it starts
-        //if (!config_used)
-
-        // **************** END
 
         // Tell user
         std::cout << oat::whoMessage(comp_name,
@@ -321,6 +299,8 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(viewer->name(), ex.what()) << std::endl;
     } catch (...) {
         std::cerr << oat::whoError(comp_name, "Unknown exception.")
                   << std::endl;

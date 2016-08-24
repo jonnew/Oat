@@ -56,7 +56,8 @@ public:
 
     /**
      * Obtain new token from SOURCE and push onto FIFO.
-     * @return SOURCE end-of-stream signal. If true, this component should exit.
+     * @return SOURCE end-of-stream signal. If true, this component should
+     * exit.
      */
     bool push(void) override;
 

@@ -52,20 +52,20 @@ public:
 
     virtual ~FrameFilter() { };
 
-    /**
-     * @brief FrameServers must be able to connect to a Source and Sink Nodes
-     * in shared memory
-     */
     void connectToNode(void);
 
     /**
      * @breif Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
      * filtered frame to SINK.
-     * @return SOURCE end-of-stream signal. If true, this component should exit.
+     * @return SOURCE end-of-stream signal. If true, this component should
+     * exit.
      */
-    bool processFrame(void);
+    bool process(void);
 
-
+    /** 
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
+     */
     virtual void appendOptions(po::options_description &opts) const;
 
     /**
@@ -84,7 +84,7 @@ public:
      * @brief Get parameters of frames being processed by this component
      * @return Frame parameters
      */
-    oat::Source<oat::SharedFrameHeader>::ConnectionParameters
+    oat::Source<oat::Frame>::ConnectionParameters
     frame_parameters(void) const { return frame_parameters_; }
 
 protected:
@@ -92,32 +92,32 @@ protected:
     // Filter name
     const std::string name_;
 
-    /**
-     * Perform frame filtering.
-     * @param frame to be filtered
-     */
-    virtual void filter(cv::Mat& frame) = 0;
-
     // List of allowed configuration options, including those
     // specified only via config file
     std::vector<std::string> config_keys_;
+
+    /**
+     * Perform frame filtering. Override to implement filtering operation in
+     * derived classes.
+     * @param frame to be filtered
+     */
+    virtual void filter(cv::Mat& frame) = 0;
 
 private:
 
     // Frame source
     const std::string frame_source_address_;
-    oat::Source<oat::SharedFrameHeader> frame_source_;
+    oat::Source<oat::Frame> frame_source_;
 
     // Frame sink
     const std::string frame_sink_address_;
-    oat::Sink<oat::SharedFrameHeader> frame_sink_;
-
-    // Currently processed frame
-    oat::Frame internal_frame_;
+    oat::Sink<oat::Frame> frame_sink_;
 
     // Currently acquired, shared frame
     oat::Frame shared_frame_;
-    oat::Source<oat::SharedFrameHeader>::ConnectionParameters frame_parameters_;
+    
+    // TODO: ugly...
+    oat::Source<oat::Frame>::ConnectionParameters frame_parameters_;
 };
 
 }      /* namespace oat */

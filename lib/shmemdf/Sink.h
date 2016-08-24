@@ -218,14 +218,14 @@ inline T * Sink<T>::retrieve() {
 // 1. SharedFrameHeader
 
 template<>
-class Sink<SharedFrameHeader> : public SinkBase<SharedFrameHeader> {
+class Sink<Frame> : public SinkBase<SharedFrameHeader> {
 
 public:
     void bind(const std::string &address, const size_t bytes);
     oat::Frame retrieve(const size_t rows, size_t cols, const int type);
 };
 
-inline void Sink<SharedFrameHeader>::bind(const std::string &address, const size_t bytes) {
+inline void Sink<Frame>::bind(const std::string &address, const size_t bytes) {
 
     if (bound_)
         throw std::runtime_error("A sink can only bind a "
@@ -267,7 +267,7 @@ inline void Sink<SharedFrameHeader>::bind(const std::string &address, const size
     }
 }
 
-inline oat::Frame Sink<SharedFrameHeader>::retrieve(const size_t rows, const size_t cols, const int type) {
+inline oat::Frame Sink<Frame>::retrieve(const size_t rows, const size_t cols, const int type) {
 
     // Make sure that the SINK is bound to a shared memory segment
     //assert(bound_);

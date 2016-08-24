@@ -23,22 +23,23 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
-#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <boost/program_options.hpp>
 
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Source.h"
 
+namespace po = boost::program_options;
+
 namespace oat {
 
-// Forward decl.
-class SharedFrameHeader;
-
 /**
- * View a frame stream on the monitor.
+ * @brief Abstract viewer.
+ * All concrete viewer types implement this ABC.
  */
+template <typename T>
 class Viewer {
 
     using Clock = std::chrono::high_resolution_clock;
@@ -47,53 +48,86 @@ class Viewer {
 public:
 
     /**
-     * View a frame stream on the monitor.
+     * @brief Abstract viewer.
+     * All concrete viewer types implement this ABC.
+     * @param source_address Frame SOURCE node address
      */
-    explicit Viewer(const std::string &frame_source_name);
+    explicit Viewer(const std::string &source_name);
     
-    ~Viewer();
+    virtual ~Viewer();
 
+    /**
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
+     */
+    virtual void appendOptions(po::options_description &opts) const;
+
+    /**
+     * @brief Configure filter parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    virtual void configure(const po::variables_map &vm) = 0;
+    /**
+     * @brief Connect to SOURCE node from which to get samples
+     */
     void connectToNode(void);
-    bool showImage(void);
-    void storeSnapshotPath(const std::string &snapshot_path);
 
-    // Accessors
-    inline std::string name() const { return name_; }
+    /**
+     * @brief Obtain sample from SOURCE and view.
+     * @return SOURCE end-of-stream signal. If true, this component should
+     * exit.
+     */
+    bool process(void);
 
-    // Constants
-    static constexpr Milliseconds MIN_UPDATE_PERIOD_MS {33};
-    static constexpr int COMPRESSION_LEVEL {9};
+    /**
+     * @brief Get viewer name
+     * @return name
+     */
+    std::string name(void) const { return name_; }
+
+protected:
+
+    // Viewer name
+    const std::string name_;
+
+    // Source address
+    const std::string source_address_;
+
+    // List of allowed configuration options
+    std::vector<std::string> config_keys_;
+
+    /**
+     * @brief Perform sample display. Override to implement display operation
+     * in derived classes.
+     * @param Sample to by displayed.
+     */
+    virtual void display(const T &sample) = 0;
 
 private:
 
-    // Viewer name
-    std::string name_;
-
-    // Image data
-    oat::Frame internal_frame_;
-
-    // Frame SOURCE to get frames to display
-    const std::string frame_source_address_;
-    oat::NodeState node_state_ {oat::NodeState::UNDEFINED};
-    oat::Source<oat::SharedFrameHeader> frame_source_;
+    // Sample SOURCE
+    T sample_;
+    oat::Source<T> source_;
 
     // Minimum viewer refresh period
     Clock::time_point tick_, tock_;
 
-    // Used to request a snapshot of the current image, saved to disk
-    std::string snapshot_folder_;
-    std::string snapshot_base_file_;
-    std::vector<int> compression_params_;
-
-    // Display thread future
-    std::atomic<bool> running_ {true}; 
-    std::atomic<bool> display_complete_ {true}; 
+    // Display update thread
+    std::atomic<bool> running_ {true};
+    std::atomic<bool> display_complete_ {true};
     std::mutex display_mutex_;
     std::condition_variable display_cv_;
-    std::unique_ptr<std::thread> display_thread_;
-    //std::future<void> display_future_;
+    std::thread display_thread_;
 
-    void display(void);
+    // Constants
+    const Milliseconds MIN_UPDATE_PERIOD_MS {33};
+
+    /**
+     * @brief Asynchronous execution of display(). This function is handled by
+     * an asynchronous thread that throttles the GUI update period to
+     * MIN_UPDATE_PERIOD_MS.
+     */
+    void processAsync(void);
 };
 
 }      /* namespace oat */

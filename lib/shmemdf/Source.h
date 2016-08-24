@@ -279,10 +279,12 @@ inline T  Source<T>::clone() const {
 // 1. SharedFrameHeader
 
 template<>
-class Source<SharedFrameHeader> : public SourceBase<SharedFrameHeader> {
+class Source<Frame> : public SourceBase<SharedFrameHeader> {
 
 public:
 
+    // TODO: This info is sitting inside SharedFrameHeader. Why am I creating a
+    // new class here?
     struct ConnectionParameters {
         size_t cols  {0};
         size_t rows  {0};
@@ -298,11 +300,13 @@ public:
     ConnectionParameters parameters() const { return parameters_; }
 
 private :
+
+    // Shared frame
     oat::Frame frame_;
     ConnectionParameters parameters_;
 };
 
-inline void Source<SharedFrameHeader>::connect() {
+inline void Source<Frame>::connect() {
 
     // Make sure we did not connect already
     if (state_ != SourceState::TOUCHED)

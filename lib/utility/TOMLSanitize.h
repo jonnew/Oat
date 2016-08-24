@@ -69,7 +69,6 @@ valueError(const std::string& entry_name,
  * @param map Program option map extacted form CLI input @param key Key within
  * option map specifying file/key pair of config file.
  */
-// TODO: Implementation file
 inline const OptionTable
 getConfigTable(const OptionMap map, const char *key="config") {
 
@@ -131,8 +130,8 @@ checkKeys(const std::vector<std::string> &options,
  */
 inline bool
 getTable(const OptionTable table,
-         const std::string& key,
-         OptionTable& nested_table) {
+         const std::string &key,
+         OptionTable &nested_table) {
 
     // If the key is in the table,
     if (table->contains(key)) {
@@ -171,7 +170,7 @@ template <typename T>
 bool getValue(const po::variables_map &vm,
               const OptionTable table,
               const std::string& key,
-              T& value,
+              T &value,
               bool required = false) {
 
     if (vm.count(key)) {
@@ -222,8 +221,7 @@ getNumericValue(const po::variables_map &vm,
                 T &value,
                 const T lower = std::numeric_limits<T>::min(),
                 const T upper = std::numeric_limits<T>::max(),
-                bool required = false)
-{
+                bool required = false) {
 
     static_assert (std::is_integral<T>::value ||
                    std::is_floating_point<T>::value, "Numeric type required.");
@@ -280,7 +278,7 @@ getNumericValue(const po::variables_map &vm,
 inline bool
 getArray(const OptionTable table,
          const std::string& key,
-         Array& array_out,
+         Array &array_out,
          bool required = false) {
 
     // If the key is in the table,
@@ -306,7 +304,7 @@ getArray(const OptionTable table,
 inline bool
 getArray(const OptionTable table,
          const std::string& key,
-         Array& array_out,
+         Array &array_out,
          size_t size,
          bool required = false) {
 
