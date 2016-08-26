@@ -52,6 +52,8 @@ public:
 
 private:
 
+    bool gui_inititalized_ {false};
+
     // Used to request a snapshot of the current image, saved to disk
     std::string snapshot_folder_;
     std::string snapshot_base_file_;

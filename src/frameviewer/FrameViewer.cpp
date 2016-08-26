@@ -39,20 +39,7 @@ using msec = std::chrono::milliseconds;
 FrameViewer::FrameViewer(const std::string &source_address) :
   Viewer<oat::Frame>(source_address)
 {
-
     config_keys_ = {"snapshot-path"};
-
-#ifdef HAVE_OPENGL
-    try {
-        cv::namedWindow(name_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
-    } catch (cv::Exception& ex) {
-        oat::whoWarn(name_, "OpenCV not compiled with OpenGL support. "
-                            "Falling back to OpenCV's display driver.\n");
-        cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
-    }
-#else
-    cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
-#endif
 }
 
 void FrameViewer::appendOptions(po::options_description &opts) const {
@@ -83,6 +70,23 @@ void FrameViewer::configure(const po::variables_map &vm) {
 }
 
 void FrameViewer::display(const oat::Frame &frame) {
+
+    // NOTE: This inititalization is done here to enesure it is done by the same
+    // thread that actually calls imshow(). If done in in the constructor, it will
+    // not play nice with OpenGL.
+    if (!gui_inititalized_) {
+#ifdef HAVE_OPENGL
+        try {
+            cv::namedWindow(name_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
+        } catch (cv::Exception& ex) {
+            oat::whoWarn(name_, "OpenCV not compiled with OpenGL support. "
+                    "Falling back to OpenCV's display driver.\n");
+            cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+        }
+#else
+        cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+#endif
+    }
 
     if (frame.rows == 0 || frame.cols == 0)
         return;
