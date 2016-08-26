@@ -20,21 +20,24 @@
 #ifndef OAT_PGGIGECAM_H
 #define OAT_PGGIGECAM_H
 
+#include "FrameServer.h"
+
 #include <memory>
 #include <string>
-#include <opencv2/core/mat.hpp>
+#include <vector>
 
 #include "FlyCapture2.h"
+#include <opencv2/core/mat.hpp>
 
 #include "../../lib/datatypes/Sample.h"
-
-#include "FrameServer.h"
 
 namespace oat {
 
 namespace pg = FlyCapture2;
 
 class PGGigECam : public FrameServer {
+
+using rte = std::runtime_error;
 
 public:
     /**
@@ -50,12 +53,13 @@ public:
     void connectToNode(void) override;
     bool process(void) override;
 
-    //void fireSoftwareTrigger(void);
+    void fireSoftwareTrigger(void);
 
 private:
 
     // Timing stuff
     bool enforce_fps_ {false};
+    double frames_per_second_ {30.0};
     static constexpr uint64_t IEEE_1394_HZ = {8000};
     uint64_t ieee_1394_cycle_index_ {0};
     uint64_t ieee_1394_start_cycle_ {0};
@@ -67,79 +71,79 @@ private:
     oat::Sample::Microseconds tick_, tock_;
 
     // GigE Camera configuration
-    int64_t max_index_ {0};
-    size_t index_;
+    //size_t index_;
 
-    int x_bin_ {1};
-    int y_bin_ {1};
-    float gain_db_ {0};
-    float shutter_ms_ {0};
-    float exposure_EV_ {0};
+    //int x_bin_ {1};
+    //int y_bin_ {1};
+    //float exposure_EV_ {0};
     bool acquisition_started_ {false};
     bool use_trigger_ {false};
     bool use_software_trigger_ {false};
-    bool trigger_polarity_ {true};
-    int64_t trigger_mode_ {14};
-    int64_t trigger_source_pin_ {0};
-    int64_t white_bal_red_ {0};
-    int64_t white_bal_blue_ {0};
-    double frames_per_second_ {30.0};
-    bool use_frame_buffer_ {false};
+    //bool trigger_polarity_ {true};
+    //int64_t trigger_mode_ {14};
+    //int64_t trigger_source_pin_ {0};
+    //int64_t white_bal_red_ {0};
+    //int64_t white_bal_blue_ {0};
+    //bool use_frame_buffer_ {false};
     //unsigned int num_transmit_retries_ {0};
-    int64_t strobe_output_pin_ {1};
+    //int64_t strobe_output_pin_ {1};
 
-    // GigE Camera interface
+    // GigE Camera object
     pg::GigECamera camera_;
 
     // The current, unbuffered frame in PG's format
     pg::Image raw_image_;
     std::unique_ptr<pg::Image> rgb_image_;
 
-    // For establishing connection
-    int setCameraIndex(unsigned int requested_idx);
-    int connectToCamera(void);
-
-    // Acquisition options
-    // NOTE: These functions operate on member variables, and therefore the
-    // arguments are gratuitous. However, these functions are by definition
-    // not used in performance-critical sections of code, and I think decent
-    // type sigs are a good trade for the extra copy operations.
-    int setupStreamChannels(void);
-    int setupFrameRate(double fps, bool is_auto);
-    int setupShutter(float shutter_ms);
-    int setupShutter(bool is_auto);
-    int setupGain(float gain_db);
-    int setupGain(bool is_auto);
-    int setupExposure(float exposure_EV);
-    int setupExposure(bool is_auto);
-    int setupWhiteBalance(int white_bal_red, int white_bal_blue);
-    int setupWhiteBalance(bool is_on);
-    int setupPixelBinning(int x_bin, int y_bin);
-    int setupImageFormat(void);
-    int setupDefaultImageFormat(void);
+    // Acquisition settings routines 
+    void setupStreamChannels(void);
+    void setupFrameRate(double fps, bool is_auto = false);
+    void setupShutter(float shutter_ms, bool is_auto = false);
+    void setupGain(float gain_db, bool is_auto = false);
+    //int setupExposure(float exposure_EV);
+    //int setupExposure(bool is_auto);
+    void setupWhiteBalance(int bal_red, int bal_blue, bool is_on);
+    //int setupWhiteBalance(bool is_on);
+    int setupPixelBinning(size_t x_bin, size_t y_bin);
+    void setupImageFormat(const std::vector<size_t> &roi);
+    void setupImageFormat(void);
     //TODO: int setupCameraFrameBuffer(void);
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
-    int setupTrigger(void);
-    int setupEmbeddedImageData(void);
+    void setupAsyncTrigger(int trigger_mode, bool trigger_rising, int trigger_pin);
+    void setupStrobeOutput(int strobe_pin);
+    void setupEmbeddedImageData(void);
+    void setupGrabSettings(void);
 
     // IEEE 1394 shutter open timestamp uncycling
     uint64_t uncycle1394Timestamp(int ieee_1394_sec,
                                   int ieee_1394_cycle);
 
     // Physical camera control
-    int turnCameraOn(void);
+    void turnCameraOn(void);
+    void connectToCamera(size_t index);
+    void startCapture(void);
+
+    /** 
+     * @brief Grab a frame from the camera's buffer.
+     * 
+     * @return return code meaning:
+     *   -1 : Grab timeout occurred
+     *    0 : Successful grab
+     *  >=1 : A return code greater than or equal to 1  only occurs if a strict
+     *        frame rate is enforced when using an external trigger. Because it is
+     *        possible for PG cameras to skip triggers, the function will check the
+     *        time between consecutive frames and indicate the estimated number of
+     *        missed frames, if any, using this code.
+     */
     int grabImage(void);
 
     // Diagnostics and meta
-    int findNumCameras(void);
+    size_t findNumCameras(void);
     void printError(pg::Error error);
     bool pollForTriggerReady(void);
     int printCameraInfo(void);
     int printBusInfo(void);
     void printStreamChannelInfo(pg::GigEStreamChannel *stream_channel);
-
-    // TODO: Grabbed frame callback
-    // void onGrabbedImage(FlyCapture2::Image* pImage, const void* pCallbackData);
 };
 
 }      /* namespace oat */

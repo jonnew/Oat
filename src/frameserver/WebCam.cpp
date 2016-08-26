@@ -63,10 +63,12 @@ void WebCam::configure(const po::variables_map &vm) {
     oat::config::checkKeys(config_keys_, config_table);
 
     // Camera index
-    oat::config::getValue(vm, config_table, "index", index_, 0);
+    oat::config::getNumericValue<size_t>(
+        vm, config_table, "index", index_, 0
+    );
 
     //// Frame rate
-    //if (oat::config::getValue(vm, config_table, "fps", frames_per_second_, 0.0))
+    //if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0))
     //    calculateFramePeriod();
 
     // ROI
@@ -74,13 +76,13 @@ void WebCam::configure(const po::variables_map &vm) {
     if (oat::config::getArray(config_table, "roi", roi, 4, false)) {
 
         use_roi_ = true;
-        auto roi_vec = roi->array_of<double>();
+        auto roi_arr = roi->array_of<int64_t>();
 
-        region_of_interest_.x = roi_vec[0]->get();
-        region_of_interest_.y = roi_vec[1]->get();
-        region_of_interest_.width = roi_vec[2]->get();
-        region_of_interest_.height = roi_vec[3]->get();
-    }
+        region_of_interest_.x      = static_cast<int>(roi_arr[0]->get());
+        region_of_interest_.y      = static_cast<int>(roi_arr[1]->get());
+        region_of_interest_.width  = static_cast<int>(roi_arr[2]->get());
+        region_of_interest_.height = static_cast<int>(roi_arr[3]->get());
+    } 
 }
 
 void WebCam::connectToNode() {

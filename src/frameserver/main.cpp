@@ -35,9 +35,9 @@
 #include "TestFrame.h"
 #include "FileReader.h"
 #include "WebCam.h"
-//#ifdef USE_FLYCAP
-//    #include "PGGigECam.h"
-//#endif
+#ifdef USE_FLYCAP
+    #include "PGGigECam.h"
+#endif
 
 #define REQ_POSITIONAL_ARGS 2
 
@@ -179,19 +179,19 @@ int main(int argc, char *argv[]) {
                     server = std::make_shared<oat::WebCam>(sink);
                     break;
                 }
-                //case 'b':
-                //{
+                case 'b':
+                {
 
 #ifndef USE_FLYCAP
-                //    std::cerr << oat::Error("Oat was not compiled with Point-Grey "
-                //            "flycapture support, so TYPE=gige is not available.\n");
-                //    return -1;
+                    std::cerr << oat::Error("Oat was not compiled with Point-Grey "
+                            "flycapture support, so TYPE=gige is not available.\n");
+                    return -1;
 #else
-                //    server = 
-                //        std::make_shared<oat::PGGigECam>(sink, index, frames_per_second);
+                    server = 
+                        std::make_shared<oat::PGGigECam>(sink);
 #endif
-                //    break;
-                //}
+                    break;
+                }
                 case 'c':
                 {
                     server = std::make_shared<oat::FileReader>(sink);

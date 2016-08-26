@@ -49,7 +49,7 @@ public:
 private:
 
     // The webcam object
-    int64_t index_ {0};
+    size_t index_ {0};
     std::unique_ptr<cv::VideoCapture> cv_camera_;
 
     // frame generation clock

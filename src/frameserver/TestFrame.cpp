@@ -66,10 +66,10 @@ void TestFrame::configure(const po::variables_map &vm) {
     oat::config::getValue(vm, config_table, "test-image", file_name_, true);
 
     // Number of frames to serve
-    oat::config::getValue(vm, config_table, "num-frames", num_samples_, 0);
+    oat::config::getNumericValue(vm, config_table, "num-frames", num_samples_, int64_t(0));
 
     // Frame rate
-    if (oat::config::getValue(vm, config_table, "fps", frames_per_second_, 0.0)) 
+    if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0)) 
         calculateFramePeriod();
 }
 

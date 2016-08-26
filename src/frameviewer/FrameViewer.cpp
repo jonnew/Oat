@@ -86,6 +86,7 @@ void FrameViewer::display(const oat::Frame &frame) {
 #else
         cv::namedWindow(name_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
 #endif
+        gui_inititalized_ = true;
     }
 
     if (frame.rows == 0 || frame.cols == 0)
