@@ -82,8 +82,8 @@ private:
     // Grid parameters
     float marker_length_ {1.0};
     float marker_separation_ {0.25};
-    int n_x_ {3};
-    int n_y_ {3};
+    int n_x_ {1};
+    int n_y_ {1};
 
     /// TODO: Heading direction
     //oat::HeadingDirection heading_dir_ {oat::HeadingDirection::NW};
