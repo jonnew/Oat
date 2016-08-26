@@ -37,19 +37,20 @@ namespace pg = FlyCapture2;
 class PGGigECam : public FrameServer {
 
 public:
-    PGGigECam(const std::string &frame_sink_address,
-              const size_t index,
-              const double fps);
+    /**
+     * @brief Serve frames from a Point Grey GigE camera.
+     * @param sink_address frame sink address
+     */
+    explicit PGGigECam(const std::string &sink_address);
+    ~PGGigECam() final;
 
-    ~PGGigECam();
+    void appendOptions(po::options_description &opts) const override;
+    void configure(const po::variables_map &vm) override;
 
-    // Use a configuration file to specify parameters
-    void configure(void) override; // Default options
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
     void connectToNode(void) override;
-    bool serveFrame(void) override;
-    void fireSoftwareTrigger(void);
+    bool process(void) override;
+
+    //void fireSoftwareTrigger(void);
 
 private:
 
@@ -66,7 +67,6 @@ private:
     oat::Sample::Microseconds tick_, tock_;
 
     // GigE Camera configuration
-    unsigned int num_cameras_;
     int64_t max_index_ {0};
     size_t index_;
 
@@ -103,7 +103,7 @@ private:
     // NOTE: These functions operate on member variables, and therefore the
     // arguments are gratuitous. However, these functions are by definition
     // not used in performance-critical sections of code, and I think decent
-    // type sigs are a good trade for the extra copy operations. 
+    // type sigs are a good trade for the extra copy operations.
     int setupStreamChannels(void);
     int setupFrameRate(double fps, bool is_auto);
     int setupShutter(float shutter_ms);
@@ -117,7 +117,7 @@ private:
     int setupPixelBinning(int x_bin, int y_bin);
     int setupImageFormat(void);
     int setupDefaultImageFormat(void);
-    //int setupCameraFrameBuffer(void);
+    //TODO: int setupCameraFrameBuffer(void);
     //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
     int setupTrigger(void);
     int setupEmbeddedImageData(void);
@@ -126,7 +126,7 @@ private:
     uint64_t uncycle1394Timestamp(int ieee_1394_sec,
                                   int ieee_1394_cycle);
 
-    // Physical camera_ control
+    // Physical camera control
     int turnCameraOn(void);
     int grabImage(void);
 

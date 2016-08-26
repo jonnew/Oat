@@ -47,11 +47,13 @@ public:
      * @param frame_source_address Frame SOURCE node address
      * @param frame_sink_address Frame SINK node address
      */
-    FrameFilter(const std::string &frame_source_address,
-                const std::string &frame_sink_address);
-
+    explicit FrameFilter(const std::string &frame_source_address,
+                         const std::string &frame_sink_address);
     virtual ~FrameFilter() { };
 
+    /** 
+     * @brief Connect to shared memory node.
+     */
     void connectToNode(void);
 
     /**
@@ -62,7 +64,7 @@ public:
      */
     bool process(void);
 
-    /** 
+    /**
      * @brief Append type-specific program options.
      * @param opts Program option description to be specialized.
      */
@@ -115,7 +117,7 @@ private:
 
     // Currently acquired, shared frame
     oat::Frame shared_frame_;
-    
+
     // TODO: ugly...
     oat::Source<oat::Frame>::ConnectionParameters frame_parameters_;
 };

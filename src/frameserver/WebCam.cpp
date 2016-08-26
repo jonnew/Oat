@@ -19,11 +19,9 @@
 
 #include "WebCam.h"
 
-#include <string>
+#include <cpptoml.h>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/videoio.hpp>
-
-#include <cpptoml.h>
 
 #include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
@@ -33,9 +31,56 @@ namespace oat {
 
 WebCam::WebCam(const std::string &frame_sink_name) :
   FrameServer(frame_sink_name)
-, index_(0)
 {
-    // Nothing
+    config_keys_ = {"index",
+                    "fps",
+                    "roi"};
+}
+
+void WebCam::appendOptions(po::options_description &opts) const {
+
+    // Accepts default options
+    FrameServer::appendOptions(opts);
+
+    // Update CLI options
+    opts.add_options()
+        ("index,i", po::value<int64_t>(),
+         "Camera index. Defaults to 0. Useful in multi-camera imaging configurations.")
+        //("fps,r", po::value<double>(),
+        // "Frames to serve per second.")
+        ("roi {CF}", po::value<std::string>(),
+         "Four element array of ints, [x0 y0 width height],"
+         "defining a rectangular region of interest. Origin"
+         "is upper left corner. ROI must fit within acquired"
+         "frame size.")
+        ;
+}
+
+void WebCam::configure(const po::variables_map &vm) {
+
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+
+    // Camera index
+    oat::config::getValue(vm, config_table, "index", index_, 0);
+
+    //// Frame rate
+    //if (oat::config::getValue(vm, config_table, "fps", frames_per_second_, 0.0))
+    //    calculateFramePeriod();
+
+    // ROI
+    oat::config::Array roi;
+    if (oat::config::getArray(config_table, "roi", roi, 4, false)) {
+
+        use_roi_ = true;
+        auto roi_vec = roi->array_of<double>();
+
+        region_of_interest_.x = roi_vec[0]->get();
+        region_of_interest_.y = roi_vec[1]->get();
+        region_of_interest_.width = roi_vec[2]->get();
+        region_of_interest_.height = roi_vec[3]->get();
+    }
 }
 
 void WebCam::connectToNode() {
@@ -55,7 +100,7 @@ void WebCam::connectToNode() {
             example_frame.rows, example_frame.cols, example_frame.type());
 }
 
-bool WebCam::serveFrame() {
+bool WebCam::process() {
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -64,7 +109,7 @@ bool WebCam::serveFrame() {
     frame_sink_.wait();
 
     if (!use_roi_) {
-            
+
         *cv_camera_ >> shared_frame_;
         frame_empty_ = shared_frame_.empty();
 
@@ -81,7 +126,7 @@ bool WebCam::serveFrame() {
     if (shared_frame_.sample().count() == 0)
         start_ = clock_.now();
 
-    auto period = 
+    auto period =
         std::chrono::duration_cast<Sample::Microseconds>(clock_.now() - start_);
     shared_frame_.sample().incrementCount(period);
 
@@ -92,52 +137,6 @@ bool WebCam::serveFrame() {
     //  END CRITICAL SECTION  //
 
     return frame_empty_;
-}
-
-void WebCam::configure() { }
-
-void WebCam::configure(const std::string& config_file, const std::string& config_key) {
-
-    // Available options
-    std::vector<std::string> options {"index", "roi"};
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
-
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        // Set the camera index
-        oat::config::getValue(this_config, "index", index_, MIN_INDEX);
-        //cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
-
-        // Set the ROI
-        oat::config::Table roi;
-        if (oat::config::getTable(this_config, "roi", roi)) {
-
-            int64_t val;
-            oat::config::getValue(roi, "x_offset", val, (int64_t)0, true);
-            region_of_interest_.x = val;
-            oat::config::getValue(roi, "y_offset", val, (int64_t)0, true);
-            region_of_interest_.y = val;
-            oat::config::getValue(roi, "width", val, (int64_t)0, true);
-            region_of_interest_.width = val;
-            oat::config::getValue(roi, "height", val, (int64_t)0, true);
-            region_of_interest_.height = val;
-            use_roi_ = true;
-
-        }
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
 }
 
 } /* namespace oat */

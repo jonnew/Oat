@@ -16,7 +16,7 @@ white_bal = {red = 500, blue = 800} # White balance (0-1000; if note specified, 
 # Region of interest (pixels) 
 # NOTE: I cannot find this documented anywhere, but it seems that these need to
 # be even numbers!                                                                                 
-roi = {x_offset = 0, y_offset = 0, width = 100, height = 100}                                  
+roi = [0, 0, 100, 100]  # Region of interest ([x0, y0, w, h], pixels)
 x_bin = 2               # On-camera x-dimension pixel binning (pixels; if note specified, defaults to "off")
 y_bin = 2               # On-camera y-dimension pixel binning (pixels; if note specified, defaults to "off")
 trigger_on = false      # If false, free run at fps or maximum rate if that is not specified
@@ -32,13 +32,13 @@ enforce_fps = false     # Ensure that frames are produced at the fps setting by 
                         # ticket on this, but PG has no solution yet.
 
 [file]
-fps = 100.0      # Hz
-roi = {x_offset = 0, y_offset = 0, width = 100, height = 100} # Region of interest (pixels)
+fps = 100.0             # Hz
+roi = [0, 0, 50, 50]  # Region of interest ([x0, y0, w, h], pixels)
 
 [wcam]
 index = 0               # Index of camera on the bus (there can be more than one)
-roi = {x_offset = 0, y_offset = 0, width = 100, height = 100} # Region of interest (pixels)
+roi = [0, 0, 100, 100]  # Region of interest ([x0, y0, w, h], pixels)
 
 [test]
-#TODO: fps = 100.0      # Hz
-num-samples = 1000
+fps = 100.0             # Hz
+num-frames = 1000       # Number of frames to serve

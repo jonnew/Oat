@@ -17,68 +17,67 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <string>
+#include "TestFrame.h"
+
 #include <thread>
-#include <opencv2/core/core.hpp>
+
 #include <cpptoml.h>
+#include <opencv2/highgui.hpp>
 
 #include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
-#include "TestFrame.h"
-
 namespace oat {
 
-TestFrame::TestFrame(const std::string &image_sink_address,
-                     const std::string &file_name,
-                     const double frames_per_second) :
-  FrameServer(image_sink_address)
-, file_name_(file_name)
-, frames_per_second_(frames_per_second)
+TestFrame::TestFrame(const std::string &sink_address) :
+  FrameServer(sink_address)
 {
-    // Default config
-    calculateFramePeriod();
+    config_keys_ = {"test-image",
+                    "num-frames",
+                    "fps"};
+
+    // Initialize time
     tick_ = clock_.now();
 }
 
-void TestFrame::configure(void) { }
+void TestFrame::appendOptions(po::options_description &opts) const {
 
-void TestFrame::configure(const std::string &config_file,
-                          const std::string &config_key) {
+    // Accepts default options
+    FrameServer::appendOptions(opts);
 
-    // Available options
-    std::vector<std::string> options {"num-samples",
-                                      "fps"};
+    // Update CLI options
+    opts.add_options()
+        ("test-image,f", po::value<std::string>(),
+         "Path to test image used as frame source.")
+        ("fps,r", po::value<double>(),
+         "Frames to serve per second.")
+        ("num-frames,n", po::value<int64_t>(),
+         "Number of frames to serve before exiting.")
+        ;
+}
 
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
+void TestFrame::configure(const po::variables_map &vm) {
 
-    // See if a configuration was provided
-    if (config->contains(config_key)) {
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
 
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
+    // Test image path
+    oat::config::getValue(vm, config_table, "test-image", file_name_, true);
 
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
+    // Number of frames to serve
+    oat::config::getValue(vm, config_table, "num-frames", num_samples_, 0);
 
-        oat::config::getValue(this_config, "num-samples", num_samples_, 0);
-
-        // Set the frame rate
-        oat::config::getValue(this_config, "fps", frames_per_second_, 0.0);
+    // Frame rate
+    if (oat::config::getValue(vm, config_table, "fps", frames_per_second_, 0.0)) 
         calculateFramePeriod();
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
 }
 
 void TestFrame::connectToNode() {
 
     cv::Mat example_frame = cv::imread(file_name_);
-    if (example_frame.empty())
-        throw std::runtime_error(file_name_ + " could not be opened.");
+    if (example_frame.data == NULL)
+        throw (std::runtime_error("File \"" + file_name_ + "\" could not be read."));
 
     frame_sink_.bind(frame_sink_address_,
             example_frame.total() * example_frame.elemSize());
@@ -93,7 +92,7 @@ void TestFrame::connectToNode() {
     shared_frame_.sample().set_rate_hz(1.0 / frame_period_in_sec_.count());
 }
 
-bool TestFrame::serveFrame() {
+bool TestFrame::process() {
 
     if (it_ < num_samples_) {
 

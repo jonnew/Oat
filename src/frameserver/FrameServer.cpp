@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   WebCam.h
+//* File:   FrameServer.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,45 +17,29 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OAT_WEBCAM_H
-#define OAT_WEBCAM_H
-
-#include <chrono>
 #include <string>
 
 #include "FrameServer.h"
 
-// Forward decl.
-namespace cv { class VideoCapture; }
-
 namespace oat {
+FrameServer::FrameServer(const std::string &frame_sink_address) :
+  name_("frameserve[" + frame_sink_address + "]")
+, frame_sink_address_(frame_sink_address)
+{
+    // Nothing
+}
 
-class WebCam : public FrameServer {
-public:
+void FrameServer::appendOptions(po::options_description &opts) const {
 
-    /**
-     * @brief Serve test frames from a webcam.
-     * @param sink_address frame sink address
-     */
-    explicit WebCam(const std::string &sink_address_);
+    // TODO: move to type specific options
 
-    void appendOptions(po::options_description &opts) const override;
-    void configure(const po::variables_map &vm) override;
+    // Common program options
+    opts.add_options()
+        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+        "Configuration file/key pair.\n"
+        "e.g. 'config.toml mykey'")
+        ;
+}
 
-    void connectToNode(void) override;
-    bool process(void) override;
+} /* namespace oat */
 
-
-private:
-
-    // The webcam object
-    int64_t index_ {0};
-    std::unique_ptr<cv::VideoCapture> cv_camera_;
-
-    // frame generation clock
-    std::chrono::steady_clock clock_;
-    std::chrono::steady_clock::time_point start_;
-};
-
-}      /* namespace oat */
-#endif /* OAT_WEBCAM_H */

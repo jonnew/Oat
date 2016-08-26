@@ -38,13 +38,27 @@
 
 namespace oat {
 
-PGGigECam::PGGigECam(const std::string &frame_sink_address,
-                     const size_t index,
-                     const double fps) :
-  FrameServer(frame_sink_address)
-, index_(index)
-, frames_per_second_(fps)
+PGGigECam::PGGigECam(const std::string &sink_address) ;
+  FrameServer(sink_address)
 {
+    // Available options
+    config_keys_ = {"index",
+                    "fps",
+                    //"exposure",
+                    "shutter",
+                    "gain",
+                    "white_bal",
+                    "roi",
+                    "x_bin",
+                    "y_bin",
+                    "trigger_on",
+                    "trigger_rising",
+                    "trigger_mode",
+                    "trigger_pin",
+                    "enforce_fps",
+                    "strobe_pin",
+                    "calibration_file"};
+
     // Find the number of cameras on the bus
     findNumCameras();
 
@@ -61,54 +75,51 @@ PGGigECam::~PGGigECam() {
     camera_.Disconnect();
 }
 
-/**
- * Set default camera_ configuration
- */
-void PGGigECam::configure() {
+///**
+// * Set default camera_ configuration
+// */
+//void PGGigECam::configure() {
+//
+//    setCameraIndex(index_);
+//    connectToCamera();
+//    turnCameraOn();
+//    setupStreamChannels();
+//    setupFrameRate(frames_per_second_, true);
+//    //setupExposure(true);
+//    setupShutter(true);
+//    setupGain(true);
+//    setupWhiteBalance(false);
+//    setupDefaultImageFormat();
+//    setupTrigger();
+//    //setupCameraFrameBuffer();
+//    setupEmbeddedImageData();
+//}
+//
+void TestFrame::appendOptions(po::options_description &opts) const {
 
-    setCameraIndex(index_);
-    connectToCamera();
-    turnCameraOn();
-    setupStreamChannels();
-    setupFrameRate(frames_per_second_, true);
-    //setupExposure(true);
-    setupShutter(true);
-    setupGain(true);
-    setupWhiteBalance(false);
-    setupDefaultImageFormat();
-    setupTrigger();
-    //setupCameraFrameBuffer();
-    setupEmbeddedImageData();
+    // Accepts default options
+    FrameServer::appendOptions(opts);
+
+    // Update CLI options
+    opts.add_options()
+        ("fps,r", po::value<double>(),
+         "Frames to serve per second.")
+        ;
 }
 
-/**
- * Configure file using TOML configuration file
- * @param config_file The configuration file.
- * @param key The configuration key specifying options for this instance.
- */
+void TestFrame::configure(const po::variables_map &vm) {
+
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+
+    // Frame rate
+    if (oat::config::getValue(vm, config_table, "fps", frames_per_second_, 0.0)) 
+        calculateFramePeriod();
+}
+
 void PGGigECam::configure(const std::string& config_file, const std::string& config_key) {
 
-    // Available options
-    std::vector<std::string> options { "index",
-                                       "fps",
-                                       //"exposure",
-                                       "shutter",
-                                       "gain",
-                                       "white_bal",
-                                       "roi",
-                                       "x_bin",
-                                       "y_bin",
-                                       "trigger_on",
-                                       "trigger_rising",
-                                       "trigger_mode",
-                                       "trigger_pin",
-                                       "enforce_fps",
-                                       "strobe_pin",
-                                       "calibration_file" };
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
 
     // See if a camera_ configuration was provided
     if (config->contains(config_key)) {
@@ -1047,15 +1058,17 @@ int PGGigECam::findNumCameras(void) {
     pg::Error error;
     pg::BusManager busMgr;
 
-    error = busMgr.GetNumOfCameras(&num_cameras_);
-    if (num_cameras_ == 0)
-        throw (std::runtime_error("No GigE cameras were detected.\n"));
+    int num_cameras = 0;
 
-    max_index_ = num_cameras_ - 1;
+    error = busMgr.GetNumOfCameras(&num_cameras);
+    if (num_cameras == 0)
+        throw (std::runtime_error("No Point Grey GigE cameras were detected.\n"));
+
+    max_index_ = num_cameras - 1;
     if (error != pg::PGRERROR_OK)
         throw (std::runtime_error(error.GetDescription()));
 
-    return 0;
+    return num_cameras;
 }
 
 void PGGigECam::printError(pg::Error error) {
@@ -1085,7 +1098,7 @@ int PGGigECam::printBusInfo(void) {
 
     std::cout << "\n";
     std::cout << "*** BUS INFORMATION ***\n";
-    std::cout << "No. cameras detected on bus: " << num_cameras_ << "\n";
+    std::cout << "No. cameras detected on bus: " << findNumCameras() << "\n";
     return 0;
 }
 

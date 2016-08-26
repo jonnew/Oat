@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
     } catch (const cv::Exception &ex) {
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
-        std::cerr << oat::whoError(viewer->name(), ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
         std::cerr << oat::whoError(comp_name, "Unknown exception.")
                   << std::endl;

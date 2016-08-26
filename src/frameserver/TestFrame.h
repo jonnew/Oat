@@ -20,6 +20,7 @@
 #ifndef OAT_TESTFRAME_H
 #define	OAT_TESTFRAME_H
 
+#include <chrono>
 #include <limits>
 #include <string>
 
@@ -30,16 +31,17 @@ namespace oat {
 class TestFrame : public FrameServer {
 public:
 
-    TestFrame(const std::string &file_name,
-              const std::string &image_sink_name,
-              const double frames_per_second);
+    /** 
+     * @brief Serve test frames using a static image.
+     * @param sink_address frame sink address
+     */
+    explicit TestFrame(const std::string &sink_address);
 
-    // Implement FrameServer interface
-    void configure(void) override;
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
+    void appendOptions(po::options_description &opts) const override;
+    void configure(const po::variables_map &vm) override;
+
     void connectToNode(void) override;
-    bool serveFrame(void) override;
+    bool process(void) override;
 
 private:
 

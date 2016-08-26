@@ -56,10 +56,6 @@ private:
     std::string snapshot_folder_;
     std::string snapshot_base_file_;
 
-    // Snapshot compression level
-    //static const std::vector<int>
-    //    compression_params_ {CV_IMWRITE_PNG_COMPRESSION, 9};
-
     void set_snapshot_path(const std::string &snapshot_path);
     void saveSnapshot(void);
     void display(const oat::Frame &frame) override;

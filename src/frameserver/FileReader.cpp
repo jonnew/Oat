@@ -17,10 +17,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <chrono>
-#include <string>
 #include <thread>
-#include <opencv2/videoio.hpp>
 
 #include <cpptoml.h>
 #include "../../lib/utility/TOMLSanitize.h"
@@ -30,18 +27,63 @@
 
 namespace oat {
 
-FileReader::FileReader(const std::string &image_sink_address,
-                       const std::string &file_name,
-                       const double frames_per_second) :
-  FrameServer(image_sink_address)
-, file_name_(file_name)
-, file_reader_(file_name)
-, frames_per_second_(frames_per_second)
+FileReader::FileReader(const std::string &sink_address) :
+  FrameServer(sink_address)
 {
+    config_keys_ = {"video-file",
+                    "fps",
+                    "roi"};
 
-    // Default config
-    calculateFramePeriod();
+    // Initialize time
     tick_ = clock_.now();
+}
+
+void FileReader::appendOptions(po::options_description &opts) const {
+
+    // Accepts default options
+    FrameServer::appendOptions(opts);
+
+    // Update CLI options
+    opts.add_options()
+        ("video-file,f", po::value<std::string>(),
+         "Path to video file to serve frames from.")
+        ("fps,r", po::value<double>(),
+         "Frames to serve per second.")
+        ("roi {CF}", po::value<std::string>(),
+         "Four element array of ints, [x0 y0 width height],"
+         "defining a rectangular region of interest. Origin"
+         "is upper left corner. ROI must fit within acquired"
+         "frame size.")
+        ;
+}
+
+void FileReader::configure(const po::variables_map &vm) {
+
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+
+    // Video file
+    std::string file_name;
+    oat::config::getValue(vm, config_table, "video-file", file_name, true);
+    file_reader_.open(file_name);
+
+    // Frame rate
+    if (oat::config::getValue(vm, config_table, "fps", frames_per_second_, 0.0)) 
+        calculateFramePeriod();
+
+    // ROI
+    oat::config::Array roi;
+    if (oat::config::getArray(config_table, "roi", roi, 4, false)) {
+
+        use_roi_ = true;
+        auto roi_vec = roi->array_of<double>();
+
+        region_of_interest_.x = roi_vec[0]->get();
+        region_of_interest_.y = roi_vec[1]->get();
+        region_of_interest_.width = roi_vec[2]->get();
+        region_of_interest_.height = roi_vec[3]->get();
+    }
 }
 
 void FileReader::connectToNode() {
@@ -59,13 +101,13 @@ void FileReader::connectToNode() {
             example_frame.rows, example_frame.cols, example_frame.type());
 
     // Reset the video to the start
-    file_reader_.set(CV_CAP_PROP_POS_AVI_RATIO, 0);
+    file_reader_.set(cv::CAP_PROP_POS_AVI_RATIO, 0);
 
     // Put the sample rate in the shared frame
     shared_frame_.sample().set_rate_hz(1.0 / frame_period_in_sec_.count());
 }
 
-bool FileReader::serveFrame() {
+bool FileReader::process() {
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -97,57 +139,10 @@ bool FileReader::serveFrame() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-
     std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
     tick_ = clock_.now();
 
     return frame_empty_;
-}
-
-void FileReader::configure() { }
-
-void FileReader::configure(const std::string& config_file,
-                           const std::string& config_key) {
-
-    // Available options
-    std::vector<std::string> options {"fps", "roi"};
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
-
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        // Set the frame rate
-        oat::config::getValue(this_config, "fps", frames_per_second_, 0.0);
-        calculateFramePeriod();
-
-        // Set the ROI
-        oat::config::Table roi;
-        if (oat::config::getTable(this_config, "roi", roi)) {
-
-            int64_t val;
-            oat::config::getValue(roi, "x_offset", val, (int64_t)0, true);
-            region_of_interest_.x = val;
-            oat::config::getValue(roi, "y_offset", val, (int64_t)0, true);
-            region_of_interest_.y = val;
-            oat::config::getValue(roi, "width", val, (int64_t)0, true);
-            region_of_interest_.width = val;
-            oat::config::getValue(roi, "height", val, (int64_t)0, true);
-            region_of_interest_.height = val;
-            use_roi_ = true;
-        }
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
 }
 
 void FileReader::calculateFramePeriod() {

@@ -34,9 +34,9 @@
 #include <boost/interprocess/exceptions.hpp>
 #include <opencv2/core.hpp>
 
+#include "../../lib/utility/in_place.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
-#include "../../lib/utility/IOFormat.h"
 
 #include "ViewerBase.h"
 #include "Viewer.h"
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
                 case 'a':
                 {
                     viewer = std::make_shared<oat::ViewerBase>(
-                        oat::in_place<oat::FrameViewer>(), source
+                        std::in_place<oat::FrameViewer>(), source
                     );
                     break;
                 }

@@ -18,13 +18,6 @@
 //******************************************************************************
 
 #include <string>
-#include <opencv2/cvconfig.h>
-#include <opencv2/core/mat.hpp>
-
-#include "../../lib/utility/make_unique.h"
-#include "../../lib/shmemdf/Source.h"
-#include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedFrameHeader.h"
 
 #include "FrameFilter.h"
 

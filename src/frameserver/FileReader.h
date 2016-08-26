@@ -23,6 +23,7 @@
 #include <chrono>
 #include <limits>
 #include <string>
+
 #include <opencv2/videoio.hpp>
 
 #include "FrameServer.h"
@@ -32,28 +33,27 @@ namespace oat {
 class FileReader : public FrameServer {
 public:
 
-    FileReader(const std::string &file_name_in,
-               const std::string &image_sink_name,
-               const double frames_per_second = std::numeric_limits<double>::max());
+    FileReader(const std::string &sink_name);
 
-    // Implement FrameServer interface
-    void configure(void) override;
-    void configure(const std::string &config_file, 
-                   const std::string &config_key) override;
+    void appendOptions(po::options_description &opts) const override;
+    void configure(const po::variables_map &vm) override;
+
     void connectToNode(void) override;
-    bool serveFrame(void) override;
+    bool process(void) override;
 
 private:
 
     // Video file
-    std::string file_name_;
     cv::VideoCapture file_reader_;
 
     // Playback speed
     double frames_per_second_;
     void calculateFramePeriod(void);
 
-    // frame generation clock
+    // Region of interest
+    cv::Rect_<size_t> region_of_interest_;
+
+    // Frame generation clock
     std::chrono::high_resolution_clock clock_;
     std::chrono::duration<double> frame_period_in_sec_;
     std::chrono::high_resolution_clock::time_point tick_;

@@ -20,12 +20,15 @@
 #ifndef OAT_FRAMESERVER_H
 #define	OAT_FRAMESERVER_H
 
-#include <atomic>
-#include <opencv2/opencv.hpp>
+#include <string>
+
+#include <boost/program_options.hpp>
+#include <opencv2/core.hpp>
 
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedFrameHeader.h"
+
+namespace po = boost::program_options;
 
 namespace oat {
 
@@ -36,17 +39,15 @@ namespace oat {
 class FrameServer {
 public:
 
-    explicit FrameServer(const std::string &frame_sink_address) :
-      name_("frameserve[" + frame_sink_address + "]")
-    , frame_sink_address_(frame_sink_address)
-    {
-        // Nothing
-    }
-
-    virtual ~FrameServer() {};
+    /** 
+     * @brief Abstract frame server
+     * @param sink_address frame sink address
+     */
+    explicit FrameServer(const std::string &sink_address);
+    virtual ~FrameServer() { };
 
     /**
-     * FrameServers must be able to connect to a Node that exists in shared memory
+     * @brief Connect to shared memory node.
      */
     virtual void connectToNode(void) = 0;
 
@@ -54,11 +55,19 @@ public:
      * FrameServers must be able to serve cv::Mat frames.
      * @return running state. true = stream EOF . false = stream not exhausted.
      */
-    virtual bool serveFrame(void) = 0;
+    virtual bool process(void) = 0;
 
-    // FrameServers must be configurable via file
-    virtual void configure(void) = 0;
-    virtual void configure(const std::string &file_name, const std::string &key) = 0;
+    /**
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
+     */
+    virtual void appendOptions(po::options_description &opts) const;
+
+    /**
+     * @brief Configure frame server parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    virtual void configure(const po::variables_map &vm) = 0;
 
     // Accessors
     std::string name() const { return name_; }
@@ -68,13 +77,17 @@ protected:
     // Component name
     std::string name_;
 
-    // Cameras have a region of interest to crop images
+    // List of allowed configuration options, including those
+    // specified only via config file
+    std::vector<std::string> config_keys_;
+
+    // Cameras can have a region of interest to crop incoming frames
     bool use_roi_ {false};
     cv::Rect_<size_t> region_of_interest_;
 
     // Frame sink
     const std::string frame_sink_address_;
-    oat::Sink<oat::SharedFrameHeader> frame_sink_;
+    oat::Sink<oat::Frame> frame_sink_;
 
     // Currently acquired, shared frame
     bool frame_empty_ {true};
@@ -83,4 +96,3 @@ protected:
 
 }       /* namespace oat */
 #endif	/* OAT_FRAMESERVER_H */
-

@@ -23,32 +23,28 @@
 #include <memory>
 #include <boost/program_options.hpp>
 
+#include "../../lib/utility/in_place.h"
+
 namespace po = boost::program_options;
 
 namespace oat {
 
-//template<typename T>
-//struct FakeCopyable
-//{
-//    FakeCopyable(T&& t) : target(std::forward<T>(t)) { }
-//
-//    FakeCopyable(FakeCopyable&&) = default;
-//    FakeCopyable(const FakeCopyable&) { throw std::logic_error("Cannot copy."); }
-//
-//    template<typename... Args>
-//    T operator()(Args&&... a) { return target(std::forward<Args>(a)...); }
-//
-//    T target;
-//};
-//
-//template<typename T>
-//FakeCopyable<T> fake_copyable(T&& t) { return { std::forward<T>(t) }; }
-
-template <typename T> 
-struct in_place {};
-
 class ViewerBase {
 
+public:
+
+    template<typename T, typename... Args> 
+    ViewerBase(std::in_place<T>, Args&&... args) :
+      viewer(new ViewerModel<T>(std::forward<Args>(args)...)) { }
+    void appendOptions(po::options_description &opts) const 
+        { viewer->appendOptions(opts); }
+    void configure(const po::variables_map &vm) const 
+        { viewer->configure(vm); }
+    void connectToNode(void) { viewer->connectToNode(); }
+    bool process(void) { return viewer->process(); }
+    std::string name() const { return viewer->name(); }
+    
+private:
     struct ViewerConcept {
         virtual ~ViewerConcept() { }
         virtual void appendOptions(po::options_description &opts) const = 0;
@@ -62,38 +58,19 @@ class ViewerBase {
     struct ViewerModel : ViewerConcept {
         template <typename... Args>
         ViewerModel(Args&&... args) : viewer(std::forward<Args>(args)...) { }
-        void appendOptions(po::options_description &opts) const 
+        void appendOptions(po::options_description &opts) const override 
             { viewer.appendOptions(opts); }
-        void configure(const po::variables_map &vm) { viewer.configure(vm); }
-        void connectToNode(void) { viewer.connectToNode();}
-        bool process(void) { return viewer.process(); }
-        std::string name() const { return viewer.name(); }
+        void configure(const po::variables_map &vm) override 
+            { viewer.configure(vm); }
+        void connectToNode(void) override { viewer.connectToNode();}
+        bool process(void) override { return viewer.process(); }
+        std::string name() const override { return viewer.name(); }
     private:
         T viewer;
     };
 
     //TODO: Unique ptr?
     std::shared_ptr<ViewerConcept> viewer;
-
-public:
-
-    template<typename T, typename... Args> ViewerBase(in_place<T>, Args&&... args) :
-        viewer(new ViewerModel<T>(std::forward<Args>(args)...)) { }
-
-    std::string name() const { return viewer->name(); }
-
-    void appendOptions(po::options_description &opts) const {
-        viewer->appendOptions(opts);
-    }
-
-    void configure(const po::variables_map &vm) const {
-        viewer->configure(vm);
-    }
-
-    void connectToNode(void) { viewer->connectToNode(); }
-
-    bool process(void) { return viewer->process(); }
 };
-
 }      /* namespace oat */
 #endif /* OAT_VIEWERBASE_H */
