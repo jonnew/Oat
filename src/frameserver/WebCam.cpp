@@ -49,7 +49,7 @@ void WebCam::appendOptions(po::options_description &opts) const {
         //("fps,r", po::value<double>(),
         // "Frames to serve per second.")
         ("roi {CF}", po::value<std::string>(),
-         "Four element array of ints, [x0 y0 width height],"
+         "Four element array of unsigned ints, [x0 y0 width height],"
          "defining a rectangular region of interest. Origin"
          "is upper left corner. ROI must fit within acquired"
          "frame size.")

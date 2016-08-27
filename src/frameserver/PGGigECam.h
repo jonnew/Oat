@@ -53,8 +53,6 @@ public:
     void connectToNode(void) override;
     bool process(void) override;
 
-    void fireSoftwareTrigger(void);
-
 private:
 
     // Timing stuff
@@ -70,23 +68,8 @@ private:
     // Used to mark times between acquisitions
     oat::Sample::Microseconds tick_, tock_;
 
-    // GigE Camera configuration
-    //size_t index_;
-
-    //int x_bin_ {1};
-    //int y_bin_ {1};
-    //float exposure_EV_ {0};
     bool acquisition_started_ {false};
     bool use_trigger_ {false};
-    bool use_software_trigger_ {false};
-    //bool trigger_polarity_ {true};
-    //int64_t trigger_mode_ {14};
-    //int64_t trigger_source_pin_ {0};
-    //int64_t white_bal_red_ {0};
-    //int64_t white_bal_blue_ {0};
-    //bool use_frame_buffer_ {false};
-    //unsigned int num_transmit_retries_ {0};
-    //int64_t strobe_output_pin_ {1};
 
     // GigE Camera object
     pg::GigECamera camera_;
@@ -100,10 +83,7 @@ private:
     void setupFrameRate(double fps, bool is_auto = false);
     void setupShutter(float shutter_ms, bool is_auto = false);
     void setupGain(float gain_db, bool is_auto = false);
-    //int setupExposure(float exposure_EV);
-    //int setupExposure(bool is_auto);
     void setupWhiteBalance(int bal_red, int bal_blue, bool is_on);
-    //int setupWhiteBalance(bool is_on);
     int setupPixelBinning(size_t x_bin, size_t y_bin);
     void setupImageFormat(const std::vector<size_t> &roi);
     void setupImageFormat(void);

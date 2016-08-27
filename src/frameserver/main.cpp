@@ -59,7 +59,7 @@ const char usage_io[] =
     "to (e.g. raw).";
 
 void printUsage(const po::options_description &options,
-                const std::string &type="") {
+                const std::string &type) {
 
     if (type.empty()) {
         std::cout <<
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, sigHandler);
 
     // Results of command line input
-    std::string type;
+    std::string type = "";
     std::string sink;
     std::vector<std::string> config_fk;
 
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
                 }
                 default:
                 {
-                    printUsage(visible_options);
+                    printUsage(visible_options, type);
                     std::cout << oat::Error("Invalid TYPE specified. Exiting.\n");
                     return -1;
                 }
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (io_error) {
-            printUsage(visible_options);
+            printUsage(visible_options, type);
             std::cerr << oat::Error(io_error_msg);
             return -1;
         }
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
         return 0;
 
     } catch (const po::error &ex) {
-        printUsage(visible_options);
+        printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
         std::cerr << oat::whoError(comp_name,

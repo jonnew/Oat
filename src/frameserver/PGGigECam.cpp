@@ -56,7 +56,7 @@ PGGigECam::PGGigECam(const std::string &sink_address) :
                     "enforce_fps",
                     "strobe_pin"};
 
-    // Intialize frame timing
+    // Initialize frame timing
     tick_ = oat::Sample::Microseconds(0);
     tock_ = oat::Sample::Microseconds(0);
 }
@@ -68,26 +68,6 @@ PGGigECam::~PGGigECam() {
     camera_.Disconnect();
 }
 
-///**
-// * Set default camera_ configuration
-// */
-//void PGGigECam::configure() {
-//
-//    setCameraIndex(index_);
-//    connectToCamera();
-//    turnCameraOn();
-//    setupStreamChannels();
-//    setupFrameRate(frames_per_second_, true);
-//    //setupExposure(true);
-//    setupShutter(true);
-//    setupGain(true);
-//    setupWhiteBalance(false);
-//    setupDefaultImageFormat();
-//    setupTrigger();
-//    //setupCameraFrameBuffer();
-//    setupEmbeddedImageData();
-//}
-//
 void PGGigECam::appendOptions(po::options_description &opts) const {
 
     // Accepts default options
@@ -96,27 +76,56 @@ void PGGigECam::appendOptions(po::options_description &opts) const {
     // Update CLI options
     opts.add_options()
         ("index,i", po::value<size_t>(),
-         "")
+         "Camera index. Defaults to 0. Useful in multi-camera imaging "
+         "configurations.")
         ("fps,r", po::value<double>(),
-         "Frames to serve per second.")
+         "Acquisition frame rate in Hz. Ignored if trigger-mode > -1 and "
+         "enforce_fps=false. Defaults to the maximum frame rate.")
         ("enforce-fps,e", po::value<bool>(),
-         "")
+         "If true, ensures that frames are produced at the fps setting bool "
+         "retransmitting frames if the requested period is exceeded. This is "
+         "sometimes needed in the case of an external trigger because PG cameras "
+         "sometimes just ignore them. I have opened a support ticket on this, "
+         "but PG has no solution yet.")
         ("shutter,s", po::value<double>(),
-         "")
+         "Shutter time in milliseconds. Defaults to auto.")
         ("gain,g", po::value<double>(),
-         "")
+         "Sensor gain value, specified in dB. Defaults to auto.")
         ("strobe-pin,S", po::value<size_t>(),
-         "")
+         "Hardware pin number on that a gate signal for the camera shutter "
+         "is copied to. Defaults to 1.")
         ("trigger-mode,m", po::value<int>(),
-         "")
+         "Shutter trigger mode. Supported values:\n"
+         " -1  \tNo external trigger. Frames are captured in free-running mode at "
+         "the currently set frame rate.\n" 
+         " 0   \tStandard external trigger. Trigger edge causes sensor "
+         "exposure, then sensor readout to internal memory.\n"
+         " 1   \tBulb shutter mode. Same as 0, except that sensor exposure "
+         "duration is determined by trigger active duration.\n"
+         " 13  \tLow smear mode. Same as 0, speed of the vertical clock is "
+         "increased near the end of the integration cycle.\n"
+         " 14  \tOverlapped exposure/readout external trigger. Sensor exposure "
+         "occurs during sensory readout to internal memory. This is the "
+         "fastest option.")
         ("trigger-rising,p", po::value<bool>(),
-         "")
+         "True to trigger on rising edge, false to trigger on falling edge. "
+         "Defaults to true.")
         ("trigger-pin,t", po::value<size_t>(),
-         "")
+         "GPIO pin number on that trigger is sent to if external shutter "
+         "triggering is used. Defaults to 0.")
+        ("roi {CF}", po::value<std::string>(),
+         "Four element array of unsigned ints, [x0 y0 width height],"
+         "defining a rectangular region of interest. Origin"
+         "is upper left corner. ROI must fit within acquired"
+         "frame size. Defaults to full sensor size.")
         ("bin {CF}", po::value<std::string>(),
-         "")
+         "Two element array of unsigned ints, [bx by], "
+         "defining how pixels should be binned before transmission to the "
+         "computer. Defaults to [1 1] (no binning).")
         ("white-balance {CF}", po::value<std::string>(),
-         "")
+         "Two element array of unsigned integers, [red blue], used to "
+         "specify the white balance. Values should be between 0 and 1000. "
+         "Defaults to off.")
         ;
 }
 
@@ -415,11 +424,6 @@ void PGGigECam::setupWhiteBalance(int bal_red,
     }
 }
 
-/**
- * Default image setup. Image uses all available pixels and BRG pixel format.
- *
- * @return 0 if successful.
- */
 void PGGigECam::setupImageFormat() {
 
     std::cout << "Querying image setting information...\n";
@@ -588,8 +592,12 @@ void PGGigECam::setupAsyncTrigger(int trigger_mode,
         return;
     }
 
-    if (trigger_mode == -7)
-        use_software_trigger_ = true;
+    if (trigger_mode != 0  ||
+        trigger_mode != 1  ||
+        trigger_mode != 13 ||
+        trigger_mode != 14) {
+        throw (rte("Trigger mode is unsupported."));
+    }
 
     // Get current trigger settings
     pg::TriggerModeInfo trigger_mode_info;
@@ -616,11 +624,10 @@ void PGGigECam::setupAsyncTrigger(int trigger_mode,
         throw (rte(error.GetDescription()));
 
     // Trigger info
-    if (use_software_trigger_)
-        std::cout << "Trigger the camera by pressing Enter\n";
-    else
-        std::cout << "Trigger the camera by sending a trigger pulse to GPIO_"
-                  << triggerMode.source << "\n";
+    std::cout << "Trigger the camera by sending a trigger pulse to GPIO_"
+              << triggerMode.source << "\n";
+
+    use_trigger_ = true;
 }
 
 void PGGigECam::setupGrabSettings() {
@@ -988,32 +995,6 @@ void PGGigECam::printStreamChannelInfo(pg::GigEStreamChannel *pStreamChannel) {
     std::cout << "Destination IP address: " << ipAddress.str() << "\n";
     std::cout << "Source port (on camera): " << pStreamChannel->sourcePort << "\n\n";
 
-}
-
-void PGGigECam::fireSoftwareTrigger() {
-    // Check that the trigger is ready
-
-    if (use_software_trigger_) {
-
-        pollForTriggerReady();
-
-        std::cout << "Press the Enter key to initiate a software trigger\n";
-        std::cin.ignore();
-
-        // Fire software trigger
-        const unsigned int k_softwareTrigger = 0x62C;
-        const unsigned int k_fireVal = 0x80000000;
-        pg::Error error;
-
-        error = camera_.WriteRegister(k_softwareTrigger, k_fireVal);
-        if (error != pg::PGRERROR_OK) {
-            printError(error);
-            std::cout << "Error firing software trigger\n";
-        }
-
-    } else {
-        std::cout << "Cannot firing software trigger because software trigger has not been configured.\n";
-    }
 }
 
 } /* namespace oat */
