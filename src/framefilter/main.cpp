@@ -50,7 +50,7 @@ const char usage_type[] =
     "  bsub: Background subtraction\n"
     "  mask: Binary mask\n"
     "  mog: Mixture of Gaussians background segmentation.\n"
-    "  undistort: Compensate for lens distortion using distortion model.\n";
+    "  undistort: Compensate for lens distortion using distortion model.";
 
 const char usage_io[] =
     "SOURCE:\n"
@@ -60,26 +60,29 @@ const char usage_io[] =
     "  User-supplied name of the memory segment to publish frames "
     "to (e.g. filt).";
 
+const char purpose[] =
+    "Filter frames from SOURCE and publish filtered frames "
+    "to SINK.";
+
 void printUsage(const po::options_description &options,
-                const std::string &type="") {
+                const std::string &type) {
 
     if (type.empty()) {
         std::cout <<
         "Usage: framefilt [INFO]\n"
-        "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n"
-        "Filter frames from SOURCE and publish filtered frames "
-        "to SINK.\n";
+        "   or: framefilt TYPE SOURCE SINK [CONFIGURATION]\n";
 
+        std::cout << purpose << "\n";
         std::cout << options << "\n";
-        std::cout << usage_type << "\n";
+        std::cout << usage_type << "\n\n";
         std::cout << usage_io << std::endl;
 
     } else {
         std::cout <<
-        "Usage: framefilt " << type << " SOURCE SINK [CONFIGURATION]\n"
-        "Filter frames from SOURCE and published filtered frames "
-        "to SINK.\n\n";
+        "Usage: framefilt " << type << " [INFO]\n"
+        "   or: framefilt " << type << " SOURCE SINK [CONFIGURATION]\n";
 
+        std::cout << purpose << "\n\n";
         std::cout << usage_io << "\n";
         std::cout << options;
     }
@@ -205,7 +208,7 @@ int main(int argc, char *argv[]) {
                 }
                 default:
                 {
-                    printUsage(visible_options);
+                    printUsage(visible_options, "");
                     std::cerr << oat::Error("Invalid TYPE specified.\n");
                     return -1;
                 }
@@ -249,7 +252,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (io_error) {
-            printUsage(visible_options);
+            printUsage(visible_options, type);
             std::cerr << oat::Error(io_error_msg);
             return -1;
         }
@@ -288,7 +291,7 @@ int main(int argc, char *argv[]) {
         return 0;
 
     } catch (const po::error &ex) {
-        printUsage(visible_options);
+        printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
         std::cerr << oat::whoError(comp_name,

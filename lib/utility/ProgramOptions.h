@@ -30,7 +30,7 @@ namespace config {
 
 namespace po = boost::program_options;
 
-static const char * VERSION_STRING =
+static const char VERSION_STRING[] =
     Oat_VERSION_MAJOR
     "."
     Oat_VERSION_MINOR
@@ -38,7 +38,7 @@ static const char * VERSION_STRING =
     "Written by Jonathan P. Newman in the MWL@MIT.\n"
     "Licensed under the GPL3.0.\n";
 
-/** 
+/**
  * @brief Read only wrapper for program options descriptions common to all oat
  * components (e.g. --help, --version, etc).
  * @note Singleton
@@ -46,27 +46,15 @@ static const char * VERSION_STRING =
 class ComponentInfo
 {
 public:
-    static ComponentInfo * instance(); 
+    static ComponentInfo * instance();
     po::options_description get() { return *desc; }
 
 private:
     ComponentInfo();
 
-    static ComponentInfo * inst; 
+    static ComponentInfo * inst;
     std::unique_ptr<po::options_description> desc;
 };
-
-///** 
-// * @brief Extract a configuration file/key pair for a set of program options. File must be a
-// * path to a valid TOML file. Entries under key parameter within the TOML file
-// * can be used within inidividual components to specify runtime parameters, and
-// * should be checked against valid program options prior to use.
-// * @param map Variable map in which file/key configuration might be located.
-// * @param key Program option indicating a config file path.
-// * @return Extracted file/key pair if present. Empty otherwise.
-// */
-//std::vector<std::string> 
-//extractConfigFileKey(po::variables_map map, const char *key="config");
 
 }      /* namespace config */
 }      /* namespace oat */

@@ -32,7 +32,7 @@ namespace po = boost::program_options;
 ComponentInfo * ComponentInfo::inst = nullptr;
 
 ComponentInfo::ComponentInfo() :
-  desc(std::make_unique<po::options_description>("INFO")) 
+  desc(std::make_unique<po::options_description>("INFO"))
 {
     desc->add_options()
         ("help", "Produce help message.")

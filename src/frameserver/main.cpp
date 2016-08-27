@@ -51,12 +51,15 @@ const char usage_type[] =
     "  wcam: Onboard or USB webcam.\n"
     "  gige: Point Grey GigE camera.\n"
     "  file: Video from file (*.mpg, *.avi, etc.).\n"
-    "  test: Write-free static image server for performance testing.\n";
+    "  test: Write-free static image server for performance testing.";
 
 const char usage_io[] =
     "SINK:\n"
     "  User-supplied name of the memory segment to publish frames "
     "to (e.g. raw).";
+
+const char purpose[] =
+    "Serve frames to SINK.";
 
 void printUsage(const po::options_description &options,
                 const std::string &type) {
@@ -64,18 +67,19 @@ void printUsage(const po::options_description &options,
     if (type.empty()) {
         std::cout <<
         "Usage: frameserve [INFO]\n"
-        "   or: frameserve TYPE SINK [CONFIGURATION]\n"
-        "Serve frames to SINK\n";
+        "   or: frameserve TYPE SINK [CONFIGURATION]\n";
 
+        std::cout << purpose << "\n";
         std::cout << options << "\n";
-        std::cout << usage_type << "\n";
+        std::cout << usage_type << "\n\n";
         std::cout << usage_io << std::endl;
 
     } else {
         std::cout <<
-        "Usage: frameserve " << type << " SINK [CONFIGURATION]\n"
-        "Serve frames to SINK\n\n";
+        "Usage: frameserve " << type << " [INFO]\n"
+        "   or: frameserve " << type << " SINK [CONFIGURATION]\n";
 
+        std::cout << purpose << "\n\n";
         std::cout << usage_io << "\n";
         std::cout << options;
     }
@@ -204,7 +208,7 @@ int main(int argc, char *argv[]) {
                 }
                 default:
                 {
-                    printUsage(visible_options, type);
+                    printUsage(visible_options, "");
                     std::cout << oat::Error("Invalid TYPE specified. Exiting.\n");
                     return -1;
                 }

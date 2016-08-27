@@ -55,31 +55,35 @@ volatile sig_atomic_t source_eof = 0;
 
 const char usage_type[] =
     "TYPE\n"
-    "  frame: Display frames in a GUI\n";
+    "  frame: Display frames in a GUI";
 
 const char usage_io[] =
     "SOURCE:\n"
     "  User-supplied name of the memory segment to receive frames "
     "from (e.g. raw).";
 
+const char purpose[] = 
+    "Graphical visualization of SOURCE stream.";
+
 void printUsage(const po::options_description &options,
-                const std::string &type="") {
+                const std::string &type) {
 
     if (type.empty()) {
         std::cout <<
         "Usage: view [INFO]\n"
-        "   or: view TYPE SOURCE [CONFIGURATION]\n"
-        "Graphical visualization of SOURCE stream.\n";
+        "   or: view TYPE SOURCE [CONFIGURATION]\n";
 
+        std::cout << purpose << "\n";
         std::cout << options << "\n";
-        std::cout << usage_type << "\n";
+        std::cout << usage_type << "\n\n";
         std::cout << usage_io << std::endl;
 
     } else {
         std::cout <<
-        "Usage: view " << type << " SOURCE [CONFIGURATION]\n"
-        "Graphical visualization of SOURCE stream.\n\n";
+        "Usage: view " << type << " [INFO]\n"
+        "   or: view " << type << " SOURCE [CONFIGURATION]\n";
 
+        std::cout << purpose << "\n\n";
         std::cout << usage_io << "\n";
         std::cout << options;
     }
@@ -193,7 +197,7 @@ int main(int argc, char *argv[]) {
                 //}
                 default:
                 {
-                    printUsage(visible_options);
+                    printUsage(visible_options, "");
                     std::cerr << oat::Error("Invalid TYPE specified.\n");
                     return -1;
                 }
@@ -232,7 +236,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (io_error) {
-            printUsage(visible_options);
+            printUsage(visible_options, type);
             std::cerr << oat::Error(io_error_msg);
             return -1;
         }
@@ -269,7 +273,7 @@ int main(int argc, char *argv[]) {
         return 0;
 
     } catch (const po::error &ex) {
-        printUsage(visible_options);
+        printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
         std::cerr << oat::whoError(comp_name,
