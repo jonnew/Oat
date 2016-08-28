@@ -47,20 +47,9 @@ public:
      * @param sink_address SINK node address
      */
     Buffer(const std::string &source_address,
-           const std::string &sink_address) :
-      name_("buffer[" + source_address + "->" + sink_address + "]")
-    , source_address_(source_address)
-    , sink_address_(sink_address)
-    {
-      // Nothing
-    }
+           const std::string &sink_address); 
 
-    virtual ~Buffer() {
-
-        // Join threads
-        sink_running_ = false;
-        sink_thread_.join();
-    }
+    virtual ~Buffer();
 
     /**
      * Buffers must be able to connect to SOURCE and SINK nodes in shared
@@ -87,7 +76,7 @@ protected:
     using msec = std::chrono::milliseconds;
 
     /**
-     * In response to downstream request, publish object from FIFO to SINK.
+     * @brief In response to downstream request, publish object from FIFO to SINK.
      */
     virtual void pop(void) = 0;
 

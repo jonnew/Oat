@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   TokenBuffer.h
+//* File:   Buffer.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,47 +17,27 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OAT_TOKEN_BUFFER_H
-#define	OAT_TOKEN_BUFFER_H
-
 #include "Buffer.h"
 
-#include <boost/lockfree/spsc_queue.hpp>
-
-#include "../../lib/datatypes/Position2D.h"
+#include <string>
 
 namespace oat {
 
-/**
- * Generic token buffer.
- */
-template <typename T>
-class TokenBuffer : public Buffer {
+Buffer::Buffer(const std::string &source_address,
+               const std::string &sink_address) :
+  name_("buffer[" + source_address + "->" + sink_address + "]")
+, source_address_(source_address)
+, sink_address_(sink_address)
+{
+    // Nothing
+}
 
-    using SPSCBuffer =
-        boost::lockfree::spsc_queue<T, buffer_size_t>;
+Buffer::~Buffer()
+{
+    // Join threads
+    sink_running_ = false;
+    if (sink_thread_.joinable())
+        sink_thread_.join();
+}
 
-public:
-
-    TokenBuffer(const std::string &source_address,
-                const std::string &sink_address);
-
-    void connectToNode(void) override;
-    bool push(void) override;
-
-private:
-
-    void pop(void) override;
-
-    // Source
-    oat::Source<T> source_;
-
-    // Buffer
-    SPSCBuffer buffer_;
-
-    // Sink
-    T * shared_token_;
-    oat::Sink<T> sink_;
-};
-}      /* namespace oat */
-#endif /* OAT_TOKEN_BUFFER_H */
+} /* namespace oat */

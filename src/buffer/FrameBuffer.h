@@ -34,7 +34,7 @@ namespace oat {
 class FrameBuffer : public Buffer {
 
     using FrameParam =
-        oat::Source<oat::SharedFrameHeader>::ConnectionParameters;
+        oat::Source<oat::Frame>::ConnectionParameters;
     using SPSCBuffer =
         boost::lockfree::spsc_queue<oat::Frame, buffer_size_t>;
 
@@ -69,14 +69,14 @@ private:
     void pop(void) override;
 
     // Source
-    oat::Source<oat::SharedFrameHeader> source_;
+    oat::Source<oat::Frame> source_;
 
     // Buffer
     SPSCBuffer buffer_;
 
     // Sink
     oat::Frame shared_frame_;
-    oat::Sink<oat::SharedFrameHeader> sink_;
+    oat::Sink<oat::Frame> sink_;
 };
 
 }      /* namespace oat */

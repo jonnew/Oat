@@ -17,9 +17,9 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <string>
-
 #include "FrameFilter.h"
+
+#include <string>
 
 namespace oat {
 
