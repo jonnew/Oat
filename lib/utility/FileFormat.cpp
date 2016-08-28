@@ -18,9 +18,10 @@
 //******************************************************************************
 
 #include <ctime>
+#include <chrono>
 #include <string>
 #include <boost/filesystem.hpp>
-
+#include <iostream>
 #include "FileFormat.h"
 
 namespace oat {
@@ -30,9 +31,8 @@ namespace bfs = boost::filesystem;
 int createSavePath(std::string &save_path_result,
                    const std::string &save_directory,
                    const std::string &base_file_name,
-                   const std::string &prepend_str, 
-                   const bool use_prepend_str,
-                   const bool allow_overwrite) {
+                   const std::string &prepend_str,
+                   const bool use_prepend_str) {
 
     // First check that the save_directory is valid
     bfs::path path(save_directory.c_str());
@@ -50,38 +50,42 @@ int createSavePath(std::string &save_path_result,
     else
         save_path_result = save_directory + "/" + base_file_name;
 
-    if (!allow_overwrite)
-       ensureUniquePath(save_path_result);
-
-    if (!checkWritePermission(save_path_result))
-        return 2;
-
     return 0;
 }
 
-/**
- * Generate a current timestamp formated as Y-M-D-H-M-S.
- * @return
- */
-std::string createTimeStamp() {
+std::string createTimeStamp(bool use_msec) {
 
-    std::time_t raw_time;
-    struct tm * time_info;
     char buffer[100];
-    std::time(&raw_time);
-    time_info = std::localtime(&raw_time);
-    std::strftime(buffer, 80, "%F-%H-%M-%S", time_info);
+    auto now = std::chrono::system_clock::now();
+    std::time_t raw_time = std::chrono::system_clock::to_time_t(now);
+    auto time_info = std::localtime(&raw_time);
+    std::strftime(buffer, sizeof buffer, "%F-%H-%M-%S", time_info);
+
+    if (use_msec) {
+        
+        char msec_buffer[5];
+        auto sec = 
+            std::chrono::time_point_cast<std::chrono::seconds>(now);
+        auto msec = 
+            std::chrono::duration_cast<std::chrono::milliseconds>(now - sec);
+      
+        std::cout << "Msec: " << msec.count() << std::endl;
+
+        snprintf(msec_buffer, sizeof msec_buffer, "-%ld", msec.count());
+        strcat(buffer, msec_buffer);
+
+        std::cout << "Msec: " << msec_buffer << std::endl;
+    }
 
     return std::string(buffer);
 }
 
-
-int ensureUniquePath(std::string& file) {
+int ensureUniquePath(std::string& file_path) {
 
     int i = 0;
-    std::string original_file = file;
+    std::string original_file = file_path;
 
-    while (bfs::exists(file.c_str())) {
+    while (bfs::exists(file_path.c_str())) {
 
         ++i;
         bfs::path path(original_file.c_str());
@@ -92,8 +96,8 @@ int ensureUniquePath(std::string& file) {
         std::string append = "_" + std::to_string(i);
         stem += append.c_str();
 
-        // Recreate file name
-        file = std::string(parent_path.generic_string()) + "/" +
+        // Recreate file path
+        file_path = std::string(parent_path.generic_string()) + "/" +
                std::string(stem.generic_string()) +
                std::string(extension.generic_string());
     }

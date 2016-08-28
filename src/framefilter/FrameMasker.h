@@ -42,7 +42,7 @@ public:
     FrameMasker(const std::string &frame_souce_address,
                 const std::string &frame_sink_address);
 
-    void appendOptions(po::options_description &opts) const override;
+    void appendOptions(po::options_description &opts) override;
     void configure(const po::variables_map &vm) override;
 
 private:

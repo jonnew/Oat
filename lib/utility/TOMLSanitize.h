@@ -110,9 +110,8 @@ checkKeys(const std::vector<std::string> &options,
 
         auto key = it->first;
 
-        if (std::find(std::begin(options), std::end(options), key) == options.end()) {
+        if (std::find(std::begin(options), std::end(options), key) == options.end())
             throw (std::runtime_error("Unknown configuration key '" + key + "'."));
-        }
 
         it++;
     }
@@ -274,64 +273,71 @@ getNumericValue(const po::variables_map &vm,
     }
 }
 
-// TOML array from table, any size
-inline bool
-getArray(const OptionTable table,
-         const std::string& key,
-         Array &array_out,
-         bool required = false) {
-
-    // If the key is in the table,
-    if (table->contains(key)) {
-
-        // Make sure the key points to a value (and not a table, array, or table-array)
-        if (table->get(key)->is_array()) {
-
-            array_out = table->get_array(key);
-            return true;
-
-        } else {
-            throw (std::runtime_error("'" + key + "' must be a TOML array."));
-        }
-    } else if (required) {
-         throw (std::runtime_error("Required configuration value '" + key + "' was not specified."));
-    } else {
-        return false;
-    }
-}
-
 // TOML array from table, required size
-inline bool
-getArray(const OptionTable table,
+template <typename T>
+bool
+getArray(const po::variables_map &vm,
+         const OptionTable table,
          const std::string& key,
-         Array &array_out,
-         size_t size,
+         std::vector<T> &array_out,
          bool required = false) {
 
-    // If the key is in the table,
-    if (table->contains(key)) {
+    OptionTable t;
 
-        // Make sure the key points to a value (and not a table, array, or table-array)
-        if (table->get(key)->is_array()) {
+    if (vm.count(key)) {
 
-            array_out = table->get_array(key);
+        std::istringstream toml {key + "=" + vm[key].as<std::string>()};
+        cpptoml::parser p {toml};
+        t = p.parse();
 
-            if (array_out->get().size() != size) {
-                throw (std::runtime_error("'" + key + "' must be a TOML vector "
-                        "containing " + std::to_string(size) + " elements."));
-            }
+    } else if (table->contains(key)) {
 
-            return true;
+        t = table;
 
-        } else {
-            throw (std::runtime_error("'" + key + "' must be a TOML vector "
-                    "containing " + std::to_string(size) + " elements."));
-        }
     } else if (required) {
         throw (std::runtime_error("Required configuration value '" + key + "' was not specified."));
     } else {
         return false;
     }
+
+    // Make sure the key points to a value (and not a table, array, or table-array)
+    if (t->get(key)->is_array()) {
+
+        // CPP TOML only works with int64_t
+        if (std::is_integral<T>::value) {
+            auto out = *t->get_array_of<int64_t>(key);
+            array_out.assign(out.begin(), out.end());
+        } else if (std::is_floating_point<T>::value) {
+            auto out = *t->get_array_of<double>(key);
+            array_out.assign(out.begin(), out.end());
+        } else {
+            throw (std::runtime_error("Unsupported array type."));
+        }
+
+        return true;
+
+    } else {
+        throw (std::runtime_error("'" + key + "' must be a TOML array."));
+    }
+}
+
+// TOML array from table, required size
+template <typename T, size_t size>
+bool
+getArray(const po::variables_map &vm,
+         const OptionTable table,
+         const std::string& key,
+         std::vector<T> &array_out,
+         bool required = false) {
+
+    auto rc =getArray<T>(vm, table, key, array_out, required);
+
+    if (rc && array_out.size() != size) {
+        throw (std::runtime_error("'" + key + "' must be a TOML vector "
+                "containing " + std::to_string(size) + " elements."));
+    }
+
+    return rc;
 }
 
 }      /* namespace config */

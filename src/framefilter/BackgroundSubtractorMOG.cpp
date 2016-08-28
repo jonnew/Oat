@@ -43,27 +43,34 @@ namespace oat {
 BackgroundSubtractorMOG::BackgroundSubtractorMOG(
         const std::string &frame_source_address,
         const std::string &frame_sink_address) :
-  FrameFilter(frame_source_address, frame_sink_address) {
-
-    config_keys_ = {"learning-coeff", "gpu-index"};
+  FrameFilter(frame_source_address, frame_sink_address)
+{
+    // Nothing
 }
 
-void BackgroundSubtractorMOG::appendOptions(po::options_description &opts) const {
+void BackgroundSubtractorMOG::appendOptions(po::options_description &opts)  {
 
     // Accepts a config file
     FrameFilter::appendOptions(opts);
 
     // Update CLI options
-    opts.add_options()
-        ("learning-coeff", po::value<double>(),
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("adaptation-coeff,a", po::value<double>(),
          "Value, 0 to 1.0, specifying how quickly the statistical model "
          "of the background image should be updated. "
          "Default is 0, specifying no adaptation.")
 #ifdef HAVE_CUDA
-        ("gpu-index", po::value<int64_t>(),
+        ("gpu-index", po::value<size_t>(),
          "Index of GPU card to use for performing MOG segmentation.")
 #endif
         ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
 void BackgroundSubtractorMOG::configure(const po::variables_map &vm) {
@@ -74,17 +81,17 @@ void BackgroundSubtractorMOG::configure(const po::variables_map &vm) {
 
 #ifdef HAVE_CUDA
     // GPU index
-    int64_t index {0};
-    oat::config::getNumericValue(vm, config_table, "gpu-index", index, 0);
+    size_t index = 0;
+    oat::config::getNumericValue<size_t>(vm, config_table, "gpu-index", index, 0);
     cv::cuda::GpuMat gm; // Create context. This can take an extremely long time
     configureGPU(index);
     background_subtractor_ = cv::cuda::createBackgroundSubtractorMOG(/*TODO: defaults OK?*/);
 #else
-    background_subtractor_ = cv::createBackgroundSubtractorMOG2(/*defaults OK?*/);
+    background_subtractor_ = cv::createBackgroundSubtractorMOG2(/*TODO:defaults OK?*/);
 #endif
 
     // Learning coefficient
-    oat::config::getNumericValue(vm, config_table, "learning-coeff", learning_coeff_, 0.0, 1.0);
+    oat::config::getNumericValue(vm, config_table, "adaptation-coeff", learning_coeff_, 0.0, 1.0);
 }
 
 #ifdef HAVE_CUDA

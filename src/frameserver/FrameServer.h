@@ -39,7 +39,7 @@ namespace oat {
 class FrameServer {
 public:
 
-    /** 
+    /**
      * @brief Abstract frame server
      * @param sink_address frame sink address
      */
@@ -61,7 +61,7 @@ public:
      * @brief Append type-specific program options.
      * @param opts Program option description to be specialized.
      */
-    virtual void appendOptions(po::options_description &opts) const;
+    virtual void appendOptions(po::options_description &opts);
 
     /**
      * @brief Configure frame server parameters.
@@ -90,8 +90,11 @@ protected:
     oat::Sink<oat::Frame> frame_sink_;
 
     // Currently acquired, shared frame
-    bool frame_empty_ {true};
+    //bool frame_empty_ {true};
     oat::Frame shared_frame_;
+
+    // Internal sample number
+    oat::Sample internal_sample_;
 };
 
 }       /* namespace oat */

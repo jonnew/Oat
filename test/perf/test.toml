@@ -9,7 +9,7 @@ camera-matrix = [7473.00, 0.00000, 408.433,
                  0.00000, 0.00000, 1.00000]
 
 [framefilt-mask]
-mask = "./beach-5MP.jpg"
+mask = "./earth-1MP.jpg"
 
 [posifilt-kalman]
 dt = 0.02

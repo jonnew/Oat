@@ -61,52 +61,50 @@ Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
 
 void Decorator::connectToNodes() {
 
-    // Establish our a slot in the node
-    frame_source_.touch(frame_source_address_);
-
-    // Wait for synchronous start with sink when it binds the node
-    frame_source_.connect();
-
-    // Get frame meta data to format sink
-    oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
-            frame_source_.parameters();
-
-    // Connect to position source nodes
-    for (auto &ps : position_sources_)
-        ps.source->touch(ps.name);
-
     // Examine sample period of sources to make sure they are the same
     double sample_rate_hz;
     std::vector<double> all_ts;
 
-    // Position sources
+    // Establish our a slots in the frame and positions sources
+    frame_source_.touch(frame_source_address_);
+
+    for (auto &ps : position_sources_)
+        ps.source->touch(ps.name);
+
+    // Wait for synchronous start with sink when it binds the node
+    frame_source_.connect();
+
     for (auto &ps : position_sources_) {
         ps.source->connect();
         all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
     }
 
-    for (auto &a : all_ts)
-        std::cout << a << std::endl;
-
-    if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
-        std::cerr << oat::Warn(
-                     "Warning: sample rates of sources are inconsistent.\n"
-                     "This component forces synchronization at the lowest source sample rate.\n"
-                     "You should probably use separate recorders to capture these sources.\n"
-                     "specified sample rate set to: " + std::to_string(sample_rate_hz) + "\n"
-                     );
-    }
+    // Get frame meta data to format sink
+    oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
+            frame_source_.parameters();
 
     // Bind to sink sink node and create a shared frame
     frame_sink_.bind(frame_sink_address_, param.bytes);
     shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
+    all_ts.push_back(shared_frame_.sample().period_sec().count());
+
+    if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
+        std::cerr << oat::Warn(oat::inconsistentSampleRateWarning(sample_rate_hz));
+    }
 
     // Set drawing parameters based on frame dimensions
-    size_t min_size = (param.rows < param.cols) ? param.rows : param.cols;
-    position_circle_radius_ =  std::ceil(static_cast<float>(min_size)/100.0);
-    heading_line_length_ =  std::ceil(static_cast<float>(min_size)/100.0);
-    encode_bit_size_  =  
+    const size_t min_size = (param.rows < param.cols) ? param.rows : param.cols;
+    position_circle_radius_ = std::ceil(symbol_scale_ * min_size);
+    heading_line_length_ = std::ceil(symbol_scale_ * min_size);
+    encode_bit_size_  =
         std::ceil(param.cols / 3 / sizeof(internal_frame_.sample().count()) / 8);
+
+    // If we are drawing positions, get ready for that
+    if (decorate_position_) {
+        previous_positions_.push_back(oat::Point2D(0,0));
+        positions_found_.push_back(false);
+        history_frame_ = cv::Mat::zeros(shared_frame_.size(), shared_frame_.type());
+    }
 }
 
 bool Decorator::decorateFrame() {
@@ -116,7 +114,7 @@ bool Decorator::decorateFrame() {
     ////////////////////////////
 
     // Wait for sink to write to node
-    if (frame_source_.wait() == oat::NodeState::END )
+    if (frame_source_.wait() == oat::NodeState::END)
         return true;
 
     // Clone the shared frame
@@ -167,7 +165,7 @@ bool Decorator::decorateFrame() {
 void Decorator::drawOnFrame() {
 
     if (decorate_position_) {
-        
+
         drawPosition();
 
         if (print_region_)
@@ -189,7 +187,7 @@ void Decorator::invertHomography(oat::Position2D &p) {
     if (p.position_valid) {
 
         cv::Matx33d inv_homo = p.homography().inv();
-        
+
         std::vector<oat::Point2D> in_positions;
         std::vector<oat::Point2D> out_positions;
         in_positions.push_back(p.position);
@@ -226,24 +224,38 @@ void Decorator::invertHomography(oat::Position2D &p) {
 void Decorator::drawPosition() {
 
     size_t i = 0;
+
+    cv::Mat symbol_frame = 
+        cv::Mat::zeros(internal_frame_.size(), internal_frame_.type());
+
     for (auto &p : positions_) {
-        
+
         if (p.unit_of_length() == oat::DistanceUnit::WORLD)
             invertHomography(p);
 
         if (p.position_valid) {
 
-            cv::circle(internal_frame_,
+            cv::circle(symbol_frame,
                        p.position,
                        position_circle_radius_,
                        pos_colors_[i],
                        line_thickness_);
 
+            if (show_position_history_ && positions_found_[i]) {
+
+                cv::line(history_frame_,
+                         p.position,
+                         previous_positions_[i],
+                         pos_colors_[i],1);
+            }
+
+            previous_positions_[i] = p.position;
+
             if (p.velocity_valid) {
 
-                cv::Point2d end = 
+                cv::Point2d end =
                     p.position + (velocity_scale_factor_ * p.velocity);
-                cv::line(internal_frame_,
+                cv::line(symbol_frame,
                          p.position,
                          end,
                          pos_colors_[i],
@@ -252,17 +264,45 @@ void Decorator::drawPosition() {
 
             if (p.heading_valid) {
 
-                cv::Point2d start =
-                        p.position - (heading_line_length_ * p.heading);
-                cv::Point2d end =
-                        p.position + (heading_line_length_ * p.heading);
+                cv::Point2d start = 
+                    p.position - (heading_line_length_ * p.heading);
+                cv::Point2d end = 
+                    p.position + (1.5 * heading_line_length_ * p.heading);
 
-                cv::line(internal_frame_, start, end, font_color_, line_thickness_);
+                cv::arrowedLine(symbol_frame,
+                                start,
+                                end, 
+                                font_color_, 
+                                line_thickness_);
             }
+
+            positions_found_[i] = true;
+        } else {
+            positions_found_[i] = false;
         }
 
         (i > position_sources_.size() - 1) ? i = 0 : i++;
     }
+
+    // TODO: Following is inefficient and it shows in the performance testing
+    if (show_position_history_)
+        symbol_frame += history_frame_;
+
+    cv::Mat result_frame = 
+        cv::Mat::zeros(internal_frame_.size(), internal_frame_.type());
+    cv::addWeighted(internal_frame_,
+                    1 - symbol_alpha_,
+                    symbol_frame,
+                    symbol_alpha_,
+                    0.0,
+                    result_frame);
+
+    cv::Mat mask;
+    const cv::Scalar zero(0);
+    cv::inRange(symbol_frame, zero, zero, mask);
+    internal_frame_.setTo(zero, mask == 0); 
+    result_frame.setTo(zero, mask); 
+    internal_frame_ += result_frame;
 }
 
 
@@ -329,9 +369,6 @@ void Decorator::printSampleNumber() {
                 font_color_);
 }
 
-/** 
- * @brief Encode the current sample number into the first row of the matrix
- */
 void Decorator::encodeSampleNumber() {
 
     uint64_t sample_count = internal_frame_.sample().count();

@@ -48,7 +48,6 @@ std::string file_name;
 std::string save_path;
 bool allow_overwrite = false;
 bool prepend_timestamp = false;
-bool prepend_source = false;
 bool concise_file = false;
 
 // ZMQ stream
@@ -67,7 +66,7 @@ enum class ControlMode : int16_t
 void printUsage(std::ostream& out, po::options_description options) {
     out << "Usage: record [INFO]\n"
         << "   or: record [CONFIGURATION]\n"
-        << "Record frame and/or position streams.\n\n"
+        << "Record frame and/or position streams.\n"
         << options << "\n";
 }
 
@@ -125,42 +124,41 @@ int main(int argc, char *argv[]) {
 
         po::options_description configuration("CONFIGURATION");
         configuration.add_options()
-                ("filename,n", po::value<std::string>(&file_name),
-                "The base file name to which to source name will be appended")
-                ("folder,f", po::value<std::string>(&save_path),
-                "The path to the folder to which the video stream and position "
-                "information will be saved.")
-                ("date,d",
-                "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the "
-                "filename.")
-                ("prepend-source,a",
-                "If specified, the source name will be prepended to the "
-                "filename, after the data, if selected")
-                ("allow-overwrite,o",
-                "If set and save path matches and existing file, the file will "
-                "be overwritten instead of a numerical index being added to "
-                "the file path.")
-                ("concise-file,c",
-                 "If set, indeterminate position data fields will not be written "
-                 "e.g. pos_xy will not be be written even when pos_ok = false. This "
-                 "means that position objects will be of variable size depending on the "
-                 "validity on whether a position was detected or not, potentially "
-                 "complicating file parsing.")
+                ("frame-sources,s", po::value< std::vector<std::string> >()->multitoken(),
+                "The names of the FRAME SOURCES that supply images to save to video.")
                 ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
                 "The names of the POSITION SOURCES that supply object positions "
                 "to be recorded.")
+                ("filename,n", po::value<std::string>(&file_name),
+                "The base file name. If not specified, defaults to the SOURCE "
+                "name.")
+                ("folder,f", po::value<std::string>(&save_path),
+                "The path to the folder to which the video stream and position "
+                "data will be saved. If not specified, defaults to the "
+                "current directory.")
+                ("date,d",
+                "If specified, YYYY-MM-DD-hh-mm-ss_ will be prepended to the "
+                "filename.")
+                ("allow-overwrite,o",
+                "If set and save path matches and existing file, the file will "
+                "be overwritten instead of a incremental numerical index being "
+                "appended to the file name.")
+                ("concise-file,c",
+                 "If set, indeterminate position data fields will not be written "
+                 "e.g. pos_xy will not be written even when pos_ok = false. This "
+                 "means that position objects will be of variable size depending on the "
+                 "validity on whether a position was detected or not, potentially "
+                 "complicating file parsing.")
                 ("interactive", "Start recorder with interactive controls enabled.")
                 ("rpc-endpoint", po::value<std::string>(&rpc_endpoint),
                  "Yield interactive control of the recorder to a remote ZMQ REQ "
                  "socket using an interal REP socket with ZMQ style endpoint "
                  "specifier: '<transport>://<host>:<port>'. For instance, "
                  "'tcp://*:5555' or 'ipc://*:5556' specify TCP and interprocess "
-                 "communication on ports 5555 or 5556, respectively")
-                ("frame-sources,s", po::value< std::vector<std::string> >()->multitoken(),
-                "The names of the FRAME SOURCES that supply images to save to video.")
+                 "communication on ports 5555 or 5556, respectively.")
                 ;
 
-        po::options_description all_options("OPTIONS");
+        po::options_description all_options("");
         all_options.add(options).add(configuration);
 
         po::variables_map variable_map;
@@ -195,12 +193,10 @@ int main(int argc, char *argv[]) {
 
         if (!variable_map.count("folder")) {
             save_path = ".";
-            std::cerr << oat::Warn("Warning: Saving files to the current directory.\n");
         }
 
         if (!variable_map.count("filename")) {
             file_name = "";
-            std::cerr << oat::Warn("Warning: No base filename was provided.\n");
         }
 
         if (variable_map.count("interactive") && variable_map.count("rpc-endpoint")) {
@@ -241,9 +237,6 @@ int main(int argc, char *argv[]) {
 
         if (variable_map.count("date"))
             prepend_timestamp = true;
-
-        if (variable_map.count("prepend-source"))
-            prepend_source = true;
 
         if (variable_map.count("allow-overwrite"))
             allow_overwrite = true;
@@ -314,7 +307,6 @@ int main(int argc, char *argv[]) {
                 case ControlMode::NONE :
                 {
                     // Start the recorder w/o controls
-                    recorder->initializeRecording();
                     run(recorder);
                     rc = 0;
 

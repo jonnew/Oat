@@ -47,7 +47,7 @@ public:
     explicit PGGigECam(const std::string &sink_address);
     ~PGGigECam() final;
 
-    void appendOptions(po::options_description &opts) const override;
+    void appendOptions(po::options_description &opts) override;
     void configure(const po::variables_map &vm) override;
 
     void connectToNode(void) override;
@@ -84,7 +84,7 @@ private:
     void setupShutter(float shutter_ms, bool is_auto = false);
     void setupGain(float gain_db, bool is_auto = false);
     void setupWhiteBalance(int bal_red, int bal_blue, bool is_on);
-    int setupPixelBinning(size_t x_bin, size_t y_bin);
+    void setupPixelBinning(size_t x_bin, size_t y_bin);
     void setupImageFormat(const std::vector<size_t> &roi);
     void setupImageFormat(void);
     //TODO: int setupCameraFrameBuffer(void);
@@ -121,8 +121,7 @@ private:
     size_t findNumCameras(void);
     void printError(pg::Error error);
     bool pollForTriggerReady(void);
-    int printCameraInfo(void);
-    int printBusInfo(void);
+    void printCameraInfo(void);
     void printStreamChannelInfo(pg::GigEStreamChannel *stream_channel);
 };
 

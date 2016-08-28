@@ -50,7 +50,7 @@ Viewer<T>::~Viewer()
 }
 
 template<typename T>
-void Viewer<T>::appendOptions(po::options_description &opts) const {
+void Viewer<T>::appendOptions(po::options_description &opts) {
 
     // Common program options
     opts.add_options()

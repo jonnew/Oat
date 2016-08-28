@@ -60,7 +60,7 @@ public:
      * @brief Append type-specific program options.
      * @param opts Program option description to be specialized.
      */
-    virtual void appendOptions(po::options_description &opts) const;
+    virtual void appendOptions(po::options_description &opts); 
 
     /**
      * @brief Configure filter parameters.

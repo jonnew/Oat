@@ -37,7 +37,7 @@ public:
      */
     explicit TestFrame(const std::string &sink_address);
 
-    void appendOptions(po::options_description &opts) const override;
+    void appendOptions(po::options_description &opts) override;
     void configure(const po::variables_map &vm) override;
 
     void connectToNode(void) override;
@@ -58,8 +58,8 @@ private:
     std::chrono::high_resolution_clock::time_point tick_;
 
     // Sample count specification
-    int64_t num_samples_ {std::numeric_limits<int64_t>::max()};
-    int64_t it_ {0};
+    uint64_t num_samples_ {std::numeric_limits<int64_t>::max()};
+    //int64_t it_ {0};
 };
 
 }       /* namespace oat */

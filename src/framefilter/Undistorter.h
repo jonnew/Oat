@@ -42,18 +42,10 @@ public:
     Undistorter(const std::string &frame_souce_address,
                 const std::string &frame_sink_address);
 
-    void appendOptions(po::options_description &opts) const override;
+    void appendOptions(po::options_description &opts) override;
     void configure(const po::variables_map &vm) override;
 
 private:
-
-    // Camera model to use for calibration
-    enum class CameraModel
-    {
-        NA      = -1,  //!< Not applicable
-        PINHOLE =  0,  //!< Pinhole camera model
-        FISHEYE =  1   //!< Fisheye lens model
-    };
 
     /**
      * Apply undistortion filter.
@@ -62,9 +54,8 @@ private:
      */
     void filter(cv::Mat& frame) override;
 
-    CameraModel camera_model_ {CameraModel::PINHOLE};
     cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
-    std::vector<double> distortion_coefficients_ {0,0,0,0,0,0,0,0};
+    std::vector<double> dist_coeff_;
 };
 
 }      /* namespace oat */

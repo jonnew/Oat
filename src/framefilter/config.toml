@@ -8,7 +8,9 @@
 
 [bsub]
 background = "background.png"       # Path to static background image
-
+adaption-coeff = 0.0                # Coefficient specifying how quickly the background image is updated using new frames
+                                    # 0.0 - No background image update
+                                    # 1.0 - Replace background with each new frame
 [mask]
 mask = "mask.png"                   # Path to mask image
 

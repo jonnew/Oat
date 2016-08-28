@@ -21,6 +21,7 @@
 #define	OAT_SAMPLE_H
 
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <ratio>
 
@@ -51,9 +52,9 @@ public:
      */
     explicit Sample(const double period_sec) :
       period_sec_(period_sec)
-    , rate_hz_( 1.0 / period_sec)
     {
-        // Nothing
+        assert(period_sec_.count() > 0.0);
+        rate_hz_ = 1.0 / period_sec;
     }
 
     /**
@@ -63,9 +64,9 @@ public:
      */
     explicit Sample(const Seconds period_sec) :
       period_sec_(period_sec)
-    , rate_hz_( 1.0 / period_sec.count())
     {
-        // Nothing
+        assert(period_sec_.count() > 0.0);
+        rate_hz_ = 1.0 / period_sec.count();
     }
 
     /**
@@ -98,6 +99,8 @@ public:
      * @param value Sample rate in Hz.
      */
     void set_rate_hz(const double value) {
+
+        assert(value > 0.0);
         rate_hz_ = value;
         period_sec_ = Seconds(1.0 / value);
         period_microseconds_ = 
@@ -108,7 +111,7 @@ public:
     Microseconds microseconds() const { return microseconds_; }
     Seconds period_sec() const { return period_sec_; }
     Microseconds period_microseconds() const { return period_microseconds_; }
-    double rate_hz() const { return 1.0 / period_sec_.count(); }
+    double rate_hz() const { return rate_hz_; }
 
 private:
 
@@ -117,7 +120,6 @@ private:
     Seconds period_sec_ {0.0};
     Microseconds period_microseconds_ {0};
     double rate_hz_ {0.0};
-
 };
 
 }      /* namespace oat */

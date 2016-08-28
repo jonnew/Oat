@@ -59,9 +59,7 @@ public:
     // transformed into other formats such as msgpack, etc, instead of doing the 
     // writing right here?
     template <typename Writer>
-    void Serialize(Writer& writer, bool verbose = false) const {
-
-        writer.StartObject();
+    void Serialize(Writer &writer, bool verbose = false) const {
 
         // Sample number
         writer.String("tick");
@@ -118,8 +116,6 @@ public:
             writer.String("reg");
             writer.String(region);
         }
-
-        writer.EndObject();
     }
 
     void setCoordSystem(const DistanceUnit value,

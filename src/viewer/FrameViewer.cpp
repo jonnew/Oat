@@ -39,15 +39,16 @@ using msec = std::chrono::milliseconds;
 FrameViewer::FrameViewer(const std::string &source_address) :
   Viewer<oat::Frame>(source_address)
 {
-    config_keys_ = {"snapshot-path"};
+    // Nothing
 }
 
-void FrameViewer::appendOptions(po::options_description &opts) const {
+void FrameViewer::appendOptions(po::options_description &opts) {
 
     // Accepts a config file
     Viewer<oat::Frame>::appendOptions(opts);
 
     // Common program options
+    po::options_description local_opts;
     opts.add_options()
         ("snapshot-path,f", po::value<std::string>(),
         "The path to which in which snapshots will be saved. "
@@ -55,6 +56,12 @@ void FrameViewer::appendOptions(po::options_description &opts) const {
         "The timestamp of the snapshot will be prepended to the file name. "
         "Defaults to the current directory.")
         ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
 void FrameViewer::configure(const po::variables_map &vm) {

@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   FrameServer.cpp
+//* File:   FrameWriter.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -15,29 +15,44 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//*****************************************************************************
 
-#include "FrameServer.h"
+#ifndef OAT_FRAMEWRITER_H
+#define OAT_FRAMEWRITER_H
 
-#include <string>
+#include "Writer.h"
+
+#include <opencv2/videoio.hpp>
+
+#include "../../lib/datatypes/Frame.h"
 
 namespace oat {
+namespace blf = boost::lockfree;
 
-FrameServer::FrameServer(const std::string &frame_sink_address) :
-  name_("frameserve[" + frame_sink_address + "]")
-, frame_sink_address_(frame_sink_address)
-{
-    // Nothing
-}
+// Constants
+static constexpr int FRAME_WRITE_BUFFER_SIZE {1000};
 
-void FrameServer::appendOptions(po::options_description &opts) {
+/**
+ * Frame stream video file writer.
+ */
+class FrameWriter : public Writer<oat::Frame> {
 
-    // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-}
+    // Inherit constructor
+    using Writer<oat::Frame>::Writer;
 
-} /* namespace oat */
+public:
+
+    ~FrameWriter() { };
+
+    void initialize(const std::string &source_name,
+                    const oat::Frame &f) override;
+
+    void write(void) override;
+    
+private:
+
+    cv::VideoWriter video_writer_; 
+
+};
+}      /* namespace oat */
+#endif /* OAT_FRAMEWRITER_H */

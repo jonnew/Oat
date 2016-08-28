@@ -32,7 +32,7 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
     // Nothing
 }
 
-void FrameFilter::appendOptions(po::options_description &opts) const {
+void FrameFilter::appendOptions(po::options_description &opts) {
 
     // Common program options
     opts.add_options()

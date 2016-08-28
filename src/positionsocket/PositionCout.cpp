@@ -32,9 +32,8 @@ namespace oat {
 
 PositionCout::PositionCout(const std::string &position_source_address) :
   PositionSocket(position_source_address)
-//, publisher_(context_, ZMQ_PUB)
 {
-    //publisher_.bind(endpoint);
+    // Nothing
 }
 
 void PositionCout::sendPosition(const oat::Position2D& position) {
@@ -44,7 +43,7 @@ void PositionCout::sendPosition(const oat::Position2D& position) {
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     position.Serialize(writer);
 
-    std::cout << buffer.GetString();
+    std::cout << buffer.GetString() << std::flush;
 }
 
 } /* namespace oat */

@@ -30,31 +30,34 @@ namespace oat {
 FileReader::FileReader(const std::string &sink_address) :
   FrameServer(sink_address)
 {
-    config_keys_ = {"video-file",
-                    "fps",
-                    "roi"};
-
     // Initialize time
     tick_ = clock_.now();
 }
 
-void FileReader::appendOptions(po::options_description &opts) const {
+void FileReader::appendOptions(po::options_description &opts) {
 
     // Accepts default options
     FrameServer::appendOptions(opts);
 
     // Update CLI options
-    opts.add_options()
+    po::options_description local_opts;
+    local_opts.add_options()
         ("video-file,f", po::value<std::string>(),
          "Path to video file to serve frames from.")
         ("fps,r", po::value<double>(),
          "Frames to serve per second.")
-        ("roi {CF}", po::value<std::string>(),
-         "Four element array of ints, [x0 y0 width height],"
+        ("roi", po::value<std::string>(),
+         "Four element array of unsigned ints, [x0,y0,width,height],"
          "defining a rectangular region of interest. Origin"
          "is upper left corner. ROI must fit within acquired"
-         "frame size.")
+         "frame size. Defaults to full video size.")
         ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
 void FileReader::configure(const po::variables_map &vm) {
@@ -69,20 +72,18 @@ void FileReader::configure(const po::variables_map &vm) {
     file_reader_.open(file_name);
 
     // Frame rate
-    if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0)) 
+    if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0))
         calculateFramePeriod();
 
     // ROI
-    oat::config::Array roi;
-    if (oat::config::getArray(config_table, "roi", roi, 4, false)) {
+    std::vector<size_t> roi;
+    if (oat::config::getArray<size_t, 4>(vm, config_table, "roi", roi)) {
 
         use_roi_ = true;
-        auto roi_arr = roi->array_of<int64_t>();
-
-        region_of_interest_.x      = static_cast<int>(roi_arr[0]->get());
-        region_of_interest_.y      = static_cast<int>(roi_arr[1]->get());
-        region_of_interest_.width  = static_cast<int>(roi_arr[2]->get());
-        region_of_interest_.height = static_cast<int>(roi_arr[3]->get());
+        region_of_interest_.x      = roi[0];
+        region_of_interest_.y      = roi[1];
+        region_of_interest_.width  = roi[2];
+        region_of_interest_.height = roi[3];
     } 
 }
 
@@ -104,10 +105,12 @@ void FileReader::connectToNode() {
     file_reader_.set(cv::CAP_PROP_POS_AVI_RATIO, 0);
 
     // Put the sample rate in the shared frame
-    shared_frame_.sample().set_rate_hz(1.0 / frame_period_in_sec_.count());
+    internal_sample_.set_rate_hz(1.0 / frame_period_in_sec_.count());
 }
 
 bool FileReader::process() {
+
+    bool frame_empty = false;
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -117,21 +120,23 @@ bool FileReader::process() {
 
     // Crop if necessary
     if (!use_roi_) {
-            
+
         file_reader_ >> shared_frame_;
-        frame_empty_ = shared_frame_.empty();
+        frame_empty = shared_frame_.empty();
 
     } else {
 
         oat::Frame to_crop;
         file_reader_ >> to_crop;
-        if (!(frame_empty_ = to_crop.empty()))
+        frame_empty = to_crop.empty();
+        if (!frame_empty) {
             to_crop = to_crop(region_of_interest_);
-        to_crop.copyTo(shared_frame_);
+            to_crop.copyTo(shared_frame_);
+        }
     }
 
-    // Increment sample count
-    shared_frame_.sample().incrementCount();
+    // Update sample count
+    shared_frame_.sample() = internal_sample_;
 
     // Tell sources there is new data
     frame_sink_.post();
@@ -139,10 +144,13 @@ bool FileReader::process() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
+    // Pure SINKs increment sample count
+    internal_sample_.incrementCount();
+
     std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
     tick_ = clock_.now();
 
-    return frame_empty_;
+    return frame_empty;
 }
 
 void FileReader::calculateFramePeriod() {

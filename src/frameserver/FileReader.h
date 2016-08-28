@@ -35,7 +35,7 @@ public:
 
     FileReader(const std::string &sink_name);
 
-    void appendOptions(po::options_description &opts) const override;
+    void appendOptions(po::options_description &opts) override;
     void configure(const po::variables_map &vm) override;
 
     void connectToNode(void) override;

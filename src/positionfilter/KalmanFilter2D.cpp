@@ -37,6 +37,58 @@ KalmanFilter2D::KalmanFilter2D(const std::string& position_source_address,
     sig_measure_noise_tune_ = static_cast<int>(sig_measure_noise_);
 }
 
+void KalmanFilter2D::configure(const std::string &config_file,
+                               const std::string &config_key) {
+
+    // Available options
+    std::vector<std::string> options {"dt",
+                                      "timeout",
+                                      "sigma_accel",
+                                      "sigma_noise",
+                                      "tune" };
+
+    // This will throw cpptoml::parse_exception if a file
+    // with invalid TOML is provided
+    auto config = cpptoml::parse_file(config_file);
+
+    // See if a camera configuration was provided
+    if (config->contains(config_key)) {
+
+        // Get this components configuration table
+        auto this_config = config->get_table(config_key);
+
+        // Check for unknown options in the table and throw if you find them
+        oat::config::checkKeys(options, this_config);
+
+        // Time step
+        oat::config::getValue(this_config, "dt", dt_, 0.0);
+
+        // Occlusion timeout
+        double timeout_in_sec {0};
+        if (oat::config::getValue(this_config, "timeout", timeout_in_sec, 0.0)) {
+            not_found_count_threshold_ = static_cast<int>(timeout_in_sec / dt_);
+        }
+
+        // Acceleration stdev
+        oat::config::getValue(this_config, "sigma_accel", sig_accel_, 0.0);
+
+        // Measurement noise stdev
+        oat::config::getValue(this_config, "sigma_noise", sig_measure_noise_, 0.0);
+
+        // GUI for tuning
+        bool config_tune {false};
+        oat::config::getValue(this_config, "tune", config_tune);
+
+        if (config_tune) {
+            tuning_on_ = true;
+            createTuningWindows();
+        }
+
+    } else {
+        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
+    }
+}
+
 void KalmanFilter2D::filter(oat::Position2D &position) {
 
     // Transform raw position into kf_meas_ vector
@@ -90,58 +142,6 @@ void KalmanFilter2D::filter(oat::Position2D &position) {
     tune();
 }
 
-void KalmanFilter2D::configure(const std::string &config_file,
-                               const std::string &config_key) {
-
-    // Available options
-    std::vector<std::string> options {"dt",
-                                      "timeout",
-                                      "sigma_accel",
-                                      "sigma_noise",
-                                      "tune" };
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
-
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        // Time step
-        oat::config::getValue(this_config, "dt", dt_, 0.0);
-
-        // Occlusion timeout
-        double timeout_in_sec {0};
-        if (oat::config::getValue(this_config, "timeout", timeout_in_sec, 0.0)) {
-            not_found_count_threshold_ = static_cast<int>(timeout_in_sec / dt_);
-        }
-
-        // Acceleration stdev
-        oat::config::getValue(this_config, "sigma_accel", sig_accel_, 0.0);
-
-        // Measurement noise stdev
-        oat::config::getValue(this_config, "sigma_noise", sig_measure_noise_, 0.0);
-
-        // GUI for tuning
-        bool config_tune {false};
-        oat::config::getValue(this_config, "tune", config_tune);
-
-        if (config_tune) {
-            tuning_on_ = true;
-            createTuningWindows();
-        }
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
-}
-
 void KalmanFilter2D::initializeFilter(void) {
 
     initializeStaticMatracies();
@@ -153,11 +153,16 @@ void KalmanFilter2D::initializeFilter(void) {
     // TODO: Add head direction?
     // The state is
     // [ x  x'  y  y']^T, where ' denotes the time derivative
-    // Initialize the state using the current measurement
-    kf_.statePre.at<double>(0) = kf_meas_.at<double>(0);
+    // Initialize the pre/post state using the current measurement
+    kf_.statePre.at<double>(0) = kf_meas_(0, 0);
     kf_.statePre.at<double>(1) = 0.0;
-    kf_.statePre.at<double>(2) = kf_meas_.at<double>(1);
+    kf_.statePre.at<double>(2) = kf_meas_(1, 0);
     kf_.statePre.at<double>(3) = 0.0;
+
+    kf_.statePost.at<double>(0) = kf_meas_(0, 0);
+    kf_.statePost.at<double>(1) = 0.0;
+    kf_.statePost.at<double>(2) = kf_meas_(1, 0);
+    kf_.statePost.at<double>(3) = 0.0;
 }
 
 void KalmanFilter2D::initializeStaticMatracies() {

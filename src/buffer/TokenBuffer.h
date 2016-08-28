@@ -78,6 +78,5 @@ private:
     T * shared_token_;
     oat::Sink<T> sink_;
 };
-
 }      /* namespace oat */
 #endif /* OAT_TOKEN_BUFFER_H */

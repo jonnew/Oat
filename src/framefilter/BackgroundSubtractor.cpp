@@ -24,6 +24,7 @@
 #include <cpptoml.h>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
@@ -38,19 +39,30 @@ BackgroundSubtractor::BackgroundSubtractor(
             const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address)
 {
-    config_keys_ = {"background"};
+    // Nothing
 }
 
-void BackgroundSubtractor::appendOptions(po::options_description &opts) const {
+void BackgroundSubtractor::appendOptions(po::options_description &opts) {
 
     // Accepts a config file
     FrameFilter::appendOptions(opts);
 
     // Update CLI options
-    opts.add_options()
-        ("background", po::value<std::string>(),
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("adaptation-coeff,a", po::value<double>(),
+         "Scalar value, 0 to 1.0, specifying how quickly the new frames are "
+         "used to update the backgound image. Default is 0, specifying no "
+         "adaptation and a static background image that is never updated.")
+        ("background,f", po::value<std::string>(),
          "Path to background image used for subtraction.")
         ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
 void BackgroundSubtractor::configure(const po::variables_map &vm) {
@@ -71,19 +83,29 @@ void BackgroundSubtractor::configure(const po::variables_map &vm) {
 
         background_set_ = true;
     }
+
+    // Adaptation coefficient
+    oat::config::getNumericValue<double>(vm, config_table, "adaptation-coeff", alpha_, 0.0, 1.0);
 }
 
 void BackgroundSubtractor::setBackgroundImage(const cv::Mat &frame) {
 
     background_frame_ = frame.clone();
+    frame.clone().convertTo(background_frame_f_, CV_32F);
     background_set_ = true;
 }
 
-void BackgroundSubtractor::filter(cv::Mat& frame) {
+void BackgroundSubtractor::filter(cv::Mat &frame) {
 
-    // First frame used if not provided in config
+    // First image is always used as the default background image if one is
+    // not provided in a configuration file
     if (!background_set_)
         setBackgroundImage(frame);
+
+    if (alpha_ > 0.0) {
+       cv::accumulateWeighted(frame, background_frame_f_, alpha_);
+       background_frame_f_.convertTo(background_frame_, CV_8U);
+    }
 
     frame = frame - background_frame_;
 }

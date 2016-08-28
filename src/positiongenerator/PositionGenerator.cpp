@@ -104,7 +104,9 @@ void PositionGenerator<T>::connectToNode() {
     // Bind to sink sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
-    shared_position_->sample().set_rate_hz(1.0 / sample_period_in_sec_.count());
+
+    // Setup sample rate info on internal copy
+    internal_position_.sample().set_rate_hz(1.0 / sample_period_in_sec_.count());
 }
 
 template<typename T>
@@ -119,9 +121,6 @@ bool PositionGenerator<T>::process() {
         tick_ = clock_.now();
     }
 
-    // This is a pure SINK so it increments the sample count
-    internal_position_.sample().incrementCount();
-
     // START CRITICAL SECTION //
     ////////////////////////////
 
@@ -135,6 +134,9 @@ bool PositionGenerator<T>::process() {
 
     ////////////////////////////
     //  END CRITICAL SECTION  //
+
+    // Pure SINK so it needs to update sample count
+    internal_position_.sample().incrementCount();
 
     return eof;
 }

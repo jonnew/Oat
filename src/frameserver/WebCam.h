@@ -23,10 +23,9 @@
 #include <chrono>
 #include <string>
 
-#include "FrameServer.h"
+#include <opencv2/videoio.hpp>
 
-// Forward decl.
-namespace cv { class VideoCapture; }
+#include "FrameServer.h"
 
 namespace oat {
 
@@ -39,16 +38,14 @@ public:
      */
     explicit WebCam(const std::string &sink_address_);
 
-    void appendOptions(po::options_description &opts) const override;
+    void appendOptions(po::options_description &opts) override;
     void configure(const po::variables_map &vm) override;
 
     void connectToNode(void) override;
     bool process(void) override;
 
-
 private:
 
-    // The webcam object
     size_t index_ {0};
     std::unique_ptr<cv::VideoCapture> cv_camera_;
 

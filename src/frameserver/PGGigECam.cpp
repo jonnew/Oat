@@ -42,39 +42,26 @@ namespace oat {
 PGGigECam::PGGigECam(const std::string &sink_address) :
   FrameServer(sink_address)
 {
-    // Available options
-    config_keys_ = {"index",
-                    "fps",
-                    "shutter",
-                    "gain",
-                    "white_bal",
-                    "roi",
-                    "bin",
-                    "trigger_mode",
-                    "trigger_rising",
-                    "trigger_pin",
-                    "enforce_fps",
-                    "strobe_pin"};
-
     // Initialize frame timing
     tick_ = oat::Sample::Microseconds(0);
     tock_ = oat::Sample::Microseconds(0);
 }
 
-PGGigECam::~PGGigECam() {
-
+PGGigECam::~PGGigECam() 
+{
     // Ignore error return values -- throwing exception unsafe in destructor
     camera_.StopCapture();
     camera_.Disconnect();
 }
 
-void PGGigECam::appendOptions(po::options_description &opts) const {
+void PGGigECam::appendOptions(po::options_description &opts) {
 
     // Accepts default options
     FrameServer::appendOptions(opts);
 
     // Update CLI options
-    opts.add_options()
+    po::options_description local_opts;
+    local_opts.add_options()
         ("index,i", po::value<size_t>(),
          "Camera index. Defaults to 0. Useful in multi-camera imaging "
          "configurations.")
@@ -97,7 +84,7 @@ void PGGigECam::appendOptions(po::options_description &opts) const {
         ("trigger-mode,m", po::value<int>(),
          "Shutter trigger mode. Supported values:\n"
          " -1  \tNo external trigger. Frames are captured in free-running mode at "
-         "the currently set frame rate.\n" 
+         "the currently set frame rate.\n"
          " 0   \tStandard external trigger. Trigger edge causes sensor "
          "exposure, then sensor readout to internal memory.\n"
          " 1   \tBulb shutter mode. Same as 0, except that sensor exposure "
@@ -113,20 +100,26 @@ void PGGigECam::appendOptions(po::options_description &opts) const {
         ("trigger-pin,t", po::value<size_t>(),
          "GPIO pin number on that trigger is sent to if external shutter "
          "triggering is used. Defaults to 0.")
-        ("roi {CF}", po::value<std::string>(),
-         "Four element array of unsigned ints, [x0 y0 width height],"
+        ("roi", po::value<std::string>(),
+         "Four element array of unsigned ints, [x0,y0,width,height],"
          "defining a rectangular region of interest. Origin"
          "is upper left corner. ROI must fit within acquired"
          "frame size. Defaults to full sensor size.")
-        ("bin {CF}", po::value<std::string>(),
-         "Two element array of unsigned ints, [bx by], "
+        ("bin", po::value<std::string>(),
+         "Two element array of unsigned ints, [bx,by], "
          "defining how pixels should be binned before transmission to the "
-         "computer. Defaults to [1 1] (no binning).")
-        ("white-balance {CF}", po::value<std::string>(),
-         "Two element array of unsigned integers, [red blue], used to "
-         "specify the white balance. Values should be between 0 and 1000. "
+         "computer. Defaults to [1,1] (no binning).")
+        ("white-balance", po::value<std::string>(),
+         "Two element array of unsigned integers, [red,blue], used to "
+         "specify the white balance. Values are between 0 and 1000. "
          "Defaults to off.")
         ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
 void PGGigECam::configure(const po::variables_map &vm) {
@@ -167,32 +160,27 @@ void PGGigECam::configure(const po::variables_map &vm) {
         setupGain(gain, true);
 
     // Set white balance
-    oat::config::Array wb;
-    if (oat::config::getArray(config_table, "white-bal", wb, 2, false)) {
-        auto wb_vec = wb->array_of<double>();
-        setupWhiteBalance(wb_vec[0]->get(), 
-                          wb_vec[1]->get(), 
-                          true);
-    } else {
+    std::vector<double> wb;
+    if (oat::config::getArray<double, 2>(config_table, "white-bal", wb))
+        setupWhiteBalance(wb[0], wb[1], true);
+    else
         setupWhiteBalance(0, 0, false);
-    }
 
     // Pixel binning
-    oat::config::Array bin_size;
-    if (oat::config::getArray(config_table, "bin-size", bin_size, 2, false)) {
-        auto bin_vec = bin_size->array_of<int64_t>();
-        setupPixelBinning(static_cast<size_t>(bin_vec[0]->get()), 
-                          static_cast<size_t>(bin_vec[1]->get()));
-    }
+    std::vector<size_t> bin_size;
+    if (oat::config::getArray<size_t, 2>(vm, config_table, "bin-size", bin_size))
+        setupPixelBinning(bin_size[0], bin_size[1]);
 
     // ROI
-    oat::config::Array roi;
-    if (oat::config::getArray(config_table, "roi", roi, 4, false)) {
-        auto roi_arr = roi->array_of<int64_t>();
-        std::vector<size_t> roi_vec {static_cast<size_t>(roi_arr[0]->get()), 
-                                     static_cast<size_t>(roi_arr[1]->get()), 
-                                     static_cast<size_t>(roi_arr[2]->get()), 
-                                     static_cast<size_t>(roi_arr[3]->get())};
+    std::vector<size_t> roi;
+    if (oat::config::getArray<size_t, 4>(vm, config_table, "roi", roi)) {
+
+        use_roi_ = true;
+        region_of_interest_.x      = roi[0];
+        region_of_interest_.y      = roi[1];
+        region_of_interest_.width  = roi[2];
+        region_of_interest_.height = roi[3];
+
         setupImageFormat(roi_vec);
     } else {
         setupImageFormat();
@@ -227,12 +215,12 @@ void PGGigECam::configure(const po::variables_map &vm) {
         throw rte("Stobe pin must be different from trigger pin.");
 
     setupAsyncTrigger(trigger_mode, trigger_rising, trigger_pin);
-   
+
     // Start the configured camera
     setupGrabSettings();
     startCapture();
 
-    // TODO: Has hack that requires camera to be running in order to function 
+    // TODO: Has hack that requires camera to be running in order to function
     // Embed timestamp with frames
     setupEmbeddedImageData();
 }
@@ -438,15 +426,16 @@ void PGGigECam::setupImageFormat() {
     imageSettings.offsetY = 0;
     imageSettings.width   = image_settings_info.maxWidth;
     imageSettings.height  = image_settings_info.maxHeight;
+    // TODO: What is the correct format here? What if I want to do mono
+    // imaging?
     imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW8;
     std::cout << imageSettings.pixelFormat << std::endl;
-    // TODO: Camera model dependent!!!
 
-    std::cout << "ROI set to [0 0 " 
-              << image_settings_info.maxWidth
-              << " " 
-              << image_settings_info.maxHeight
-              << "]\n";
+    std::cout << "ROI set to [0 0 "
+              + image_settings_info.maxWidth
+              + " "
+              + image_settings_info.maxHeight
+              + "]\n";
 
     error = camera_.SetGigEImageSettings(&imageSettings);
     if (error != pg::PGRERROR_OK)
@@ -455,10 +444,6 @@ void PGGigECam::setupImageFormat() {
     std::cout << "Image settings configured.\n";
 }
 
-/**
- * Custom image setup. Image uses the internally specified ROI settings.
- * @return
- */
 void PGGigECam::setupImageFormat(const std::vector<size_t> &roi_vec) {
 
     std::cout << "Querying image settings information...\n";
@@ -486,18 +471,22 @@ void PGGigECam::setupImageFormat(const std::vector<size_t> &roi_vec) {
     imageSettings.width   = roi_vec[3];
     imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW8;
 
-    std::cout << "ROI set to [0 0 " 
-              << image_settings_info.maxWidth
-              << " " 
-              << image_settings_info.maxHeight
-              << "]\n";
+    std::cout << "ROI set to ["
+              + roi_vec[0]
+              + " "
+              + roi_vec[1]
+              + " "
+              + roi_vec[2]
+              + " "
+              + roi_vec[3]
+              + "]\n";
 
     error = camera_.SetGigEImageSettings(&imageSettings);
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
 }
 
-int PGGigECam::setupPixelBinning(size_t x_bin, size_t y_bin) {
+void PGGigECam::setupPixelBinning(size_t x_bin, size_t y_bin) {
 
     std::cout << "Setting image binning...\n";
 
@@ -508,8 +497,6 @@ int PGGigECam::setupPixelBinning(size_t x_bin, size_t y_bin) {
         throw (rte(error.GetDescription()));
 
     std::cout << "Onboard binning set to [" << x_bin << " " << y_bin << "]\n";
-
-    return 0;
 }
 
 //int PGGigECam::setupCameraFrameBuffer() {
@@ -545,11 +532,6 @@ int PGGigECam::setupPixelBinning(size_t x_bin, size_t y_bin) {
 //    return 0;
 //}
 
-/**
- * Once connected to the camera_, issue power on command.
- *
- * @return 0 if successful.
- */
 void PGGigECam::turnCameraOn() {
 
     // Power on the camera_
@@ -582,8 +564,8 @@ void PGGigECam::turnCameraOn() {
         throw (rte(error.GetDescription()));
 }
 
-void PGGigECam::setupAsyncTrigger(int trigger_mode, 
-                                  bool trigger_rising, 
+void PGGigECam::setupAsyncTrigger(int trigger_mode,
+                                  bool trigger_rising,
                                   int trigger_pin) {
 
     // Free Running
@@ -815,7 +797,7 @@ void PGGigECam::connectToNode() {
 
     // TODO: Mono case?
     shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
-    shared_frame_.sample().set_rate_hz(frames_per_second_);
+    internal_sample_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
     // rbg_image's data buffer. When changes are made to rgb_image_, this is
@@ -851,13 +833,16 @@ bool PGGigECam::process() {
         frame_sink_.wait();
 
         raw_image_.Convert(pg::PIXEL_FORMAT_BGR, rgb_image_.get());
-        shared_frame_.sample().incrementCount(tick_);
+        shared_frame_.sample() = internal_sample_;
 
         // Tell sources there is new data
         frame_sink_.post();
 
         ////////////////////////////
         //  END CRITICAL SECTION  //
+
+        // Pure SINKs increment sample count
+        internal_sample_.incrementCount(tick_);
 
     } while (i++ < rc);
 
@@ -900,21 +885,12 @@ bool PGGigECam::pollForTriggerReady() {
     return true;
 }
 
-int PGGigECam::printBusInfo(void) {
-
-    std::cout << "\n";
-    std::cout << "*** BUS INFORMATION ***\n";
-    std::cout << "No. cameras detected on bus: " << findNumCameras() << "\n";
-    return 0;
-}
-
-int PGGigECam::printCameraInfo(void) {
+void PGGigECam::printCameraInfo(void) {
 
     pg::CameraInfo camera_info;
     pg::Error error = camera_.GetCameraInfo(&camera_info);
-    if (error != pg::PGRERROR_OK) {
+    if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
-    }
 
     std::ostringstream macAddress;
     macAddress
@@ -974,8 +950,6 @@ int PGGigECam::printCameraInfo(void) {
     std::cout << "IP address: " << ipAddress.str() << "\n";
     std::cout << "Subnet mask: " << subnetMask.str() << "\n";
     std::cout << "Default gateway: " << defaultGateway.str() << "\n\n";
-
-    return 0;
 }
 
 void PGGigECam::printStreamChannelInfo(pg::GigEStreamChannel *pStreamChannel) {

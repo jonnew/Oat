@@ -217,9 +217,9 @@ void HSVDetector::createTuningWindows() {
     cv::createTrackbar("S MAX", tuning_image_title_, &s_max_, 256);
     cv::createTrackbar("V MIN", tuning_image_title_, &v_min_, 256);
     cv::createTrackbar("V MAX", tuning_image_title_, &v_max_, 256);
-    cv::createTrackbar("MIN AREA", tuning_image_title_, &dummy0_, 10000,
+    cv::createTrackbar("MIN AREA", tuning_image_title_, &dummy0_, 100000,
             &hsvDetectorMinAreaSliderChangedCallback, this);
-    cv::createTrackbar("MAX AREA", tuning_image_title_, &dummy1_, 10000,
+    cv::createTrackbar("MAX AREA", tuning_image_title_, &dummy1_, 100000,
             &hsvDetectorMaxAreaSliderChangedCallback, this);
     cv::createTrackbar("ERODE", tuning_image_title_, &erode_px_, 50,
             &hsvDetectorErodeSliderChangedCallback, this);

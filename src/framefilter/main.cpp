@@ -120,7 +120,6 @@ int main(int argc, char *argv[]) {
     std::string type;
     std::string source;
     std::string sink;
-    std::vector<std::string> config_fk;
 
     // Component specializations
     std::unordered_map<std::string, char> type_hash;
@@ -294,8 +293,7 @@ int main(int argc, char *argv[]) {
         printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(comp_name,
-                     "Failed to parse configuration file " + config_fk[0] + "\n")
+        std::cerr << oat::whoError(comp_name,"Invalid TOML syntax\n")
                   << oat::whoError(comp_name, ex.what())
                   << std::endl;
     } catch (const std::runtime_error &ex) {

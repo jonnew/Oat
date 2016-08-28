@@ -65,7 +65,7 @@ public:
         return *this;
     }
 
-    // Expose sample information
+    // Expose sample information for potential modification
     oat::Sample & sample() { return sample_; };
 
     // Accessors

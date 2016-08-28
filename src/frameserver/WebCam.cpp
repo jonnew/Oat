@@ -19,9 +19,9 @@
 
 #include "WebCam.h"
 
-#include <cpptoml.h>
+#include <chrono>
+#include <string>
 #include <opencv2/core/mat.hpp>
-#include <opencv2/videoio.hpp>
 
 #include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
@@ -29,31 +29,34 @@
 
 namespace oat {
 
-WebCam::WebCam(const std::string &frame_sink_name) :
-  FrameServer(frame_sink_name)
+WebCam::WebCam(const std::string &sink_name) :
+  FrameServer(sink_name)
 {
-    config_keys_ = {"index",
-                    "fps",
-                    "roi"};
+    // Nothing
 }
 
-void WebCam::appendOptions(po::options_description &opts) const {
+void WebCam::appendOptions(po::options_description &opts) {
 
     // Accepts default options
     FrameServer::appendOptions(opts);
 
     // Update CLI options
-    opts.add_options()
-        ("index,i", po::value<int64_t>(),
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("index,i", po::value<size_t>(),
          "Camera index. Defaults to 0. Useful in multi-camera imaging configurations.")
-        //("fps,r", po::value<double>(),
-        // "Frames to serve per second.")
-        ("roi {CF}", po::value<std::string>(),
-         "Four element array of unsigned ints, [x0 y0 width height],"
+        ("roi", po::value<std::string>(),
+         "Four element array of unsigned ints, [x0,y0,width,height],"
          "defining a rectangular region of interest. Origin"
          "is upper left corner. ROI must fit within acquired"
-         "frame size.")
+         "frame size. Defaults to full sensor size.")
         ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
 void WebCam::configure(const po::variables_map &vm) {
@@ -67,27 +70,23 @@ void WebCam::configure(const po::variables_map &vm) {
         vm, config_table, "index", index_, 0
     );
 
-    //// Frame rate
-    //if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0))
-    //    calculateFramePeriod();
-
     // ROI
-    oat::config::Array roi;
-    if (oat::config::getArray(config_table, "roi", roi, 4, false)) {
+    std::vector<size_t> roi;
+    if (oat::config::getArray<size_t, 4>(vm, config_table, "roi", roi)) {
 
         use_roi_ = true;
-        auto roi_arr = roi->array_of<int64_t>();
-
-        region_of_interest_.x      = static_cast<int>(roi_arr[0]->get());
-        region_of_interest_.y      = static_cast<int>(roi_arr[1]->get());
-        region_of_interest_.width  = static_cast<int>(roi_arr[2]->get());
-        region_of_interest_.height = static_cast<int>(roi_arr[3]->get());
-    } 
+        region_of_interest_.x      = roi[0];
+        region_of_interest_.y      = roi[1];
+        region_of_interest_.width  = roi[2];
+        region_of_interest_.height = roi[3];
+    }
 }
 
 void WebCam::connectToNode() {
 
     cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
+    if (!cv_camera_->isOpened())
+        throw (std::runtime_error("Could not open webcam " + std::to_string(index_)));
 
     cv::Mat example_frame;
     *cv_camera_ >> example_frame;
@@ -104,6 +103,8 @@ void WebCam::connectToNode() {
 
 bool WebCam::process() {
 
+    bool frame_empty = false;
+
     // START CRITICAL SECTION //
     ////////////////////////////
 
@@ -113,24 +114,21 @@ bool WebCam::process() {
     if (!use_roi_) {
 
         *cv_camera_ >> shared_frame_;
-        frame_empty_ = shared_frame_.empty();
+        frame_empty = shared_frame_.empty();
 
     } else {
 
         oat::Frame to_crop;
         *cv_camera_ >> to_crop;
-        if (!(frame_empty_ = to_crop.empty()))
+        frame_empty = to_crop.empty();
+        if (!frame_empty) {
             to_crop = to_crop(region_of_interest_);
-        to_crop.copyTo(shared_frame_);
+            to_crop.copyTo(shared_frame_);
+        }
     }
 
-    // Increment sample count
-    if (shared_frame_.sample().count() == 0)
-        start_ = clock_.now();
-
-    auto period =
-        std::chrono::duration_cast<Sample::Microseconds>(clock_.now() - start_);
-    shared_frame_.sample().incrementCount(period);
+    //// Update sample count
+    shared_frame_.sample() = internal_sample_;
 
     // Tell sources there is new data
     frame_sink_.post();
@@ -138,7 +136,16 @@ bool WebCam::process() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    return frame_empty_;
+    // Pure SINKs increment sample count
+    // NOTE: webcams have unctrolled sample period, so it must be calculated.
+    if (internal_sample_.count() == 0)
+        start_ = clock_.now();
+
+    auto period =
+        std::chrono::duration_cast<Sample::Microseconds>(clock_.now() - start_);
+    internal_sample_.incrementCount(period);
+
+    return frame_empty;
 }
 
 } /* namespace oat */

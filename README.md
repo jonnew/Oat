@@ -356,7 +356,9 @@ __TYPE = `bsub`__
 - __`background`__=`string` Path to a background image to be subtracted from the
   SOURCE frames. This image must have the same dimensions as frames from
   SOURCE.
-
+- __`adaption-coeff`__=`+float` Value, 0 to 1.0, specifying how quickly the new
+  frames are used to update the backgound image. Default is 0, specifying no
+  adaptation and a static background image that is never updated.
 __TYPE = `mask`__
 
 - __`mask`__=`string` Path to a binary image used to mask frames from SOURCE.
@@ -1733,14 +1735,14 @@ RJ45 ------------
       given component. This dictionary is then modified first by the file-based
       configuration method and then by command line switch input. Component
       behavior is determined by dictioary values after these two steps.
-- [ ] For (all?) most components, `configure` is pure abstract in the
+- [ ] ~~For (all?) most components, `configure` is pure abstract in the
   component's base class. This doesn't make too much sense because options are
   often common to many components. For instance, in `oat-posigen`, the sample
   period, and number of samples parameters are certainly relevant to any
   implementation of the position generator idea. Therefore, `configure` should
   be abstract with a base implementation containing guaranteed-to-be-common
   parameters. For components that have no common parameters, it can be left
-  pure-abstract for the time being.
+  pure-abstract for the time being.~~
     - `oat-frameserve`
     - `oat-framefilt`
     - `oat-posifilt`
@@ -1750,6 +1752,8 @@ RJ45 ------------
     - EDIT: There are not actually many components that have common
       configuration parameters among concrete types. `oat-posidet` and possibly
       `oat-frameserve` seem like the only candidates.
+    - EDIT: The [program option refactor branch](/jonnew/Oat/tree/program-opt-refactor) 
+      may take care of this automatically
 - [ ] [CBOR](http://tools.ietf.org/html/rfc7049) binary messaging and data files
   - CBOR is an extremely simple binary encoding scheme for JSON
   - It would be great to allow the option to save CBOR files (`oat-record`) or

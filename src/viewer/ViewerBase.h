@@ -40,14 +40,15 @@ public:
         { viewer->appendOptions(opts); }
     void configure(const po::variables_map &vm) const 
         { viewer->configure(vm); }
-    void connectToNode(void) { viewer->connectToNode(); }
-    bool process(void) { return viewer->process(); }
+    void connectToNode(void) const { viewer->connectToNode(); }
+    bool process(void) const { return viewer->process(); }
     std::string name() const { return viewer->name(); }
     
 private:
+
     struct ViewerConcept {
         virtual ~ViewerConcept() { }
-        virtual void appendOptions(po::options_description &opts) const = 0;
+        virtual void appendOptions(po::options_description &opts) = 0;
         virtual void configure(const po::variables_map &vm) = 0;
         virtual void connectToNode(void) = 0;
         virtual bool process(void) = 0;
@@ -58,7 +59,7 @@ private:
     struct ViewerModel : ViewerConcept {
         template <typename... Args>
         ViewerModel(Args&&... args) : viewer(std::forward<Args>(args)...) { }
-        void appendOptions(po::options_description &opts) const override 
+        void appendOptions(po::options_description &opts) override 
             { viewer.appendOptions(opts); }
         void configure(const po::variables_map &vm) override 
             { viewer.configure(vm); }
@@ -69,8 +70,7 @@ private:
         T viewer;
     };
 
-    //TODO: Unique ptr?
-    std::shared_ptr<ViewerConcept> viewer;
+    std::unique_ptr<ViewerConcept> viewer;
 };
 }      /* namespace oat */
 #endif /* OAT_VIEWERBASE_H */

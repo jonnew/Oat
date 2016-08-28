@@ -80,7 +80,7 @@ private:
     int h_min_ {0}, h_max_ {256};
     int s_min_ {0}, s_max_ {256};
     int v_min_ {0}, v_max_ {256};
-    int dummy0_ {0}, dummy1_ {10000};
+    int dummy0_ {0}, dummy1_ {100000};
 
     // Detect object area
     double object_area_ {0.0};

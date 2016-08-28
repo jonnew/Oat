@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   FrameServer.cpp
+//* File:   FrameWriter.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -15,29 +15,33 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//*****************************************************************************
 
-#include "FrameServer.h"
+#include "FrameWriter.h"
 
-#include <string>
+#include <iostream>
+#include <cassert>
 
 namespace oat {
 
-FrameServer::FrameServer(const std::string &frame_sink_address) :
-  name_("frameserve[" + frame_sink_address + "]")
-, frame_sink_address_(frame_sink_address)
-{
-    // Nothing
+void FrameWriter::initialize(const std::string &source_name,
+                             const oat::Frame &f) {
+
+    // Initialize writer using the first frame taken from server
+    int fourcc = cv::VideoWriter::fourcc('H', '2', '6', '4');
+    video_writer_.open(path_, fourcc, f.sample().rate_hz(), f.size());
 }
 
-void FrameServer::appendOptions(po::options_description &opts) {
+void FrameWriter::write(void) {
 
-    // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
+    cv::Mat mat;
+    while (buffer_.pop(mat)) {
+
+        // File desriptor must be avaiable for writing
+        assert(video_writer_.isOpened());
+
+        video_writer_.write(mat);
+    }
 }
 
 } /* namespace oat */

@@ -42,7 +42,7 @@ public:
      * @brief Append type-specific program options.
      * @param opts Program option description to be specialized.
      */
-    void appendOptions(po::options_description &opts) const override;
+    void appendOptions(po::options_description &opts) override;
 
     /**
      * @brief Configure filter parameters.

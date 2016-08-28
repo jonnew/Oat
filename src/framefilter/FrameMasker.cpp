@@ -34,22 +34,29 @@ FrameMasker::FrameMasker(const std::string &frame_source_address,
                          const std::string &frame_sink_address) :
   FrameFilter(frame_source_address, frame_sink_address)
 {
-    config_keys_ = {"mask"};
+    // Nothing
 }
 
-void FrameMasker::appendOptions(po::options_description &opts) const {
+void FrameMasker::appendOptions(po::options_description &opts) {
 
     // Accepts a config file
     FrameFilter::appendOptions(opts);
 
     // Update CLI options
-    opts.add_options()
-        ("mask", po::value<std::string>(),
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("mask,f", po::value<std::string>(),
          "Path to a binary image used to mask frames from SOURCE. SOURCE frame "
          "pixels with indices corresponding to non-zero value pixels in the mask "
          "image will be unaffected. Others will be set to zero. This image must "
          "have the same dimensions as frames from SOURCE.")
         ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
 void FrameMasker::configure(const po::variables_map &vm) {
@@ -68,10 +75,6 @@ void FrameMasker::configure(const po::variables_map &vm) {
             throw (std::runtime_error("File \"" + img_path + "\" could not be read."));
 
         mask_set_ = true;
-    } else {
-        std::cerr << oat::whoWarn(name_, 
-                "No mask file provided. " 
-                "This filter does nothing but waste CPU cycles.\n");
     }
 }
 

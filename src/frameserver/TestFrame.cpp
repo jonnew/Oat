@@ -32,28 +32,31 @@ namespace oat {
 TestFrame::TestFrame(const std::string &sink_address) :
   FrameServer(sink_address)
 {
-    config_keys_ = {"test-image",
-                    "num-frames",
-                    "fps"};
-
     // Initialize time
     tick_ = clock_.now();
 }
 
-void TestFrame::appendOptions(po::options_description &opts) const {
+void TestFrame::appendOptions(po::options_description &opts) {
 
     // Accepts default options
     FrameServer::appendOptions(opts);
 
     // Update CLI options
-    opts.add_options()
+    po::options_description local_opts;
+    local_opts.add_options()
         ("test-image,f", po::value<std::string>(),
          "Path to test image used as frame source.")
         ("fps,r", po::value<double>(),
          "Frames to serve per second.")
-        ("num-frames,n", po::value<int64_t>(),
+        ("num-frames,n", po::value<uint64_t>(),
          "Number of frames to serve before exiting.")
         ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
 void TestFrame::configure(const po::variables_map &vm) {
@@ -66,10 +69,12 @@ void TestFrame::configure(const po::variables_map &vm) {
     oat::config::getValue(vm, config_table, "test-image", file_name_, true);
 
     // Number of frames to serve
-    oat::config::getNumericValue(vm, config_table, "num-frames", num_samples_, int64_t(0));
+    oat::config::getNumericValue<uint64_t>(
+        vm, config_table, "num-frames", num_samples_, 0
+    );
 
     // Frame rate
-    if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0)) 
+    if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0))
         calculateFramePeriod();
 }
 
@@ -89,12 +94,12 @@ void TestFrame::connectToNode() {
     example_frame.copyTo(shared_frame_);
 
     // Put the sample rate in the shared frame
-    shared_frame_.sample().set_rate_hz(1.0 / frame_period_in_sec_.count());
+    internal_sample_.set_rate_hz(1.0 / frame_period_in_sec_.count());
 }
 
 bool TestFrame::process() {
 
-    if (it_ < num_samples_) {
+    if (internal_sample_.count() < num_samples_) {
 
         // START CRITICAL SECTION //
         ////////////////////////////
@@ -102,8 +107,8 @@ bool TestFrame::process() {
         // Wait for sources to read
         frame_sink_.wait();
 
-        // Increment sample count
-        shared_frame_.sample().incrementCount();
+        // Zero frame copy
+        shared_frame_.sample() = internal_sample_;
 
         // Tell sources there is new data
         frame_sink_.post();
@@ -111,7 +116,10 @@ bool TestFrame::process() {
         ////////////////////////////
         //  END CRITICAL SECTION  //
 
-        it_++;
+        // Pure SINKs increment sample count
+        internal_sample_.incrementCount();
+
+        //it_++;
 
         std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
         tick_ = clock_.now();

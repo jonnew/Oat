@@ -21,15 +21,17 @@
 #define	OAT_SHMEMDFHELPERS_H
 
 #include <algorithm>
+#include <cassert>
+#include <cmath>
 
 #include "Source.h"
 
-namespace oat { 
+namespace oat {
 
 template<typename T>
 struct NamedSource {
 
-    explicit NamedSource(const std::string &name, 
+    explicit NamedSource(const std::string &name,
                          std::unique_ptr<oat::Source<T>> &&source) :
       name(name),
       source(std::move(source))
@@ -44,19 +46,44 @@ struct NamedSource {
 template<typename T>
 using NamedSourceList = std::vector<NamedSource<T>>;
 
-inline bool checkSamplePeriods(const std::vector<double> &periods, 
-                               double &min_rate) { 
+/**
+ * @brief Check if a set of sample periods is consistent.
+ * @param periods_sec Sample periods in seconds.
+ * @param min_rate The minimal sample rate in the set.
+ * @param epsilon Equality tolerance.
+ * @return True if maximum difference between periods is within epsilon. False
+ * otherwise.
+ */
+inline 
+bool checkSamplePeriods(const std::vector<double> &periods_sec,
+                        double &min_rate,
+                        double const epsilon=1e-6) {
 
-    min_rate = 1.0 / *std::max_element(std::begin(periods), std::end(periods));
+    assert(periods_sec.size() > 0);
 
-    if (periods.size() > 1 && 
-        !std::equal(periods.begin() + 1, periods.end(), periods.begin())) {
-        return false;
-    } else {
-        return true;
+    double max_period = *std::max_element(std::begin(periods_sec), 
+                                          std::end(periods_sec));
+    min_rate = 1.0 / max_period;
+
+    if (periods_sec.size() > 1) {
+        for (auto &p : periods_sec)
+            if (std::fabs(p - max_period) > epsilon)
+                return false;
     }
+
+    return true;
+}
+
+inline 
+std::string inconsistentSampleRateWarning(double min_rate) {
+
+    return 
+        "WARNING: sample rates of sources are inconsistent.\n"
+        " (1) This component forces synchronization at the lowest\n"
+        "     source sample rate, which is " + std::to_string(min_rate) + "\n"
+        " (2) You should probably use separate components to\n" 
+        "     process these sources if you want independent rates.\n";
 }
 
 }       /* namespace oat */
 #endif	/* OAT_SHMEMDFHELPERS_H */
-
