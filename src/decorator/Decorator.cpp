@@ -28,35 +28,95 @@
 
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/make_unique.h"
 
 #include "Decorator.h"
 
 namespace oat {
 
-Decorator::Decorator(const std::vector<std::string> &position_source_addresses,
-                     const std::string &frame_source_address,
+Decorator::Decorator(const std::string &frame_source_address,
                      const std::string &frame_sink_address) :
   name_("decorator[" + frame_source_address+ "->" + frame_sink_address + "]")
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
+    // Nothing
+}
 
-    if (!position_source_addresses.empty()) {
-        for (auto &addr : position_source_addresses) {
+void Decorator::appendOptions(po::options_description &opts) {
 
-            oat::Position2D pos(addr);
-            positions_.push_back(std::move(pos));
-            position_sources_.push_back(
-                oat::NamedSource<oat::Position2D>(
-                    addr,
-                    std::make_unique<oat::Source<oat::Position2D>>()
-                )
-            );
+    opts.add_options()
+        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+        "Configuration file/key pair.\n"
+        "e.g. 'config.toml mykey'")
+        ;
+
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
+        "The name of position SOURCE(s) used to draw object position markers.\n")
+        ("timestamp,t", "Write the current date and time on each frame.\n")
+        ("sample,s", "Write the frame sample number on each frame.\n")
+        ("sample-code,S", "Write the binary encoded sample on the corner of each frame.\n")
+        ("region,R", "Write region information on each frame "
+        "if there is a position stream that contains it.\n")
+        ("history,h", "Display position history.\n")
+        ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
+}
+
+void Decorator::configure(const po::variables_map &vm) {
+
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+
+    // Position sources
+    // NOTE: not setable via configuration file
+    if (vm.count("position-sources"))  {
+
+        auto p_source_addrs = 
+            vm["position-sources"].as< std::vector<std::string> >();
+
+        // Setup position sources
+        if (!p_source_addrs.empty()) {
+            for (auto &addr : p_source_addrs) {
+
+                oat::Position2D pos(addr);
+                positions_.push_back(std::move(pos));
+                position_sources_.push_back(
+                    oat::NamedSource<oat::Position2D>(
+                        addr,
+                        std::make_unique<oat::Source<oat::Position2D>>()
+                    )
+                );
+            }
+        } else {
+            decorate_position_ = false;
         }
-    } else {
-        decorate_position_ = false;
     }
+
+    // Timestamp
+    oat::config::getValue<bool>(vm, config_table, "timestamp", print_timestamp_);
+
+    // Region
+    oat::config::getValue<bool>(vm, config_table, "region", print_region_);
+
+    // Sample number
+    oat::config::getValue<bool>(vm, config_table, "sample", print_sample_number_);
+
+    // Sample number
+    oat::config::getValue<bool>(vm, config_table, "sample-code", encode_sample_number_);
+
+    // Path history
+    oat::config::getValue<bool>(vm, config_table, "history", show_position_history_);
 }
 
 void Decorator::connectToNodes() {
@@ -80,7 +140,7 @@ void Decorator::connectToNodes() {
     }
 
     // Get frame meta data to format sink
-    oat::Source<oat::SharedFrameHeader>::ConnectionParameters param =
+    oat::Source<oat::Frame>::ConnectionParameters param =
             frame_source_.parameters();
 
     // Bind to sink sink node and create a shared frame
@@ -107,7 +167,7 @@ void Decorator::connectToNodes() {
     }
 }
 
-bool Decorator::decorateFrame() {
+bool Decorator::process() {
 
     // 1. Get frame
     // START CRITICAL SECTION //
@@ -225,7 +285,7 @@ void Decorator::drawPosition() {
 
     size_t i = 0;
 
-    cv::Mat symbol_frame = 
+    cv::Mat symbol_frame =
         cv::Mat::zeros(internal_frame_.size(), internal_frame_.type());
 
     for (auto &p : positions_) {
@@ -264,15 +324,15 @@ void Decorator::drawPosition() {
 
             if (p.heading_valid) {
 
-                cv::Point2d start = 
+                cv::Point2d start =
                     p.position - (heading_line_length_ * p.heading);
-                cv::Point2d end = 
+                cv::Point2d end =
                     p.position + (1.5 * heading_line_length_ * p.heading);
 
                 cv::arrowedLine(symbol_frame,
                                 start,
-                                end, 
-                                font_color_, 
+                                end,
+                                font_color_,
                                 line_thickness_);
             }
 
@@ -288,7 +348,7 @@ void Decorator::drawPosition() {
     if (show_position_history_)
         symbol_frame += history_frame_;
 
-    cv::Mat result_frame = 
+    cv::Mat result_frame =
         cv::Mat::zeros(internal_frame_.size(), internal_frame_.type());
     cv::addWeighted(internal_frame_,
                     1 - symbol_alpha_,
@@ -300,8 +360,8 @@ void Decorator::drawPosition() {
     cv::Mat mask;
     const cv::Scalar zero(0);
     cv::inRange(symbol_frame, zero, zero, mask);
-    internal_frame_.setTo(zero, mask == 0); 
-    result_frame.setTo(zero, mask); 
+    internal_frame_.setTo(zero, mask == 0);
+    result_frame.setTo(zero, mask);
     internal_frame_ += result_frame;
 }
 

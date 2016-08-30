@@ -22,13 +22,15 @@
 
 #include <string>
 #include <vector>
+#include <boost/program_options.hpp>
 
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Helpers.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedFrameHeader.h"
 #include "../../lib/datatypes/Position2D.h"
+
+namespace po = boost::program_options;
 
 namespace oat {
 
@@ -51,9 +53,20 @@ public:
      * @param frame_source_address Frame SOURCE address
      * @param frame_sink_address Decorated frame SINK address
      */
-    Decorator(const std::vector<std::string> &position_source_addresses,
-              const std::string &frame_source_address,
+    Decorator(const std::string &frame_source_address,
               const std::string &frame_sink_address);
+
+    /**
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
+     */
+    void appendOptions(po::options_description &opts);
+
+    /**
+     * @brief Configure decorator parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    void configure(const po::variables_map &vm);
 
     /**
      * Calibrator SOURCE must be able to connect to a NODEs from
@@ -66,14 +79,14 @@ public:
      * information specified by user options. Publish decorated frame to SINK.
      * @return SOURCE end-of-stream signal. If true, this component should exit.
      */
-    bool decorateFrame(void);
+    bool process(void);
 
     //Accessors
-    void set_print_region(bool value) { print_region_ = value; }
-    void set_print_timestamp(bool value) { print_timestamp_ = value; }
-    void set_print_sample_number(bool value) { print_sample_number_ = value; }
-    void set_encode_sample_number(bool value) { encode_sample_number_ = value; }
-    void set_show_position_history(bool value) { show_position_history_ = value; }
+    //void set_print_region(bool value) { print_region_ = value; }
+    //void set_print_timestamp(bool value) { print_timestamp_ = value; }
+    //void set_print_sample_number(bool value) { print_sample_number_ = value; }
+    //void set_encode_sample_number(bool value) { encode_sample_number_ = value; }
+    //void set_show_position_history(bool value) { show_position_history_ = value; }
 
     std::string name(void) const { return name_; }
 
@@ -87,16 +100,19 @@ private:
 
     // Mat client object for receiving frames
     std::string frame_source_address_;
-    oat::Source<SharedFrameHeader> frame_source_;
+    oat::Source<oat::Frame> frame_source_;
 
     // Mat server for sending decorated frames
     oat::Frame shared_frame_;
     std::string frame_sink_address_;
-    oat::Sink<SharedFrameHeader> frame_sink_;
+    oat::Sink<oat::Frame> frame_sink_;
 
     // Positions to be added to the image stream
     std::vector<oat::Position2D> positions_;
     oat::NamedSourceList<oat::Position2D> position_sources_;
+
+    // List of allowed configuration options
+    std::vector<std::string> config_keys_;
 
     // Options
     bool decorate_position_ {true};
