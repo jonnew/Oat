@@ -53,14 +53,14 @@ public:
      * @param source_address Frame SOURCE node address
      */
     explicit Viewer(const std::string &source_name);
-    
+
     virtual ~Viewer();
 
     /**
      * @brief Append type-specific program options.
      * @param opts Program option description to be specialized.
      */
-    virtual void appendOptions(po::options_description &opts); 
+    virtual void appendOptions(po::options_description &opts);
 
     /**
      * @brief Configure filter parameters.

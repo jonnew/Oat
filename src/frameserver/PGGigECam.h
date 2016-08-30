@@ -78,7 +78,7 @@ private:
     pg::Image raw_image_;
     std::unique_ptr<pg::Image> rgb_image_;
 
-    // Acquisition settings routines 
+    // Acquisition settings routines
     void setupStreamChannels(void);
     void setupFrameRate(double fps, bool is_auto = false);
     void setupShutter(float shutter_ms, bool is_auto = false);
@@ -100,12 +100,12 @@ private:
 
     // Physical camera control
     void turnCameraOn(void);
-    void connectToCamera(size_t index);
+    void connectToCamera(int index);
     void startCapture(void);
 
-    /** 
+    /**
      * @brief Grab a frame from the camera's buffer.
-     * 
+     *
      * @return return code meaning:
      *   -1 : Grab timeout occurred
      *    0 : Successful grab

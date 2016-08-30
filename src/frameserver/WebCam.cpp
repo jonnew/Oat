@@ -43,7 +43,7 @@ void WebCam::appendOptions(po::options_description &opts) {
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
-        ("index,i", po::value<size_t>(),
+        ("index,i", po::value<int>(),
          "Camera index. Defaults to 0. Useful in multi-camera imaging configurations.")
         ("roi", po::value<std::string>(),
          "Four element array of unsigned ints, [x0,y0,width,height],"
@@ -66,7 +66,7 @@ void WebCam::configure(const po::variables_map &vm) {
     oat::config::checkKeys(config_keys_, config_table);
 
     // Camera index
-    oat::config::getNumericValue<size_t>(
+    oat::config::getNumericValue<int>(
         vm, config_table, "index", index_, 0
     );
 

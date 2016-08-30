@@ -9,10 +9,12 @@ set (oat-calibrate_SOURCE
      PathChanger.cpp
      CameraCalibrator.cpp
      HomographyGenerator.cpp)
-     
+
 # Targets
 add_executable (oat-calibrate ${oat-calibrate_SOURCE} main.cpp)
-target_link_libraries (oat-calibrate ${OatCommon_LIBS})
+target_link_libraries (oat-calibrate
+                       oatutility
+                       ${OatCommon_LIBS})
 
 # Installation
 install (TARGETS oat-calibrate DESTINATION ../../oat/libexec COMPONENT oat-utlities)

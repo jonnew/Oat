@@ -38,14 +38,6 @@ class HomographyGenerator : public Calibrator {
 
 public:
 
-    // Homography estimation procedure
-    enum class EstimationMethod
-    {
-        ROBUST = 0, //!< RANSAC-based outlier rejection
-        REGULAR,    //!< Best bit without outlier rejection
-        EXACT       //!< Solve an exact homography for 4 points
-    };
-
     /**
      * Interactive homography transform generator.  The user is presented with
      * a video display of the frame stream. The user then select points on the
@@ -53,14 +45,12 @@ public:
      * selection, the a best-fit homography matrix relating pixels to work
      * coordinates is calulated and the MSE between the transformed and
      * user-supplied positions is displayed.
-     * @param frame_source_name imaging setup frame source name
+     * @param source_name imaging setup frame source name
      */
-    HomographyGenerator(const std::string &frame_source_name,
-                        const std::string &calibration_key,
-                        EstimationMethod method);
+    HomographyGenerator(const std::string &source_name);
 
-    // Overridden methods
-    void configure(const std::string& config_file, const std::string& config_key) override;
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
     // Accept visitors
     void accept(CalibratorVisitor* visitor) override;
@@ -81,11 +71,11 @@ protected:
 private:
 
     // Is homography well-defined?
-    bool homography_valid_;
+    bool homography_valid_ {false};
     cv::Mat homography_;
 
-    // Default esimation method
-    EstimationMethod method_ {EstimationMethod::ROBUST};
+    // Default esimation method (robust)
+    size_t method_ {0};
 
     // Data used to create homography
     std::vector<cv::Point2f> pixels_;
@@ -124,7 +114,6 @@ private:
     cv::Mat drawMousePoint(cv::Mat& frame);
     void onMouseEvent(int event, int x, int y);
     static void onMouseEvent(int event, int x, int y, int, void * _this);
-
 };
 
 }      /* namespace oat */

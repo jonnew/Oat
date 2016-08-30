@@ -174,7 +174,10 @@ bool getValue(const po::variables_map &vm,
 
     if (vm.count(key)) {
 
-        value = vm[key].as<T>();
+        if (std::is_same<T, bool>::value)
+            value = true;
+        else
+            value = vm[key].as<T>();
         return true;
 
     } else if (table->contains(key)) {

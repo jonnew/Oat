@@ -12,8 +12,8 @@ set (oat-framefilt_SOURCE
 
 # Target
 add_executable (oat-framefilt ${oat-framefilt_SOURCE})
-target_link_libraries (oat-framefilt 
-                       oatutility 
+target_link_libraries (oat-framefilt
+                       oatutility
                        ${OatCommon_LIBS})
 
 # Installation

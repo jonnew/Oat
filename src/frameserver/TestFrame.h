@@ -31,7 +31,7 @@ namespace oat {
 class TestFrame : public FrameServer {
 public:
 
-    /** 
+    /**
      * @brief Serve test frames using a static image.
      * @param sink_address frame sink address
      */

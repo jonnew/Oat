@@ -43,14 +43,6 @@ public:
     using Clock = std::chrono::high_resolution_clock;
     using Milliseconds = std::chrono::milliseconds;
 
-    // Camera model to use for calibration
-    enum class CameraModel
-    {
-        NA      = -1,  //!< Not applicable
-        PINHOLE =  0,  //!< Pinhole camera model
-        FISHEYE =  1   //!< Fisheye lens model
-    };
-
     /**
      * Interactive camera calibrator. The corners of a chessboard pattern (of a
      * user-specified size and element length) are automatically detected in
@@ -60,26 +52,24 @@ public:
      * @param frame_source_name imaging setup frame source name
      * @param model Camera model used to generate camera matrix and distortion coefficients.
      */
-    CameraCalibrator(const std::string &frame_source_name,
-                     const std::string &calibration_key,
-                     const CameraModel &model,
-                     cv::Size &chessboard_size,
-                     double square_size_meters);
+    CameraCalibrator(const std::string &source_name);
 
-    /**
-     * Configure calibration parameters.
-     * @param config_file configuration file path
-     * @param config_key configuration key
-     */
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
     // Accept visitors
     void accept(CalibratorVisitor* visitor) override;
     void accept(OutputVisitor* visitor, std::ostream& out) override;
 
+    // Interactive session mode type
+    enum class Mode : size_t
+    {
+        NORMAL = 0, //!< Top level commands available. Can enter/exit other modes.
+        DETECT,     //!< Rig-detection mode. Used to populate chessboard corner data.
+        UNDISTORT   //!< Undistort image using camera_matrix_ and distortion_coefficients_
+    };
+
     // Accessors
-    CameraModel model() const { return model_; }
     bool calibration_valid() const { return calibration_valid_; }
     cv::Mat camera_matrix() const { return camera_matrix_; }
     cv::Mat distortion_coefficients() const { return distortion_coefficients_; }
@@ -94,32 +84,18 @@ protected:
 
 private:
 
-    // Interactive session mode
-    enum class Mode
-    {
-        NORMAL = 0, //!< Top level commands available. Can enter/exit other modes.
-        DETECT,     //!< Rig-detection mode. Used to populate chessboard corner data.
-        UNDISTORT   //!< Undistort image using camera_matrix_ and distortion_coefficients_
-    };
 
     Mode mode_ {Mode::NORMAL};
 
-    // For writing mode on frames
-    std::map<Mode, std::string> mode_msg_hash_;
-
     // Is camera calibration well-defined?
-    CameraModel calibration_model_ {CameraModel::NA};
     bool calibration_valid_ {false};
     cv::Mat camera_matrix_, distortion_coefficients_;
     double rms_error_ {-1.0};
 
-    // Default estimation method
-    CameraModel model_ {CameraModel::PINHOLE};
-
     // NXM black squares in the chessboard
     bool chessboard_detected_ {false};
     double square_size_meters_ {0.0254};
-    cv::Size chessboard_size_; //!< Number of interior corners on chessboard
+    cv::Size chessboard_size_ {6, 9}; //!< Number of interior corners on chessboard
 
     // Frame dimensions
     cv::Size frame_size_;
@@ -142,7 +118,6 @@ private:
     void clearDataPoints(void);
     void printCalibrationResults(std::ostream& out);
     void generateCalibrationParameters(void);
-    int selectCameraModel(void);
     cv::Mat drawCorners(cv::Mat& frame, bool invert_colors);
 
     template<typename M>

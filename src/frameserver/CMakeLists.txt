@@ -19,9 +19,9 @@ endif (${USE_FLYCAP})
 
 # Targets
 add_executable (oat-frameserve ${oat-frameserve_SOURCE} main.cpp)
-target_link_libraries (oat-frameserve 
+target_link_libraries (oat-frameserve
                        oatutility
-                       ${OatCommon_LIBS} 
+                       ${OatCommon_LIBS}
                        ${FLYCAPTURE2})
 
 # Installation

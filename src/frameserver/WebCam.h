@@ -20,12 +20,12 @@
 #ifndef OAT_WEBCAM_H
 #define OAT_WEBCAM_H
 
+#include "FrameServer.h"
+
 #include <chrono>
 #include <string>
 
 #include <opencv2/videoio.hpp>
-
-#include "FrameServer.h"
 
 namespace oat {
 
@@ -46,7 +46,7 @@ public:
 
 private:
 
-    size_t index_ {0};
+    int index_ {0};
     std::unique_ptr<cv::VideoCapture> cv_camera_;
 
     // frame generation clock

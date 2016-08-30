@@ -90,7 +90,7 @@ void PathChanger::setNewPath(Calibrator* cal) {
 
         new_path = std::string { exp_result.we_wordv[0] };
         wordfree(&exp_result);
-        cal->generateSavePath(new_path);
+        cal->generateSavePath(new_path, "calibration");
 
     } else {
         throw std::runtime_error("Could not parse path.");

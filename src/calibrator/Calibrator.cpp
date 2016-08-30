@@ -17,22 +17,21 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include <memory>
+#include "Calibrator.h"
+
 #include <string>
 #include <boost/filesystem.hpp>
 #include <opencv2/core/mat.hpp>
 
-#include "Calibrator.h"
+#include "../../lib/utility/TOMLSanitize.h"
 
 namespace bfs = boost::filesystem;
 
 namespace oat {
 
-Calibrator::Calibrator(const std::string &frame_source_address,
-                       const std::string &calibration_key) :
-  calibration_key_(calibration_key)
-, name_("calibrate[" + frame_source_address + "]")
-, frame_source_address_(frame_source_address)
+Calibrator::Calibrator(const std::string &source_address) :
+  name_("calibrate[" + source_address + "]")
+, source_address_(source_address)
 {
     // Nothing
 }
@@ -40,10 +39,57 @@ Calibrator::Calibrator(const std::string &frame_source_address,
 void Calibrator::connectToNode() {
 
     // Establish our a slot in the node
-    frame_source_.touch(frame_source_address_);
+    frame_source_.touch(source_address_);
 
     // Wait for sychronous start with sink when it binds the node
     frame_source_.connect();
+}
+
+void Calibrator::appendOptions(po::options_description &opts) {
+
+    opts.add_options()
+        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+        "Configuration file/key pair.\n"
+        "e.g. 'config.toml mykey'")
+        ;
+
+    // Common program options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("calibration-key,k", po::value<std::string>(),
+        "The key name for the calibration entry that will be inserted "
+        "into the calibration file. e.g. 'camera-1-homography'\n")
+        ("calibration-path,f", po::value<std::string>(),
+        "The calibration file location. If not is specified,"
+        "defaults to './calibration.toml'. If a folder is specified, "
+        "defaults to '<folder>/calibration.toml\n. If a full path "
+        "including file in specified, then it will be that path "
+        "without modification.")
+        ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
+}
+
+void Calibrator::configure(const po::variables_map &vm) {
+
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+
+    // Square width (must come before chessboard size because it is used there)
+    oat::config::getValue<std::string>(
+        vm, config_table, "calibration-key", calibration_key_
+    );
+
+    oat::config::getValue<std::string>(
+        vm, config_table, "calibration-path", calibration_save_path_
+    );
+
+    generateSavePath(calibration_save_path_, "calibration");
 }
 
 bool Calibrator::process(void) {
@@ -52,8 +98,7 @@ bool Calibrator::process(void) {
     ////////////////////////////
 
     // Wait for sink to write to node
-    node_state_ = frame_source_.wait();
-    if (node_state_ == oat::NodeState::END)
+    if (frame_source_.wait() == oat::NodeState::END)
         return true;
 
     // Clone the shared frame
@@ -71,7 +116,9 @@ bool Calibrator::process(void) {
     return false;
 }
 
-bool Calibrator::generateSavePath(const std::string& save_path) {
+// TODO: Replace with common utility?
+bool Calibrator::generateSavePath(const std::string &save_path,
+                                  const std::string &default_name) {
 
     // Create folder and file name
     bfs::path path(save_path.c_str());
@@ -81,7 +128,7 @@ bool Calibrator::generateSavePath(const std::string& save_path) {
 
         // Use default file name
         folder = path.string();
-        file_name = "calibration";
+        file_name = default_name;
 
     } else {
 

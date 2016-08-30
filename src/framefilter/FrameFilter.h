@@ -31,9 +31,6 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-// Forward decl.
-class SharedFrameHeader;
-
 /**
  * @brief Abstract frame filter.
  * All concrete frame filter types implement this ABC.
@@ -51,7 +48,7 @@ public:
                          const std::string &frame_sink_address);
     virtual ~FrameFilter() { };
 
-    /** 
+    /**
      * @brief Connect to shared memory node.
      */
     void connectToNode(void);

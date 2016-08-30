@@ -84,7 +84,7 @@ void FileReader::configure(const po::variables_map &vm) {
         region_of_interest_.y      = roi[1];
         region_of_interest_.width  = roi[2];
         region_of_interest_.height = roi[3];
-    } 
+    }
 }
 
 void FileReader::connectToNode() {

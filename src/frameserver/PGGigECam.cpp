@@ -47,7 +47,7 @@ PGGigECam::PGGigECam(const std::string &sink_address) :
     tock_ = oat::Sample::Microseconds(0);
 }
 
-PGGigECam::~PGGigECam() 
+PGGigECam::~PGGigECam()
 {
     // Ignore error return values -- throwing exception unsafe in destructor
     camera_.StopCapture();
@@ -62,7 +62,7 @@ void PGGigECam::appendOptions(po::options_description &opts) {
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
-        ("index,i", po::value<size_t>(),
+        ("index,i", po::value<int>(),
          "Camera index. Defaults to 0. Useful in multi-camera imaging "
          "configurations.")
         ("fps,r", po::value<double>(),
@@ -83,15 +83,15 @@ void PGGigECam::appendOptions(po::options_description &opts) {
          "is copied to. Defaults to 1.")
         ("trigger-mode,m", po::value<int>(),
          "Shutter trigger mode. Supported values:\n"
-         " -1  \tNo external trigger. Frames are captured in free-running mode at "
+         "  -1:  \tNo external trigger (default). Frames are captured in free-running mode at "
          "the currently set frame rate.\n"
-         " 0   \tStandard external trigger. Trigger edge causes sensor "
+         "   0:  \tStandard external trigger. Trigger edge causes sensor "
          "exposure, then sensor readout to internal memory.\n"
-         " 1   \tBulb shutter mode. Same as 0, except that sensor exposure "
+         "   1:  \tBulb shutter mode. Same as 0, except that sensor exposure "
          "duration is determined by trigger active duration.\n"
-         " 13  \tLow smear mode. Same as 0, speed of the vertical clock is "
+         "  13:  \tLow smear mode. Same as 0, speed of the vertical clock is "
          "increased near the end of the integration cycle.\n"
-         " 14  \tOverlapped exposure/readout external trigger. Sensor exposure "
+         "  14:  \tOverlapped exposure/readout external trigger. Sensor exposure "
          "occurs during sensory readout to internal memory. This is the "
          "fastest option.")
         ("trigger-rising,p", po::value<bool>(),
@@ -130,8 +130,8 @@ void PGGigECam::configure(const po::variables_map &vm) {
 
     // Camera index
     auto num_cams = findNumCameras();
-    size_t index = 0;
-    oat::config::getNumericValue<size_t>(
+    int index = 0;
+    oat::config::getNumericValue<int>(
         vm, config_table, "index", index, 0, num_cams - 1
     );
 
@@ -225,7 +225,7 @@ void PGGigECam::configure(const po::variables_map &vm) {
     setupEmbeddedImageData();
 }
 
-void PGGigECam::connectToCamera(size_t index) {
+void PGGigECam::connectToCamera(int index) {
 
     auto num_cameras = findNumCameras();
 

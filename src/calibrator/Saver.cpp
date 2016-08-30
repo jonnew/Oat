@@ -62,10 +62,6 @@ void Saver::visit(CameraCalibrator* cc) {
         return;
     }
 
-    // Get TOML value holding camera model type
-    auto temp = static_cast<int64_t>(cc->model());
-    auto model = cpptoml::make_value<int64_t>(std::move(temp));
-
     // Construct TOML array from camera matrix and distortion coefficients
     auto _cam = cc->camera_matrix(); // Have to make copy or iterator does not work
     auto cam = cpptoml::make_array();
@@ -80,7 +76,6 @@ void Saver::visit(CameraCalibrator* cc) {
 
     // Insert camera matrix and distortion coeffs into sub table
     auto camera = cpptoml::make_table();
-    camera->insert("camera-model", model);
     camera->insert("camera-matrix", cam);
     camera->insert("distortion-coeffs", dc);
 

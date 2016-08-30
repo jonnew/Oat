@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, sigHandler);
 
     // Results of command line input
-    std::string type = "";
+    std::string type;
     std::string sink;
 
     // Component specializations
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
                             "flycapture support, so TYPE=gige is not available.\n");
                     return -1;
 #else
-                    server = 
+                    server =
                         std::make_shared<oat::PGGigECam>(sink);
 #endif
                     break;

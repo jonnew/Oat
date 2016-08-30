@@ -33,17 +33,17 @@ class ViewerBase {
 
 public:
 
-    template<typename T, typename... Args> 
+    template<typename T, typename... Args>
     ViewerBase(std::in_place<T>, Args&&... args) :
       viewer(new ViewerModel<T>(std::forward<Args>(args)...)) { }
-    void appendOptions(po::options_description &opts) const 
+    void appendOptions(po::options_description &opts) const
         { viewer->appendOptions(opts); }
-    void configure(const po::variables_map &vm) const 
+    void configure(const po::variables_map &vm) const
         { viewer->configure(vm); }
     void connectToNode(void) const { viewer->connectToNode(); }
     bool process(void) const { return viewer->process(); }
     std::string name() const { return viewer->name(); }
-    
+
 private:
 
     struct ViewerConcept {
@@ -59,9 +59,9 @@ private:
     struct ViewerModel : ViewerConcept {
         template <typename... Args>
         ViewerModel(Args&&... args) : viewer(std::forward<Args>(args)...) { }
-        void appendOptions(po::options_description &opts) override 
+        void appendOptions(po::options_description &opts) override
             { viewer.appendOptions(opts); }
-        void configure(const po::variables_map &vm) override 
+        void configure(const po::variables_map &vm) override
             { viewer.configure(vm); }
         void connectToNode(void) override { viewer.connectToNode();}
         bool process(void) override { return viewer.process(); }

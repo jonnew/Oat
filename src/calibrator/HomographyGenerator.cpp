@@ -45,63 +45,71 @@
 
 namespace oat {
 
-HomographyGenerator::HomographyGenerator(const std::string &frame_source_name,
-                                         const std::string &calibration_key,
-                                         const EstimationMethod method) :
-  Calibrator(frame_source_name, calibration_key)
-, homography_valid_(false)
-, method_(method)
+HomographyGenerator::HomographyGenerator(const std::string &source_name) :
+  Calibrator(source_name)
 {
 
-    // if (interactive_) { // TODO: Generalize to accept points from a file without interactive session
-
 #ifdef HAVE_OPENGL
-        try {
-            cv::namedWindow(name(), cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
-        } catch (cv::Exception& ex) {
-            oat::whoWarn(name(), "OpenCV not compiled with OpenGL support."
-                    " Falling back to OpenCV's display driver.\n");
-            cv::namedWindow(name(), cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
-        }
-#else
+    try {
+        cv::namedWindow(name(), cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
+    } catch (cv::Exception& ex) {
+        oat::whoWarn(name(), "OpenCV not compiled with OpenGL support."
+                " Falling back to OpenCV's display driver.\n");
         cv::namedWindow(name(), cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
+    }
+#else
+    cv::namedWindow(name(), cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
 #endif
 
-        //set the callback function for any mouse event
-        cv::setMouseCallback(name(), onMouseEvent, this);
+    //set the callback function for any mouse event
+    cv::setMouseCallback(name(), onMouseEvent, this);
 
-        std::cout << "Starting interactive session.\n";
-        UsagePrinter usage;
-        accept(&usage, std::cout);
-   // }
+    std::cout << "Starting interactive session.\n";
+    UsagePrinter usage;
+    accept(&usage, std::cout);
 }
 
-void HomographyGenerator::configure(const std::string& config_file, const std::string& config_key) {
+void HomographyGenerator::appendOptions(po::options_description &opts) {
 
-    // TODO: Provide list of pixel points and world coords directly from file.
+    // Accepts a config file and calibration save path options
+    Calibrator::appendOptions(opts);
 
-    // Available options
-    std::vector<std::string> options {""};
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("method,m", po::value<size_t>(),
+        "Homography estimation method. Defaults to 0.\n\n"
+        "Values:\n"
+        "  0: \tRANSAC-based robust estimation method (automatic "
+        "outlier rejection).\n"
+        "  1: \tBest-fit using all data points.\n"
+        "  2: \tCompute the homography that fits four points. Useful when "
+        "frames contain known fiducial marks.\n")
+        ;
 
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
+    opts.add(local_opts);
 
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
-void HomographyGenerator::calibrate(cv::Mat& frame) {
+void HomographyGenerator::configure(const po::variables_map &vm) {
+
+    // Accepts default configuration
+    Calibrator::configure(vm);
+
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+
+    // Estimation method
+    oat::config::getNumericValue<size_t>(
+            vm, config_table, "method", method_, 0, 2
+    );
+}
+
+void HomographyGenerator::calibrate(cv::Mat &frame) {
 
     if (clicked_)
         frame = drawMousePoint(frame);
@@ -116,7 +124,6 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
             addDataPoint();
             break;
         }
-
         case 'd': // Delete point from data map
         {
             removeDataPoint();
@@ -149,7 +156,7 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
             printDataPoints(std::cout);
             break;
         }
-        case 's': // Persist homography to file
+        case 's': // Save homography to file
         {
             Saver saver(calibration_key_, calibration_save_path_);
             accept(&saver);
@@ -159,12 +166,10 @@ void HomographyGenerator::calibrate(cv::Mat& frame) {
 }
 
 void HomographyGenerator::accept(CalibratorVisitor* visitor) {
-
     visitor->visit(this);
 }
 
 void HomographyGenerator::accept(OutputVisitor* visitor, std::ostream& out) {
-
     visitor->visit(this, out);
 }
 
@@ -230,6 +235,11 @@ int HomographyGenerator::addDataPoint() {
 
 int HomographyGenerator::removeDataPoint() {
 
+    if (pixels_.size() == 0) {
+        std::cerr << oat::Error("No data points to delete.\n");
+        return -1;
+    }
+
     try {
 
         point_size_t idx;
@@ -276,33 +286,13 @@ int HomographyGenerator::selectHomographyMethod() {
         return -1;
     }
 
-    switch (sel) {
-        case 0:
-        {
-            method_ = EstimationMethod::ROBUST;
-            std::cout << "Estimation method set to robust.\n";
-            break;
-        }
-        case 1:
-        {
-            method_ = EstimationMethod::REGULAR;
-            std::cout << "Estimation method set to regular.\n";
-            break;
-        }
-        case 2:
-        {
-            method_ = EstimationMethod::EXACT;
-            std::cout << "Estimation method set to exact.\n";
-            break;
-        }
-        default:
-        {
-            std::cerr << oat::Error("Invalid selection.\n");
-            return -1;
-        }
+    if (sel >= 0 && sel <= 2) {
+        method_ = sel;
+        return 0;
+    } else {
+        std::cerr << oat::Error("Invalid selection.\n");
+        return -1;
     }
-
-    return 0;
 }
 
 void HomographyGenerator::printDataPoints(std::ostream& out) {
@@ -312,8 +302,8 @@ void HomographyGenerator::printDataPoints(std::ostream& out) {
     boost::io::ios_flags_saver ifs(out);
 
     // Table format parameters
-    constexpr int entry_width {25};
-    constexpr int prec {5};
+    const int entry_width {25};
+    const int prec {5};
 
     out << "Current homography data set:\n"
         << std::left
@@ -365,21 +355,23 @@ int HomographyGenerator::generateHomography() {
     }
 
     switch (method_) {
-        case EstimationMethod::ROBUST :
+        case 0:
         {
             homography_ = cv::findHomography(pixels_, world_points_, cv::RANSAC);
             break;
         }
-        case EstimationMethod::REGULAR :
+        case 1:
         {
             homography_ = cv::findHomography(pixels_, world_points_, 0);
             break;
         }
-        case EstimationMethod::EXACT :
+        case 2:
         {
             if (pixels_.size() != 4) {
-                std::cerr << oat::Error("Exactly 4 points are used to calculate an exact homography.\n")
-                          << oat::Error("Ensure there are exactly 4 points in your data set by adding or deleting.\n");
+                std::cerr << oat::Error("Exactly 4 points are used to calculate "
+                                        "an exact homography.\n")
+                          << oat::Error("Ensure there are exactly 4 points in your "
+                                        "data set by adding or deleting some.\n");
                 printDataPoints(std::cout);
                 return -1;
             } else {
@@ -396,8 +388,10 @@ int HomographyGenerator::generateHomography() {
         return 0;
     } else {
 
-        std::cerr << oat::Error("Failed to fit a homography to the data set.\n")
-                  << oat::Error("Check the sanity of your data and/or try a different transform estimation method.\n");
+        std::cerr << oat::Error("Failed to fit a homography to the data "
+                                "set.\n")
+                  << oat::Error("Check the sanity of your data and/or try "
+                                "a different transform estimation method.\n");
         return -1;
     }
 }
@@ -429,7 +423,6 @@ cv::Mat HomographyGenerator::drawMousePoint(cv::Mat& frame) {
 }
 
 void HomographyGenerator::onMouseEvent(int event, int x, int y, int, void* _this) {
-
     static_cast<HomographyGenerator*>(_this)->onMouseEvent(event, x, y);
 }
 
@@ -438,7 +431,6 @@ void HomographyGenerator::onMouseEvent(int event, int x, int y) {
     if (event == cv::EVENT_LBUTTONDOWN) {
         mouse_pt_.x = x;
         mouse_pt_.y = y;
-
         clicked_ = true;
     }
 }

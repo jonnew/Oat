@@ -22,10 +22,14 @@
 
 #include <string>
 #include <iosfwd>
+
+#include <boost/program_options.hpp>
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Source.h"
+
+namespace po = boost::program_options;
 
 namespace oat {
 
@@ -45,10 +49,9 @@ public:
     /**
      * Abstract calibrator.
      * All concrete calibrator types implement this ABC.
-     * @param frame_source_address Frame SOURCE address
+     * @param source_address Frame SOURCE address
      */
-    Calibrator(const std::string &frame_source_address,
-               const std::string &calibration_key);
+    Calibrator(const std::string &source_address);
 
     virtual ~Calibrator() {};
 
@@ -65,50 +68,67 @@ public:
     virtual bool process(void);
 
     /**
-     * Configure calibration parameters.
-     * @param config_file configuration file path
-     * @param config_key configuration key
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
      */
-    virtual void configure(const std::string &config_file,
-                           const std::string &config_key) = 0;
+    virtual void appendOptions(po::options_description &opts);
+
+    /**
+     * @brief Configure filter parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    virtual void configure(const po::variables_map &vm);
 
     /**
      * Create the calibration file path using a specified path.
      * @param save_path the path to save configuration data. If this path is a
      * folder, the calibration file will default to calibraiton.toml.
+     * @param default_name Default file name in the case that a full path is
+     * not provided.
      * @return True if the specified calibration file already exists.
      */
-    virtual bool generateSavePath(const std::string& save_path);
+    virtual bool generateSavePath(const std::string &save_path,
+                                  const std::string &default_name);
 
     // Accept functions for visitors
     virtual void accept(CalibratorVisitor* visitor) = 0;
     virtual void accept(OutputVisitor* visitor, std::ostream& out) = 0;
 
     // Accessors
-    const std::string & name() const { return name_; }
-    const std::string & calibration_save_path() const {
+    //const std::string & name() const { return name_; }
+    std::string calibration_save_path() const {
         return calibration_save_path_;
     }
 
-    void set_calibration_key(const std::string& value) {calibration_key_ = value; }
+    void set_calibration_key(const std::string& value) {
+        calibration_key_ = value;
+    }
+
+    std::string name() const { return name_; }
 
 protected:
+
+    // List of allowed configuration options, including those
+    // specified only via config file
+    std::vector<std::string> config_keys_;
 
     /** Perform calibration routine.
      * @param frame frame to use for generating calibration parameters
      */
     virtual void calibrate(cv::Mat& frame) = 0;
 
-    std::string calibration_key_;       //!< Key name of calibration table entry
-    std::string calibration_save_path_; //!< Calibration parameter save path
+    std::string calibration_key_ {"calibration"};  //!< Key name of calibration table entry
+    std::string calibration_save_path_ {"."};      //!< Calibration parameter save path
 
 private:
 
-    std::string name_;                      //!< Calibrator name
-    oat::Frame internal_frame_;             //!< Current frame provided by SOURCE
-    std::string frame_source_address_;      //!< Frame source address
-    oat::NodeState node_state_ {oat::NodeState::UNDEFINED}; //!< Frame source node state
-    oat::Source<SharedFrameHeader> frame_source_; //!< The calibrator frame SOURCE
+    std::string name_;                  //!< Calibrator name
+    oat::Frame internal_frame_;         //!< Current frame provided by SOURCE
+    std::string source_address_;        //!< Frame source address
+    oat::Source<Frame> frame_source_;   //!< The calibrator frame SOURCE
+
+    //std::string calibration_key_;       //!< Key name of calibration table entry
+    //std::string calibration_save_path_; //!< Calibration parameter save path
 };
 
 }      /* namespace oat */
