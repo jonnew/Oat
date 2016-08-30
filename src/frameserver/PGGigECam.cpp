@@ -82,16 +82,17 @@ void PGGigECam::appendOptions(po::options_description &opts) {
          "Hardware pin number on that a gate signal for the camera shutter "
          "is copied to. Defaults to 1.")
         ("trigger-mode,m", po::value<int>(),
-         "Shutter trigger mode. Supported values:\n"
-         "  -1:  \tNo external trigger (default). Frames are captured in free-running mode at "
+         "Shutter trigger mode. Defaults to -1.\n\n"
+         "Values:\n"
+         " -1:  \tNo external trigger. Frames are captured in free-running mode at "
          "the currently set frame rate.\n"
-         "   0:  \tStandard external trigger. Trigger edge causes sensor "
+         "  0:  \tStandard external trigger. Trigger edge causes sensor "
          "exposure, then sensor readout to internal memory.\n"
-         "   1:  \tBulb shutter mode. Same as 0, except that sensor exposure "
+         "  1:  \tBulb shutter mode. Same as 0, except that sensor exposure "
          "duration is determined by trigger active duration.\n"
-         "  13:  \tLow smear mode. Same as 0, speed of the vertical clock is "
+         " 13:  \tLow smear mode. Same as 0, speed of the vertical clock is "
          "increased near the end of the integration cycle.\n"
-         "  14:  \tOverlapped exposure/readout external trigger. Sensor exposure "
+         " 14:  \tOverlapped exposure/readout external trigger. Sensor exposure "
          "occurs during sensory readout to internal memory. This is the "
          "fastest option.")
         ("trigger-rising,p", po::value<bool>(),
@@ -100,16 +101,16 @@ void PGGigECam::appendOptions(po::options_description &opts) {
         ("trigger-pin,t", po::value<size_t>(),
          "GPIO pin number on that trigger is sent to if external shutter "
          "triggering is used. Defaults to 0.")
-        ("roi", po::value<std::string>(),
+        ("roi,R", po::value<std::string>(),
          "Four element array of unsigned ints, [x0,y0,width,height],"
          "defining a rectangular region of interest. Origin"
          "is upper left corner. ROI must fit within acquired"
          "frame size. Defaults to full sensor size.")
-        ("bin", po::value<std::string>(),
+        ("bin,b", po::value<std::string>(),
          "Two element array of unsigned ints, [bx,by], "
          "defining how pixels should be binned before transmission to the "
          "computer. Defaults to [1,1] (no binning).")
-        ("white-balance", po::value<std::string>(),
+        ("white-balance,w", po::value<std::string>(),
          "Two element array of unsigned integers, [red,blue], used to "
          "specify the white balance. Values are between 0 and 1000. "
          "Defaults to off.")
@@ -161,7 +162,7 @@ void PGGigECam::configure(const po::variables_map &vm) {
 
     // Set white balance
     std::vector<double> wb;
-    if (oat::config::getArray<double, 2>(config_table, "white-bal", wb))
+    if (oat::config::getArray<double, 2>(vm, config_table, "white-bal", wb))
         setupWhiteBalance(wb[0], wb[1], true);
     else
         setupWhiteBalance(0, 0, false);
@@ -181,7 +182,7 @@ void PGGigECam::configure(const po::variables_map &vm) {
         region_of_interest_.width  = roi[2];
         region_of_interest_.height = roi[3];
 
-        setupImageFormat(roi_vec);
+        setupImageFormat(roi);
     } else {
         setupImageFormat();
     }
@@ -227,7 +228,7 @@ void PGGigECam::configure(const po::variables_map &vm) {
 
 void PGGigECam::connectToCamera(int index) {
 
-    auto num_cameras = findNumCameras();
+    auto num_cameras = static_cast<int>(findNumCameras());
 
     if (index >= num_cameras)
         throw (rte("Requested camera index " +
@@ -432,10 +433,10 @@ void PGGigECam::setupImageFormat() {
     std::cout << imageSettings.pixelFormat << std::endl;
 
     std::cout << "ROI set to [0 0 "
-              + image_settings_info.maxWidth
-              + " "
-              + image_settings_info.maxHeight
-              + "]\n";
+              << image_settings_info.maxWidth
+              << " "
+              << image_settings_info.maxHeight
+              << "]\n";
 
     error = camera_.SetGigEImageSettings(&imageSettings);
     if (error != pg::PGRERROR_OK)
@@ -472,14 +473,14 @@ void PGGigECam::setupImageFormat(const std::vector<size_t> &roi_vec) {
     imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW8;
 
     std::cout << "ROI set to ["
-              + roi_vec[0]
-              + " "
-              + roi_vec[1]
-              + " "
-              + roi_vec[2]
-              + " "
-              + roi_vec[3]
-              + "]\n";
+              << roi_vec[0]
+              << " "
+              << roi_vec[1]
+              << " "
+              << roi_vec[2]
+              << " "
+              << roi_vec[3]
+              << "]\n";
 
     error = camera_.SetGigEImageSettings(&imageSettings);
     if (error != pg::PGRERROR_OK)
@@ -849,7 +850,7 @@ bool PGGigECam::process() {
     return false;
 }
 
-size_t PGGigECam::findNumCameras(void) {
+unsigned int PGGigECam::findNumCameras(void) {
 
     pg::Error error;
     pg::BusManager busMgr;
@@ -860,7 +861,7 @@ size_t PGGigECam::findNumCameras(void) {
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
 
-    return static_cast<size_t>(num_cameras);
+    return num_cameras;
 }
 
 void PGGigECam::printError(pg::Error error) {

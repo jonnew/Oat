@@ -118,7 +118,7 @@ private:
     int grabImage(void);
 
     // Diagnostics and meta
-    size_t findNumCameras(void);
+    unsigned int findNumCameras(void);
     void printError(pg::Error error);
     bool pollForTriggerReady(void);
     void printCameraInfo(void);
