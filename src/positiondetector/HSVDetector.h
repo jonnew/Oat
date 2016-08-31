@@ -58,8 +58,8 @@ public:
      */
     void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
 
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
     // Accessors (used for tuning GUI)
     void set_erode_size(int erode_px);
@@ -88,6 +88,8 @@ private:
     double max_object_area_ {std::numeric_limits<double>::max()};
 
     // Parameter tuning GUI functions and properties
+    bool tuning_on_ {false};
+    bool tuning_windows_created_ {false};
     const std::string tuning_image_title_;
     void tune(cv::Mat &frame, const oat::Position2D &position);
     void createTuningWindows(void);

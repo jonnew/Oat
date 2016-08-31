@@ -20,11 +20,9 @@
 #ifndef OAT_DIFFERENCEDETECTOR_H
 #define	OAT_DIFFERENCEDETECTOR_H
 
-#include <string>
-#include <limits>
-#include <opencv2/core/mat.hpp>
-
 #include "PositionDetector.h"
+
+#include <limits>
 
 namespace oat {
 
@@ -52,8 +50,8 @@ public:
      */
     void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
 
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
     //Accessors (used for tuning GUI)
     void set_min_object_area(double value) { min_object_area_ = value; }
@@ -71,7 +69,7 @@ private:
     double object_area_ {0.0};
 
     // Detector parameters
-    int difference_intensity_threshold_ {0};
+    int difference_intensity_threshold_ {10};
     cv::Size blur_size_;
     bool blur_on_ {false};
     double min_object_area_ {0.0};
@@ -83,9 +81,12 @@ private:
     int dummy0_ {0}, dummy1_ {10000};
 
     // Processing functions
+    bool tuning_on_ {false};
+    bool tuning_windows_created_ {false};
     void createTuningWindows(void);
     void tune(cv::Mat &frame, const oat::Position2D &position);
     void applyThreshold(cv::Mat &frame);
+
 };
 
 // Tuning GUI callbacks

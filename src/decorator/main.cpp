@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
                 ("sink", po::value<std::string>(&sink),
                  "User-supplied name of the memory segment to publish frames.")
                 ("type-args", po::value<std::vector<std::string> >(),
-                 "type-specifuc arguments.")
+                 "type-specific arguments.")
                 ;
 
         // Required positional arguments and type-specific configuration

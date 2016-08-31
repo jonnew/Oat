@@ -22,10 +22,14 @@
 
 #include <string>
 
+#include <boost/program_options.hpp>
+
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
+
+namespace po = boost::program_options;
 
 namespace oat {
 
@@ -51,6 +55,18 @@ public:
     virtual ~PositionDetector() { }
 
     /**
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
+     */
+    virtual void appendOptions(po::options_description &opts);
+
+    /**
+     * @brief Configure component parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    virtual void configure(const po::variables_map &vm) = 0;
+
+    /**
      * PositionDetectors must be able to connect to a Source and Sink
      * Nodes in shared memory
      */
@@ -63,17 +79,8 @@ public:
      */
     virtual bool process(void);
 
-    /**
-     * Configure filter parameters.
-     * @param config_file configuration file path
-     * @param config_key configuration key
-     */
-    virtual void configure(const std::string &config_file,
-                           const std::string &config_key) = 0;
-
     // Accessors
     std::string name(void) const { return name_; }
-    void tuning_on(const bool value)  { tuning_on_ = value; }
 
 protected:
 
@@ -87,9 +94,8 @@ protected:
     // Detector name
     const std::string name_;
 
-    // Use GUI to tune detection parameters
-    bool tuning_on_ {false};
-    bool tuning_windows_created_ {false};
+    // List of allowed configuration options    
+    std::vector<std::string> config_keys_;
 
 private:
 
@@ -100,7 +106,7 @@ private:
 
     // Frame source
     const std::string frame_source_address_;
-    oat::Source<oat::SharedFrameHeader> frame_source_;
+    oat::Source<oat::Frame> frame_source_;
 
     // Position sink
     const std::string position_sink_address_;

@@ -45,6 +45,109 @@ HSVDetector::HSVDetector(const std::string &frame_source_address,
     set_dilate_size(10);
 }
 
+void HSVDetector::appendOptions(po::options_description &opts) {
+
+    // Accepts a config file
+    PositionDetector::appendOptions(opts);
+
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("h-thresh,H", po::value<std::string>(),
+         "Hue thresholds as array of ints, [min,max], specifying the minimum and maximum "
+         "hue levels to consider to be in range.")
+        ("s-thresh,S", po::value<std::string>(),
+         "Saturation thresholds as array of ints, [min,max], specifying the minimum and maximum "
+         "saturation levels to consider to be in range.")
+        ("v-thresh,V", po::value<std::string>(),
+         "Value thresholds as array of ints, [min,max], specifying the minimum and maximum "
+         "value levels to consider to be in range.")
+        ("erode,e", po::value<int>(),
+         "Contour erode kernel size in pixels (normalized box filter).")
+        ("dilate,d", po::value<int>(),
+         "Contour dilation kernel size in pixels (normalized box filter).")
+        ("area,a", po::value<std::string>(),
+         "Array of floats, [min,max], specifying the minimum and maximum "
+         "object contour area in pixels^2.")
+        ("tune,t",
+         "If true, provide a GUI with sliders for tuning detection parameters.")
+        ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
+}
+
+void HSVDetector::configure(const po::variables_map &vm) {
+
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+
+    // Hue
+    std::vector<int> h;
+    if (oat::config::getArray<int, 2>(vm, config_table, "h-thresh", h)) {
+       
+        h_min_ = h[0];
+        h_max_ = h[1];
+
+        if (h_min_ < 0 || h_min_> 256 || h_max_ < 0 || h_max_ > 256)
+           throw std::runtime_error("Values in h-thresh should be between 0 and 256.");
+    }
+
+    // Saturation
+    std::vector<int> s;
+    if (oat::config::getArray<int, 2>(vm, config_table, "s-thresh", s)) {
+       
+        s_min_ = s[0];
+        s_max_ = s[1];
+
+        if (s_min_ < 0 || s_min_> 256 || s_max_ < 0 || s_max_ > 256)
+           throw std::runtime_error("Values in s-thresh should be between 0 and 256.");
+    }
+
+    // Value
+    std::vector<int> v;
+    if (oat::config::getArray<int, 2>(vm, config_table, "v-thresh", v)) {
+       
+        v_min_ = v[0];
+        v_max_ = v[1];
+
+        if (v_min_ < 0 || v_min_> 256 || v_max_ < 0 || v_max_ > 256)
+           throw std::runtime_error("Values in v-thresh should be between 0 and 256.");
+    }
+
+    // Erode size
+    int erode;
+    if (oat::config::getNumericValue<int>(vm, config_table, "erode", erode, 0))
+        set_erode_size(erode);
+
+    // Dilate size
+    int dilate;
+    if (oat::config::getNumericValue<int>(vm, config_table, "dilate", dilate, 0))
+        set_dilate_size(dilate);
+
+    // Min/max object area
+    std::vector<double> area;
+    if (oat::config::getArray<double, 2>(vm, config_table, "area", area)) {
+        
+        min_object_area_ = area[0];
+        max_object_area_ = area[1];
+
+        // Limitation of cv::highGUI
+        dummy0_ = min_object_area_;
+        dummy1_ = max_object_area_;
+
+        if (min_object_area_ >= max_object_area_)
+           throw std::runtime_error("Max area should be larger than min area.");
+    }
+
+    // Tuning GUI
+    oat::config::getValue<bool>(vm, config_table, "tune", tuning_on_);
+}
+
 void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
 
     // Transform frame to HSV
@@ -80,90 +183,6 @@ void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
     // Use the GUI tuner if requested
     if (tuning_on_)
         tune(frame, position);
-}
-
-void HSVDetector::configure(const std::string &config_file,
-                            const std::string &config_key) {
-
-    // Available options
-    std::vector<std::string> options {"erode",
-                                      "dilate",
-                                      "min_area",
-                                      "max_area",
-                                      "h_thresholds",
-                                      "s_thresholds",
-                                      "v_thresholds",
-                                      "tune" };
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-   auto config = cpptoml::parse_file(config_file);
-
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        // Erode
-        {
-            int64_t val;
-            oat::config::getValue(this_config, "erode", val, (int64_t)0);
-            set_erode_size(val);
-
-        }
-
-        // Dilate
-        {
-            int64_t val;
-            oat::config::getValue(this_config, "dilate", val, (int64_t)0);
-            set_dilate_size(val);
-        }
-
-        // Minimum object area
-        oat::config::getValue(this_config, "min_area", min_object_area_, 0.0);
-
-        // Maximum object area
-        oat::config::getValue(this_config, "max_area", max_object_area_, 0.0);
-
-        // HSV thresholds
-        oat::config::Table t;
-        if (oat::config::getTable(this_config, "h_thresholds", t)) {
-
-            int64_t val;
-            oat::config::getValue(t, "min", val, (int64_t)0, (int64_t)256, true);
-            h_min_ = val;
-            oat::config::getValue(t, "max", val, (int64_t)0, (int64_t)256, true);
-            h_max_ = val;
-        }
-
-        if (oat::config::getTable(this_config, "s_thresholds", t)) {
-
-            int64_t val;
-            oat::config::getValue(t, "min", val, (int64_t)0, (int64_t)256, true);
-            s_min_ = val;
-            oat::config::getValue(t, "max", val, (int64_t)0, (int64_t)256, true);
-            s_max_ = val;
-        }
-
-        if (oat::config::getTable(this_config, "v_thresholds", t)) {
-
-            int64_t val;
-            oat::config::getValue(t, "min", val, (int64_t)0, (int64_t)256, true);
-            v_min_ = val;
-            oat::config::getValue(t, "max", val, (int64_t)0, (int64_t)256, true);
-            v_max_ = val;
-        }
-
-        // Tuning
-        oat::config::getValue(this_config, "tune", tuning_on_);
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
 }
 
 void HSVDetector::tune(cv::Mat &frame, const oat::Position2D &position) {

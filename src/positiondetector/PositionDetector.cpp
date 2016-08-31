@@ -23,7 +23,6 @@
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/SharedFrameHeader.h"
 
 #include "PositionDetector.h"
 
@@ -36,6 +35,16 @@ PositionDetector::PositionDetector(const std::string &frame_source_address,
 , position_sink_address_(position_sink_address)
 {
   // Nothing
+}
+
+void PositionDetector::appendOptions(po::options_description &opts) {
+
+    // Common program options
+    opts.add_options()
+        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+        "Configuration file/key pair.\n"
+        "e.g. 'config.toml mykey'")
+        ;
 }
 
 void PositionDetector::connectToNode() {
