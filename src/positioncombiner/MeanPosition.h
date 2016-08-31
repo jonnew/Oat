@@ -29,23 +29,15 @@ namespace oat {
 
 /**
  * A mean position combiner.
+ * A mean position combiner to generate a mean position from 2 or more
+ * source positions. Can be used to generate the mean position heading
+ * using a specified anchor position as a reference.
  */
 class MeanPosition : public PositionCombiner {
 public:
 
-    /**
-     * A mean position combiner.
-     * A mean position combiner to generate a mean position from 2 or more
-     * source positions. Can be used to generate the mean position heading
-     * using a specified anchor position as a reference.
-     * @param position_source_addresses A vector of position SOURCE addresses
-     * @param position_sink_address Combined position SINK address
-     */
-    MeanPosition(const std::vector<std::string> &position_source_addresses,
-                 const std::string &position_sink_address);
-
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
 private:
 
@@ -61,9 +53,8 @@ private:
     bool generate_heading_ {false};
 
     /// SOURCE position to be used ad an anchor when calculating heading
-    int64_t heading_anchor_idx_ {0};
+    int heading_anchor_idx_ {0};
 };
-
 
 }      /* namespace oat */
 #endif /* OAT_MEANPOSITION_H */

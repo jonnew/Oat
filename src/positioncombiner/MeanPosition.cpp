@@ -29,43 +29,45 @@
 
 namespace oat {
 
-MeanPosition::MeanPosition(const std::vector<std::string> &position_source_addresses,
-                           const std::string &position_sink_address) :
-  PositionCombiner(position_source_addresses, position_sink_address)
-{
-    // Nothing
+void MeanPosition::appendOptions(po::options_description &opts) {
+
+    // Accepts a config file and sources/sinks
+    // TODO: Code smell -- this is required in order for specializations to
+    // function at runtime...
+    PositionCombiner::appendOptions(opts);
+
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("heading-anchor,h", po::value<int>(),
+         "Index of the SOURCE position to use as an anchor when calculating "
+         "object heading. In this case the heading equals the mean directional "
+         "vector between this anchor position and all other SOURCE positions. If "
+         "unspecified, the heading is not calculated.")
+        ;
+
+    opts.add(local_opts);
+
+    // Populate valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
 }
 
-void MeanPosition::configure(const std::string& config_file, const std::string& config_key) {
+void MeanPosition::configure(const po::variables_map &vm) {
 
-    // Available options
-    const std::vector<std::string> options {"heading_anchor"};
+    // Setup sources and sink
+    // TODO: Code smell -- this is required in order for specializations to
+    // function at runtime...
+    PositionCombiner::configure(vm);
 
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    //oat::config::checkKeys(config_keys_, config_table);
 
-    // See if a configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        // Heading anchor
-        if (oat::config::getValue(this_config, "heading_anchor",
-                heading_anchor_idx_,
-                static_cast<int64_t>(0),
-                static_cast<int64_t>(num_sources() - 1))) {
-
-            generate_heading_ = true;
-        }
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
+    // Adaptation coefficient
+    generate_heading_ = oat::config::getNumericValue<int>(
+        vm, config_table, "heading-anchor", heading_anchor_idx_, 0, num_sources() - 1
+    );
 }
 
 void MeanPosition::combine(const std::vector<oat::Position2D> &sources,

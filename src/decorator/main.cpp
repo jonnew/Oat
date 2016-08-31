@@ -116,7 +116,6 @@ int main(int argc, char *argv[]) {
         // Visible options for help message
         visible_options.add(oat::config::ComponentInfo::instance()->get());
 
-
         po::options_description options;
         options.add(positional_opt_desc)
                .add(oat::config::ComponentInfo::instance()->get());

@@ -7,23 +7,38 @@
 # ```
 
 [bsub]
-background = "background.png"       # Path to static background image
-adaption-coeff = 0.0                # Coefficient specifying how quickly the background image is updated using new frames
-                                    # 0.0 - No background image update
-                                    # 1.0 - Replace background with each new frame
+background = "background.png" # Path to background image used for background
+                              # subtraction
+adaption-coeff = 0.0          # Scalar value, 0 to 1.0, specifying how
+                              # quickly the new frames are used to update the
+                              # backgound image. Default is 0, specifying no
+                              # adaptation and a static background image that
+                              # is never updated.
+                              # 0.0 - No background image update
+                              # 1.0 - Replace background with each new frame
+
 [mask]
-mask = "mask.png"                   # Path to mask image
+mask = "mask.png"             # Path to a binary image used to mask frames
+                              # SOURCE frame pixels with indices
+                              # corresponding to non-zero value pixels in the mask
+                              # image will be unaffected. Others will be set to zero.
+                              # This image must have the same dimensions as frames
+                              # from SOURCE.
 
 [mog]
-learning_coeff = 0.0                # Learning coefficient to update model of image background
-                                    # 0.0 - No update after initial model formation
-                                    # 1.0 - Replace model on each new frame
+adaption-coeff = 0.0          # Value, 0 to 1.0, specifying how quickly the
+                              # statistical model of the background image
+                              # should be updated. Default is 0, specifying
+                              # no adaptation.
 
 [undistort]  # NOTE: Use oat-calibrate to generate these parameters
-camera-model = 0                    # Camera model to use.
-                                    # 0 - Pinhole
-                                    # 1 - Fisheye
+
+# Five to eight float array, [x,x,x,x,x,...], specifying lens
+# distortion coefficients.
 distortion-coeffs = [-53.7430, 20443.3, 0.437918, -0.178999, 51.4270]
+
+#Nine element float array, [x,x,x,x,x,x,x,x,x], specifying the 3x3 camera matrix
+#for your imaging setup.
 camera-matrix = [7473.00, 0.00000, 408.433,
                  0.00000, 8828.00, 260.437,
                  0.00000, 0.00000, 1.00000]

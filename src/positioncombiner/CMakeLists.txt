@@ -9,7 +9,9 @@ set (oat-posicom_SOURCE
 
 # Target
 add_executable (oat-posicom ${oat-posicom_SOURCE})
-target_link_libraries (oat-posicom ${OatCommon_LIBS})
+target_link_libraries (oat-posicom
+                       oatutility
+                       ${OatCommon_LIBS})
 
 # Installation
 install (TARGETS oat-posicom DESTINATION ../../oat/libexec COMPONENT oat-processors)

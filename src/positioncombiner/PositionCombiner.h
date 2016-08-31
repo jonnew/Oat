@@ -25,10 +25,14 @@
 #include <vector>
 #include <utility>
 
+#include <boost/program_options.hpp>
+
 #include "../../lib/shmemdf/Helpers.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/datatypes/Position2D.h"
+
+namespace po = boost::program_options;
 
 namespace oat {
 
@@ -43,13 +47,16 @@ public:
     using pvec_size_t = oat::NamedSourceList<oat::Position2D>::size_type;
 
     /**
-     * Abstract position combiner.
-     * All concrete position combiner types implement this ABC.
-     * @param position_source_addresses A vector of position SOURCE addresses
-     * @param position_sink_address Combined position SINK address
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
      */
-    PositionCombiner(const std::vector<std::string> &position_source_addresses,
-                     const std::string &position_sink_address);
+    virtual void appendOptions(po::options_description &opts);
+
+    /**
+     * @brief Configure component parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    virtual void configure(const po::variables_map &vm);
 
     /**
      * Position combiner SOURCEs must be able to connect to a NODEs from
@@ -67,22 +74,17 @@ public:
 
     std::string name(void) const { return name_; }
 
-    /**
-     * Configure position combiner parameters.
-     * @param config_file configuration file path
-     * @param config_key configuration key
-     */
-    virtual void configure(const std::string &config_file,
-                           const std::string &config_key) = 0;
-
 protected:
+
+    // List of allowed configuration options
+    std::vector<std::string> config_keys_;
 
     /**
      * Perform position combination.
      * @param sources SOURCE position servers
      * @return combined position
      */
-    virtual void combine(const std::vector<oat::Position2D>& source_positions,
+    virtual void combine(const std::vector<oat::Position2D> &source_positions,
                          oat::Position2D &combined_position) = 0;
 
     /**

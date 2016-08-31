@@ -34,14 +34,31 @@
 
 namespace oat {
 
-PositionCombiner::PositionCombiner(
-                        const std::vector<std::string> &position_source_addresses,
-                        const std::string &position_sink_address) :
-  name_("posicom[" + position_source_addresses[0] + "...->" + position_sink_address + "]")
-, position_sink_address_(position_sink_address)
-{
+void PositionCombiner::appendOptions(po::options_description &opts) {
 
-    for (auto &addr : position_source_addresses) {
+    // Common program options
+    opts.add_options()
+        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+        "Configuration file/key pair.\n"
+        "e.g. 'config.toml mykey'")
+        ;
+}
+
+void PositionCombiner::configure(const po::variables_map &vm) {
+
+    // Pull the sources and sink out as positional options
+    auto sources = vm["sources-and-sink"].as< std::vector<std::string> >();
+
+    if (sources.size() < 3)
+        throw std::runtime_error("At least two SOURCES and a SINK must be specified.");
+
+    // Last positional argument is the sink.
+    auto sink_addr = sources.back();
+    sources.pop_back();
+
+    name_ = "posicom[" + sources[0] + "...->" + sink_addr+ "]";
+
+    for (auto &addr : sources) {
 
         oat::Position2D pos(addr);
         positions_.push_back(std::move(pos));

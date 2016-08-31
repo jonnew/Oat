@@ -7,17 +7,17 @@
 # ```
 
 [hsv]
-tune = true                             # Provide sliders for tuning hsv parameters
-erode = 1                               # Pixels, candidate object erosion kernel size
-dilate = 7                              # Pixels, candidate object dilation kernel size
-min_area = 0.0                          # Pixels^2, minimum object area
-max_area = 5000.0                       # Pixels^2, maximum object area
-h_thresholds = {min = 030, max = 080}   # Hue pass band
-s_thresholds = {min = 140, max = 250}   # Saturation pass band
-v_thresholds = {min = 000, max = 070}   # Value pass band
+tune = true                 # Provide sliders for tuning hsv parameters
+erode = 1                   # Pixels, candidate object erosion kernel size
+dilate = 7                  # Pixels, candidate object dilation kernel size
+min_area = 0.0              # Pixels^2, minimum object area
+max_area = 5000.0           # Pixels^2, maximum object area
+h_thresholds = [030, 080]   # Hue pass band
+s_thresholds = [140, 250]   # Saturation pass band
+v_thresholds = [000, 070]   # Value pass band
 
 [diff]
-tune = true                             # Provide sliders for tuning diff parameters
-blur = 10 				                # Pixels, blurring kernel size (normalized box filter)
-diff_threshold = 20 			        # Intensity difference threshold
+tune = true                 # Provide sliders for tuning diff parameters
+blur = 10 				    # Pixels, blurring kernel size (normalized box filter)
+diff_threshold = 20 		# Intensity difference threshold
 

@@ -9,27 +9,24 @@
 [gige]
 index = 1               # Index of camera on the bus (there can be more than one)
 fps = 30.0              # Frames per second
-#exposure = 0.0         # Automatically adjust shutter and gain to achieve given exposure (EV)
 shutter = 3.0           # Shutter time (ms; ignored if exposure on)
 gain = 10.0             # Sensor gain(dB; ignored if exposure on)
-white_bal = {red = 500, blue = 800} # White balance (0-1000; if note specified, defaults to "off")
-# Region of interest (pixels) 
-# NOTE: I cannot find this documented anywhere, but it seems that these need to
-# be even numbers!                                                                                 
-roi = [0, 0, 100, 100]  # Region of interest ([x0, y0, w, h], pixels)
-x_bin = 2               # On-camera x-dimension pixel binning (pixels; if note specified, defaults to "off")
-y_bin = 2               # On-camera y-dimension pixel binning (pixels; if note specified, defaults to "off")
-trigger_on = false      # If false, free run at fps or maximum rate if that is not specified
-trigger_rising = true   # Rising edge active if true. Falling edge active if false.
-trigger_mode = 14       # FPGA implmented trigger mode
-                        #   14 = Overlapped Exposure/Readout Mode (see Camera manual)
+white-bal = [500, 800]  # White balance, [red, blue], specified as 0-1000.
+roi = [0, 0, 100, 100]  # Region of interest ([x0, y0, w, h], pixels). These numbers must be even.
+bin = [2, 2]            # On-camera pixel binning ([x, y], pixels. Consult
+                        # camera's technical reference for supported pixel binning modes.
+trigger-rising = true   # Rising edge active if true. Falling edge active if false.
+trigger-mode = 14       # FPGA implmented trigger mode
+                        #  -1  = Free running capture without external trigger
                         #   1  = Standard trigger
                         #   7  = Software trigger
-trigger_pin = 0         # GPIO pin that trigger will be sent to
-enforce_fps = false     # Ensure that frames are produced at the fps setting by retransmitting frames 
+                        #   14 = Overlapped Exposure/Readout Mode (see Camera manual)
+trigger-pin = 0         # GPIO pin that trigger will be sent to
+enforce-fps = false     # Ensure that frames are produced at the fps setting by retransmitting frames
                         # if the requested period is exceeded. This is needed in the case of an external
                         # trigger because PG cameras sometimes just ignore them. I have opened a support
                         # ticket on this, but PG has no solution yet.
+shutter-pin = 1         # Pin to use for shutter output
 
 [file]
 fps = 100.0             # Hz
