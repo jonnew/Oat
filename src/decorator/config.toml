@@ -1,0 +1,15 @@
+# Example configuration file for the decorate component
+# To use them:
+#
+# ``` bash
+# oat decorate SOURCE SINK -c config.toml dec
+# ```
+
+[dec]
+timestamp = true   # Write the current date and time on each frame.
+sample = true      # Write the frame sample number on each frame.
+sample-code = true # Write the binary encoded sample on the corner
+                   # of each frame.
+region = true      # Write region information on each frame if 
+                   # there is a position stream that contains it.
+history = true     # Display position history.
