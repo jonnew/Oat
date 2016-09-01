@@ -22,9 +22,13 @@
 
 #include <string>
 
+#include <boost/program_options.hpp>
+
+#include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
-#include "../../lib/datatypes/Position2D.h"
+
+namespace po = boost::program_options;
 
 namespace oat {
 
@@ -48,6 +52,18 @@ public:
     virtual ~PositionFilter() { }
 
     /**
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
+     */
+    virtual void appendOptions(po::options_description &opts);
+
+    /**
+     * @brief Configure component parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    virtual void configure(const po::variables_map &vm) = 0;
+
+    /**
      * PositionFilters must be able to connect to a Source and Sink
      * Nodes in shared memory
      */
@@ -60,18 +76,13 @@ public:
      */
     bool process(void);
 
-    /**
-     * Configure position filter parameters.
-     * @param config_file configuration file path
-     * @param config_key configuration key
-     */
-    virtual void configure(const std::string &config_file,
-                           const std::string &config_key) = 0;
-
     // Accessors
     std::string name(void) const { return name_; }
 
 protected:
+
+    // List of allowed configuration options    
+    std::vector<std::string> config_keys_;
 
     /**
      * Perform position filtering.
@@ -101,4 +112,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_POSITIONFILTER_H */
-

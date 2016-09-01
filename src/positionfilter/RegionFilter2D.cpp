@@ -40,62 +40,88 @@ RegionFilter2D::RegionFilter2D(const std::string &position_source_address,
 
 RegionFilter2D::~RegionFilter2D() {
 
-    for (auto &value : region_contours)
-        delete value;
+    for (auto &value : region_contours) {delete value;}
 }
 
-void RegionFilter2D::configure(const std::string &config_file,
-                               const std::string &config_key) {
 
+void RegionFilter2D::appendOptions(po::options_description &opts) {
 
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
+    // Accepts a config file
+    PositionFilter::appendOptions(opts);
 
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("<regions>", po::value<std::string>(),
+         "Supplied via config file only.\n"
+         "Regions contours are specified as n-point matrices, [[x0, y0],[x1, "
+         "y1],...,[xn, yn]], which define the vertices of a polygon:\n\n"
+         "  <region>=[[+float, +float],[+float, +float],...,[+float, +float]]\n\n"
+         "The name of the contour is used as the region label. For example,"
+         "here is an octagonal region called CN and a tetragonal region called "
+         "R0:\n\n"
+         "  CN = \t[[336.00, 272.50],"
+         "       \t [290.00, 310.00],"
+         "       \t [289.00, 369.50],"
+         "       \t [332.67, 417.33],"
+         "       \t [389.33, 413.33],"
+         "       \t [430.00, 375.33],"
+         "       \t [433.33, 319.33],"
+         "       \t [395.00, 272.00]]\n\n"
+         "  R0 = \t[[654.00, 380.00],"
+         "       \t [717.33, 386.67],"
+         "       \t [714.00, 316.67],"
+         "       \t [655.33, 319.33]]")
+        ;
 
-        // The config should be an table of arrays.
-        // Each key specifies the region ID and its value specifies an array
-        // defining a vector of 2D points.
+    opts.add(local_opts);
 
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
+}
 
-        // Iterate through each region definition
-        auto it = this_config->begin();
-        while (it != this_config->end()) {
+void RegionFilter2D::configure(const po::variables_map &vm) {
 
-            oat::config::Array region_array;
-            oat::config::getArray(this_config, it->first, region_array);
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
 
-            // Push the name of this region onto the id list
-            region_ids.push_back(it->first);
-            region_contours.push_back(new std::vector<cv::Point>());
+    // The config should be an table of arrays.
+    // Each key specifies the region ID and its value specifies an array
+    // defining a vector of 2D points.
 
-            auto region = region_array->nested_array();
-            auto reg_it = region.begin();
+    // Iterate through each region definition
+    auto it = config_table->begin();
 
-            while (reg_it != region.end()) {
+    while (it != config_table->end()) {
 
-                auto point = (**reg_it).array_of<double>();
+        oat::config::Array region_array;
+        oat::config::getArray(config_table, it->first, region_array);
 
-                if (point.size() != 2) {
-                    throw std::runtime_error(
-                         oat::configValueError(
-                         it->first,
-                         config_key,
-                         config_file,
-                         "must be a nested, Nx2 TOML array of doubles to specify a region contour")
-                         );
-                }
+        // Push the name of this region onto the id list
+        region_ids.push_back(it->first);
+        region_contours.push_back(new std::vector<cv::Point>());
 
-                auto p = cv::Point2d(point[0]->get(), point[1]->get());
-                region_contours.back()->push_back(p);
-                reg_it++;
+        auto region = region_array->nested_array();
+        auto reg_it = region.begin();
+
+        while (reg_it != region.end()) {
+
+            auto point = (**reg_it).array_of<double>();
+
+            if (point.size() != 2) {
+                throw std::runtime_error("Each region must be a nested, Nx2"
+                                         "TOML array of doubles to specify a "
+                                         "polygon contour");
             }
-            it++;
+
+            auto p = cv::Point2d(point[0]->get(), point[1]->get());
+            region_contours.back()->push_back(p);
+            reg_it++;
         }
+        it++;
+    }
 
 //#ifndef NDEBUG
 //        //check the result
@@ -107,9 +133,6 @@ void RegionFilter2D::configure(const std::string &config_file,
 //            }
 //        }
 //#endif
-    } else {
-         throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
 }
 
 

@@ -34,6 +34,49 @@ PositionFilter(position_source_address, position_sink_address)
     // Nothing
 }
 
+void HomographyTransform2D::appendOptions(po::options_description &opts) {
+
+    // Accepts a config file
+    PositionFilter::appendOptions(opts);
+
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("homography,H", po::value<std::string>(),
+         "A nine-element array of floats, [h11,h12,...,h33], specifying a "
+         "homography matrix for 2D position. Generally produced by "
+         "oat-calibrate homography.")
+        ;
+
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
+}
+
+void HomographyTransform2D::configure(const po::variables_map &vm) {
+
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+    
+    // Homography
+    std::vector<double> H;
+    if (oat::config::getArray<double, 9>(vm, config_table, "homography", H)) {
+
+        homography_(0, 0) = H[0];
+        homography_(0, 1) = H[1];
+        homography_(0, 2) = H[2];
+        homography_(1, 0) = H[3];
+        homography_(1, 1) = H[4];
+        homography_(1, 2) = H[5];
+        homography_(2, 0) = H[6];
+        homography_(2, 1) = H[7];
+        homography_(2, 2) = H[8];
+    }
+}
+
 void HomographyTransform2D::filter(oat::Position2D& position) {
 
     // TODO: If the homography_is not valid, I should warn the user...
@@ -78,46 +121,5 @@ void HomographyTransform2D::filter(oat::Position2D& position) {
     }
 }
 
-void HomographyTransform2D::configure(const std::string &config_file,
-                                      const std::string &config_key) {
-
-    // Available options
-    std::vector<std::string> options {"homography"};
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
-
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        // Homography matrix
-        oat::config::Array homo_array;
-        if (oat::config::getArray(this_config, "homography", homo_array, 9, true)) {
-
-            auto homo_vec = homo_array->array_of<double>();
-
-            homography_(0, 0) = homo_vec[0]->get();
-            homography_(0, 1) = homo_vec[1]->get();
-            homography_(0, 2) = homo_vec[2]->get();
-            homography_(1, 0) = homo_vec[3]->get();
-            homography_(1, 1) = homo_vec[4]->get();
-            homography_(1, 2) = homo_vec[5]->get();
-            homography_(2, 0) = homo_vec[6]->get();
-            homography_(2, 1) = homo_vec[7]->get();
-            homography_(2, 2) = homo_vec[8]->get();
-
-            homography_valid_ = true;
-        }
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
-}
 
 } /* namespace oat */

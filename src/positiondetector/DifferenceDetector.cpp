@@ -57,7 +57,8 @@ void DifferenceDetector::appendOptions(po::options_description &opts) {
          "Array of floats, [min,max], specifying the minimum and maximum "
          "object contour area in pixels^2.")
         ("tune,t",
-         "If true, provide a GUI with sliders for tuning detection parameters.")
+         "If true, provide a GUI with sliders for tuning detection "
+         "parameters.")
         ;
 
     opts.add(local_opts);

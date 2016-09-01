@@ -20,10 +20,10 @@
 #ifndef OAT_KALMANFILTER2D_H
 #define	OAT_KALMANFILTER2D_H
 
+#include "PositionFilter.h"
+
 #include <string>
 #include <opencv2/opencv.hpp>
-
-#include "PositionFilter.h"
 
 namespace oat {
 
@@ -48,8 +48,8 @@ public:
     KalmanFilter2D(const std::string &position_source_address,
                    const std::string& position_sink_address);
 
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
 private:
 
@@ -96,4 +96,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_KALMANFILTER2D_H */
-

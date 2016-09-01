@@ -343,6 +343,32 @@ getArray(const po::variables_map &vm,
     return rc;
 }
 
+// TOML array from table, any size
+inline bool 
+getArray(const OptionTable table, 
+         const std::string& key, 
+         Array& array_out, 
+         bool required = false) {
+
+    // If the key is in the table,
+    if (table->contains(key)) {
+
+        // Make sure the key points to a value (and not a table, array, or table-array)
+        if (table->get(key)->is_array()) {
+
+            array_out = table->get_array(key);
+            return true;
+
+        } else {
+            throw (std::runtime_error("'" + key + "' must be a TOML array.\n"));
+        }
+    } else if (required) {
+         throw (std::runtime_error("Required configuration value '" + key + "' was not specified.\n"));
+    } else {
+        return false;
+    }
+}
+
 }      /* namespace config */
 }      /* namespace oat */
 #endif /* OAT_TOMLSANATIZE_H */

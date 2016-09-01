@@ -20,11 +20,11 @@
 #ifndef OAT_REGIONFILTER2D_H
 #define	OAT_REGIONFILTER2D_H
 
+#include "PositionFilter.h"
+
 #include <string>
 #include <vector>
 #include <opencv2/core.hpp>
-
-#include "PositionFilter.h"
 
 namespace oat {
 
@@ -51,8 +51,8 @@ public:
 
     ~RegionFilter2D();
 
-    void configure(const std::string &config_file,
-                   const std::string &config_key) override;
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
 private:
 
@@ -71,4 +71,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_REGIONFILTER2D_H */
-

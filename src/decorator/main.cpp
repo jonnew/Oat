@@ -210,9 +210,7 @@ int main(int argc, char *argv[]) {
         printUsage(visible_options);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(comp_name,"Invalid TOML syntax\n")
-                  << oat::whoError(comp_name, ex.what())
-                  << std::endl;
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {

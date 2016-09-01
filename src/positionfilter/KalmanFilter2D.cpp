@@ -37,55 +37,70 @@ KalmanFilter2D::KalmanFilter2D(const std::string& position_source_address,
     sig_measure_noise_tune_ = static_cast<int>(sig_measure_noise_);
 }
 
-void KalmanFilter2D::configure(const std::string &config_file,
-                               const std::string &config_key) {
+void KalmanFilter2D::appendOptions(po::options_description &opts) {
 
-    // Available options
-    std::vector<std::string> options {"dt",
-                                      "timeout",
-                                      "sigma_accel",
-                                      "sigma_noise",
-                                      "tune" };
+    // Accepts a config file
+    PositionFilter::appendOptions(opts);
 
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("dt", po::value<double>(), // TODO: should be automatic?
+         "Kalman filter time step in seconds.")
+        ("timeout,T", po::value<double>(),
+         "Seconds to perform position estimation detection with lack of "
+         "position measure. Defaults to 0.")
+        ("sigma-accel,a", po::value<double>(), // TODO: Should be specified in each dimension
+         "Standard deviation of normally distributed, random accelerations used "
+         "by the internal model of object motion (position units/s2; e.g. "
+         "pixels/s2).")
+        ("sigma-noise,n", po::value<double>(), // TODO: Should be specified in each dimension
+         "Standard deviation of randomly distributed position measurement noise "
+         "(position units; e.g. pixels).")
+        ("tune,t",
+         "If true, provide a GUI with sliders for tuning detection "
+         "parameters.")
+        ;
 
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
+    opts.add(local_opts);
 
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
+    // Return valid keys
+    for (auto &o: local_opts.options())
+        config_keys_.push_back(o->long_name());
+}
 
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
+void KalmanFilter2D::configure(const po::variables_map &vm) {
 
-        // Time step
-        oat::config::getValue(this_config, "dt", dt_, 0.0);
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
 
-        // Occlusion timeout
-        double timeout_in_sec {0};
-        if (oat::config::getValue(this_config, "timeout", timeout_in_sec, 0.0)) {
-            not_found_count_threshold_ = static_cast<int>(timeout_in_sec / dt_);
-        }
+    // Time step
+    oat::config::getNumericValue<double>(
+        vm, config_table, "dt", dt_, 0
+    );
 
-        // Acceleration stdev
-        oat::config::getValue(this_config, "sigma_accel", sig_accel_, 0.0);
+    // Blind filter timeout
+    double t;
+    if (oat::config::getNumericValue<double>(vm, config_table, "timeout", t, 0))
+        not_found_count_threshold_ = static_cast<int>(t / dt_);
 
-        // Measurement noise stdev
-        oat::config::getValue(this_config, "sigma_noise", sig_measure_noise_, 0.0);
+    // Sigma accel
+    oat::config::getNumericValue<double>(
+        vm, config_table, "sigma-accel", sig_accel_, 0
+    );
+    // Sigma noise
+    oat::config::getNumericValue<double>(
+        vm, config_table, "sigma-noise", sig_measure_noise_, 0
+    );
 
-        // GUI for tuning
-        bool config_tune {false};
-        oat::config::getValue(this_config, "tune", config_tune);
+    // Tuning GUI
+    bool tune;
+    oat::config::getValue<bool>(vm, config_table, "tune", tune);
 
-        if (config_tune) {
-            tuning_on_ = true;
-            createTuningWindows();
-        }
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
+    if (tune) {
+        tuning_on_ = true;
+        createTuningWindows();
     }
 }
 

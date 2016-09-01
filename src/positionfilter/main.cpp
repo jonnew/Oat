@@ -23,38 +23,67 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include <cpptoml.h>
 #include <boost/program_options.hpp>
 #include <boost/interprocess/exceptions.hpp>
-#include <cpptoml.h>
 
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/ProgramOptions.h"
 
 #include "KalmanFilter2D.h"
 #include "HomographyTransform2D.h"
 #include "RegionFilter2D.h"
+
+#define REQ_POSITIONAL_ARGS 3
 
 namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
 
-void printUsage(po::options_description options) {
-    std::cout << "Usage: posifilt [INFO]\n"
-              << "   or: posifilt TYPE SOURCE SINK [CONFIGURATION]\n"
-              << "Filter positions from SOURCE and published filtered positions "
-              << "to SINK.\n\n"
-              << "TYPE\n"
-              << "  kalman: Kalman filter\n"
-              << "  homography: homography transform\n"
-              << "  region: position region annotation\n\n"
-              << "SOURCE:\n"
-              << "  User-supplied name of the memory segment to receive "
-              << "positions from (e.g. rpos).\n\n"
-              << "SINK:\n"
-              << "  User-supplied name of the memory segment to publish "
-              << "positions to (e.g. rpos).\n\n"
-              << options << "\n";
+const char usage_type[] =
+    "TYPE\n"
+    "  kalman: Kalman filter\n"
+    "  homography: homography transform\n"
+    "  region: position region annotation";
+
+const char usage_io[] =
+    "SOURCE:\n"
+    "  User-supplied name of the memory segment to receive positions "
+    "from (e.g. pos).\n\n"
+    "SINK:\n"
+    "  User-supplied name of the memory segment to publish positions "
+    "to (e.g. filt).";
+
+const char purpose[] =
+    "Filter positions from SOURCE and publish filtered positions "
+    "to SINK.";
+
+void printUsage(const po::options_description &options,
+                const std::string &type) {
+
+    if (type.empty()) {
+        std::cout <<
+        "Usage: posifilt [INFO]\n"
+        "   or: posifilt TYPE SOURCE SINK [CONFIGURATION]\n";
+
+        std::cout << purpose << "\n";
+        std::cout << options << "\n";
+        std::cout << usage_type << "\n\n";
+        std::cout << usage_io << std::endl;
+
+    } else {
+        std::cout <<
+        "Usage: posifilt " << type << " [INFO]\n"
+        "   or: posifilt " << type << " SOURCE SINK [CONFIGURATION]\n";
+
+        std::cout << purpose << "\n\n";
+        std::cout << usage_io << "\n";
+        std::cout << options;
+    }
 }
+
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
 void sigHandler(int) {
@@ -68,9 +97,8 @@ void run(std::shared_ptr<oat::PositionFilter> filter) {
 
         filter->connectToNode();
 
-        while (!quit && !source_eof) {
+        while (!quit && !source_eof)
             source_eof = filter->process();
-        }
 
     } catch (const boost::interprocess::interprocess_exception &ex) {
 
@@ -85,189 +113,189 @@ int main(int argc, char *argv[]) {
 
     std::signal(SIGINT, sigHandler);
 
-    // The image source to which the viewer will be attached
+    // Results of command line input
     std::string type;
     std::string source;
     std::string sink;
-    std::vector<std::string> config_fk;
-    bool config_used = false;
-    po::options_description visible_options("OPTIONS");
 
+    // Component specializations
     std::unordered_map<std::string, char> type_hash;
     type_hash["kalman"] = 'a';
     type_hash["homography"] = 'b';
     type_hash["region"] = 'c';
 
-    try {
-
-        po::options_description options("INFO");
-        options.add_options()
-                ("help", "Produce help message.")
-                ("version,v", "Print version information.")
-                ;
-
-        po::options_description config("CONFIGURATION");
-        config.add_options()
-                ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-                "Configuration file/key pair.")
-                ;
-
-        po::options_description hidden("HIDDEN OPTIONS");
-        hidden.add_options()
-                ("type", po::value<std::string>(&type), "Filter TYPE.")
-                ("position-source", po::value<std::string>(&source),
-                "The name of the server that supplies object position information."
-                "The server must be of type SMServer<Position>\n")
-                ("sink", po::value<std::string>(&sink),
-                "The name of the sink to which filtered positions will be published."
-                "The server must be of type SMServer<Position>\n")
-                ;
-
-        po::positional_options_description positional_options;
-        positional_options.add("type", 1);
-        positional_options.add("position-source", 1);
-        positional_options.add("sink", 1);
-
-        visible_options.add(options).add(config);
-
-        po::options_description all_options("ALL OPTIONS");
-        all_options.add(options).add(config).add(hidden);
-
-        po::variables_map variable_map;
-        po::store(po::command_line_parser(argc, argv)
-                .options(all_options)
-                .positional(positional_options)
-                .run(),
-                variable_map);
-        po::notify(variable_map);
-
-        // Use the parsed options
-        if (variable_map.count("help")) {
-            printUsage(visible_options);
-            return 0;
-        }
-
-        if (variable_map.count("version")) {
-            std::cout << "Oat Position Filter version "
-                      << Oat_VERSION_MAJOR
-                      << "."
-                      << Oat_VERSION_MINOR
-                      << "\n";
-            std::cout << "Written by Jonathan P. Newman in the MWL@MIT.\n";
-            std::cout << "Licensed under the GPL3.0.\n";
-            return 0;
-        }
-
-        if (!variable_map.count("type")) {
-            printUsage(visible_options);
-            std::cout <<  oat::Error("A TYPE must be specified.\n");
-            return -1;
-        }
-
-        if (!variable_map.count("position-source")) {
-            printUsage(visible_options);
-            std::cout <<  oat::Error("A position SOURCE must be specified.\n");
-            return -1;
-        }
-
-        if (!variable_map.count("sink")) {
-            printUsage(visible_options);
-            std::cout <<  oat::Error("A position SINK must be specified.\n");
-            return -1;
-        }
-
-        if (!variable_map.count("config") && type.compare("homography") == 0) {
-            printUsage(visible_options);
-            std::cerr << oat::Error("When TYPE=homography, a configuration file must be specified"
-                                    " to provide homography matrix.\n");
-            return -1;
-        }
-
-        if (!variable_map["config"].empty()) {
-
-            config_fk = variable_map["config"].as<std::vector<std::string> >();
-
-            if (config_fk.size() == 2) {
-                config_used = true;
-            } else {
-                printUsage(visible_options);
-                std::cerr << oat::Error("Configuration must be supplied as file key pair.\n");
-                return -1;
-            }
-        }
-
-    } catch (std::exception& e) {
-        std::cerr << oat::Error(e.what()) << "\n";
-        return -1;
-    } catch (...) {
-        std::cerr << oat::Error("Exception of unknown type.\n");
-        return -1;
-    }
-
-    // Create component
+    // The component itself
+    std::string comp_name = "posifilt";
     std::shared_ptr<oat::PositionFilter> filter;
 
-    // Refine component type
-    switch (type_hash[type]) {
-        case 'a':
-        {
-            filter = std::make_shared<oat::KalmanFilter2D>(source, sink);
-            break;
-        }
-        case 'b':
-        {
-            filter = std::make_shared<oat::HomographyTransform2D>(source, sink);
-            break;
-        }
-        case 'c':
-        {
-            filter = std::make_shared<oat::RegionFilter2D>(source, sink);
-            break;
-        }
-        default:
-        {
-            printUsage(visible_options);
-            std::cerr << oat::Error("Invalid TYPE specified.\n");
-            return -1;
-        }
-    }
-        
+    // Program options
+    po::options_description visible_options;
+
     try {
 
-        if (config_used)
-            filter->configure(config_fk[0], config_fk[1]);
+        // Required positional options
+        po::options_description positional_opt_desc("POSITIONAL");
+        positional_opt_desc.add_options()
+            ("type", po::value<std::string>(&type),
+             "Type of position filter to use.")
+            ("source", po::value<std::string>(&source),
+             "User-supplied name of the memory segment to receive positions.")
+            ("sink", po::value<std::string>(&sink),
+             "User-supplied name of the memory segment to publish positions.")
+            ("type-args", po::value<std::vector<std::string> >(),
+             "type-specific arguments.")
+            ;
+
+        // Required positional arguments and type-specific configuration
+        po::positional_options_description positional_options;
+        positional_options.add("type", 1);
+        positional_options.add("source", 1);
+        positional_options.add("sink", 1);
+        positional_options.add("type-args", -1);
+
+        // Visible options for help message
+        visible_options.add(oat::config::ComponentInfo::instance()->get());
+
+        // All options, including positional
+        po::options_description options;
+        options.add(positional_opt_desc)
+               .add(oat::config::ComponentInfo::instance()->get());
+
+        // Parse options, including unrecognized options which may be
+        // type-specific
+        auto parsed_opt = po::command_line_parser(argc, argv)
+            .options(options)
+            .positional(positional_options)
+            .allow_unregistered()
+            .run();
+
+        po::variables_map option_map;
+        po::store(parsed_opt, option_map);
+
+        // Check options for errors and bind options to local variables
+        po::notify(option_map);
+
+        // If a TYPE was provided, then specialize the filter and corresponding
+        // program options
+        if (option_map.count("type")) {
+
+            // Refine component type
+            switch (type_hash[type]) {
+                case 'a':
+                {
+                    filter = std::make_shared<oat::KalmanFilter2D>(source, sink);
+                    break;
+                }
+                case 'b':
+                {
+                    filter = std::make_shared<oat::HomographyTransform2D>(source, sink);
+                    break;
+                }
+                case 'c':
+                {
+                    filter = std::make_shared<oat::RegionFilter2D>(source, sink);
+                    break;
+                }
+                default:
+                {
+                    printUsage(visible_options, "");
+                    std::cerr << oat::Error("Invalid TYPE specified.\n");
+                    return -1;
+                }
+            }
+
+            // Specialize program options for the selected TYPE
+            po::options_description detail_opts {"CONFIGURATION"};
+            filter->appendOptions(detail_opts);
+            visible_options.add(detail_opts);
+            options.add(detail_opts);
+        }
+        
+        // Check INFO arguments
+        if (option_map.count("help")) {
+            printUsage(visible_options, type);
+            return 0;
+        }
+
+        if (option_map.count("version")) {
+            std::cout << oat::config::VERSION_STRING;
+            return 0;
+        }
+
+        // Check IO arguments
+        bool io_error {false};
+        std::string io_error_msg;
+
+        if (!option_map.count("type")) {
+            io_error_msg += "A TYPE must be specified.\n";
+            io_error = true;
+        }
+
+        if (!option_map.count("source")) {
+            io_error_msg += "A SOURCE must be specified.\n";
+            io_error = true;
+        }
+
+        if (!option_map.count("sink")) {
+            io_error_msg += "A SINK must be specified.\n";
+            io_error = true;
+        }
+
+        if (io_error) {
+            printUsage(visible_options, type);
+            std::cerr << oat::Error(io_error_msg);
+            return -1;
+        }
+
+        // Get specialized component name
+        comp_name = filter->name();
+
+        // Reparse specialized component options
+        auto special_opt =
+            po::collect_unrecognized(parsed_opt.options, po::include_positional);
+        special_opt.erase(special_opt.begin(),special_opt.begin() + REQ_POSITIONAL_ARGS);
+
+        po::store(po::command_line_parser(special_opt)
+                 .options(options)
+                 .run(), option_map);
+        po::notify(option_map);
+
+        filter->configure(option_map);
 
         // Tell user
-        std::cout << oat::whoMessage(filter->name(),
+        std::cout << oat::whoMessage(comp_name,
                      "Listening to source " + oat::sourceText(source) + ".\n")
-                  << oat::whoMessage(filter->name(),
+                  << oat::whoMessage(comp_name,
                      "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                  << oat::whoMessage(filter->name(),
-                     "Press CTRL+C to exit.\n");
+                  << oat::whoMessage(comp_name,
+                      "Press CTRL+C to exit.\n");
 
-        // Infinite loop until ctrl-c or server end-of-stream signal
+        // Infinite loop until ctrl-c or end of messages signal
         run(filter);
 
         // Tell user
-        std::cout << oat::whoMessage(filter->name(), "Exiting.\n");
+        std::cout << oat::whoMessage(comp_name, "Exiting.")
+                  << std::endl;
 
-        // Exit
+        // Exit success
         return 0;
 
+    } catch (const po::error &ex) {
+        printUsage(visible_options, type);
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(filter->name(),
-                     "Failed to parse configuration file " + config_fk[0]  + "\n")
-                  << oat::whoError(filter->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(filter->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(filter->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
-        std::cerr << oat::whoError(filter->name(), ex.what()) << "\n";
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
-        std::cerr << oat::whoError(filter->name(), "Unknown exception.\n");
+        std::cerr << oat::whoError(comp_name, "Unknown exception.")
+                  << std::endl;
     }
 
-    // Exit failure
+    // exit failure
     return -1;
 }

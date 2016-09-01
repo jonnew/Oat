@@ -140,15 +140,15 @@ int main(int argc, char *argv[]) {
         // Required positional options
         po::options_description positional_opt_desc("POSITIONAL");
         positional_opt_desc.add_options()
-                ("type", po::value<std::string>(&type),
-                 "Type of frame filter to use.")
-                ("source", po::value<std::string>(&source),
-                 "User-supplied name of the memory segment to receive frames.")
-                ("sink", po::value<std::string>(&sink),
-                 "User-supplied name of the memory segment to publish frames.")
-                ("type-args", po::value<std::vector<std::string> >(),
-                 "type-specific arguments.")
-                ;
+            ("type", po::value<std::string>(&type),
+             "Type of frame filter to use.")
+            ("source", po::value<std::string>(&source),
+             "User-supplied name of the memory segment to receive frames.")
+            ("sink", po::value<std::string>(&sink),
+             "User-supplied name of the memory segment to publish frames.")
+            ("type-args", po::value<std::vector<std::string> >(),
+             "type-specific arguments.")
+            ;
 
         // Required positional arguments and type-specific configuration
         po::positional_options_description positional_options;
@@ -293,9 +293,7 @@ int main(int argc, char *argv[]) {
         printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(comp_name,"Invalid TOML syntax\n")
-                  << oat::whoError(comp_name, ex.what())
-                  << std::endl;
+        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
@@ -307,6 +305,6 @@ int main(int argc, char *argv[]) {
                   << std::endl;
     }
 
-    // Exit failure
+    // exit failure
     return -1;
 }

@@ -32,6 +32,15 @@ PositionFilter::PositionFilter(const std::string &position_source_address,
   // Nothing
 }
 
+void PositionFilter::appendOptions(po::options_description &opts) {
+
+    // Common program options
+    opts.add_options()
+        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+        "Configuration file/key pair.\n"
+        "e.g. 'config.toml mykey'")
+        ;
+}
 void PositionFilter::connectToNode() {
 
     // Establish our a slot in the node 
