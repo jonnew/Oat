@@ -20,17 +20,14 @@
 #ifndef OAT_FRAME_BUFFER_H
 #define	OAT_FRAME_BUFFER_H
 
+#include "Buffer.h"
+
 #include <boost/lockfree/spsc_queue.hpp>
 
 #include "../../lib/shmemdf/SharedFrameHeader.h"
 
-#include "Buffer.h"
-
 namespace oat {
 
-/**
- * Frame buffer.
- */
 class FrameBuffer : public Buffer {
 
     using FrameParam =
@@ -41,31 +38,19 @@ class FrameBuffer : public Buffer {
 public:
 
     /**
-     * Frame buffer.
-     *
+     * @brief Frame buffer.
      * @param source_address SOURCE node address
      * @param sink_address SINK node address
      */
     FrameBuffer(const std::string &source_address,
                 const std::string &sink_address);
 
-    /**
-     * Buffers must be able to connect to SOURCE and SINK nodes in shared
-     * memory.
-     */
-    void connectToNode(void) override;
 
-    /**
-     * Obtain new frame from SOURCE and push onto FIFO.
-     * @return SOURCE end-of-stream signal. If true, this component should exit.
-     */
+    void connectToNode(void) override;
     bool push(void) override;
 
 private:
 
-    /**
-     * In response to downstream request, publish frames from FIFO to SINK.
-     */
     void pop(void) override;
 
     // Source
@@ -81,4 +66,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_FRAME_BUFFER_H */
-

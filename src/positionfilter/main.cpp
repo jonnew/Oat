@@ -24,15 +24,15 @@
 #include <unordered_map>
 #include <vector>
 
-#include <cpptoml.h>
-#include <boost/program_options.hpp>
 #include <boost/interprocess/exceptions.hpp>
+#include <boost/program_options.hpp>
+#include <cpptoml.h>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "KalmanFilter2D.h"
 #include "HomographyTransform2D.h"
+#include "KalmanFilter2D.h"
 #include "RegionFilter2D.h"
 
 #define REQ_POSITIONAL_ARGS 3

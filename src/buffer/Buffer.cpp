@@ -24,8 +24,8 @@
 namespace oat {
 
 Buffer::Buffer(const std::string &source_address,
-               const std::string &sink_address) :
-  name_("buffer[" + source_address + "->" + sink_address + "]")
+               const std::string &sink_address)
+: name_("buffer[" + source_address + "->" + sink_address + "]")
 , source_address_(source_address)
 , sink_address_(sink_address)
 {
@@ -38,6 +38,5 @@ Buffer::~Buffer()
     sink_running_ = false;
     if (sink_thread_.joinable())
         sink_thread_.join();
-}
 
 } /* namespace oat */

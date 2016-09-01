@@ -23,18 +23,18 @@
 #include <string>
 #include <unordered_map>
 
-#include <cpptoml.h>
-#include <boost/program_options.hpp>
 #include <boost/interprocess/exceptions.hpp>
+#include <boost/program_options.hpp>
+#include <cpptoml.h>
 #include <opencv2/core.hpp>
 
-#include "../../lib/utility/ProgramOptions.h"
-#include "../../lib/utility/IOFormat.h"
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/ProgramOptions.h"
 
 #include "Buffer.h"
-#include "TokenBuffer.h"
 #include "FrameBuffer.h"
+#include "TokenBuffer.h"
 
 #define REQ_POSITIONAL_ARGS 3
 
@@ -62,8 +62,8 @@ const char purpose[] =
     "Place tokens from SOURCE into a FIFO. Publish tokens in "
     "FIFO to SINK.";
 
-void printUsage(const po::options_description &options,
-                const std::string &type) {
+void printUsage(const po::options_description &options, const std::string &type)
+{
 
     if (type.empty()) {
         std::cout <<
@@ -87,12 +87,14 @@ void printUsage(const po::options_description &options,
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int) {
+void sigHandler(int)
+{
     quit = 1;
 }
 
 // Processing loop
-void run(const std::shared_ptr<oat::Buffer> buffer) {
+void run(const std::shared_ptr<oat::Buffer> buffer)
+{
 
     try {
 
@@ -110,7 +112,8 @@ void run(const std::shared_ptr<oat::Buffer> buffer) {
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
     std::signal(SIGINT, sigHandler);
 

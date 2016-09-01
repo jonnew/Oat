@@ -47,21 +47,21 @@ int main(int argc, char *argv[]) {
 
         po::options_description options("INFO");
         options.add_options()
-                ("help", "Produce help message.")
-                ("version,v", "Print version information.")
-                ;
+            ("help", "Produce help message.")
+            ("version,v", "Print version information.")
+            ;
 
         po::options_description config("CONFIGURATION");
         options.add_options()
-                ("quiet,q", "Quiet mode. Prevent output text.")
-                ("legacy,l", "Legacy mode. Append  \"_sh_mem\" to input NAMES before removing.")
-                ;
+            ("quiet,q", "Quiet mode. Prevent output text.")
+            ("legacy,l", "Legacy mode. Append  \"_sh_mem\" to input NAMES before removing.")
+            ;
 
         po::options_description hidden("HIDDEN OPTIONS");
         hidden.add_options()
-                ("names", po::value< std::vector<std::string> >(),
-                "The names of the shared memory segments to remove.")
-                ;
+            ("names", po::value< std::vector<std::string> >(),
+            "The names of the shared memory segments to remove.")
+            ;
 
         po::positional_options_description positional_options;
         positional_options.add("names", -1);
@@ -147,7 +147,6 @@ int main(int argc, char *argv[]) {
                 success = true;
             }
 
-
             if (success && !quiet)
                 std::cout << "success.\n";
             if (!success && !quiet)
@@ -158,4 +157,3 @@ int main(int argc, char *argv[]) {
     // Exit
     return 0;
 }
-

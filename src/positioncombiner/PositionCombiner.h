@@ -113,4 +113,3 @@ private:
 
 }      /* namespace oat */
 #endif	/* OAT_POSITIONCOMBINER_H */
-

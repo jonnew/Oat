@@ -17,20 +17,21 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <iostream>
-
 #include "FrameBuffer.h"
+
+#include <iostream>
 
 namespace oat {
 
 FrameBuffer::FrameBuffer(const std::string &source_address,
-                         const std::string &sink_address) :
-  Buffer(source_address, sink_address)
+                         const std::string &sink_address)
+: Buffer(source_address, sink_address)
 {
-  // Nothing
+    // Nothing
 }
 
-void FrameBuffer::connectToNode() {
+void FrameBuffer::connectToNode()
+{
 
     // Establish our a slot in the node
     source_.touch(source_address_);
@@ -49,7 +50,8 @@ void FrameBuffer::connectToNode() {
     sink_thread_ = std::thread(&FrameBuffer::pop, this);
 }
 
-bool FrameBuffer::push() {
+bool FrameBuffer::push()
+{
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -78,7 +80,8 @@ bool FrameBuffer::push() {
     return false;
 }
 
-void FrameBuffer::pop() {
+void FrameBuffer::pop()
+{
 
     while (sink_running_) {
 

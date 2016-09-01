@@ -26,14 +26,15 @@ namespace oat {
 
 template <typename T>
 TokenBuffer<T>::TokenBuffer(const std::string &source_address,
-                         const std::string &sink_address) :
-  Buffer(source_address, sink_address)
+                            const std::string &sink_address)
+: Buffer(source_address, sink_address)
 {
-  // Nothing
+    // Nothing
 }
 
 template <typename T>
-void TokenBuffer<T>::connectToNode() {
+void TokenBuffer<T>::connectToNode()
+{
 
     // Establish our a slot in the node
     source_.touch(source_address_);
@@ -49,7 +50,8 @@ void TokenBuffer<T>::connectToNode() {
 }
 
 template <typename T>
-bool TokenBuffer<T>::push() {
+bool TokenBuffer<T>::push()
+{
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -79,7 +81,8 @@ bool TokenBuffer<T>::push() {
 }
 
 template <typename T>
-void TokenBuffer<T>::pop() {
+void TokenBuffer<T>::pop()
+{
 
     while (sink_running_) {
 
