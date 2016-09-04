@@ -20,9 +20,9 @@
 #ifndef OAT_POSITIONCOUT_H
 #define	OAT_POSITIONCOUT_H
 
-#include <string>
-
 #include "PositionSocket.h"
+
+#include <string>
 
 namespace oat {
 
@@ -32,13 +32,17 @@ class Position2D;
 class PositionCout : public PositionSocket {
 
 public:
-    PositionCout(const std::string &position_source_address); 
+    PositionCout(const std::string &position_source_address);
+
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
 private:
 
-    void sendPosition(const oat::Position2D& position) override;
+    bool pretty_ {false};
+
+    void sendPosition(const oat::Position2D &position) override;
 };
 
 }      /* namespace oat */
 #endif /* OAT_POSITIONCOUT_H */
-

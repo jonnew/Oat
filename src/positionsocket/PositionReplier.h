@@ -20,10 +20,10 @@
 #ifndef OAT_POSITIONREPLIER_H
 #define OAT_POSITIONREPLIER_H
 
+#include "PositionSocket.h"
+
 #include <string>
 #include <zmq.hpp>
-
-#include "PositionSocket.h"
 
 namespace oat {
 
@@ -32,9 +32,10 @@ class Position2D;
 
 class PositionReplier : public PositionSocket {
 public:
-    PositionReplier(const std::string &position_source_address,
-                    const std::string &endpoint);
+    PositionReplier(const std::string &position_source_address);
 
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 private:
 
     // ZMQ context
@@ -48,4 +49,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_POSITIONREPLIER_H */
-

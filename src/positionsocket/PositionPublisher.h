@@ -20,10 +20,10 @@
 #ifndef OAT_POSITIONPUBLISHER_H
 #define	OAT_POSITIONPUBLISHER_H
 
+#include "PositionSocket.h"
+
 #include <string>
 #include <zmq.hpp>
-
-#include "PositionSocket.h"
 
 namespace oat {
 
@@ -31,10 +31,11 @@ namespace oat {
 class Position2D;
 
 class PositionPublisher : public PositionSocket {
-
 public:
-    PositionPublisher(const std::string &position_source_address,
-                      const std::string &endpoint);
+    PositionPublisher(const std::string &position_source_address);
+
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
 private:
 

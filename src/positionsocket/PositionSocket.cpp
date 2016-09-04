@@ -17,25 +17,35 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "PositionSocket.h"
+
 #include <string>
 
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
-
-#include "PositionSocket.h"
+#include "../../lib/shmemdf/Source.h"
 
 namespace oat {
 
-PositionSocket::PositionSocket(const std::string &position_source_address) :
-  name_("posisock[" + position_source_address + "->*]")
+PositionSocket::PositionSocket(const std::string &position_source_address)
+: name_("posisock[" + position_source_address + "->*]")
 , position_source_address_(position_source_address)
 {
     // Nothing
 }
 
-void PositionSocket::connectToNode() {
+void PositionSocket::appendOptions(po::options_description &opts)
+{
+    // Common program options
+    opts.add_options()
+        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+        "Configuration file/key pair.\n"
+        "e.g. 'config.toml mykey'")
+        ;
+}
 
+void PositionSocket::connectToNode()
+{
     // Establish our a slot in the node 
     position_source_.touch(position_source_address_);
 
@@ -43,9 +53,9 @@ void PositionSocket::connectToNode() {
     position_source_.connect();
 }
 
-bool PositionSocket::process() {
-
-     // START CRITICAL SECTION //
+bool PositionSocket::process()
+{
+    // START CRITICAL SECTION //
     ////////////////////////////
     node_state_ = position_source_.wait();
     if (node_state_ == oat::NodeState::END)

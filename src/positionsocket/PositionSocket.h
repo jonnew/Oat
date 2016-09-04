@@ -22,11 +22,14 @@
 
 #include <string>
 #include <zmq.hpp>
-#include <boost/asio.hpp>
+
+#include <boost/program_options.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
+
+namespace po = boost::program_options;
 
 namespace oat {
 
@@ -41,6 +44,18 @@ public:
     explicit PositionSocket(const std::string &position_source_address);
 
     virtual ~PositionSocket() { }
+
+    /**
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
+     */
+    virtual void appendOptions(po::options_description &opts);
+
+    /**
+     * @brief Configure component parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    virtual void configure(const po::variables_map &vm) = 0;
 
     /**
      * PositionSockets must be able to connect to a source
@@ -58,6 +73,9 @@ public:
     std::string name(void) const { return name_; }
 
 protected:
+
+    // List of allowed configuration options    
+    std::vector<std::string> config_keys_;
 
     /**
      * Serve the position via specified IO protocol.

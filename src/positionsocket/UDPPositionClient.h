@@ -20,19 +20,20 @@
 #ifndef OAT_UDPCLIENT_H
 #define	OAT_UDPCLIENT_H
 
+#include "PositionSocket.h"
+
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
-
 #include <rapidjson/rapidjson.h>
 
 #include "SocketWriteStream.h"
-#include "PositionSocket.h"
 
 namespace oat {
 
 // Forward decl.
 class Position2D;
 
+// TODO: What if user requests port less than 1000 without sudo?
 class UDPPositionClient : public PositionSocket {
 
     using UDPSocket = boost::asio::ip::udp::socket;
@@ -41,10 +42,10 @@ class UDPPositionClient : public PositionSocket {
     using SocketWriter = rapidjson::SocketWriteStream<UDPSocket, UDPEndpoint>;
 
 public:
-    // TODO: What if user requests port less than 1000 without sudo?
-    UDPPositionClient(const std::string &position_source_name,
-                      const std::string &host,
-                      const std::string &port);
+    UDPPositionClient(const std::string &position_source_name);
+
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
 private:
 

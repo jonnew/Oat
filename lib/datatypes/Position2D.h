@@ -20,12 +20,11 @@
 #ifndef OAT_POSITION2D_H
 #define	OAT_POSITION2D_H
 
+#include "Position.h"
+
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
-
 #include <rapidjson/prettywriter.h>
-
-#include "Position.h"
 
 namespace oat {
 
@@ -36,8 +35,8 @@ using UnitVector2D = cv::Point2d;
 class Position2D : public Position {
 
 public:
-    explicit Position2D(const std::string &label) :
-      Position(label)
+    explicit Position2D(const std::string &label) 
+    : Position(label)
     {
         // Nothing
     }
@@ -59,14 +58,18 @@ public:
     // transformed into other formats such as msgpack, etc, instead of doing the 
     // writing right here?
     template <typename Writer>
-    void Serialize(Writer &writer, bool verbose = false) const {
+    void Serialize(Writer &writer, bool verbose = false) const
+    {
+        writer.SetMaxDecimalPlaces(5);
+
+        writer.StartObject();
 
         // Sample number
         writer.String("tick");
-        writer.Int(sample_.count());
+        writer.Uint64(sample_.count());
 
         writer.String("usec");
-        writer.Int64(sample_.microseconds().count());
+        writer.Uint64(sample_.microseconds().count());
 
         // Coordinate system
         writer.String("unit");
@@ -116,10 +119,12 @@ public:
             writer.String("reg");
             writer.String(region);
         }
+
+        writer.EndObject();
     }
 
-    void setCoordSystem(const DistanceUnit value,
-                        const cv::Matx33d homography) {
+    void setCoordSystem(const DistanceUnit value, const cv::Matx33d homography)
+    {
         unit_of_length_ = value;
         homography_ = homography;
     }
@@ -128,6 +133,7 @@ public:
 
 private:
 
+    // TODO: Generalize to 3D position. Replace homography_ with tvec and rvec
     cv::Matx33d homography_ {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
 
 };

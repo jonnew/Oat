@@ -24,16 +24,16 @@
 namespace oat {
 
 PositionFilter::PositionFilter(const std::string &position_source_address,
-                               const std::string &position_sink_address) :
-  name_("posifilt[" + position_source_address + "->" + position_sink_address + "]")
+                               const std::string &position_sink_address)
+: name_("posifilt[" + position_source_address + "->" + position_sink_address + "]")
 , position_source_address_(position_source_address)
 , position_sink_address_(position_sink_address)
 {
   // Nothing
 }
 
-void PositionFilter::appendOptions(po::options_description &opts) {
-
+void PositionFilter::appendOptions(po::options_description &opts)
+{
     // Common program options
     opts.add_options()
         ("config,c", po::value<std::vector<std::string> >()->multitoken(),
@@ -41,9 +41,10 @@ void PositionFilter::appendOptions(po::options_description &opts) {
         "e.g. 'config.toml mykey'")
         ;
 }
-void PositionFilter::connectToNode() {
 
-    // Establish our a slot in the node 
+void PositionFilter::connectToNode()
+{
+    // Establish our a slot in the node
     position_source_.touch(position_source_address_);
 
     // Wait for synchronous start with sink when it binds the node
@@ -54,8 +55,8 @@ void PositionFilter::connectToNode() {
     shared_position_ = position_sink_.retrieve();
 }
 
-bool PositionFilter::process() {
-
+bool PositionFilter::process()
+{
     // START CRITICAL SECTION //
     ////////////////////////////
 

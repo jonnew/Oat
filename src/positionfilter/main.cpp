@@ -60,9 +60,8 @@ const char purpose[] =
     "Filter positions from SOURCE and publish filtered positions "
     "to SINK.";
 
-void printUsage(const po::options_description &options,
-                const std::string &type) {
-
+void printUsage(const po::options_description &options, const std::string &type)
+{
     if (type.empty()) {
         std::cout <<
         "Usage: posifilt [INFO]\n"
@@ -86,13 +85,14 @@ void printUsage(const po::options_description &options,
 
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int) {
+void sigHandler(int)
+{
     quit = 1;
 }
 
 // Processing loop
-void run(std::shared_ptr<oat::PositionFilter> filter) {
-
+void run(std::shared_ptr<oat::PositionFilter> filter)
+{
     try {
 
         filter->connectToNode();
@@ -109,8 +109,8 @@ void run(std::shared_ptr<oat::PositionFilter> filter) {
     }
 }
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
     std::signal(SIGINT, sigHandler);
 
     // Results of command line input
@@ -175,8 +175,7 @@ int main(int argc, char *argv[]) {
         // Check options for errors and bind options to local variables
         po::notify(option_map);
 
-        // If a TYPE was provided, then specialize the filter and corresponding
-        // program options
+        // If a TYPE was provided, then specialize
         if (option_map.count("type")) {
 
             // Refine component type
