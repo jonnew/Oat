@@ -41,8 +41,6 @@ public:
               const size_t index,
               const double fps);
 
-    ~PGUSBCam();
-
     // Use a configuration file to specify parameters
     void configure(void) override; // Default options
     void configure(const std::string &config_file,
@@ -103,7 +101,7 @@ private:
     // NOTE: These functions operate on member variables, and therefore the
     // arguments are gratuitous. However, these functions are by definition
     // not used in performance-critical sections of code, and I think decent
-    // type sigs are a good trade for the extra copy operations. 
+    // type sigs are a good trade for the extra copy operations.
     //int setupStreamChannels(void);
     int setupFrameRate(double fps, bool is_auto);
     int setupShutter(float shutter_ms);

@@ -216,7 +216,7 @@ void PGUSBCam::configure(const std::string& config_file, const std::string& conf
                 region_of_interest_.width = val;
                 oat::config::getValue(roi, "height", val, (int64_t)0, true);
                 region_of_interest_.height = val;
-               
+
             } else {
                // setupDefaultImageFormat();
             }
@@ -323,7 +323,7 @@ int PGUSBCam::connectToCamera(void) {
     printCameraInfo();
 
     std::cout << "Restoring default camcera acqusition settings...\n";
-    
+
     error = camera_.RestoreFromMemoryChannel(0);
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
@@ -396,17 +396,17 @@ int PGUSBCam::setupFrameRate(double fps, bool is_auto) {
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
-    
+
     // If set to auto, then get the automatically configured frame frame rate
     if (is_auto) {
         error = camera_.GetProperty(&prop);
         if (error != pg::PGRERROR_OK) {
             throw (std::runtime_error(error.GetDescription()));
         }
-        
+
         frames_per_second_ = prop.absValue;
     }
-    
+
     return 0;
 }
 
@@ -540,7 +540,7 @@ int PGUSBCam::setupWhiteBalance(bool is_on) {
 
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
-    }  
+    }
 
     prop.onOff = is_on;
     prop.autoManualMode = false;
@@ -655,11 +655,11 @@ int PGUSBCam::setupImageFormat() {
     if ( (k_fmt7PixFmt & fmt7Info.pixelFormatBitField) == 0 )
     {
         // Pixel format not supported!
-        std::cout << "Pixel format is not supported" << std::endl; 
+        std::cout << "Pixel format is not supported" << std::endl;
          throw (std::runtime_error(error.GetDescription()));
         //return -1;
     }
-    
+
 
     // pg::Format7ImageSettings image_settings_info;
     // error = camera_.GetFormat7ImageSettingsInfo(&image_settings_info);
@@ -711,14 +711,14 @@ int PGUSBCam::setupImageFormat() {
         //PrintError( error );
         std::cout << "error validating format 7 format\n";
          throw ( std::runtime_error(error.GetDescription()));
-        
+
         //return -1;
     }
 
     if ( !valid )
     {
         // Settings are not valid
-        //cout << "Format7 settings are not valid" << endl; 
+        //cout << "Format7 settings are not valid" << endl;
         throw (std::runtime_error("oh noes something is not valid\n"));
         //return -1;
     }
@@ -946,7 +946,7 @@ int PGUSBCam::setupEmbeddedImageData() {
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
-    
+
     // TODO: HACK! See https://github.com/jonnew/Oat/issues/11
     int i = 0;
     while (use_trigger_ && (error == pg::PGRERROR_OK || i < 10)) {
@@ -1128,7 +1128,7 @@ bool PGUSBCam::serveFrame() {
         ////////////////////////////
         //  END CRITICAL SECTION  //
 
-        // Pure SINKs increment sample count 
+        // Pure SINKs increment sample count
         internal_sample_.incrementCount(tick_);
 
     } while (i++ < rc);
