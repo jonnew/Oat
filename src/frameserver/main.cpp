@@ -36,6 +36,7 @@
 #include "WebCam.h"
 #ifdef USE_FLYCAP
     #include "PGGigECam.h"
+    #include "PGUSBCam.h"
 #endif
 
 namespace po = boost::program_options;
@@ -100,6 +101,7 @@ int main(int argc, char *argv[]) {
     type_hash["gige"] = 'b';
     type_hash["file"] = 'c';
     type_hash["test"] = 'd';
+    type_hash["usb"] = 'e';
 
     try {
 
@@ -240,6 +242,20 @@ int main(int argc, char *argv[]) {
         {
             server = std::make_shared<oat::TestFrame>(sink, file_path, frames_per_second);
             break;
+        }
+        case 'e':
+        {
+#ifndef USE_FLYCAP
+            std::cerr << oat::Error("Oat was not compiled with Point-Grey "
+                    "flycapture support, so TYPE=usb is not available.\n");
+            return -1;
+#else
+        
+            server = std::make_shared<oat::PGUSBCam>(sink, index, frames_per_second);
+#endif
+            break;
+
+
         }
         default:
         {
