@@ -537,9 +537,10 @@ int PGUSBCam::setupWhiteBalance(bool is_on) {
     pg::Property prop;
     prop.type = pg::WHITE_BALANCE;
     pg::Error error = camera_.GetProperty(&prop);
+
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
-    }
+    }  
 
     prop.onOff = is_on;
     prop.autoManualMode = false;
@@ -548,24 +549,30 @@ int PGUSBCam::setupWhiteBalance(bool is_on) {
     prop.valueB = white_bal_blue_;
 
     error = camera_.SetProperty(&prop);
-    if (error != pg::PGRERROR_OK) {
-        throw (std::runtime_error(error.GetDescription()));
-    }
 
-    if (is_on) {
-        std::cout << "White balance set to: \n";
-        std::cout << "\tRed: "
-                  << std::fixed
-                  << std::setprecision(2)
-                  << white_bal_red_ << "\n";
-        std::cout << "\tBlue: "
-                  << std::fixed
-                  << std::setprecision(2)
-                  << white_bal_blue_ << "\n";
+    if(error == pg::PGRERROR_PROPERTY_NOT_PRESENT)
+    {
+        std::cout  << "White balance proprty can't be set on this camera: " << error.GetDescription() << "\n";
     } else {
-        std::cout << "White balance turned off.\n";
-    }
 
+        if (error != pg::PGRERROR_OK) {
+            throw (std::runtime_error(error.GetDescription()));
+        }
+
+        if (is_on) {
+            std::cout << "White balance set to: \n";
+            std::cout << "\tRed: "
+                      << std::fixed
+                      << std::setprecision(2)
+                      << white_bal_red_ << "\n";
+            std::cout << "\tBlue: "
+                      << std::fixed
+                      << std::setprecision(2)
+                      << white_bal_blue_ << "\n";
+        } else {
+            std::cout << "White balance turned off.\n";
+        }
+    }
     return 0;
 }
 
