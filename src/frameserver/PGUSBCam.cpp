@@ -220,7 +220,7 @@ void PGUSBCam::configure(const std::string& config_file, const std::string& conf
             } else {
                // setupDefaultImageFormat();
             }
-             //setupImageFormat();
+             setupImageFormat();
         }
 
         // Setup trigger
@@ -1048,6 +1048,7 @@ uint64_t PGUSBCam::uncycle1394Timestamp(int ieee_1394_sec,
 
 void PGUSBCam::connectToNode() {
 
+
     pg::Format7ImageSettings pImageSettings;
     unsigned int pPacketSize;
     float pPercentage;
@@ -1057,7 +1058,6 @@ void PGUSBCam::connectToNode() {
     if (error != pg::PGRERROR_OK) {
         throw (std::runtime_error(error.GetDescription()));
     }
-
 
     pg::Image temp(pImageSettings.height,
                    pImageSettings.width,
