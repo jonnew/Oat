@@ -54,7 +54,7 @@ configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
 include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
 
 # Build options
-option (USE_FLYCAP "Compile with support for Point-Grey cameras" ON)
+option (USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
 option (BUILD_TESTS "Build and run tests." ON)
 option (BUILD_DOCS "Build doxygen documentation." OFF)
 
