@@ -7,6 +7,7 @@ if (${USE_FLYCAP})
          FrameServer.cpp
          TestFrame.cpp
          PGGigECam.cpp
+         PGUSBCam.cpp
          WebCam.cpp
          FileReader.cpp)
 else (${USE_FLYCAP})

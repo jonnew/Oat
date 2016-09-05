@@ -37,6 +37,7 @@
 #include "WebCam.h"
 #ifdef USE_FLYCAP
     #include "PGGigECam.h"
+    #include "PGUSBCam.h"
 #endif
 
 #define REQ_POSITIONAL_ARGS 2
@@ -122,6 +123,7 @@ int main(int argc, char *argv[]) {
     type_hash["gige"] = 'b';
     type_hash["file"] = 'c';
     type_hash["test"] = 'd';
+    type_hash["usb"] = 'e';
 
     // The component itself
     std::string comp_name = "frameserve";
