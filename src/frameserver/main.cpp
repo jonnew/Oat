@@ -245,8 +245,17 @@ int main(int argc, char *argv[]) {
         }
         case 'e':
         {
+#ifndef USE_FLYCAP
+            std::cerr << oat::Error("Oat was not compiled with Point-Grey "
+                    "flycapture support, so TYPE=usb is not available.\n");
+            return -1;
+#else
+        
             server = std::make_shared<oat::PGUSBCam>(sink, index, frames_per_second);
+#endif
             break;
+
+
         }
         default:
         {
