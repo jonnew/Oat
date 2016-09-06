@@ -35,10 +35,18 @@ namespace oat {
 
 namespace pg = FlyCapture2;
 
+enum class PixelColor : int {
+    mono8 = 0,
+    color8,
+};
+
 template <typename T>
 class PointGreyCam : public FrameServer {
 
+
     using rte = std::runtime_error;
+    using PixelMap = std::map<oat::PixelColor,
+                              std::tuple<pg::PixelFormat, pg::PixelFormat, int>>;
 
 public:
 
@@ -67,6 +75,11 @@ private:
     int last_ieee_1394_sec_ {0};
     bool first_frame_ {true};
 
+    // Pixel color mapping
+    bool color_conversion_required_ {false};
+    oat::PixelColor pix_col_ {oat::PixelColor::mono8};
+    static const PixelMap pix_map_;
+
     // Used to mark times between acquisitions
     oat::Sample::Microseconds tick_, tock_;
 
@@ -77,8 +90,7 @@ private:
     T camera_;
 
     // The current, unbuffered frame in PG's format
-    pg::Image raw_image_;
-    std::unique_ptr<pg::Image> rgb_image_;
+    std::unique_ptr<pg::Image> shmem_image_;
 
     // Acquisition settings routines
     void setupFrameRate(double fps, bool is_auto = false);
@@ -115,7 +127,7 @@ private:
      *        time between consecutive frames and indicate the estimated number of
      *        missed frames, if any, using this code.
      */
-    int grabImage(void);
+    int grabImage(pg::Image *raw_image);
 
     // Diagnostics and meta
     unsigned int findNumCameras(void);

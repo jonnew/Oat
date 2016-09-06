@@ -39,6 +39,16 @@
 
 namespace oat {
 
+// Initialize Pixel map
+template <typename T>
+const typename PointGreyCam<T>::PixelMap PointGreyCam<T>::pix_map_ =
+{
+    {PixelColor::mono8,
+        std::make_tuple(pg::PIXEL_FORMAT_MONO8, pg::PIXEL_FORMAT_MONO8, CV_8UC1)},
+    {PixelColor::mono8,
+        std::make_tuple(pg::PIXEL_FORMAT_RAW8, pg::PIXEL_FORMAT_BGR, CV_8UC3)}
+};
+
 template <typename T>
 PointGreyCam<T>::PointGreyCam(const std::string &sink_address)
 : FrameServer(sink_address)
@@ -77,10 +87,13 @@ void PointGreyCam<T>::appendOptions(po::options_description &opts)
          "sometimes needed in the case of an external trigger because PG cameras "
          "sometimes just ignore them. I have opened a support ticket on this, "
          "but PG has no solution yet.")
-        ("mono,m", 
-         "If specified, mono images will be produced.")
         ("shutter,s", po::value<double>(),
          "Shutter time in milliseconds. Defaults to auto.")
+        ("color,C", po::value<int>(),
+         "Pixel color format. Defaults to 0.\n\n"
+         "Values:\n"
+         "  0:  \tMono 8-bit.\n"
+         "  1:  \tColor (BRG) 8-bit.\n")
         ("gain,g", po::value<double>(),
          "Sensor gain value, specified in dB. Defaults to auto.")
         ("strobe-pin,S", po::value<size_t>(),
@@ -141,7 +154,7 @@ void PointGreyCam<T>::configure(const po::variables_map &vm)
     oat::config::getNumericValue<int>(
         vm, config_table, "index", index, 0, num_cams - 1);
 
-    connectToCamera(index); 
+    connectToCamera(index);
     //turnCameraOn();
 
     // Frame rate
@@ -159,6 +172,15 @@ void PointGreyCam<T>::configure(const po::variables_map &vm)
     else
         setupShutter(shutter_ms, true);
 
+    // Pixel color
+    int pix_col;
+    if(oat::config::getNumericValue<int>(vm, config_table, "color", pix_col, 0, 1))
+        pix_col_ = static_cast<oat::PixelColor>(pix_col);
+
+    // Determine if color conversion is required
+    if (std::get<0>(pix_map_.at(pix_col_)) != std::get<1>(pix_map_.at(pix_col_)))
+        color_conversion_required_ = true;
+
     // Sensor gain
     double gain = 0.0;
     if (oat::config::getNumericValue<double>(
@@ -171,6 +193,8 @@ void PointGreyCam<T>::configure(const po::variables_map &vm)
     std::vector<double> wb;
     if (oat::config::getArray<double, 2>(vm, config_table, "white-bal", wb))
         setupWhiteBalance(wb[0], wb[1], true);
+    else
+        setupWhiteBalance(0, 0, false);
 
     // Pixel binning
     std::vector<size_t> bin_size;
@@ -352,8 +376,8 @@ void PointGreyCam<T>::setupGain(float gain_db, bool is_auto)
     if (is_auto) {
         std::cout << "Gain set to auto.\n";
     } else {
-        std::cout << "Gain set to " 
-                  << std::fixed 
+        std::cout << "Gain set to "
+                  << std::fixed
                   << std::setprecision(2)
                   << gain_db << " dB.\n";
     }
@@ -362,14 +386,18 @@ void PointGreyCam<T>::setupGain(float gain_db, bool is_auto)
 template <typename T>
 void PointGreyCam<T>::setupWhiteBalance(int bal_red, int bal_blue, bool is_on)
 {
+
+    // Mono pixels do not support white balance
+    if (pix_col_ == oat::PixelColor::mono8)
+        return;
+
     std::cout << "Setting camera white balance...\n";
 
     pg::Property prop;
     prop.type = pg::WHITE_BALANCE;
     pg::Error error = camera_.GetProperty(&prop);
-    if (error != pg::PGRERROR_OK) {
+    if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
-    }
 
     prop.onOff = is_on;
     prop.autoManualMode = false;
@@ -636,13 +664,13 @@ void PointGreyCam<T>::setupEmbeddedImageData()
 // TODO: implement onboard buffer and perform retry a RetrieveBuffer
 // A single time if a torn image is detected.
 template <typename T>
-int PointGreyCam<T>::grabImage()
+int PointGreyCam<T>::grabImage(pg::Image *raw_image)
 {
     assert (acquisition_started_ &&
             "Cannot grab image because acquisition has not been started.");
 
     pg::Error error;
-    error = camera_.RetrieveBuffer(&raw_image_);
+    error = camera_.RetrieveBuffer(raw_image);
 
     if (error == pg::PGRERROR_TIMEOUT) {
         return -1;
@@ -657,7 +685,7 @@ int PointGreyCam<T>::grabImage()
     }
 
     // Get the embedded timestamp of the must current frame
-    const pg::TimeStamp ts = raw_image_.GetTimeStamp();
+    const pg::TimeStamp ts = raw_image->GetTimeStamp();
 
     if (!ieee_1394_start_set_) {
         ieee_1394_start_cycle_ = ts.cycleSeconds * IEEE_1394_HZ + ts.cycleCount ;
@@ -712,7 +740,8 @@ void PointGreyCam<T>::connectToNode()
 template <typename T>
 bool PointGreyCam<T>::process()
 {
-    int rc = grabImage();
+    pg::Image raw_image;
+    int rc = grabImage(&raw_image);
 
     // There was a grab timeout.
     // Allow check to see if SIGINT occurred.
@@ -734,7 +763,11 @@ bool PointGreyCam<T>::process()
         // Wait for sources to read
         frame_sink_.wait();
 
-        raw_image_.Convert(pg::PIXEL_FORMAT_BGR, rgb_image_.get());
+        if (color_conversion_required_)
+            raw_image.Convert(std::get<1>(pix_map_.at(pix_col_)), shmem_image_.get());
+        else
+            shmem_image_->DeepCopy(&raw_image);
+
         shared_frame_.sample() = internal_sample_;
 
         // Tell sources there is new data
@@ -959,9 +992,7 @@ void PointGreyCam<pg::GigECamera>::setupImageFormat()
     imageSettings.offsetY = 0;
     imageSettings.width   = image_settings_info.maxWidth;
     imageSettings.height  = image_settings_info.maxHeight;
-    // TODO: What is the correct format here? What if I want to do mono
-    // imaging?
-    imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW8;
+    imageSettings.pixelFormat = std::get<0>(pix_map_.at(pix_col_));
 
     std::cout << "ROI set to [0 0 "
               << image_settings_info.maxWidth
@@ -1002,7 +1033,7 @@ void PointGreyCam<pg::GigECamera>::setupImageFormat(const std::vector<size_t> &r
     imageSettings.offsetY = roi_vec[1];
     imageSettings.height  = roi_vec[2];
     imageSettings.width   = roi_vec[3];
-    imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW8;
+    imageSettings.pixelFormat = std::get<0>(pix_map_.at(pix_col_)); //pg::PIXEL_FORMAT_RAW8;
 
     std::cout << "ROI set to ["
               << roi_vec[0]
@@ -1044,9 +1075,7 @@ void PointGreyCam<pg::GigECamera>::connectToNode()
 
     pg::Image temp(imageSettings.height,
                    imageSettings.width,
-                   pg::PIXEL_FORMAT_BGR);
-
-    raw_image_.Convert(pg::PIXEL_FORMAT_BGR, &temp);
+                   std::get<1>(pix_map_.at(pix_col_)));
 
     const size_t bytes = temp.GetDataSize();
     const size_t rows = temp.GetRows();
@@ -1055,17 +1084,16 @@ void PointGreyCam<pg::GigECamera>::connectToNode()
 
     frame_sink_.bind(frame_sink_address_, bytes);
 
-    // TODO: Mono case?
-    shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
+    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<2>(pix_map_.at(pix_col_)));
     internal_sample_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
-    // rbg_image's data buffer. When changes are made to rgb_image_, this is
+    // rbg_image's data buffer. When changes are made to shmem_image_, this is
     // automatically propagated into shmem and 'converted' into a cv::Mat
     // (although this 'conversion' is simply filling in appropriate header info,
     // which was accomplished in the call to frame_sink_.retrieve())
-    rgb_image_ = std::make_unique<pg::Image>
-            (rows, cols, stride, shared_frame_.data, bytes, pg::PIXEL_FORMAT_BGR);
+    shmem_image_ = std::make_unique<pg::Image>
+            (rows, cols, stride, shared_frame_.data, bytes, std::get<1>(pix_map_.at(pix_col_)));
 }
 
 // 1. USB Camera
@@ -1085,7 +1113,7 @@ void PointGreyCam<pg::Camera>::setupImageFormat(
     if (error != pg::PGRERROR_OK)
          throw (rte(error.GetDescription()));
 
-    const pg::PixelFormat k_fmt7PixFmt = pg::PIXEL_FORMAT_MONO8;
+    const pg::PixelFormat k_fmt7PixFmt = std::get<0>(pix_map_.at(pix_col_));
 
     if ((k_fmt7PixFmt & image_settings_info.pixelFormatBitField) == 0) {
         std::cerr << "Pixel format is not supported\n";
@@ -1158,7 +1186,7 @@ void PointGreyCam<pg::Camera>::setupImageFormat()
     if (error != pg::PGRERROR_OK)
          throw (rte(error.GetDescription()));
 
-    const pg::PixelFormat k_fmt7PixFmt = pg::PIXEL_FORMAT_MONO8;
+    const pg::PixelFormat k_fmt7PixFmt = std::get<0>(pix_map_.at(pix_col_));
 
     if ((k_fmt7PixFmt & image_settings_info.pixelFormatBitField) == 0) {
         std::cerr << "Pixel format is not supported\n";
@@ -1218,14 +1246,12 @@ void PointGreyCam<pg::Camera>::connectToNode()
     pg::Error error = camera_.GetFormat7Configuration(
         &pImageSettings, &pPacketSize, &pPercentage);
 
-    if (error != pg::PGRERROR_OK) 
+    if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
 
     pg::Image temp(pImageSettings.height,
                    pImageSettings.width,
-                   pg::PIXEL_FORMAT_BGR);
-
-    raw_image_.Convert(pg::PIXEL_FORMAT_BGR, &temp);
+                   std::get<1>(pix_map_.at(pix_col_))); 
 
     const size_t bytes = temp.GetDataSize();
     const size_t rows = temp.GetRows();
@@ -1234,16 +1260,16 @@ void PointGreyCam<pg::Camera>::connectToNode()
 
     frame_sink_.bind(frame_sink_address_, bytes);
 
-    shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
+    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<2>(pix_map_.at(pix_col_)));
     internal_sample_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
-    // rbg_image's data buffer. When changes are made to rgb_image_, this is
+    // rbg_image's data buffer. When changes are made to shmem_image_, this is
     // automatically propagated into shmem and 'converted' into a cv::Mat
     // (although this 'conversion' is simply filling in appropriate header info,
     // which was accomplished in the call to frame_sink_.retrieve())
-    rgb_image_ = std::make_unique<pg::Image>
-            (rows, cols, stride, shared_frame_.data, bytes, pg::PIXEL_FORMAT_BGR);
+    shmem_image_ = std::make_unique<pg::Image>
+            (rows, cols, stride, shared_frame_.data, bytes, std::get<1>(pix_map_.at(pix_col_)));
 }
 
 // Explicit instantiation
