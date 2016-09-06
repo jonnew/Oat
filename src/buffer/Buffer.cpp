@@ -38,5 +38,6 @@ Buffer::~Buffer()
     sink_running_ = false;
     if (sink_thread_.joinable())
         sink_thread_.join();
+}
 
 } /* namespace oat */

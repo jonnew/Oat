@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   PGGigECam.cpp
+//* File:   PointGreyCam.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,10 +17,10 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "PGGigECam.h"
+#include "PointGreyCam.h"
 
-#include <chrono>
 #include <cassert>
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -29,33 +29,36 @@
 #include <thread>
 #include <unistd.h>
 
-#include <cpptoml.h>
 #include "FlyCapture2.h"
+#include <cpptoml.h>
 #include <opencv2/opencv.hpp>
 
-#include "../../lib/utility/make_unique.h"
-#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/TOMLSanitize.h"
+#include "../../lib/utility/make_unique.h"
 
 namespace oat {
 
-PGGigECam::PGGigECam(const std::string &sink_address) :
-  FrameServer(sink_address)
+template <typename T>
+PointGreyCam<T>::PointGreyCam(const std::string &sink_address)
+: FrameServer(sink_address)
 {
     // Initialize frame timing
     tick_ = oat::Sample::Microseconds(0);
     tock_ = oat::Sample::Microseconds(0);
 }
 
-PGGigECam::~PGGigECam()
+template <typename T>
+PointGreyCam<T>::~PointGreyCam()
 {
     // Ignore error return values -- throwing exception unsafe in destructor
     camera_.StopCapture();
     camera_.Disconnect();
 }
 
-void PGGigECam::appendOptions(po::options_description &opts) {
-
+template <typename T>
+void PointGreyCam<T>::appendOptions(po::options_description &opts)
+{
     // Accepts default options
     FrameServer::appendOptions(opts);
 
@@ -68,12 +71,14 @@ void PGGigECam::appendOptions(po::options_description &opts) {
         ("fps,r", po::value<double>(),
          "Acquisition frame rate in Hz. Ignored if trigger-mode > -1 and "
          "enforce_fps=false. Defaults to the maximum frame rate.")
-        ("enforce-fps,e", po::value<bool>(),
+        ("enforce-fps,e",
          "If true, ensures that frames are produced at the fps setting bool "
          "retransmitting frames if the requested period is exceeded. This is "
          "sometimes needed in the case of an external trigger because PG cameras "
          "sometimes just ignore them. I have opened a support ticket on this, "
          "but PG has no solution yet.")
+        ("mono,m", 
+         "If specified, mono images will be produced.")
         ("shutter,s", po::value<double>(),
          "Shutter time in milliseconds. Defaults to auto.")
         ("gain,g", po::value<double>(),
@@ -95,7 +100,7 @@ void PGGigECam::appendOptions(po::options_description &opts) {
          " 14:  \tOverlapped exposure/readout external trigger. Sensor exposure "
          "occurs during sensory readout to internal memory. This is the "
          "fastest option.")
-        ("trigger-rising,p", po::value<bool>(),
+        ("trigger-rising,p",
          "True to trigger on rising edge, false to trigger on falling edge. "
          "Defaults to true.")
         ("trigger-pin,t", po::value<size_t>(),
@@ -113,18 +118,19 @@ void PGGigECam::appendOptions(po::options_description &opts) {
         ("white-balance,w", po::value<std::string>(),
          "Two element array of unsigned integers, [red,blue], used to "
          "specify the white balance. Values are between 0 and 1000. "
-         "Defaults to off.")
+         "Only works for color sensors. Defaults to off.")
         ;
 
     opts.add(local_opts);
 
     // Return valid keys
-    for (auto &o: local_opts.options())
+    for (auto &o : local_opts.options())
         config_keys_.push_back(o->long_name());
 }
 
-void PGGigECam::configure(const po::variables_map &vm) {
-
+template <typename T>
+void PointGreyCam<T>::configure(const po::variables_map &vm)
+{
     // Check for config file and entry correctness
     auto config_table = oat::config::getConfigTable(vm);
     oat::config::checkKeys(config_keys_, config_table);
@@ -133,29 +139,30 @@ void PGGigECam::configure(const po::variables_map &vm) {
     auto num_cams = findNumCameras();
     int index = 0;
     oat::config::getNumericValue<int>(
-        vm, config_table, "index", index, 0, num_cams - 1
-    );
+        vm, config_table, "index", index, 0, num_cams - 1);
 
-    connectToCamera(index);
-    turnCameraOn();
-    setupStreamChannels();
+    connectToCamera(index); 
+    //turnCameraOn();
 
     // Frame rate
-    if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0))
+    if (oat::config::getNumericValue<double>(
+            vm, config_table, "fps", frames_per_second_, 0.0))
         setupFrameRate(frames_per_second_, false);
     else
         setupFrameRate(frames_per_second_, true);
 
     // Shutter time
     double shutter_ms = 0.0;
-    if (oat::config::getNumericValue(vm, config_table, "shutter", shutter_ms, 0.0, 1000.0))
+    if (oat::config::getNumericValue<double>(
+            vm, config_table, "shutter", shutter_ms, 0.0, 1000.0))
         setupShutter(shutter_ms, false);
     else
         setupShutter(shutter_ms, true);
 
     // Sensor gain
     double gain = 0.0;
-    if (oat::config::getNumericValue(vm, config_table, "gain", gain, 0.0))
+    if (oat::config::getNumericValue<double>(
+            vm, config_table, "gain", gain, 0.0))
         setupGain(gain, false);
     else
         setupGain(gain, true);
@@ -164,8 +171,6 @@ void PGGigECam::configure(const po::variables_map &vm) {
     std::vector<double> wb;
     if (oat::config::getArray<double, 2>(vm, config_table, "white-bal", wb))
         setupWhiteBalance(wb[0], wb[1], true);
-    else
-        setupWhiteBalance(0, 0, false);
 
     // Pixel binning
     std::vector<size_t> bin_size;
@@ -193,24 +198,28 @@ void PGGigECam::configure(const po::variables_map &vm) {
     //    setupCameraFrameBuffer(retries)
 
     // Enforce FPS
-    oat::config::getValue(vm, config_table, "enforce_fps", enforce_fps_, false);
+    oat::config::getValue<bool>(vm, config_table, "enforce_fps", enforce_fps_, false);
 
     // Strobe pin (configure before trigger to look for pin conflict)
     int strobe_pin = 1;
-    oat::config::getNumericValue(vm, config_table, "strobe-pin", strobe_pin, 0);
+    oat::config::getNumericValue<int>(
+        vm, config_table, "strobe-pin", strobe_pin, 0);
     setupStrobeOutput(strobe_pin);
 
     // Trigger mode
     int trigger_mode = -1;
-    oat::config::getNumericValue(vm, config_table, "trigger-mode", trigger_mode, -1);
+    oat::config::getNumericValue<int>(
+        vm, config_table, "trigger-mode", trigger_mode, -1);
 
     // Trigger polarity
     bool trigger_rising= true;
-    oat::config::getNumericValue(vm, config_table, "trigger-rising", trigger_rising);
+    oat::config::getNumericValue<bool>(
+        vm, config_table, "trigger-rising", trigger_rising);
 
     // Trigger pin
     int trigger_pin = 0;
-    oat::config::getNumericValue(vm, config_table, "trigger-pin", trigger_pin , 0);
+    oat::config::getNumericValue<int>(
+        vm, config_table, "trigger-pin", trigger_pin, 0);
 
     if (trigger_pin == strobe_pin)
         throw rte("Stobe pin must be different from trigger pin.");
@@ -226,8 +235,9 @@ void PGGigECam::configure(const po::variables_map &vm) {
     setupEmbeddedImageData();
 }
 
-void PGGigECam::connectToCamera(int index) {
-
+template <typename T>
+void PointGreyCam<T>::connectToCamera(int index)
+{
     auto num_cameras = static_cast<int>(findNumCameras());
 
     if (index >= num_cameras)
@@ -257,41 +267,9 @@ void PGGigECam::connectToCamera(int index) {
     std::cout << "Default settings restored.\n";
 }
 
-void PGGigECam::setupStreamChannels() {
-
-    unsigned int numStreamChannels = 0;
-    pg::Error error = camera_.GetNumStreamChannels(&numStreamChannels);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    for (unsigned int i = 0; i < numStreamChannels; i++) {
-        pg::GigEStreamChannel streamChannel;
-        error = camera_.GetGigEStreamChannelInfo(i, &streamChannel);
-        if (error != pg::PGRERROR_OK)
-            throw (rte(error.GetDescription()));
-
-        // TODO: This is not going to be valid if cameras are on a switch...
-        streamChannel.destinationIpAddress.octets[0] = 224;
-        streamChannel.destinationIpAddress.octets[1] = 0;
-        streamChannel.destinationIpAddress.octets[2] = 0;
-        streamChannel.destinationIpAddress.octets[3] = 1;
-
-        // TODO: Make a more reasoned choice for these parameters based on the
-        // number of cameras on the system...
-        streamChannel.packetSize = 9000;
-        streamChannel.interPacketDelay = 250;
-
-        error = camera_.SetGigEStreamChannelInfo(i, &streamChannel);
-        if (error != pg::PGRERROR_OK)
-            throw (rte(error.GetDescription()));
-
-        std::cout << "Printing stream channel information for channel " << i << "\n";
-        printStreamChannelInfo(&streamChannel);
-    }
-}
-
-void PGGigECam::setupFrameRate(double fps, bool is_auto) {
-
+template <typename T>
+void PointGreyCam<T>::setupFrameRate(double fps, bool is_auto)
+{
     std::cout << "Setting up frame rate...\n";
 
     pg::Property prop;
@@ -323,8 +301,9 @@ void PGGigECam::setupFrameRate(double fps, bool is_auto) {
     }
 }
 
-void PGGigECam::setupShutter(float shutter_ms, bool is_auto) {
-
+template <typename T>
+void PointGreyCam<T>::setupShutter(float shutter_ms, bool is_auto)
+{
     std::cout << "Setting up shutter...\n";
 
     pg::Property prop;
@@ -351,8 +330,9 @@ void PGGigECam::setupShutter(float shutter_ms, bool is_auto) {
     }
 }
 
-void PGGigECam::setupGain(float gain_db, bool is_auto) {
-
+template <typename T>
+void PointGreyCam<T>::setupGain(float gain_db, bool is_auto)
+{
     std::cout << "Setting camera gain...\n";
 
     pg::Property prop;
@@ -369,16 +349,19 @@ void PGGigECam::setupGain(float gain_db, bool is_auto) {
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
 
-    if (is_auto)
+    if (is_auto) {
         std::cout << "Gain set to auto.\n";
-    else
-        std::cout << "Gain set to " << std::fixed << std::setprecision(2) << gain_db << " dB.\n";
+    } else {
+        std::cout << "Gain set to " 
+                  << std::fixed 
+                  << std::setprecision(2)
+                  << gain_db << " dB.\n";
+    }
 }
 
-void PGGigECam::setupWhiteBalance(int bal_red,
-                                  int bal_blue,
-                                  bool is_on) {
-
+template <typename T>
+void PointGreyCam<T>::setupWhiteBalance(int bal_red, int bal_blue, bool is_on)
+{
     std::cout << "Setting camera white balance...\n";
 
     pg::Property prop;
@@ -413,94 +396,29 @@ void PGGigECam::setupWhiteBalance(int bal_red,
     }
 }
 
-void PGGigECam::setupImageFormat() {
-
-    std::cout << "Querying image setting information...\n";
-
-    pg::GigEImageSettingsInfo image_settings_info;
-    pg::Error error = camera_.GetGigEImageSettingsInfo(&image_settings_info);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    pg::GigEImageSettings imageSettings;
-    imageSettings.offsetX = 0;
-    imageSettings.offsetY = 0;
-    imageSettings.width   = image_settings_info.maxWidth;
-    imageSettings.height  = image_settings_info.maxHeight;
-    // TODO: What is the correct format here? What if I want to do mono
-    // imaging?
-    imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW8;
-    std::cout << imageSettings.pixelFormat << std::endl;
-
-    std::cout << "ROI set to [0 0 "
-              << image_settings_info.maxWidth
-              << " "
-              << image_settings_info.maxHeight
-              << "]\n";
-
-    error = camera_.SetGigEImageSettings(&imageSettings);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    std::cout << "Image settings configured.\n";
+template <typename T>
+void PointGreyCam<T>::setupImageFormat()
+{
+    static_assert(sizeof(T) == 0, "Not a valid PoinGreyCam type.");
 }
 
-void PGGigECam::setupImageFormat(const std::vector<size_t> &roi_vec) {
-
-    std::cout << "Querying image settings information...\n";
-
-    pg::GigEImageSettingsInfo image_settings_info;
-    pg::Error error = camera_.GetGigEImageSettingsInfo(&image_settings_info);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    if (roi_vec[0] > image_settings_info.maxWidth ||
-        roi_vec[1] > image_settings_info.maxHeight) {
-        throw (rte("ROI pixel offsets are larger than the sensor array. Exiting.\n"));
-    }
-
-    if ((roi_vec[2] + roi_vec[0]) > image_settings_info.maxWidth)
-        throw (rte("Current X-axis ROI settings are off the sensor array\n"));
-
-    if ((roi_vec[3] + roi_vec[1]) > image_settings_info.maxHeight)
-        throw (rte("Current Y-axis ROI settings are off the sensor array\n"));
-
-    pg::GigEImageSettings imageSettings;
-    imageSettings.offsetX = roi_vec[0];
-    imageSettings.offsetY = roi_vec[1];
-    imageSettings.height  = roi_vec[2];
-    imageSettings.width   = roi_vec[3];
-    imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW8;
-
-    std::cout << "ROI set to ["
-              << roi_vec[0]
-              << " "
-              << roi_vec[1]
-              << " "
-              << roi_vec[2]
-              << " "
-              << roi_vec[3]
-              << "]\n";
-
-    error = camera_.SetGigEImageSettings(&imageSettings);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
+template <typename T>
+void PointGreyCam<T>::setupImageFormat(const std::vector<size_t> &roi_vec)
+{
+    (void)roi_vec; // Suppress unused parameter warnings
+    static_assert(sizeof(T) == 0, "Not a valid PoinGreyCam type.");
 }
 
-void PGGigECam::setupPixelBinning(size_t x_bin, size_t y_bin) {
-
-    std::cout << "Setting image binning...\n";
-
-    // On-board image binning
-    pg::Error error;
-    error = camera_.SetGigEImageBinningSettings(x_bin, y_bin);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    std::cout << "Onboard binning set to [" << x_bin << " " << y_bin << "]\n";
+template <typename T>
+void PointGreyCam<T>::setupPixelBinning(size_t x_bin, size_t y_bin)
+{
+    (void)x_bin; // Suppress unused parameter warnings
+    (void)y_bin;
+    static_assert(sizeof(T) == 0, "Not a valid PoinGreyCam type.");
 }
 
-//int PGGigECam::setupCameraFrameBuffer() {
+// template<typename T>
+// int PointGreyCam<T>::setupCameraFrameBuffer() {
 //
 //    // If requested
 //    if (use_frame_buffer_) {
@@ -521,9 +439,11 @@ void PGGigECam::setupPixelBinning(size_t x_bin, size_t y_bin) {
 //        // Direct image data through frame buffer
 //        image_retransmit_reg |= 1 << 1;
 //
-//        error = camera_.WriteRegister(image_retransmit_addr, image_retransmit_reg);
+//        error = camera_.WriteRegister(image_retransmit_addr,
+//        image_retransmit_reg);
 //        if (error != pg::PGRERROR_OK) {
-//            std::cout << "Warning: camera_ frame buffering requested, but this "
+//            std::cout << "Warning: camera_ frame buffering requested, but this
+//            "
 //                         "camera_ does not support frame buffering.\n"
 //                      << "Request ignored.\n";
 //            use_frame_buffer_ = false;
@@ -533,42 +453,45 @@ void PGGigECam::setupPixelBinning(size_t x_bin, size_t y_bin) {
 //    return 0;
 //}
 
-void PGGigECam::turnCameraOn() {
+// TODO: Required??
+//template <typename T>
+//void PointGreyCam<T>::turnCameraOn()
+//{
+//    // Power on the camera_
+//    const unsigned int k_cameraPower = 0x610;
+//    const unsigned int k_powerVal = 0x80000000;
+//    pg::Error error = camera_.WriteRegister(k_cameraPower, k_powerVal);
+//    if (error != pg::PGRERROR_OK && error != pg::PGRERROR_NOT_IMPLEMENTED)
+//        throw (rte(error.GetDescription()));
+//
+//    unsigned int regVal = 0;
+//    unsigned int retries = 10;
+//
+//    // Wait for camera_ to complete power-up
+//    do {
+//
+//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//        error = camera_.ReadRegister(k_cameraPower, &regVal);
+//        if (error == pg::PGRERROR_TIMEOUT) {
+//            // ignore timeout errors, camera_ may not be responding to
+//            // register reads during power-up
+//        } else if (error != pg::PGRERROR_OK) {
+//            throw (rte(error.GetDescription()));
+//        }
+//
+//        retries--;
+//    } while ((regVal & k_powerVal) == 0 && retries > 0);
+//
+//    // Check for timeout errors after retrying
+//    if (error == pg::PGRERROR_TIMEOUT)
+//        throw (rte(error.GetDescription()));
+//}
 
-    // Power on the camera_
-    const unsigned int k_cameraPower = 0x610;
-    const unsigned int k_powerVal = 0x80000000;
-    pg::Error error = camera_.WriteRegister(k_cameraPower, k_powerVal);
-    if (error != pg::PGRERROR_OK && error != pg::PGRERROR_NOT_IMPLEMENTED)
-        throw (rte(error.GetDescription()));
-
-    unsigned int regVal = 0;
-    unsigned int retries = 10;
-
-    // Wait for camera_ to complete power-up
-    do {
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        error = camera_.ReadRegister(k_cameraPower, &regVal);
-        if (error == pg::PGRERROR_TIMEOUT) {
-            // ignore timeout errors, camera_ may not be responding to
-            // register reads during power-up
-        } else if (error != pg::PGRERROR_OK) {
-            throw (rte(error.GetDescription()));
-        }
-
-        retries--;
-    } while ((regVal & k_powerVal) == 0 && retries > 0);
-
-    // Check for timeout errors after retrying
-    if (error == pg::PGRERROR_TIMEOUT)
-        throw (rte(error.GetDescription()));
-}
-
-void PGGigECam::setupAsyncTrigger(int trigger_mode,
-                                  bool trigger_rising,
-                                  int trigger_pin) {
-
+template <typename T>
+void PointGreyCam<T>::setupAsyncTrigger(int trigger_mode,
+                                        bool trigger_rising,
+                                        int trigger_pin)
+{
     // Free Running
     if (trigger_mode < 0 ) {
         use_trigger_ = false;
@@ -613,8 +536,9 @@ void PGGigECam::setupAsyncTrigger(int trigger_mode,
     use_trigger_ = true;
 }
 
-void PGGigECam::setupGrabSettings() {
-
+template <typename T>
+void PointGreyCam<T>::setupGrabSettings()
+{
     // Setup frame buffering
     // NOTE: For some reason grabMode = pg::BUFFER_FRAMES does not play nicely
     // with the time-stamp correction for dropped triggers. I have yet to
@@ -650,8 +574,9 @@ void PGGigECam::setupGrabSettings() {
     //    }
 }
 
-void PGGigECam::startCapture() {
-
+template <typename T>
+void PointGreyCam<T>::startCapture()
+{
     // Camera is ready, start capturing images
     pg::Error error = camera_.StartCapture();
     if (error == pg::PGRERROR_ISOCH_BANDWIDTH_EXCEEDED)
@@ -662,8 +587,9 @@ void PGGigECam::startCapture() {
     acquisition_started_ = true;
 }
 
-void PGGigECam::setupStrobeOutput(int strobe_pin) {
-
+template <typename T>
+void PointGreyCam<T>::setupStrobeOutput(int strobe_pin)
+{
     pg::StrobeControl strobe;
     strobe.source = strobe_pin;
     strobe.onOff = true;
@@ -674,11 +600,11 @@ void PGGigECam::setupStrobeOutput(int strobe_pin) {
     pg::Error error = camera_.SetStrobe(&strobe);
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
-
 }
 
-void PGGigECam::setupEmbeddedImageData() {
-
+template <typename T>
+void PointGreyCam<T>::setupEmbeddedImageData()
+{
     pg::EmbeddedImageInfo embeddedInfo;
     pg::Error error = camera_.GetEmbeddedImageInfo(&embeddedInfo);
     if (error != pg::PGRERROR_OK)
@@ -699,7 +625,7 @@ void PGGigECam::setupEmbeddedImageData() {
 }
 
 // TODO: event driven acquisition.
-//void PGGigECam::onGrabbedImage(Image* pImage, const void* pCallbackData) {
+//void PointGreyCam<T>::onGrabbedImage(Image* pImage, const void* pCallbackData) {
 //
 //    &raw_image_ = pImage;
 //    current_frame = imageToMat();
@@ -709,8 +635,9 @@ void PGGigECam::setupEmbeddedImageData() {
 
 // TODO: implement onboard buffer and perform retry a RetrieveBuffer
 // A single time if a torn image is detected.
-int PGGigECam::grabImage() {
-
+template <typename T>
+int PointGreyCam<T>::grabImage()
+{
     assert (acquisition_started_ &&
             "Cannot grab image because acquisition has not been started.");
 
@@ -762,9 +689,10 @@ int PGGigECam::grabImage() {
     }
 }
 
-uint64_t PGGigECam::uncycle1394Timestamp(int ieee_1394_sec,
-                                         int ieee_1394_cycle) {
-
+template <typename T>
+uint64_t PointGreyCam<T>::uncycle1394Timestamp(int ieee_1394_sec,
+                                               int ieee_1394_cycle)
+{
     if (ieee_1394_sec - last_ieee_1394_sec_ < 0)
         ieee_1394_cycle_index_++;
 
@@ -775,42 +703,15 @@ uint64_t PGGigECam::uncycle1394Timestamp(int ieee_1394_sec,
            - ieee_1394_start_cycle_;
 }
 
-void PGGigECam::connectToNode() {
-
-    pg::GigEImageSettings imageSettings;
-
-    pg::Error error = camera_.GetGigEImageSettings(&imageSettings);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    pg::Image temp(imageSettings.height,
-                   imageSettings.width,
-                   pg::PIXEL_FORMAT_BGR);
-
-    raw_image_.Convert(pg::PIXEL_FORMAT_BGR, &temp);
-
-    size_t bytes = temp.GetDataSize();
-    size_t rows = temp.GetRows();
-    size_t cols = temp.GetCols();
-    size_t stride = temp.GetStride();
-
-    frame_sink_.bind(frame_sink_address_, bytes);
-
-    // TODO: Mono case?
-    shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
-    internal_sample_.set_rate_hz(frames_per_second_);
-
-    // Use the shared_frame_.data, which points to a block of shared memory as
-    // rbg_image's data buffer. When changes are made to rgb_image_, this is
-    // automatically propagated into shmem and 'converted' into a cv::Mat
-    // (although this 'conversion' is simply filling in appropriate header info,
-    // which was accomplished in the call to frame_sink_.retrieve())
-    rgb_image_ = std::make_unique<pg::Image>
-            (rows, cols, stride, shared_frame_.data, bytes, pg::PIXEL_FORMAT_BGR);
+template <typename T>
+void PointGreyCam<T>::connectToNode()
+{
+    static_assert(sizeof(T) == 0, "Not a valid PoinGreyCam type.");
 }
 
-bool PGGigECam::process() {
-
+template <typename T>
+bool PointGreyCam<T>::process()
+{
     int rc = grabImage();
 
     // There was a grab timeout.
@@ -850,8 +751,9 @@ bool PGGigECam::process() {
     return false;
 }
 
-unsigned int PGGigECam::findNumCameras(void) {
-
+template <typename T>
+unsigned int PointGreyCam<T>::findNumCameras(void)
+{
     pg::Error error;
     pg::BusManager busMgr;
 
@@ -864,14 +766,17 @@ unsigned int PGGigECam::findNumCameras(void) {
     return num_cameras;
 }
 
-void PGGigECam::printError(pg::Error error) {
+template <typename T>
+void PointGreyCam<T>::printError(pg::Error error)
+{
     error.PrintErrorTrace();
     if (!camera_.IsConnected())
         std::cerr << "Camera must be connected before getting its info.\n";
 }
 
-bool PGGigECam::pollForTriggerReady() {
-
+template <typename T>
+bool PointGreyCam<T>::pollForTriggerReady()
+{
     const unsigned int k_softwareTrigger = 0x62C;
     pg::Error error;
     unsigned int regVal = 0;
@@ -886,8 +791,9 @@ bool PGGigECam::pollForTriggerReady() {
     return true;
 }
 
-void PGGigECam::printCameraInfo(void) {
-
+template <typename T>
+void PointGreyCam<T>::printCameraInfo(void)
+{
     pg::CameraInfo camera_info;
     pg::Error error = camera_.GetCameraInfo(&camera_info);
     if (error != pg::PGRERROR_OK)
@@ -953,23 +859,395 @@ void PGGigECam::printCameraInfo(void) {
     std::cout << "Default gateway: " << defaultGateway.str() << "\n\n";
 }
 
-void PGGigECam::printStreamChannelInfo(pg::GigEStreamChannel *pStreamChannel) {
+/* SPECIALIZATIONS */
 
-    std::ostringstream ipAddress;
-    ipAddress
-        << (unsigned int) pStreamChannel->destinationIpAddress.octets[0] << "."
-        << (unsigned int) pStreamChannel->destinationIpAddress.octets[1] << "."
-        << (unsigned int) pStreamChannel->destinationIpAddress.octets[2] << "."
-        << (unsigned int) pStreamChannel->destinationIpAddress.octets[3];
+// 0. GigE Camera
 
-    std::cout << "Network interface: " << pStreamChannel->networkInterfaceIndex << "\n";
-    //std::cout << "Host Port: " << pStreamChannel->hostPort << "\n";
-    std::cout << "Do not fragment bit: " << (pStreamChannel->doNotFragment ? "Enabled" : "Disabled") << "\n";
-    std::cout << "Packet size: " << pStreamChannel->packetSize << "\n";
-    std::cout << "Inter packet delay: " << pStreamChannel->interPacketDelay << "\n";
-    std::cout << "Destination IP address: " << ipAddress.str() << "\n";
-    std::cout << "Source port (on camera): " << pStreamChannel->sourcePort << "\n\n";
+template <>
+void PointGreyCam<pg::GigECamera>::connectToCamera(int index)
+{
+    auto num_cameras = static_cast<int>(findNumCameras());
 
+    if (index >= num_cameras)
+        throw (rte("Requested camera index " +
+               std::to_string(index) + " is out of range.\n"));
+
+    std::cout << "Connecting to camera: " << index << "\n";
+
+    pg::BusManager busMgr;
+    pg::PGRGuid guid;
+    pg::Error error = busMgr.GetCameraFromIndex(index, &guid);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    error = camera_.Connect(&guid);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    printCameraInfo();
+
+    std::cout << "Restoring default acqusition settings...\n";
+
+    error = camera_.RestoreFromMemoryChannel(0);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    std::cout << "Default settings restored.\n";
+
+    unsigned int numStreamChannels = 0;
+    error = camera_.GetNumStreamChannels(&numStreamChannels);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    for (unsigned int i = 0; i < numStreamChannels; i++) {
+        pg::GigEStreamChannel streamChannel;
+        error = camera_.GetGigEStreamChannelInfo(i, &streamChannel);
+        if (error != pg::PGRERROR_OK)
+            throw (rte(error.GetDescription()));
+
+        // TODO: This is not going to be valid if cameras are on a switch...
+        streamChannel.destinationIpAddress.octets[0] = 224;
+        streamChannel.destinationIpAddress.octets[1] = 0;
+        streamChannel.destinationIpAddress.octets[2] = 0;
+        streamChannel.destinationIpAddress.octets[3] = 1;
+
+        // TODO: Make a more reasoned choice for these parameters based on the
+        // number of cameras on the system...
+        streamChannel.packetSize = 9000;
+        streamChannel.interPacketDelay = 250;
+
+        error = camera_.SetGigEStreamChannelInfo(i, &streamChannel);
+        if (error != pg::PGRERROR_OK)
+            throw (rte(error.GetDescription()));
+
+        std::cout << "Stream channel information for channel " << i << "\n";
+
+        std::ostringstream ipAddress;
+        ipAddress
+            << (unsigned int) streamChannel.destinationIpAddress.octets[0] << "."
+            << (unsigned int) streamChannel.destinationIpAddress.octets[1] << "."
+            << (unsigned int) streamChannel.destinationIpAddress.octets[2] << "."
+            << (unsigned int) streamChannel.destinationIpAddress.octets[3];
+
+        std::cout << "Network interface: " << streamChannel.networkInterfaceIndex
+                  << "\n";
+        //std::cout << "Host Port: " << streamChannel.hostPort << "\n";
+        std::cout << "Do not fragment bit: "
+                  << (streamChannel.doNotFragment ? "Enabled" : "Disabled")
+                  << "\n";
+        std::cout << "Packet size: " << streamChannel.packetSize << "\n";
+        std::cout << "Inter packet delay: " << streamChannel.interPacketDelay
+                  << "\n";
+        std::cout << "Destination IP address: " << ipAddress.str() << "\n";
+        std::cout << "Source port (on camera): " << streamChannel.sourcePort
+                  << "\n\n";
+    }
 }
+
+template <>
+void PointGreyCam<pg::GigECamera>::setupImageFormat()
+{
+    std::cout << "Setting image parameters...\n";
+
+    pg::GigEImageSettingsInfo image_settings_info;
+    pg::Error error = camera_.GetGigEImageSettingsInfo(&image_settings_info);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    pg::GigEImageSettings imageSettings;
+    imageSettings.offsetX = 0;
+    imageSettings.offsetY = 0;
+    imageSettings.width   = image_settings_info.maxWidth;
+    imageSettings.height  = image_settings_info.maxHeight;
+    // TODO: What is the correct format here? What if I want to do mono
+    // imaging?
+    imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW8;
+
+    std::cout << "ROI set to [0 0 "
+              << image_settings_info.maxWidth
+              << " "
+              << image_settings_info.maxHeight
+              << "]\n";
+
+    error = camera_.SetGigEImageSettings(&imageSettings);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    std::cout << "Image settings configured.\n";
+}
+
+template <>
+void PointGreyCam<pg::GigECamera>::setupImageFormat(const std::vector<size_t> &roi_vec)
+{
+    std::cout << "Querying image settings information...\n";
+
+    pg::GigEImageSettingsInfo image_settings_info;
+    pg::Error error = camera_.GetGigEImageSettingsInfo(&image_settings_info);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    if (roi_vec[0] > image_settings_info.maxWidth ||
+        roi_vec[1] > image_settings_info.maxHeight) {
+        throw (rte("ROI pixel offsets are larger than the sensor array. Exiting.\n"));
+    }
+
+    if ((roi_vec[2] + roi_vec[0]) > image_settings_info.maxWidth)
+        throw (rte("X-axis ROI settings are off the sensor array\n"));
+
+    if ((roi_vec[3] + roi_vec[1]) > image_settings_info.maxHeight)
+        throw (rte("Y-axis ROI settings are off the sensor array\n"));
+
+    pg::GigEImageSettings imageSettings;
+    imageSettings.offsetX = roi_vec[0];
+    imageSettings.offsetY = roi_vec[1];
+    imageSettings.height  = roi_vec[2];
+    imageSettings.width   = roi_vec[3];
+    imageSettings.pixelFormat = pg::PIXEL_FORMAT_RAW8;
+
+    std::cout << "ROI set to ["
+              << roi_vec[0]
+              << " "
+              << roi_vec[1]
+              << " "
+              << roi_vec[2]
+              << " "
+              << roi_vec[3]
+              << "]\n";
+
+    error = camera_.SetGigEImageSettings(&imageSettings);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+}
+
+template <>
+void PointGreyCam<pg::GigECamera>::setupPixelBinning(size_t x_bin, size_t y_bin)
+{
+    std::cout << "Setting image binning...\n";
+
+    // On-board image binning
+    pg::Error error;
+    error = camera_.SetGigEImageBinningSettings(x_bin, y_bin);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    std::cout << "Onboard binning set to [" << x_bin << " " << y_bin << "]\n";
+}
+
+template <>
+void PointGreyCam<pg::GigECamera>::connectToNode()
+{
+    pg::GigEImageSettings imageSettings;
+
+    pg::Error error = camera_.GetGigEImageSettings(&imageSettings);
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    pg::Image temp(imageSettings.height,
+                   imageSettings.width,
+                   pg::PIXEL_FORMAT_BGR);
+
+    raw_image_.Convert(pg::PIXEL_FORMAT_BGR, &temp);
+
+    const size_t bytes = temp.GetDataSize();
+    const size_t rows = temp.GetRows();
+    const size_t cols = temp.GetCols();
+    const size_t stride = temp.GetStride();
+
+    frame_sink_.bind(frame_sink_address_, bytes);
+
+    // TODO: Mono case?
+    shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
+    internal_sample_.set_rate_hz(frames_per_second_);
+
+    // Use the shared_frame_.data, which points to a block of shared memory as
+    // rbg_image's data buffer. When changes are made to rgb_image_, this is
+    // automatically propagated into shmem and 'converted' into a cv::Mat
+    // (although this 'conversion' is simply filling in appropriate header info,
+    // which was accomplished in the call to frame_sink_.retrieve())
+    rgb_image_ = std::make_unique<pg::Image>
+            (rows, cols, stride, shared_frame_.data, bytes, pg::PIXEL_FORMAT_BGR);
+}
+
+// 1. USB Camera
+
+template <>
+void PointGreyCam<pg::Camera>::setupImageFormat(
+    const std::vector<size_t> &roi_vec)
+{
+    std::cout << "Setting image parameters...\n";
+
+    const pg::Mode k_fmt7Mode = pg::MODE_0;
+    pg::Format7Info image_settings_info;
+    bool supported;
+
+    image_settings_info.mode = k_fmt7Mode;
+    pg::Error error = camera_.GetFormat7Info(&image_settings_info, &supported);
+    if (error != pg::PGRERROR_OK)
+         throw (rte(error.GetDescription()));
+
+    const pg::PixelFormat k_fmt7PixFmt = pg::PIXEL_FORMAT_MONO8;
+
+    if ((k_fmt7PixFmt & image_settings_info.pixelFormatBitField) == 0) {
+        std::cerr << "Pixel format is not supported\n";
+        throw(rte(error.GetDescription()));
+    }
+
+    if (roi_vec[0] > image_settings_info.maxWidth ||
+        roi_vec[1] > image_settings_info.maxHeight) {
+        throw (rte("ROI pixel offsets are larger than the sensor array. Exiting.\n"));
+    }
+
+    if ((roi_vec[2] + roi_vec[0]) > image_settings_info.maxWidth)
+        throw (rte("X-axis ROI settings are off the sensor array\n"));
+
+    if ((roi_vec[3] + roi_vec[1]) > image_settings_info.maxHeight)
+        throw (rte("Y-axis ROI settings are off the sensor array\n"));
+
+    pg::Format7ImageSettings fmt7ImageSettings;
+    fmt7ImageSettings.mode = image_settings_info.mode;
+    fmt7ImageSettings.offsetX = roi_vec[0];
+    fmt7ImageSettings.offsetY = roi_vec[1];
+    fmt7ImageSettings.width   = roi_vec[2];
+    fmt7ImageSettings.height  = roi_vec[3];
+    fmt7ImageSettings.pixelFormat = k_fmt7PixFmt;
+
+    std::cout << "ROI set to ["
+              << roi_vec[0]
+              << " "
+              << roi_vec[1]
+              << " "
+              << roi_vec[2]
+              << " "
+              << roi_vec[3]
+              << "]\n";
+
+    pg::Format7PacketInfo fmt7PacketInfo;
+    bool valid = true;
+
+    // Validate the settings to make sure that they are valid
+    error = camera_.ValidateFormat7Settings(
+        &fmt7ImageSettings, &valid, &fmt7PacketInfo);
+
+    if (error != pg::PGRERROR_OK)
+        throw(rte(error.GetDescription()));
+
+    if (!valid)
+        throw (rte("Format7 image settings are invalid for this camera."));
+
+    error = camera_.SetFormat7Configuration(
+        &fmt7ImageSettings,
+        fmt7PacketInfo.recommendedBytesPerPacket );
+
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    std::cout << "Image settings configured.\n";
+}
+
+template <>
+void PointGreyCam<pg::Camera>::setupImageFormat()
+{
+    std::cout << "Setting image parameters...\n";
+
+    const pg::Mode k_fmt7Mode = pg::MODE_0;
+
+    pg::Format7Info image_settings_info;
+    bool supported;
+    image_settings_info.mode = k_fmt7Mode;
+    pg::Error error = camera_.GetFormat7Info(&image_settings_info, &supported);
+    if (error != pg::PGRERROR_OK)
+         throw (rte(error.GetDescription()));
+
+    const pg::PixelFormat k_fmt7PixFmt = pg::PIXEL_FORMAT_MONO8;
+
+    if ((k_fmt7PixFmt & image_settings_info.pixelFormatBitField) == 0) {
+        std::cerr << "Pixel format is not supported\n";
+        throw(rte(error.GetDescription()));
+    }
+
+    pg::Format7ImageSettings fmt7ImageSettings;
+    fmt7ImageSettings.mode = image_settings_info.mode;
+    fmt7ImageSettings.offsetX = 0;
+    fmt7ImageSettings.offsetY = 0;
+    fmt7ImageSettings.width = image_settings_info.maxWidth;
+    fmt7ImageSettings.height = image_settings_info.maxHeight;
+    fmt7ImageSettings.pixelFormat = k_fmt7PixFmt;
+
+    std::cout << "ROI set to [0 0 "
+              << image_settings_info.maxWidth
+              << " "
+              << image_settings_info.maxHeight
+              << "]\n";
+
+    pg::Format7PacketInfo fmt7PacketInfo;
+    bool valid = true;
+
+    // Validate the settings to make sure that they are valid
+    error = camera_.ValidateFormat7Settings(
+        &fmt7ImageSettings, &valid, &fmt7PacketInfo);
+
+    if (error != pg::PGRERROR_OK)
+        throw(rte(error.GetDescription()));
+
+    if (!valid)
+        throw (rte("Format7 image settings are invalid for this camera."));
+
+    error = camera_.SetFormat7Configuration(
+        &fmt7ImageSettings,
+        fmt7PacketInfo.recommendedBytesPerPacket );
+
+    if (error != pg::PGRERROR_OK)
+        throw (rte(error.GetDescription()));
+
+    std::cout << "Image settings configured.\n";
+}
+
+template <>
+void PointGreyCam<pg::Camera>::setupPixelBinning(size_t x_bin, size_t y_bin)
+{
+    std::cout << "Pixel binning is not implemented.\n";
+}
+
+template <>
+void PointGreyCam<pg::Camera>::connectToNode()
+{
+    pg::Format7ImageSettings pImageSettings;
+    unsigned int pPacketSize;
+    float pPercentage;
+
+    pg::Error error = camera_.GetFormat7Configuration(
+        &pImageSettings, &pPacketSize, &pPercentage);
+
+    if (error != pg::PGRERROR_OK) 
+        throw (rte(error.GetDescription()));
+
+    pg::Image temp(pImageSettings.height,
+                   pImageSettings.width,
+                   pg::PIXEL_FORMAT_BGR);
+
+    raw_image_.Convert(pg::PIXEL_FORMAT_BGR, &temp);
+
+    const size_t bytes = temp.GetDataSize();
+    const size_t rows = temp.GetRows();
+    const size_t cols = temp.GetCols();
+    const size_t stride = temp.GetStride();
+
+    frame_sink_.bind(frame_sink_address_, bytes);
+
+    shared_frame_ = frame_sink_.retrieve(rows, cols, CV_8UC3);
+    internal_sample_.set_rate_hz(frames_per_second_);
+
+    // Use the shared_frame_.data, which points to a block of shared memory as
+    // rbg_image's data buffer. When changes are made to rgb_image_, this is
+    // automatically propagated into shmem and 'converted' into a cv::Mat
+    // (although this 'conversion' is simply filling in appropriate header info,
+    // which was accomplished in the call to frame_sink_.retrieve())
+    rgb_image_ = std::make_unique<pg::Image>
+            (rows, cols, stride, shared_frame_.data, bytes, pg::PIXEL_FORMAT_BGR);
+}
+
+// Explicit instantiation
+template class PointGreyCam<pg::Camera>;
+template class PointGreyCam<pg::GigECamera>;
 
 } /* namespace oat */

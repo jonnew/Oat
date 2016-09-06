@@ -24,9 +24,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include <cpptoml.h>
-#include <boost/program_options.hpp>
+#include "FlyCapture2.h"
 #include <boost/interprocess/exceptions.hpp>
+#include <boost/program_options.hpp>
+#include <cpptoml.h>
 #include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
@@ -36,12 +37,12 @@
 #include "FileReader.h"
 #include "WebCam.h"
 #ifdef USE_FLYCAP
-    #include "PGGigECam.h"
-    #include "PGUSBCam.h"
+    #include "PointGreyCam.h"
 #endif
 
 #define REQ_POSITIONAL_ARGS 2
 
+namespace pg = FlyCapture2;
 namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
@@ -62,8 +63,8 @@ const char usage_io[] =
 const char purpose[] =
     "Serve frames to SINK.";
 
-void printUsage(const po::options_description &options,
-                const std::string &type) {
+void printUsage(const po::options_description &options, const std::string &type)
+{
 
     if (type.empty()) {
         std::cout <<
@@ -87,12 +88,13 @@ void printUsage(const po::options_description &options,
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int) {
+void sigHandler(int)
+{
     quit = 1;
 }
 
-void run(const std::shared_ptr<oat::FrameServer>& server) {
-
+void run(const std::shared_ptr<oat::FrameServer> &server)
+{
     try {
 
         server->connectToNode();
@@ -109,8 +111,8 @@ void run(const std::shared_ptr<oat::FrameServer>& server) {
     }
 }
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
     std::signal(SIGINT, sigHandler);
 
     // Results of command line input
@@ -188,12 +190,13 @@ int main(int argc, char *argv[]) {
                 {
 
 #ifndef USE_FLYCAP
-                    std::cerr << oat::Error("Oat was not compiled with Point-Grey "
-                            "flycapture support, so TYPE=gige is not available.\n");
+                    std::cerr << oat::Error(
+                        "Oat was not compiled with Point-Grey "
+                        "flycapture support, so TYPE=gige is not available.\n");
                     return -1;
 #else
                     server =
-                        std::make_shared<oat::PGGigECam>(sink);
+                        std::make_shared<oat::PointGreyCam<pg::GigECamera>>(sink);
 #endif
                     break;
                 }
@@ -205,6 +208,20 @@ int main(int argc, char *argv[]) {
                 case 'd':
                 {
                     server = std::make_shared<oat::TestFrame>(sink);
+                    break;
+                }
+                case 'e':
+                {
+
+#ifndef USE_FLYCAP
+                    std::cerr << oat::Error(
+                        "Oat was not compiled with Point-Grey "
+                        "flycapture support, so TYPE=gige is not available.\n");
+                    return -1;
+#else
+                    server
+                        = std::make_shared<oat::PointGreyCam<pg::Camera>>(sink);
+#endif
                     break;
                 }
                 default:

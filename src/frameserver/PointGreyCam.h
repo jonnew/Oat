@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   PGGigECam.h
+//* File:   PointGreyCam.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -29,23 +29,25 @@
 #include "FlyCapture2.h"
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/datatypes/Sample.h"
+#include "../../lib/datatypes/Frame.h"
 
 namespace oat {
 
 namespace pg = FlyCapture2;
 
-class PGGigECam : public FrameServer {
+template <typename T>
+class PointGreyCam : public FrameServer {
 
-using rte = std::runtime_error;
+    using rte = std::runtime_error;
 
 public:
+
     /**
      * @brief Serve frames from a Point Grey GigE camera.
      * @param sink_address frame sink address
      */
-    explicit PGGigECam(const std::string &sink_address);
-    ~PGGigECam() final;
+    explicit PointGreyCam(const std::string &sink_address);
+    ~PointGreyCam() final;
 
     void appendOptions(po::options_description &opts) override;
     void configure(const po::variables_map &vm) override;
@@ -71,15 +73,14 @@ private:
     bool acquisition_started_ {false};
     bool use_trigger_ {false};
 
-    // GigE Camera object
-    pg::GigECamera camera_;
+    // Camera object
+    T camera_;
 
     // The current, unbuffered frame in PG's format
     pg::Image raw_image_;
     std::unique_ptr<pg::Image> rgb_image_;
 
     // Acquisition settings routines
-    void setupStreamChannels(void);
     void setupFrameRate(double fps, bool is_auto = false);
     void setupShutter(float shutter_ms, bool is_auto = false);
     void setupGain(float gain_db, bool is_auto = false);
@@ -88,7 +89,6 @@ private:
     void setupImageFormat(const std::vector<size_t> &roi);
     void setupImageFormat(void);
     //TODO: int setupCameraFrameBuffer(void);
-    //TODO: int setupImageFormat(int xOffset, int yOffset, int height, int width, PixelFormat format);
     void setupAsyncTrigger(int trigger_mode, bool trigger_rising, int trigger_pin);
     void setupStrobeOutput(int strobe_pin);
     void setupEmbeddedImageData(void);
@@ -99,7 +99,7 @@ private:
                                   int ieee_1394_cycle);
 
     // Physical camera control
-    void turnCameraOn(void);
+    //void turnCameraOn(void);
     void connectToCamera(int index);
     void startCapture(void);
 
@@ -122,7 +122,6 @@ private:
     void printError(pg::Error error);
     bool pollForTriggerReady(void);
     void printCameraInfo(void);
-    void printStreamChannelInfo(pg::GigEStreamChannel *stream_channel);
 };
 
 }      /* namespace oat */

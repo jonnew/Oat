@@ -6,8 +6,8 @@ if (${USE_FLYCAP})
     set (oat-frameserve_SOURCE
          FrameServer.cpp
          TestFrame.cpp
-         PGGigECam.cpp
-         PGUSBCam.cpp
+         PointGreyCam.cpp
+         #PointGreyGigE.cpp
          WebCam.cpp
          FileReader.cpp)
 else (${USE_FLYCAP})

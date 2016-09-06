@@ -152,7 +152,7 @@ SCENARIO ("Sink<SharedFrameHeader> must bind() before waiting, posting, or alloc
 
     GIVEN ("A single Sink<SharedFrameHeader>") {
 
-        oat::Sink<oat::SharedFrameHeader> sink;
+        oat::Sink<oat::Frame> sink;
         cv::Mat mat;
         size_t cols {100};
         size_t rows {100};

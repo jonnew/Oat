@@ -134,7 +134,7 @@ inline void SinkBase<T>::post() {
 #endif
 }
 
-// Specializations...
+/* SPECIALIZATIONS */
 
 // 0. Generic without need for zero-copy storage
 

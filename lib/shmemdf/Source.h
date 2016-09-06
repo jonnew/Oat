@@ -238,7 +238,7 @@ inline void SourceBase<T>::post() {
     did_wait_need_post_ = false;
 }
 
-// Specializations...
+/* SPECIALIZATIONS */
 
 template<typename T>
 class Source : public SourceBase<T> {
