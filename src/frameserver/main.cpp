@@ -38,11 +38,11 @@
 #ifdef USE_FLYCAP
  #include "FlyCapture2.h"
  #include "PointGreyCam.h"
+ namespace pg = FlyCapture2;
 #endif
 
 #define REQ_POSITIONAL_ARGS 2
 
-namespace pg = FlyCapture2;
 namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
