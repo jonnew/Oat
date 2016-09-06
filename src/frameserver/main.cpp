@@ -24,7 +24,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "FlyCapture2.h"
 #include <boost/interprocess/exceptions.hpp>
 #include <boost/program_options.hpp>
 #include <cpptoml.h>
@@ -37,7 +36,8 @@
 #include "FileReader.h"
 #include "WebCam.h"
 #ifdef USE_FLYCAP
-    #include "PointGreyCam.h"
+ #include "FlyCapture2.h"
+ #include "PointGreyCam.h"
 #endif
 
 #define REQ_POSITIONAL_ARGS 2
