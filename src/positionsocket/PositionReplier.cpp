@@ -46,9 +46,10 @@ void PositionReplier::appendOptions(po::options_description &opts)
     po::options_description local_opts;
     local_opts.add_options()
         ("endpoint,e", po::value<std::string>(),
-         "ZMQ-style endpoint: '<transport>://<host>:<port>'. For instance, "
-         "'tcp://*:5555' or 'ipc://*:5556' specify TCP and interprocess "
-         "communication on ports 5555 or 5556, respectively")
+         "ZMQ-style endpoint. For TCP: '<transport>://<host>:<port>'. For instance, "
+         "'tcp://*:5555'. Or, for interprocess communication: "
+         "'<transport>:///<user-named-pipe>. For instance "
+         "'ipc:///tmp/test.pipe'.");
         ;
     opts.add(local_opts);
 
