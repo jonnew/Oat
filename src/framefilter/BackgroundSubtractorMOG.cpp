@@ -98,7 +98,7 @@ void BackgroundSubtractorMOG::configure(const po::variables_map &vm) {
 void BackgroundSubtractorMOG::configureGPU(size_t index) {
 
     // Determine if a compatible device is available
-    int num_devices = cv::cuda::getCudaEnabledDeviceCount();
+    size_t num_devices = cv::cuda::getCudaEnabledDeviceCount();
     if (num_devices < 1)
         throw (std::runtime_error("No GPU found or OpenCV was compiled without CUDA support."));
 
