@@ -24,6 +24,7 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/in_place.h"
+#include "../../lib/utility/make_unique.h"
 
 namespace po = boost::program_options;
 
@@ -35,7 +36,7 @@ public:
 
     template<typename T, typename... Args>
     ViewerBase(std::in_place<T>, Args&&... args) :
-      viewer(new ViewerModel<T>(std::forward<Args>(args)...)) { }
+      viewer(std::make_unique<ViewerModel<T>>(std::forward<Args>(args)...)) { }
     void appendOptions(po::options_description &opts) const
         { viewer->appendOptions(opts); }
     void configure(const po::variables_map &vm) const

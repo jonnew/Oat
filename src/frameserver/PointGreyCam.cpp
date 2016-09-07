@@ -45,7 +45,7 @@ const typename PointGreyCam<T>::PixelMap PointGreyCam<T>::pix_map_ =
 {
     {PixelColor::mono8,
         std::make_tuple(pg::PIXEL_FORMAT_MONO8, pg::PIXEL_FORMAT_MONO8, CV_8UC1)},
-    {PixelColor::mono8,
+    {PixelColor::color8,
         std::make_tuple(pg::PIXEL_FORMAT_RAW8, pg::PIXEL_FORMAT_BGR, CV_8UC3)}
 };
 

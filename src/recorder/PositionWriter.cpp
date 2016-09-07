@@ -26,7 +26,7 @@
 
 namespace oat {
 
-PositionWriter::~PositionWriter() 
+PositionWriter::~PositionWriter()
 {
     json_writer_.EndArray();
     json_writer_.EndObject();
@@ -36,12 +36,16 @@ PositionWriter::~PositionWriter()
 void PositionWriter::initialize(const std::string &source_name,
                                 const oat::Position2D &p) {
 
-    // Position file 
+    // Position file
     fd_ = fopen(path_.c_str(), "wb");
+
+    // File desriptor must be avaiable for writing
+    // TODO: Use check permissions utility
+    assert(fd_);
 
     file_stream_.reset(new rapidjson::FileWriteStream(
             fd_,
-            position_write_buffer, 
+            position_write_buffer,
             sizeof(position_write_buffer)));
     json_writer_.Reset(*file_stream_);
 
@@ -84,17 +88,9 @@ void PositionWriter::initialize(const std::string &source_name,
 void PositionWriter::write(void) {
 
     oat::Position2D p("");
-    while (buffer_.pop(p)) {
 
-        // File desriptor must be avaiable for writing
-        assert(fd_);
-
-        json_writer_.StartObject();
-        //json_writer_.String("time");
-        //json_writer_.String(oat::createTimeStamp(true).c_str());
+    while (buffer_.pop(p))
         p.Serialize(json_writer_, verbose_file_);
-        json_writer_.EndObject();
-    }
 }
-    
+
 } /* namespace oat */

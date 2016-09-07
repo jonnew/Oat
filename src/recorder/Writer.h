@@ -21,15 +21,15 @@
 #define OAT_WRITER_H
 
 #include <string>
-//#include <chrono>
+
 #include <boost/lockfree/spsc_queue.hpp>
 #include <opencv2/videoio.hpp>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 
-#include "../../lib/utility/FileFormat.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/utility/FileFormat.h"
 
 namespace oat {
 namespace blf = boost::lockfree;

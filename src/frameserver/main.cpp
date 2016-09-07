@@ -51,6 +51,7 @@ volatile sig_atomic_t source_eof = 0;
 const char usage_type[] =
     "TYPE\n"
     "  wcam: Onboard or USB webcam.\n"
+    "  usb: Point Grey USB camera.\n"
     "  gige: Point Grey GigE camera.\n"
     "  file: Video from file (*.mpg, *.avi, etc.).\n"
     "  test: Write-free static image server for performance testing.";

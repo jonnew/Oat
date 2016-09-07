@@ -20,25 +20,24 @@
 #ifndef OAT_RECORDER_H
 #define OAT_RECORDER_H
 
-#include "FrameWriter.h"
-#include "PositionWriter.h"
+#include "WriterBase.h"
+//#include "FrameWriter.h"
+//#include "PositionWriter.h"
 
 #include <atomic>
 #include <condition_variable>
 #include <string>
 #include <thread>
+
 #include <boost/any.hpp>
 
-#include "../../lib/shmemdf/Helpers.h"
-#include "../../lib/shmemdf/Source.h"
-#include "../../lib/shmemdf/Sink.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/shmemdf/Helpers.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
 
 namespace oat {
-
-// Forward decl.
-class SharedFrameHeader;
 
 /**
  * Position and frame recorder.
@@ -46,16 +45,16 @@ class SharedFrameHeader;
 class Recorder {
 
     // The controlRecorder routine needs access to Recorder's private members
-    friend 
+    friend
     int controlRecorder(std::istream &in,
                         oat::Recorder &recorder,
                         bool print_cmd);
 public:
 
     using pvec_size_t =
-        std::vector<oat::NamedSource<oat::Position2D>>::size_type; 
+        std::vector<oat::NamedSource<oat::Position2D>>::size_type;
     using fvec_size_t =
-        std::vector<oat::NamedSource<oat::SharedFrameHeader>>::size_type;
+        std::vector<oat::NamedSource<oat::Frame>>::size_type;
 
     /**
      * Position and frame recorder.
@@ -75,15 +74,15 @@ public:
      */
     void connectToNodes(void);
 
-    /** 
+    /**
      * @brief Create and initialize recording file(s). Must be called
      * before writeStreams.
-     * 
+     *
      */
     void initializeRecording(void);
 
     /** Collect frames and positions from SOURCES. Write frames and positions
-     * to file.  
+     * to file.
      * @return SOURCE end-of-stream signal. If true, this component should
      * exit.
      */
@@ -98,11 +97,11 @@ public:
     // Accessors
     bool record_on(void) const { return record_on_; }
     void set_record_on(const bool value) { record_on_ = value; }
-    bool source_eof(void) const { return source_eof_; }
+    //bool source_eof(void) const { return source_eof_; }
     void set_save_path(const std::string &value) { save_path_ = value; }
     void set_file_name(const std::string &value) { file_name_ = value; }
     void set_prepend_timestamp(const bool value) { prepend_timestamp_ = value; }
-    void set_allow_overwrite(const bool value) { allow_overwrite_ = value; } 
+    void set_allow_overwrite(const bool value) { allow_overwrite_ = value; }
     void set_verbose_file(const bool value) { verbose_file_ = value; };
 
 private:
@@ -144,32 +143,30 @@ private:
     bool initialization_required_ {true};
 
     // Source end of file flag
-    bool source_eof_ {false};
+    //bool source_eof_ {false};
 
     // Executed by writer_thread_
     void writeLoop(void);
 
-    // TODO: Somehow make list of generic Writers
     // File writers
-    std::vector< std::unique_ptr
-               < oat::PositionWriter > > position_writers_;
-    std::vector< std::unique_ptr
-               < oat::FrameWriter > > frame_writers_;
+    std::vector<std::unique_ptr<oat::WritreBase>> writers_;
 
     // File-writer threading
     std::thread writer_thread_;
     std::mutex writer_mutex_;
     std::condition_variable writer_condition_variable_;
 
+    // TODO: Make generic
     // Frame sources
     oat::NamedSourceList<oat::SharedFrameHeader> frame_sources_;
 
     // Position sources
     oat::NamedSourceList<oat::Position2D> position_sources_;
 
-    std::string generateFileName(const std::string timestamp, 
+    // Create file name from components
+    std::string generateFileName(const std::string timestamp,
                                  const std::string &source_name,
-                                 const std::string &extension); 
+                                 const std::string &extension);
 };
 
 }      /* namespace oat */
