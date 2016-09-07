@@ -54,14 +54,14 @@ void HSVDetector::appendOptions(po::options_description &opts) {
     po::options_description local_opts;
     local_opts.add_options()
         ("h-thresh,H", po::value<std::string>(),
-         "Hue thresholds as array of ints, [min,max], specifying the minimum and maximum "
-         "hue levels to consider to be in range.")
+         "Array of ints between 0 and 256, [min,max], specifying the hue "
+         "passband.")
         ("s-thresh,S", po::value<std::string>(),
-         "Saturation thresholds as array of ints, [min,max], specifying the minimum and maximum "
-         "saturation levels to consider to be in range.")
+         "Array of ints between 0 and 256, [min,max], specifying the "
+         "saturation passband.")
         ("v-thresh,V", po::value<std::string>(),
-         "Value thresholds as array of ints, [min,max], specifying the minimum and maximum "
-         "value levels to consider to be in range.")
+         "Array of ints between 0 and 256, [min,max], specifying the value "
+         "passband.")
         ("erode,e", po::value<int>(),
          "Contour erode kernel size in pixels (normalized box filter).")
         ("dilate,d", po::value<int>(),

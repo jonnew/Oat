@@ -50,7 +50,7 @@ const char usage_type[] =
     "  bsub: Background subtraction\n"
     "  mask: Binary mask\n"
     "  mog: Mixture of Gaussians background segmentation.\n"
-    "  undistort: Compensate for lens distortion using distortion model.";
+    "  undistort: Correct for lens distortion using lens distortion model.";
 
 const char usage_io[] =
     "SOURCE:\n"

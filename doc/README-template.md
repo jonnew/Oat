@@ -21,12 +21,12 @@ __Contributors__
     - [Frame Server](#frame-server)
         - [Signature](#signature)
         - [Usage](#usage)
-        - [Configuration File Options](#configuration-file-options)
+        - [Configuration Options](#configuration-options)
         - [Examples](#examples)
     - [Frame Filter](#frame-filter)
         - [Signature](#signature-1)
         - [Usage](#usage-1)
-        - [Configuration File Options](#configuration-file-options-1)
+        - [Configuration Options](#configuration-options-1)
         - [Examples](#examples-1)
     - [Frame Viewer](#frame-viewer)
         - [Signature](#signature-2)
@@ -35,22 +35,22 @@ __Contributors__
     - [Position Detector](#position-detector)
         - [Signature](#signature-3)
         - [Usage](#usage-3)
-        - [Configuration File Options](#configuration-file-options-2)
+        - [Configuration Options](#configuration-options-2)
         - [Example](#example-1)
     - [Position Generator](#position-generator)
         - [Signature](#signature-4)
         - [Usage](#usage-4)
-        - [Configuration File Options](#configuration-file-options-3)
+        - [Configuration Options](#configuration-options-3)
         - [Example](#example-2)
     - [Position Filter](#position-filter)
         - [Signature](#signature-5)
         - [Usage](#usage-5)
-        - [Configuration File Options](#configuration-file-options-4)
+        - [Configuration Options](#configuration-options-4)
         - [Example](#example-3)
     - [Position Combiner](#position-combiner)
         - [Signature](#signature-6)
         - [Usage](#usage-6)
-        - [Configuration File Options](#configuration-file-options-5)
+        - [Configuration Options](#configuration-options-5)
         - [Example](#example-4)
     - [Frame Decorator](#frame-decorator)
         - [Signature](#signature-7)
@@ -216,60 +216,26 @@ component.
 oat-frameserve-help
 ```
 
-#### Configuration File Options
-__TYPE = `gige`__
+#### Configuration Options
+__TYPE = `wcam`__
+```
+oat-frameserve-wcam-help
+```
 
-- __`index`__=`+int` User specified camera index. Useful in multi-camera
-  imaging configurations.
-- __`fps`__=`+float` Acquisition frame rate (Hz). Ignored if `trigger_on=true`
-  and `enforce_fps=false`.  If unspecified, then the maximum frame rate will be
-  used.
-- __`exposure`__=`float` Automatically adjust both shutter and gain to
-  achieve given exposure (EV).
-- __`shutter`__=`+float` Shutter time in milliseconds. Specifying `exposure`
-  overrides this option.
-- __`gain`__=`float` Sensor gain value. Specifying `exposure` overrides this
-  option (dB).
-- __`white_bal`__=`{red=+int, blue=+int}` White-balance specified as red/blue
-  intensity values (0-1000).
-- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of
-  interest to extract from the camera or video stream (pixels).
-- __`trigger_on`__=`bool` True to use camera trigger, false to use software
-  polling.
-- __`trigger_rising`__=`bool` True to trigger on rising edge, false to
-  trigger on falling edge.
-- __`trigger_mode`__=`+int` Point-grey trigger mode. Common values are:
-    - 0 - Standard external trigger. Trigger edge causes sensor exposure, then
-      sensor readout to internal memory.
-    - 1 - Blub shutter mode. Same as 0, except that sensor exposure duration is
-      determined by trigger active duration.
-    - 7 - Continuous internal trigger. No external trigger required, but not
-      synchronized to an external clock.
-    - 14 - Overlapped exposure/readout external trigger. Sensor exposure occurs
-      during sensory readout to internal memory. This is the fastest external
-      trigger mode.
-- __`trigger_pin`__=`+int` Hardware pin number on Point-grey camera that
-  trigger is sent to.
-- __`strobe_pin`__=`+int` Hardware pin number on Point-grey camera that
-  a gate signal for the camera shutter is copied  to.
-- __`enforce_fps`__=`bool`If true, ensures that frames are produced at the
-  `fps` setting by retransmitting frames if the requested period is exceeded.
-  This is sometimes needed in the case of an external trigger because PG
-  cameras sometimes just ignore them. I have opened a support ticket on this,
-  but PG has no solution yet.
+__TYPE = `gige` and `usb`__
+```
+oat-frameserve-gige-help
+```
 
 __TYPE = `file`__
+```
+oat-frameserve-file-help
+```
 
-- __`fps`__=`float` Target frame rate in frames per second. If left undefined,
-  frames will be read as quickly as possible.
-- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of
-  interest to extract from the camera or video stream (pixels).
-
-__TYPE = `wcam`__
-
-- __`index`__=`+int` User specified camera index. Useful in multi-camera
-  imaging configurations.
-
+__TYPE = `test`__
+```
+oat-frameserve-test-help
+```
 
 #### Examples
 ```bash
@@ -301,44 +267,26 @@ interest.
 oat-framefilt-help
 ```
 
-#### Configuration File Options
-__TYPE = `bsub`__
-
-- __`background`__=`string` Path to a background image to be subtracted from the
-  SOURCE frames. This image must have the same dimensions as frames from
-  SOURCE.
-- __`adaption-coeff`__=`+float` Value, 0 to 1.0, specifying how quickly the new
-  frames are used to update the backgound image. Default is 0, specifying no
-  adaptation and a static background image that is never updated.
+#### Configuration Options
 __TYPE = `mask`__
+```
+oat-framefilt-mask-help
 
-- __`mask`__=`string` Path to a binary image used to mask frames from SOURCE.
-  SOURCE frame pixels with indices corresponding to non-zero value pixels in
-  the mask image will be unaffected. Others will be set to zero. This image
-  must have the same dimensions as frames from SOURCE.
+```
+__TYPE = `bsub`__
+```
+oat-framefilt-bsub-help
+```
 
 __TYPE = `mog`__
-
-- __`learning-coeff`__=`+float` Value, 0 to 1.0, specifying how quickly the
-  statistical model of the background image should be updated. Default is 0,
-  specifying no adaptation.
-- __`gpu-index`__=`+int` Index of the GPU to use for performing background
-  subtraction if Oat was compiled with CUDA support.
+```
+oat-framefilt-mog-help
+```
 
 __TYPE = `undistort`__
-
-- __`camera-model`__=`+int` Value, 0 or 1, specifying the camera model to use.
-  0 specifies a Pinhole camera model, 1 specifies fisheye. Generated by
-  [oat-calibrate](#calibrate).
-- __`camera-matrix`__=
-  `[+float,+float,+float,+float,+float,+float,float,+float,+float]`, [Camera
-  matrix](https://en.wikipedia.org/wiki/Camera_matrix) for your imaging setup.
-  Generated by [oat-calibrate](#calibrate).
-- __`distortion-coeffs`__= `[+float,+float,+float,+float,+float, ...]`, Five to
-  eight element vector specifying lens distortion coefficients. Generated by
-  [oat-calibrate](#calibrate).
-- __`rotation`__=`+double` Counter clockwise Degrees that undistorted image
-  should be rotated. If not specified, defaults to 0.0.
+```
+oat-framefilt-undistort-help
+```
 
 #### Examples
 ```bash
@@ -361,11 +309,17 @@ displayed frame by pressing <kbd>s</kbd> while the display window is
 in focus.
 
 #### Signature
-    frame --> oat-view
+    token --> oat-view
 
 #### Usage
 ```
 oat-view-help
+```
+
+#### Configuration Options
+__TYPE = `frame`__
+```
+oat-view-frame-help
 ```
 
 #### Example
@@ -392,23 +346,16 @@ detected positions to a second segment of shared memory.
 oat-posidet-help
 ```
 
-#### Configuration File Options
+#### Configuration Options
 __TYPE = `hsv`__
-
-- __`tune`__=`bool` Provide GUI sliders for tuning hsv parameters
-- __`erode`__=`+int` Candidate object erosion kernel size (pixels)
-- __`dilate`__=`+int` Candidate object dilation kernel size (pixels)
-- __`min_area`__=`+double` Minimum object area (pixels<sup>2</sup>)
-- __`max_area`__=`+double` Maximum object area (pixels<sup>2</sup>)
-- __`h_thresholds`__=`{min=+int, max=+int}` Hue pass band
-- __`s_thresholds`__=`{min=+int, max=+int}` Saturation pass band
-- __`v_thresholds`__=`{min=+int, max=+int}` Value pass band
+```
+oat-posidet-hsv-help
+```
 
 __TYPE = `diff`__
-
-- __`tune`__=`bool` Provide GUI sliders for tuning diff parameters
-- __`blur`__=`+int` Blurring kernel size (normalized box filter; pixels)
-- __`diff_threshold`__=`+int` Intensity difference threshold
+```
+oat-posidet-diff-help
+```
 
 #### Example
 ```bash
@@ -436,15 +383,11 @@ generated positions to shared memory.
 oat-posigen-help
 ```
 
-#### Configuration File Options
+#### Configuration Options
 __TYPE = `rand2D`__
-
-- __`rate-hz`__=`+double` Position update rate in Hz.
-- __`num-samples`__=`+int` Number of position samples to produce.
-- __`room`__=`[+double, +double, +double, +double]` The 'room' in which generated
-  positions reside specified as [x origin, y origin, width, height]. Arbitrary
-  units. The room has periodic boundaries so when a position leaves one side it
-  will enter the opposing one.
+```
+oat-posigen-rand2D-help
+```
 
 #### Example
 ```bash
@@ -468,50 +411,20 @@ region contours.
 oat-posifilt-help
 ```
 
-#### Configuration File Options
+#### Configuration Options
 __TYPE = `kalman`__
-
-- __`dt`__=`+float` Sample period (seconds).
-- __`timeout`__=`+float` Time to perform position estimation detection with
-  lack of updated position measure (seconds).
-- __`sigma_accel`__=`+float` Standard deviation of normally distributed,
-  random accelerations used by the internal model of object motion (position
-  units/s<sup>2</sup>; e.g. pixels/s<sup>2</sup>).
-- __`sigma_noise`__=`+float` Standard deviation of randomly distributed
-  position measurement noise (position units; e.g. pixels).
-- __`tune`__=`bool` Use the GUI to tweak parameters.
+```
+oat-posifilt-kalman-help
+```
 
 __TYPE = `homography`__
-
-- __`homography`__ =
-  `[+float,+float,+float, +float,+float,+float,+float,+float,+float]`,
-  Homography matrix for 2D position (1x9; world units/pixel). Generate using
-  [oat-calibrate](#calibrate).
+```
+oat-posifilt-homography-help
+```
 
 __TYPE = `region`__
-
-- __`<regions>`__=`[[+float, +float],[+float, +float],...,[+float, +float]]`
-  User-named region contours (pixels). Regions counters are specified as
-  `n`-point matrices, `[[x0, y0],[x1, y1],...,[xn, yn]]`, which define the
-  vertices of a polygon. The name of the contour is used as the region label.
-  For example, here is an octagonal region called `CN` and a tetragonal region
-  called `R0`:
-
 ```
-# These regions could be named anything...
-CN = [[336.00, 272.50],
-      [290.00, 310.00],
-      [289.00, 369.50],
-      [332.67, 417.33],
-      [389.33, 413.33],
-      [430.00, 375.33],
-      [433.33, 319.33],
-      [395.00, 272.00]]
-
-R0 = [[654.00, 380.00],
-      [717.33, 386.67],
-      [714.00, 316.67],
-      [655.33, 319.33]]
+oat-posifilt-region-help
 ```
 
 #### Example
@@ -537,13 +450,11 @@ oat posifilt kalman pos kfilt -c config.toml kalman_config
 oat-posicom-help
 ```
 
-#### Configuration File Options
+#### Configuration Options
 __TYPE = `mean`__
-
-- __`heading_anchor`__=`+int` Index of the SOURCE position to use as an anchor
-  when calculating object heading. In this case the heading equals the mean
-  directional vector between this anchor position and all other SOURCE
-  positions. If unspecified, the heading is not calculated.
+```
+oat-posifilt-region-help
+```
 
 #### Example
 ```bash
@@ -684,6 +595,27 @@ client or server configurations.
 oat-posisock-help
 ```
 
+#### Configuration Options
+__TYPE = `std`__
+```
+oat-posisock-std-help
+```
+
+__TYPE = `pub`__
+```
+oat-posisock-pub-help
+```
+
+__TYPE = `rep`__
+```
+oat-posisock-rep-help
+```
+
+__type = `udp`__
+```
+oat-posisock-udp-help
+```
+
 #### Example
 ```bash
 # Reply to requests for positions from the 'pos' stream to port 5555 using TCP
@@ -772,6 +704,17 @@ for an imaging system that can be used to parameterize `oat-framefilt` and
 #### Usage
 ```
 oat-calibrate-help
+```
+
+#### Configuration Options
+__TYPE = `camera`__
+```
+oat-calibrate-camera-help
+```
+
+__TYPE = `homography`__
+```
+oat-calibrate-homography-help
 ```
 
 \newpage

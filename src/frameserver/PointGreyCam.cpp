@@ -45,7 +45,7 @@ const typename PointGreyCam<T>::PixelMap PointGreyCam<T>::pix_map_ =
 {
     {PixelColor::mono8,
         std::make_tuple(pg::PIXEL_FORMAT_MONO8, pg::PIXEL_FORMAT_MONO8, CV_8UC1)},
-    {PixelColor::color8,
+    {PixelColor::mono8,
         std::make_tuple(pg::PIXEL_FORMAT_RAW8, pg::PIXEL_FORMAT_BGR, CV_8UC3)}
 };
 
@@ -132,6 +132,9 @@ void PointGreyCam<T>::appendOptions(po::options_description &opts)
          "Two element array of unsigned integers, [red,blue], used to "
          "specify the white balance. Values are between 0 and 1000. "
          "Only works for color sensors. Defaults to off.")
+        ("auto-white-balance,W", 
+         "If specified, the white balance will be adjusted by the camera. "
+         "This option overrides manual white-balance specification.")
         ;
 
     opts.add(local_opts);
@@ -190,11 +193,15 @@ void PointGreyCam<T>::configure(const po::variables_map &vm)
         setupGain(gain, true);
 
     // Set white balance
+    // TODO: Needs three states: On, Auto, manual
     std::vector<double> wb;
-    if (oat::config::getArray<double, 2>(vm, config_table, "white-bal", wb))
-        setupWhiteBalance(wb[0], wb[1], true);
+    bool auto_wb;
+    if (oat::config::getValue<bool>(vm, config_table, "auto-white-balance", auto_wb))
+        setupWhiteBalance(0, 0, true, true);
+    else if (oat::config::getArray<double, 2>(vm, config_table, "white-balance", wb))
+        setupWhiteBalance(wb[0], wb[1], true, false);
     else
-        setupWhiteBalance(0, 0, false);
+        setupWhiteBalance(0, 0, false, false);
 
     // Pixel binning
     std::vector<size_t> bin_size;
@@ -384,12 +391,14 @@ void PointGreyCam<T>::setupGain(float gain_db, bool is_auto)
 }
 
 template <typename T>
-void PointGreyCam<T>::setupWhiteBalance(int bal_red, int bal_blue, bool is_on)
+void PointGreyCam<T>::setupWhiteBalance(int bal_red, int bal_blue, bool is_on, bool is_auto)
 {
-
     // Mono pixels do not support white balance
-    if (pix_col_ == oat::PixelColor::mono8)
+    if (pix_col_ == oat::PixelColor::mono8) {
+        std::cerr << oat::Warn(
+            "You cannot adjust the white balance for mono frames.");
         return;
+    }
 
     std::cout << "Setting camera white balance...\n";
 
@@ -400,7 +409,7 @@ void PointGreyCam<T>::setupWhiteBalance(int bal_red, int bal_blue, bool is_on)
         throw (rte(error.GetDescription()));
 
     prop.onOff = is_on;
-    prop.autoManualMode = false;
+    prop.autoManualMode = is_auto;
     prop.absControl = false;
     prop.valueA = bal_red;
     prop.valueB = bal_blue;
@@ -1233,8 +1242,6 @@ void PointGreyCam<pg::Camera>::setupImageFormat()
 template <>
 void PointGreyCam<pg::Camera>::setupPixelBinning(size_t x_bin, size_t y_bin)
 {
-    (void)x_bin; // Suppress unused parameter warnings
-    (void)y_bin;
     std::cout << "Pixel binning is not implemented.\n";
 }
 

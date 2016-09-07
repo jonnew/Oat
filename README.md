@@ -21,12 +21,12 @@ __Contributors__
     - [Frame Server](#frame-server)
         - [Signature](#signature)
         - [Usage](#usage)
-        - [Configuration File Options](#configuration-file-options)
+        - [Configuration Options](#configuration-options)
         - [Examples](#examples)
     - [Frame Filter](#frame-filter)
         - [Signature](#signature-1)
         - [Usage](#usage-1)
-        - [Configuration File Options](#configuration-file-options-1)
+        - [Configuration Options](#configuration-options-1)
         - [Examples](#examples-1)
     - [Frame Viewer](#frame-viewer)
         - [Signature](#signature-2)
@@ -35,22 +35,22 @@ __Contributors__
     - [Position Detector](#position-detector)
         - [Signature](#signature-3)
         - [Usage](#usage-3)
-        - [Configuration File Options](#configuration-file-options-2)
+        - [Configuration Options](#configuration-options-2)
         - [Example](#example-1)
     - [Position Generator](#position-generator)
         - [Signature](#signature-4)
         - [Usage](#usage-4)
-        - [Configuration File Options](#configuration-file-options-3)
+        - [Configuration Options](#configuration-options-3)
         - [Example](#example-2)
     - [Position Filter](#position-filter)
         - [Signature](#signature-5)
         - [Usage](#usage-5)
-        - [Configuration File Options](#configuration-file-options-4)
+        - [Configuration Options](#configuration-options-4)
         - [Example](#example-3)
     - [Position Combiner](#position-combiner)
         - [Signature](#signature-6)
         - [Usage](#usage-6)
-        - [Configuration File Options](#configuration-file-options-5)
+        - [Configuration Options](#configuration-options-5)
         - [Example](#example-4)
     - [Frame Decorator](#frame-decorator)
         - [Signature](#signature-7)
@@ -232,60 +232,116 @@ SINK:
   User-supplied name of the memory segment to publish frames to (e.g. raw).
 ```
 
-#### Configuration File Options
-__TYPE = `gige`__
+#### Configuration Options
+__TYPE = `wcam`__
+```
+  -c [ --config ] arg     Configuration file/key pair.
+                          e.g. 'config.toml mykey'
 
-- __`index`__=`+int` User specified camera index. Useful in multi-camera
-  imaging configurations.
-- __`fps`__=`+float` Acquisition frame rate (Hz). Ignored if `trigger_on=true`
-  and `enforce_fps=false`.  If unspecified, then the maximum frame rate will be
-  used.
-- __`exposure`__=`float` Automatically adjust both shutter and gain to
-  achieve given exposure (EV).
-- __`shutter`__=`+float` Shutter time in milliseconds. Specifying `exposure`
-  overrides this option.
-- __`gain`__=`float` Sensor gain value. Specifying `exposure` overrides this
-  option (dB).
-- __`white_bal`__=`{red=+int, blue=+int}` White-balance specified as red/blue
-  intensity values (0-1000).
-- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of
-  interest to extract from the camera or video stream (pixels).
-- __`trigger_on`__=`bool` True to use camera trigger, false to use software
-  polling.
-- __`trigger_rising`__=`bool` True to trigger on rising edge, false to
-  trigger on falling edge.
-- __`trigger_mode`__=`+int` Point-grey trigger mode. Common values are:
-    - 0 - Standard external trigger. Trigger edge causes sensor exposure, then
-      sensor readout to internal memory.
-    - 1 - Blub shutter mode. Same as 0, except that sensor exposure duration is
-      determined by trigger active duration.
-    - 7 - Continuous internal trigger. No external trigger required, but not
-      synchronized to an external clock.
-    - 14 - Overlapped exposure/readout external trigger. Sensor exposure occurs
-      during sensory readout to internal memory. This is the fastest external
-      trigger mode.
-- __`trigger_pin`__=`+int` Hardware pin number on Point-grey camera that
-  trigger is sent to.
-- __`strobe_pin`__=`+int` Hardware pin number on Point-grey camera that
-  a gate signal for the camera shutter is copied  to.
-- __`enforce_fps`__=`bool`If true, ensures that frames are produced at the
-  `fps` setting by retransmitting frames if the requested period is exceeded.
-  This is sometimes needed in the case of an external trigger because PG
-  cameras sometimes just ignore them. I have opened a support ticket on this,
-  but PG has no solution yet.
+  -i [ --index ] arg      Camera index. Defaults to 0. Useful in multi-camera 
+                          imaging configurations.
+  --roi arg               Four element array of unsigned ints, 
+                          [x0,y0,width,height],defining a rectangular region of
+                          interest. Originis upper left corner. ROI must fit 
+                          within acquiredframe size. Defaults to full sensor 
+                          size.
+```
+
+__TYPE = `gige` and `usb`__
+```
+  -c [ --config ] arg            Configuration file/key pair.
+                                 e.g. 'config.toml mykey'
+
+  -i [ --index ] arg             Camera index. Defaults to 0. Useful in 
+                                 multi-camera imaging configurations.
+  -r [ --fps ] arg               Acquisition frame rate in Hz. Ignored if 
+                                 trigger-mode > -1 and enforce_fps=false. 
+                                 Defaults to the maximum frame rate.
+  -e [ --enforce-fps ]           If true, ensures that frames are produced at 
+                                 the fps setting bool retransmitting frames if 
+                                 the requested period is exceeded. This is 
+                                 sometimes needed in the case of an external 
+                                 trigger because PG cameras sometimes just 
+                                 ignore them. I have opened a support ticket on
+                                 this, but PG has no solution yet.
+  -s [ --shutter ] arg           Shutter time in milliseconds. Defaults to 
+                                 auto.
+  -C [ --color ] arg             Pixel color format. Defaults to 0.
+                                 
+                                 Values:
+                                   0:  Mono 8-bit.
+                                   1:  Color (BRG) 8-bit.
+                                 
+  -g [ --gain ] arg              Sensor gain value, specified in dB. Defaults 
+                                 to auto.
+  -S [ --strobe-pin ] arg        Hardware pin number on that a gate signal for 
+                                 the camera shutter is copied to. Defaults to 
+                                 1.
+  -m [ --trigger-mode ] arg      Shutter trigger mode. Defaults to -1.
+                                 
+                                 Values:
+                                  -1:  No external trigger. Frames are captured
+                                       in free-running mode at the currently 
+                                       set frame rate.
+                                   0:  Standard external trigger. Trigger edge 
+                                       causes sensor exposure, then sensor 
+                                       readout to internal memory.
+                                   1:  Bulb shutter mode. Same as 0, except 
+                                       that sensor exposure duration is 
+                                       determined by trigger active duration.
+                                  13:  Low smear mode. Same as 0, speed of the 
+                                       vertical clock is increased near the end
+                                       of the integration cycle.
+                                  14:  Overlapped exposure/readout external 
+                                       trigger. Sensor exposure occurs during 
+                                       sensory readout to internal memory. This
+                                       is the fastest option.
+  -p [ --trigger-rising ]        True to trigger on rising edge, false to 
+                                 trigger on falling edge. Defaults to true.
+  -t [ --trigger-pin ] arg       GPIO pin number on that trigger is sent to if 
+                                 external shutter triggering is used. Defaults 
+                                 to 0.
+  -R [ --roi ] arg               Four element array of unsigned ints, 
+                                 [x0,y0,width,height],defining a rectangular 
+                                 region of interest. Originis upper left 
+                                 corner. ROI must fit within acquiredframe 
+                                 size. Defaults to full sensor size.
+  -b [ --bin ] arg               Two element array of unsigned ints, [bx,by], 
+                                 defining how pixels should be binned before 
+                                 transmission to the computer. Defaults to 
+                                 [1,1] (no binning).
+  -w [ --white-balance ] arg     Two element array of unsigned integers, 
+                                 [red,blue], used to specify the white balance.
+                                 Values are between 0 and 1000. Only works for 
+                                 color sensors. Defaults to off.
+  -W [ --auto-white-balance ]    If specified, the white balance will be 
+                                 adjusted by the camera. This option overrides 
+                                 manual white-balance specification.
+```
 
 __TYPE = `file`__
+```
+  -c [ --config ] arg       Configuration file/key pair.
+                            e.g. 'config.toml mykey'
 
-- __`fps`__=`float` Target frame rate in frames per second. If left undefined,
-  frames will be read as quickly as possible.
-- __`roi`__=`{x_offset=+int, y_offset=+int, width=+int, height+int}` Region of
-  interest to extract from the camera or video stream (pixels).
+  -f [ --video-file ] arg   Path to video file to serve frames from.
+  -r [ --fps ] arg          Frames to serve per second.
+  --roi arg                 Four element array of unsigned ints, 
+                            [x0,y0,width,height],defining a rectangular region 
+                            of interest. Originis upper left corner. ROI must 
+                            fit within acquiredframe size. Defaults to full 
+                            video size.
+```
 
-__TYPE = `wcam`__
+__TYPE = `test`__
+```
+  -c [ --config ] arg       Configuration file/key pair.
+                            e.g. 'config.toml mykey'
 
-- __`index`__=`+int` User specified camera index. Useful in multi-camera
-  imaging configurations.
-
+  -f [ --test-image ] arg   Path to test image used as frame source.
+  -r [ --fps ] arg          Frames to serve per second.
+  -n [ --num-frames ] arg   Number of frames to serve before exiting.
+```
 
 #### Examples
 ```bash
@@ -326,7 +382,7 @@ TYPE
   bsub: Background subtraction
   mask: Binary mask
   mog: Mixture of Gaussians background segmentation.
-  undistort: Compensate for lens distortion using distortion model.
+  undistort: Correct for lens distortion using lens distortion model.
 
 SOURCE:
   User-supplied name of the memory segment to receive frames from (e.g. raw).
@@ -335,44 +391,59 @@ SINK:
   User-supplied name of the memory segment to publish frames to (e.g. filt).
 ```
 
-#### Configuration File Options
-__TYPE = `bsub`__
-
-- __`background`__=`string` Path to a background image to be subtracted from the
-  SOURCE frames. This image must have the same dimensions as frames from
-  SOURCE.
-- __`adaption-coeff`__=`+float` Value, 0 to 1.0, specifying how quickly the new
-  frames are used to update the backgound image. Default is 0, specifying no
-  adaptation and a static background image that is never updated.
+#### Configuration Options
 __TYPE = `mask`__
+```
+  -c [ --config ] arg     Configuration file/key pair.
+                          e.g. 'config.toml mykey'
 
-- __`mask`__=`string` Path to a binary image used to mask frames from SOURCE.
-  SOURCE frame pixels with indices corresponding to non-zero value pixels in
-  the mask image will be unaffected. Others will be set to zero. This image
-  must have the same dimensions as frames from SOURCE.
+  -f [ --mask ] arg       Path to a binary image used to mask frames from 
+                          SOURCE. SOURCE frame pixels with indices 
+                          corresponding to non-zero value pixels in the mask 
+                          image will be unaffected. Others will be set to zero.
+                          This image must have the same dimensions as frames 
+                          from SOURCE.
+
+```
+__TYPE = `bsub`__
+```
+  -c [ --config ] arg             Configuration file/key pair.
+                                  e.g. 'config.toml mykey'
+
+  -a [ --adaptation-coeff ] arg   Scalar value, 0 to 1.0, specifying how 
+                                  quickly the new frames are used to update the
+                                  backgound image. Default is 0, specifying no 
+                                  adaptation and a static background image that
+                                  is never updated.
+  -f [ --background ] arg         Path to background image used for 
+                                  subtraction. If not provided, the first frame
+                                  is used as the background image.
+```
 
 __TYPE = `mog`__
+```
+  -c [ --config ] arg             Configuration file/key pair.
+                                  e.g. 'config.toml mykey'
 
-- __`learning-coeff`__=`+float` Value, 0 to 1.0, specifying how quickly the
-  statistical model of the background image should be updated. Default is 0,
-  specifying no adaptation.
-- __`gpu-index`__=`+int` Index of the GPU to use for performing background
-  subtraction if Oat was compiled with CUDA support.
+  -a [ --adaptation-coeff ] arg   Value, 0 to 1.0, specifying how quickly the 
+                                  statistical model of the background image 
+                                  should be updated. Default is 0, specifying 
+                                  no adaptation.
+```
 
 __TYPE = `undistort`__
+```
+  -c [ --config ] arg              Configuration file/key pair.
+                                   e.g. 'config.toml mykey'
 
-- __`camera-model`__=`+int` Value, 0 or 1, specifying the camera model to use.
-  0 specifies a Pinhole camera model, 1 specifies fisheye. Generated by
-  [oat-calibrate](#calibrate).
-- __`camera-matrix`__=
-  `[+float,+float,+float,+float,+float,+float,float,+float,+float]`, [Camera
-  matrix](https://en.wikipedia.org/wiki/Camera_matrix) for your imaging setup.
-  Generated by [oat-calibrate](#calibrate).
-- __`distortion-coeffs`__= `[+float,+float,+float,+float,+float, ...]`, Five to
-  eight element vector specifying lens distortion coefficients. Generated by
-  [oat-calibrate](#calibrate).
-- __`rotation`__=`+double` Counter clockwise Degrees that undistorted image
-  should be rotated. If not specified, defaults to 0.0.
+  -k [ --camera-matrix ] arg       Nine element float array, 
+                                   [x,x,x,x,x,x,x,x,x], specifying the 3x3 
+                                   camera matrix for your imaging setup. 
+                                   Generated by oat-calibrate.
+  -d [ --distortion-coeffs ] arg   Five to eight element float array, 
+                                   [x,x,x,x,x,...], specifying lens distortion 
+                                   coefficients. Generated by oat-calibrate.
+```
 
 #### Examples
 ```bash
@@ -395,7 +466,7 @@ displayed frame by pressing <kbd>s</kbd> while the display window is
 in focus.
 
 #### Signature
-    frame --> oat-view
+    token --> oat-view
 
 #### Usage
 ```
@@ -412,6 +483,18 @@ TYPE
 
 SOURCE:
   User-supplied name of the memory segment to receive frames from (e.g. raw).
+```
+
+#### Configuration Options
+__TYPE = `frame`__
+```
+  -c [ --config ] arg         Configuration file/key pair.
+                              e.g. 'config.toml mykey'
+  -f [ --snapshot-path ] arg  The path to which in which snapshots will be 
+                              saved. If a folder is designated, the base file 
+                              name will be SOURCE. The timestamp of the 
+                              snapshot will be prepended to the file name. 
+                              Defaults to the current directory.
 ```
 
 #### Example
@@ -454,23 +537,43 @@ SINK:
   User-supplied name of the memory segment to publish positions to (e.g. pos).
 ```
 
-#### Configuration File Options
+#### Configuration Options
 __TYPE = `hsv`__
+```
+  -c [ --config ] arg     Configuration file/key pair.
+                          e.g. 'config.toml mykey'
 
-- __`tune`__=`bool` Provide GUI sliders for tuning hsv parameters
-- __`erode`__=`+int` Candidate object erosion kernel size (pixels)
-- __`dilate`__=`+int` Candidate object dilation kernel size (pixels)
-- __`min_area`__=`+double` Minimum object area (pixels<sup>2</sup>)
-- __`max_area`__=`+double` Maximum object area (pixels<sup>2</sup>)
-- __`h_thresholds`__=`{min=+int, max=+int}` Hue pass band
-- __`s_thresholds`__=`{min=+int, max=+int}` Saturation pass band
-- __`v_thresholds`__=`{min=+int, max=+int}` Value pass band
+  -H [ --h-thresh ] arg   Array of ints between 0 and 256, [min,max], 
+                          specifying the hue passband.
+  -S [ --s-thresh ] arg   Array of ints between 0 and 256, [min,max], 
+                          specifying the saturation passband.
+  -V [ --v-thresh ] arg   Array of ints between 0 and 256, [min,max], 
+                          specifying the value passband.
+  -e [ --erode ] arg      Contour erode kernel size in pixels (normalized box 
+                          filter).
+  -d [ --dilate ] arg     Contour dilation kernel size in pixels (normalized 
+                          box filter).
+  -a [ --area ] arg       Array of floats, [min,max], specifying the minimum 
+                          and maximum object contour area in pixels^2.
+  -t [ --tune ]           If true, provide a GUI with sliders for tuning 
+                          detection parameters.
+```
 
 __TYPE = `diff`__
+```
+  -c [ --config ] arg           Configuration file/key pair.
+                                e.g. 'config.toml mykey'
 
-- __`tune`__=`bool` Provide GUI sliders for tuning diff parameters
-- __`blur`__=`+int` Blurring kernel size (normalized box filter; pixels)
-- __`diff_threshold`__=`+int` Intensity difference threshold
+  -d [ --diff-threshold ] arg   Intensity difference threshold to consider an 
+                                object contour.
+  -b [ --blur ] arg             Blurring kernel size in pixels (normalized box 
+                                filter).
+  -a [ --area ] arg             Array of floats, [min,max], specifying the 
+                                minimum and maximum object contour area in 
+                                pixels^2.
+  -t [ --tune ]                 If true, provide a GUI with sliders for tuning 
+                                detection parameters.
+```
 
 #### Example
 ```bash
@@ -521,15 +624,17 @@ CONFIGURATION:
   -c [ --config ] arg       Configuration file/key pair.
 ```
 
-#### Configuration File Options
+#### Configuration Options
 __TYPE = `rand2D`__
-
-- __`rate-hz`__=`+double` Position update rate in Hz.
-- __`num-samples`__=`+int` Number of position samples to produce.
-- __`room`__=`[+double, +double, +double, +double]` The 'room' in which generated
-  positions reside specified as [x origin, y origin, width, height]. Arbitrary
-  units. The room has periodic boundaries so when a position leaves one side it
-  will enter the opposing one.
+```
+  -r [ --rate-hz ] arg      Samples per second. Overriden by information in 
+                            configuration file if provided. Defaults to as fast
+                            as possible.
+  -n [ --num-samples ] arg  Number of position samples to generate and serve. 
+                            Overriden by information in configuration file if 
+                            provided. Deafaults to approximately infinite.
+  -c [ --config ] arg       Configuration file/key pair.
+```
 
 #### Example
 ```bash
@@ -570,50 +675,67 @@ SINK:
   User-supplied name of the memory segment to publish positions to (e.g. filt).
 ```
 
-#### Configuration File Options
+#### Configuration Options
 __TYPE = `kalman`__
+```
+  -c [ --config ] arg        Configuration file/key pair.
+                             e.g. 'config.toml mykey'
 
-- __`dt`__=`+float` Sample period (seconds).
-- __`timeout`__=`+float` Time to perform position estimation detection with
-  lack of updated position measure (seconds).
-- __`sigma_accel`__=`+float` Standard deviation of normally distributed,
-  random accelerations used by the internal model of object motion (position
-  units/s<sup>2</sup>; e.g. pixels/s<sup>2</sup>).
-- __`sigma_noise`__=`+float` Standard deviation of randomly distributed
-  position measurement noise (position units; e.g. pixels).
-- __`tune`__=`bool` Use the GUI to tweak parameters.
+  --dt arg                   Kalman filter time step in seconds.
+  -T [ --timeout ] arg       Seconds to perform position estimation detection 
+                             with lack of position measure. Defaults to 0.
+  -a [ --sigma-accel ] arg   Standard deviation of normally distributed, random
+                             accelerations used by the internal model of object
+                             motion (position units/s2; e.g. pixels/s2).
+  -n [ --sigma-noise ] arg   Standard deviation of randomly distributed 
+                             position measurement noise (position units; e.g. 
+                             pixels).
+  -t [ --tune ]              If true, provide a GUI with sliders for tuning 
+                             filter parameters.
+```
 
 __TYPE = `homography`__
+```
+  -c [ --config ] arg       Configuration file/key pair.
+                            e.g. 'config.toml mykey'
 
-- __`homography`__ =
-  `[+float,+float,+float, +float,+float,+float,+float,+float,+float]`,
-  Homography matrix for 2D position (1x9; world units/pixel). Generate using
-  [oat-calibrate](#calibrate).
+  -H [ --homography ] arg   A nine-element array of floats, [h11,h12,...,h33], 
+                            specifying a homography matrix for 2D position. 
+                            Generally produced by oat-calibrate homography.
+```
 
 __TYPE = `region`__
-
-- __`<regions>`__=`[[+float, +float],[+float, +float],...,[+float, +float]]`
-  User-named region contours (pixels). Regions counters are specified as
-  `n`-point matrices, `[[x0, y0],[x1, y1],...,[xn, yn]]`, which define the
-  vertices of a polygon. The name of the contour is used as the region label.
-  For example, here is an octagonal region called `CN` and a tetragonal region
-  called `R0`:
-
 ```
-# These regions could be named anything...
-CN = [[336.00, 272.50],
-      [290.00, 310.00],
-      [289.00, 369.50],
-      [332.67, 417.33],
-      [389.33, 413.33],
-      [430.00, 375.33],
-      [433.33, 319.33],
-      [395.00, 272.00]]
+  -c [ --config ] arg     Configuration file/key pair.
+                          e.g. 'config.toml mykey'
 
-R0 = [[654.00, 380.00],
-      [717.33, 386.67],
-      [714.00, 316.67],
-      [655.33, 319.33]]
+  --<regions> arg         !Config file only!
+                          Regions contours are specified as n-point matrices, 
+                          [[x0, y0],[x1, y1],...,[xn, yn]], which define the 
+                          vertices of a polygon:
+                          
+                            <region> = [[+float, +float],
+                                        [+float, +float],
+                                        ...              
+                                        [+float, +float]]
+                          
+                          The name of the contour is used as the region label. 
+                          For example,here is an octagonal region called CN and
+                          a tetragonal region called R0:
+                          
+                            CN = [[336.00, 272.50],
+                                  [290.00, 310.00],
+                                  [289.00, 369.50],
+                                  [332.67, 417.33],
+                                  [389.33, 413.33],
+                                  [430.00, 375.33],
+                                  [433.33, 319.33],
+                                  [395.00, 272.00]]
+                          
+                            R0 = [[654.00, 380.00],
+                                  [717.33, 386.67],
+                                  [714.00, 316.67],
+                                  [655.33, 319.33]]
 ```
 
 #### Example
@@ -654,13 +776,40 @@ SINK:
   User-supplied position sink name (e.g. pos).
 ```
 
-#### Configuration File Options
+#### Configuration Options
 __TYPE = `mean`__
+```
+  -c [ --config ] arg     Configuration file/key pair.
+                          e.g. 'config.toml mykey'
 
-- __`heading_anchor`__=`+int` Index of the SOURCE position to use as an anchor
-  when calculating object heading. In this case the heading equals the mean
-  directional vector between this anchor position and all other SOURCE
-  positions. If unspecified, the heading is not calculated.
+  --<regions> arg         !Config file only!
+                          Regions contours are specified as n-point matrices, 
+                          [[x0, y0],[x1, y1],...,[xn, yn]], which define the 
+                          vertices of a polygon:
+                          
+                            <region> = [[+float, +float],
+                                        [+float, +float],
+                                        ...              
+                                        [+float, +float]]
+                          
+                          The name of the contour is used as the region label. 
+                          For example,here is an octagonal region called CN and
+                          a tetragonal region called R0:
+                          
+                            CN = [[336.00, 272.50],
+                                  [290.00, 310.00],
+                                  [289.00, 369.50],
+                                  [332.67, 417.33],
+                                  [389.33, 413.33],
+                                  [430.00, 375.33],
+                                  [433.33, 319.33],
+                                  [395.00, 272.00]]
+                          
+                            R0 = [[654.00, 380.00],
+                                  [717.33, 386.67],
+                                  [714.00, 316.67],
+                                  [655.33, 319.33]]
+```
 
 #### Example
 ```bash
@@ -894,6 +1043,51 @@ SOURCE:
   User-supplied name of the memory segment to receive positions from (e.g. pos).
 ```
 
+#### Configuration Options
+__TYPE = `std`__
+```
+  -c [ --config ] arg      Configuration file/key pair.
+                           e.g. 'config.toml mykey'
+
+  -p [ --pretty-print ]    If true, print formated positions to the command 
+                           line.
+```
+
+__TYPE = `pub`__
+```
+  -c [ --config ] arg     Configuration file/key pair.
+                          e.g. 'config.toml mykey'
+
+  -e [ --endpoint ] arg   ZMQ-style endpoint. For TCP: 
+                          '<transport>://<host>:<port>'. For instance, 
+                          'tcp://*:5555'. Or, for interprocess communication: 
+                          '<transport>:///<user-named-pipe>. For instance 
+                          'ipc:///tmp/test.pipe'.
+```
+
+__TYPE = `rep`__
+```
+  -c [ --config ] arg     Configuration file/key pair.
+                          e.g. 'config.toml mykey'
+
+  -e [ --endpoint ] arg   ZMQ-style endpoint. For TCP: 
+                          '<transport>://<host>:<port>'. For instance, 
+                          'tcp://*:5555'. Or, for interprocess communication: 
+                          '<transport>:///<user-named-pipe>. For instance 
+                          'ipc:///tmp/test.pipe'.
+```
+
+__type = `udp`__
+```
+  -c [ --config ] arg     Configuration file/key pair.
+                          e.g. 'config.toml mykey'
+
+  -h [ --host ] arg       Host IP address of remote device to send positions 
+                          to. For instance, '10.0.0.1'.
+  -p [ --port ] arg       Port number of endpoint on remote device to send 
+                          positions to. For instance, 5555.
+```
+
 #### Example
 ```bash
 # Reply to requests for positions from the 'pos' stream to port 5555 using TCP
@@ -1011,6 +1205,63 @@ TYPE
 
 SOURCE:
   User-supplied name of the memory segment to receive frames from (e.g. raw).
+```
+
+#### Configuration Options
+__TYPE = `camera`__
+```
+  -c [ --config ] arg             Configuration file/key pair.
+                                  e.g. 'config.toml mykey'
+
+  -k [ --calibration-key ] arg    The key name for the calibration entry that 
+                                  will be inserted into the calibration file. 
+                                  e.g. 'camera-1-homography'
+                                  
+  -f [ --calibration-path ] arg   The calibration file location. If not is 
+                                  specified,defaults to './calibration.toml'. 
+                                  If a folder is specified, defaults to 
+                                  '<folder>/calibration.toml
+                                  . If a full path including file in specified,
+                                  then it will be that path without 
+                                  modification.
+
+  -s [ --chessboard-size ] arg    Int array, [x,y], specifying the number of 
+                                  inside corners in the horizontal and vertical
+                                  demensions of the chessboard used for 
+                                  calibration.
+                                  
+  -w [ --square-width ] arg       The length/width of a single chessboard 
+                                  square in meters.
+                                  
+```
+
+__TYPE = `homography`__
+```
+  -c [ --config ] arg             Configuration file/key pair.
+                                  e.g. 'config.toml mykey'
+
+  -k [ --calibration-key ] arg    The key name for the calibration entry that 
+                                  will be inserted into the calibration file. 
+                                  e.g. 'camera-1-homography'
+                                  
+  -f [ --calibration-path ] arg   The calibration file location. If not is 
+                                  specified,defaults to './calibration.toml'. 
+                                  If a folder is specified, defaults to 
+                                  '<folder>/calibration.toml
+                                  . If a full path including file in specified,
+                                  then it will be that path without 
+                                  modification.
+
+  -m [ --method ] arg             Homography estimation method. Defaults to 0.
+                                  
+                                  Values:
+                                    0: RANSAC-based robust estimation method 
+                                       (automatic outlier rejection).
+                                    1: Best-fit using all data points.
+                                    2: Compute the homography that fits four 
+                                       points. Useful when frames contain known
+                                       fiducial marks.
+                                  
 ```
 
 \newpage

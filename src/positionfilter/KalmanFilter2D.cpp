@@ -58,7 +58,7 @@ void KalmanFilter2D::appendOptions(po::options_description &opts) {
          "Standard deviation of randomly distributed position measurement noise "
          "(position units; e.g. pixels).")
         ("tune,t",
-         "If true, provide a GUI with sliders for tuning detection "
+         "If true, provide a GUI with sliders for tuning filter "
          "parameters.")
         ;
 

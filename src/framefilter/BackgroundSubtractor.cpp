@@ -53,7 +53,8 @@ void BackgroundSubtractor::appendOptions(po::options_description &opts) {
          "used to update the backgound image. Default is 0, specifying no "
          "adaptation and a static background image that is never updated.")
         ("background,f", po::value<std::string>(),
-         "Path to background image used for subtraction.")
+         "Path to background image used for subtraction. If not provided, the "
+         "first frame is used as the background image.")
         ;
 
     opts.add(local_opts);

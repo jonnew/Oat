@@ -92,11 +92,14 @@ private:
     // The current, unbuffered frame in PG's format
     std::unique_ptr<pg::Image> shmem_image_;
 
-    // Acquisition settings routines
+    // Acquisition setup routines
     void setupFrameRate(double fps, bool is_auto = false);
     void setupShutter(float shutter_ms, bool is_auto = false);
     void setupGain(float gain_db, bool is_auto = false);
-    void setupWhiteBalance(int bal_red, int bal_blue, bool is_on);
+    void setupWhiteBalance(int bal_red,
+                           int bal_blue,
+                           bool is_on,
+                           bool is_auto = false);
     void setupPixelBinning(size_t x_bin, size_t y_bin);
     void setupImageFormat(const std::vector<size_t> &roi);
     void setupImageFormat(void);

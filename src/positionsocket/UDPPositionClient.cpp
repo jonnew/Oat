@@ -46,9 +46,10 @@ void UDPPositionClient::appendOptions(po::options_description &opts)
     local_opts.add_options()
         ("host,h", po::value<std::string>(),
          "Host IP address of remote device to send positions to. For "
-         "instance, '10.0.0.1 5555'.")
+         "instance, '10.0.0.1'.")
         ("port,p", po::value<int>(),
-         "Port number of endpoint on remote device to send positions to.")
+         "Port number of endpoint on remote device to send positions to. For "
+         "instance, 5555.")
         ;
     opts.add(local_opts);
 
