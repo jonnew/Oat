@@ -213,23 +213,7 @@ component.
 
 #### Usage
 ```
-Usage: frameserve [INFO]
-   or: frameserve TYPE SINK [CONFIGURATION]
-Serve frames to SINK.
-
-INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
-
-TYPE
-  wcam: Onboard or USB webcam.
-  usb: Point Grey USB camera.
-  gige: Point Grey GigE camera.
-  file: Video from file (*.mpg, *.avi, etc.).
-  test: Write-free static image server for performance testing.
-
-SINK:
-  User-supplied name of the memory segment to publish frames to (e.g. raw).
+oat-frameserve-help
 ```
 
 #### Configuration File Options
@@ -314,25 +298,7 @@ interest.
 
 #### Usage
 ```
-Usage: framefilt [INFO]
-   or: framefilt TYPE SOURCE SINK [CONFIGURATION]
-Filter frames from SOURCE and publish filtered frames to SINK.
-
-INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
-
-TYPE
-  bsub: Background subtraction
-  mask: Binary mask
-  mog: Mixture of Gaussians background segmentation.
-  undistort: Compensate for lens distortion using distortion model.
-
-SOURCE:
-  User-supplied name of the memory segment to receive frames from (e.g. raw).
-
-SINK:
-  User-supplied name of the memory segment to publish frames to (e.g. filt).
+oat-framefilt-help
 ```
 
 #### Configuration File Options
@@ -399,19 +365,7 @@ in focus.
 
 #### Usage
 ```
-Usage: view [INFO]
-   or: view TYPE SOURCE [CONFIGURATION]
-Graphical visualization of SOURCE stream.
-
-INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
-
-TYPE
-  frame: Display frames in a GUI
-
-SOURCE:
-  User-supplied name of the memory segment to receive frames from (e.g. raw).
+oat-view-help
 ```
 
 #### Example
@@ -435,23 +389,7 @@ detected positions to a second segment of shared memory.
 
 #### Usage
 ```
-Usage: posidet [INFO]
-   or: posidet TYPE SOURCE SINK [CONFIGURATION]
-Perform object detection on frames from SOURCE and publish object positions to SINK.
-
-INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
-
-TYPE
-  diff: Difference detector (grey-scale, motion)
-  hsv : HSV detector (color)
-
-SOURCE:
-  User-supplied name of the memory segment to receive frames from (e.g. raw).
-
-SINK:
-  User-supplied name of the memory segment to publish positions to (e.g. pos).
+oat-posidet-help
 ```
 
 #### Configuration File Options
@@ -495,30 +433,7 @@ generated positions to shared memory.
 
 #### Usage
 ```
-Usage: posigen [INFO]
-   or: posigen TYPE SINK [CONFIGURATION]
-Publish generated positions to SINK.
-
-TYPE
-  rand2D: Randomly accelerating 2D Position
-
-SINK:
-  User supplied position sink name (e.g. pos).
-
-OPTIONAL ARGUMENTS:
-
-INFO:
-  --help                    Produce help message.
-  -v [ --version ]          Print version information.
-
-CONFIGURATION:
-  -r [ --rate-hz ] arg      Samples per second. Overriden by information in 
-                            configuration file if provided. Defaults to as fast
-                            as possible.
-  -n [ --num-samples ] arg  Number of position samples to generate and serve. 
-                            Overriden by information in configuration file if 
-                            provided. Deafaults to approximately infinite.
-  -c [ --config ] arg       Configuration file/key pair.
+oat-posigen-help
 ```
 
 #### Configuration File Options
@@ -550,24 +465,7 @@ region contours.
 
 #### Usage
 ```
-Usage: posifilt [INFO]
-   or: posifilt TYPE SOURCE SINK [CONFIGURATION]
-Filter positions from SOURCE and publish filtered positions to SINK.
-
-INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
-
-TYPE
-  kalman: Kalman filter
-  homography: homography transform
-  region: position region annotation
-
-SOURCE:
-  User-supplied name of the memory segment to receive positions from (e.g. pos).
-
-SINK:
-  User-supplied name of the memory segment to publish positions to (e.g. filt).
+oat-posifilt-help
 ```
 
 #### Configuration File Options
@@ -636,22 +534,7 @@ oat posifilt kalman pos kfilt -c config.toml kalman_config
 
 #### Usage
 ```
-Usage: posicom [INFO]
-   or: posicom TYPE SOURCES SINK [CONFIGURATION]
-Combine positional information from two or more SOURCES and Publish combined position to SINK.
-
-INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
-
-TYPE
-  mean: Geometric mean of positions
-
-SOURCES:
-  User-supplied position source names (e.g. pos1 pos2).
-
-SINK:
-  User-supplied position sink name (e.g. pos).
+oat-posicom-help
 ```
 
 #### Configuration File Options
@@ -682,40 +565,7 @@ information.
 
 #### Usage
 ```
-Usage: decorate [INFO]
-   or: decorate SOURCE SINK [CONFIGURATION]
-Decorate the frames from SOURCE, e.g. with object position markers and sample number. Publish decorated frames to SINK.
-
-SOURCE:
-  User-supplied name of the memory segment from which frames are received (e.g. raw).
-
-SINK:
-  User-supplied name of the memory segment to publish frames to (e.g. out).
-
-INFO:
-  --help                          Produce help message.
-  -v [ --version ]                Print version information.
-
-CONFIGURATION:
-  -c [ --config ] arg             Configuration file/key pair.
-                                  e.g. 'config.toml mykey'
-
-  -p [ --position-sources ] arg   The name of position SOURCE(s) used to draw 
-                                  object position markers.
-                                  
-  -t [ --timestamp ]              Write the current date and time on each 
-                                  frame.
-                                  
-  -s [ --sample ]                 Write the frame sample number on each frame.
-                                  
-  -S [ --sample-code ]            Write the binary encoded sample on the corner
-                                  of each frame.
-                                  
-  -R [ --region ]                 Write region information on each frame if 
-                                  there is a position stream that contains it.
-                                  
-  -h [ --history ]                Display position history.
-                                  
+oat-decorate-help
 ```
 
 #### Example
@@ -797,46 +647,7 @@ tends to be quite intense and (2) save to multiple locations simultaneously.
 
 #### Usage
 ```
-Usage: record [INFO]
-   or: record [CONFIGURATION]
-Record frame and/or position streams.
-
-INFO:
-  --help                         Produce help message.
-  -v [ --version ]               Print version information.
-
-CONFIGURATION:
-  -s [ --frame-sources ] arg     The names of the FRAME SOURCES that supply 
-                                 images to save to video.
-  -p [ --position-sources ] arg  The names of the POSITION SOURCES that supply 
-                                 object positions to be recorded.
-  -n [ --filename ] arg          The base file name. If not specified, defaults
-                                 to the SOURCE name.
-  -f [ --folder ] arg            The path to the folder to which the video 
-                                 stream and position data will be saved. If not
-                                 specified, defaults to the current directory.
-  -d [ --date ]                  If specified, YYYY-MM-DD-hh-mm-ss_ will be 
-                                 prepended to the filename.
-  -o [ --allow-overwrite ]       If set and save path matches and existing 
-                                 file, the file will be overwritten instead of 
-                                 a incremental numerical index being appended 
-                                 to the file name.
-  -c [ --concise-file ]          If set, indeterminate position data fields 
-                                 will not be written e.g. pos_xy will not be 
-                                 written even when pos_ok = false. This means 
-                                 that position objects will be of variable size
-                                 depending on the validity on whether a 
-                                 position was detected or not, potentially 
-                                 complicating file parsing.
-  --interactive                  Start recorder with interactive controls 
-                                 enabled.
-  --rpc-endpoint arg             Yield interactive control of the recorder to a
-                                 remote ZMQ REQ socket using an interal REP 
-                                 socket with ZMQ style endpoint specifier: 
-                                 '<transport>://<host>:<port>'. For instance, 
-                                 'tcp://*:5555' or 'ipc://*:5556' specify TCP 
-                                 and interprocess communication on ports 5555 
-                                 or 5556, respectively.
+oat-record-help
 ```
 
 #### Example
@@ -870,28 +681,7 @@ client or server configurations.
 
 #### Usage
 ```
-Usage: posisock [INFO]
-   or: posisock TYPE SOURCE [CONFIGURATION]
-Send positions from SOURCE to a remote endpoint.
-
-INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
-
-TYPE:
-  std: Asynchronous position dump to stdout.
-  pub: Asynchronous position publisher over ZMQ socket.
-       Publishes positions without request to potentially many
-       subscribers.
-  rep: Synchronous position replier over ZMQ socket. 
-       Sends positions in response to requests from a single
-       endpoint.Several transport/protocol options. The most
-       useful are tcp and interprocess (ipc).
-  udp: Asynchronous, client-side, unicast user datagram protocol
-       over a traditional BSD-style socket.
-
-SOURCE:
-  User-supplied name of the memory segment to receive positions from (e.g. pos).
+oat-posisock-help
 ```
 
 #### Example
@@ -924,23 +714,7 @@ overflow.
 
 #### Usage
 ```
-Usage: buffer [INFO]
-   or: buffer TYPE SOURCE SINK [CONFIGURATION]
-Place tokens from SOURCE into a FIFO. Publish tokens in FIFO to SINK.
-
-INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
-
-TYPE
-  frame: Frame buffer
-  pos2D: 2D Position buffer
-
-SOURCE:
-  User-supplied name of the memory segment to receive tokens from (e.g. input).
-
-SINK:
-  User-supplied name of the memory segment to publish tokens to (e.g. output).
+oat-buffer-help
 ```
 
 #### Example
@@ -997,20 +771,7 @@ for an imaging system that can be used to parameterize `oat-framefilt` and
 
 #### Usage
 ```
-Usage: calibrate [INFO]
-   or: calibrate TYPE SOURCE SINK [CONFIGURATION]
-Camera calibration and homography generation routines.
-
-INFO:
-  --help                 Produce help message.
-  -v [ --version ]       Print version information.
-
-TYPE
-  camera: Generate calibration parameters (camera matrix and distortion coefficients).
-  homography: Generate homography transform between pixels and world units.
-
-SOURCE:
-  User-supplied name of the memory segment to receive frames from (e.g. raw).
+oat-calibrate-help
 ```
 
 \newpage
@@ -1043,16 +804,7 @@ other than development, then please submit a bug report.
 
 #### Usage
 ```
-Usage: clean [INFO]
-   or: clean NAMES [CONFIGURATION]
-Deallocate the named shared memory segments specified by NAMES.
-
-INFO:
-  --help                Produce help message.
-  -v [ --version ]      Print version information.
-  -q [ --quiet ]        Quiet mode. Prevent output text.
-  -l [ --legacy ]       Legacy mode. Append  "_sh_mem" to input NAMES before 
-                        removing.
+oat-clean-help
 ```
 
 #### Example
