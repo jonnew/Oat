@@ -57,8 +57,8 @@ public:
 private:
 
     // Regions
-    std::vector< std::string > region_ids;
-    std::vector< std::vector<cv::Point> * > region_contours;
+    std::vector<std::string> region_ids_;
+    std::vector<std::vector<cv::Point> *> region_contours_;
 
     /**
      * Check the position to see if it lies within any of the

@@ -38,14 +38,13 @@ RegionFilter2D::RegionFilter2D(const std::string &position_source_address,
     // Nothing
 }
 
-RegionFilter2D::~RegionFilter2D() {
-
-    for (auto &value : region_contours) {delete value;}
+RegionFilter2D::~RegionFilter2D()
+{
+    for (auto &value : region_contours_) {delete value;}
 }
 
-
-void RegionFilter2D::appendOptions(po::options_description &opts) {
-
+void RegionFilter2D::appendOptions(po::options_description &opts)
+{
     // Accepts a config file
     PositionFilter::appendOptions(opts);
 
@@ -53,25 +52,28 @@ void RegionFilter2D::appendOptions(po::options_description &opts) {
     po::options_description local_opts;
     local_opts.add_options()
         ("<regions>", po::value<std::string>(),
-         "Supplied via config file only.\n"
+         "!Config file only!\n"
          "Regions contours are specified as n-point matrices, [[x0, y0],[x1, "
          "y1],...,[xn, yn]], which define the vertices of a polygon:\n\n"
-         "  <region>=[[+float, +float],[+float, +float],...,[+float, +float]]\n\n"
+         "  <region> = [[+float, +float],\n"
+         "              [+float, +float],\n"
+         "              ...              \n"
+         "              [+float, +float]]\n\n"
          "The name of the contour is used as the region label. For example,"
          "here is an octagonal region called CN and a tetragonal region called "
          "R0:\n\n"
-         "  CN = \t[[336.00, 272.50],"
-         "       \t [290.00, 310.00],"
-         "       \t [289.00, 369.50],"
-         "       \t [332.67, 417.33],"
-         "       \t [389.33, 413.33],"
-         "       \t [430.00, 375.33],"
-         "       \t [433.33, 319.33],"
-         "       \t [395.00, 272.00]]\n\n"
-         "  R0 = \t[[654.00, 380.00],"
-         "       \t [717.33, 386.67],"
-         "       \t [714.00, 316.67],"
-         "       \t [655.33, 319.33]]")
+         "  CN = [[336.00, 272.50],\n"
+         "        [290.00, 310.00],\n"
+         "        [289.00, 369.50],\n"
+         "        [332.67, 417.33],\n"
+         "        [389.33, 413.33],\n"
+         "        [430.00, 375.33],\n"
+         "        [433.33, 319.33],\n"
+         "        [395.00, 272.00]]\n\n"
+         "  R0 = [[654.00, 380.00],\n"
+         "        [717.33, 386.67],\n"
+         "        [714.00, 316.67],\n"
+         "        [655.33, 319.33]]")
         ;
 
     opts.add(local_opts);
@@ -100,8 +102,8 @@ void RegionFilter2D::configure(const po::variables_map &vm) {
         oat::config::getArray(config_table, it->first, region_array);
 
         // Push the name of this region onto the id list
-        region_ids.push_back(it->first);
-        region_contours.push_back(new std::vector<cv::Point>());
+        region_ids_.push_back(it->first);
+        region_contours_.push_back(new std::vector<cv::Point>());
 
         auto region = region_array->nested_array();
         auto reg_it = region.begin();
@@ -117,7 +119,7 @@ void RegionFilter2D::configure(const po::variables_map &vm) {
             }
 
             auto p = cv::Point2d(point[0]->get(), point[1]->get());
-            region_contours.back()->push_back(p);
+            region_contours_.back()->push_back(p);
             reg_it++;
         }
         it++;
@@ -125,11 +127,11 @@ void RegionFilter2D::configure(const po::variables_map &vm) {
 
 //#ifndef NDEBUG
 //        //check the result
-//        for (size_t i = 0; i < region_contours.size(); i++) {
-//            std::cout << oat::dbgMessage("Region ID: " + region_ids[i] + "\n");
-//            for (size_t j = 0; j < region_contours[i]->size(); j++) {
-//                std::cout << oat::dbgMessage("x: " + std::to_string(region_contours[i]->at(j).x) + " "
-//                          + "y: " + std::to_string(region_contours[i]->at(j).y) + "\n");
+//        for (size_t i = 0; i < region_contours_.size(); i++) {
+//            std::cout << oat::dbgMessage("Region ID: " + region_ids_[i] + "\n");
+//            for (size_t j = 0; j < region_contours_[i]->size(); j++) {
+//                std::cout << oat::dbgMessage("x: " + std::to_string(region_contours_[i]->at(j).x) + " "
+//                          + "y: " + std::to_string(region_contours_[i]->at(j).y) + "\n");
 //            }
 //        }
 //#endif
@@ -144,13 +146,13 @@ void RegionFilter2D::filter(oat::Position2D &position) {
         cv::Point pt = (cv::Point)position.position;
         std::vector<std::string>::size_type i = 0;
 
-        for (auto &r : region_contours) {
+        for (auto &r : region_contours_) {
 
             if (cv::pointPolygonTest(*r, pt, false) >= 0) {
 
                 position.region_valid = true;
 
-                std::vector<char> writable(region_ids[i].begin(), region_ids[i].end());
+                std::vector<char> writable(region_ids_[i].begin(), region_ids_[i].end());
                 writable.push_back('\0');
 
                 strcpy(position.region, &writable[0]);
