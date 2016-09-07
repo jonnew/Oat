@@ -1233,6 +1233,8 @@ void PointGreyCam<pg::Camera>::setupImageFormat()
 template <>
 void PointGreyCam<pg::Camera>::setupPixelBinning(size_t x_bin, size_t y_bin)
 {
+    (void)x_bin; // Suppress unused parameter warnings
+    (void)y_bin;
     std::cout << "Pixel binning is not implemented.\n";
 }
 
