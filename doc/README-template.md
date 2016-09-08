@@ -31,26 +31,27 @@ __Contributors__
     - [Frame Viewer](#frame-viewer)
         - [Signature](#signature-2)
         - [Usage](#usage-2)
+        - [Configuration Options](#configuration-options-2)
         - [Example](#example)
     - [Position Detector](#position-detector)
         - [Signature](#signature-3)
         - [Usage](#usage-3)
-        - [Configuration Options](#configuration-options-2)
+        - [Configuration Options](#configuration-options-3)
         - [Example](#example-1)
     - [Position Generator](#position-generator)
         - [Signature](#signature-4)
         - [Usage](#usage-4)
-        - [Configuration Options](#configuration-options-3)
+        - [Configuration Options](#configuration-options-4)
         - [Example](#example-2)
     - [Position Filter](#position-filter)
         - [Signature](#signature-5)
         - [Usage](#usage-5)
-        - [Configuration Options](#configuration-options-4)
+        - [Configuration Options](#configuration-options-5)
         - [Example](#example-3)
     - [Position Combiner](#position-combiner)
         - [Signature](#signature-6)
         - [Usage](#usage-6)
-        - [Configuration Options](#configuration-options-5)
+        - [Configuration Options](#configuration-options-6)
         - [Example](#example-4)
     - [Frame Decorator](#frame-decorator)
         - [Signature](#signature-7)
@@ -63,6 +64,7 @@ __Contributors__
     - [Position Socket](#position-socket)
         - [Signature](#signature-9)
         - [Usage](#usage-9)
+        - [Configuration Options](#configuration-options-7)
         - [Example](#example-7)
     - [Buffer](#buffer)
         - [Signatures](#signatures)
@@ -71,6 +73,7 @@ __Contributors__
     - [Calibrate](#calibrate)
         - [Signature](#signature-10)
         - [Usage](#usage-11)
+        - [Configuration Options](#configuration-options-8)
     - [Kill](#kill)
         - [Usage](#usage-12)
         - [Example](#example-9)
@@ -157,25 +160,52 @@ frameserve ---> framefilt ---> posidet ---> decorate ---> view
 Generally, an Oat component is called in the following pattern:
 
 ```
-oat <subcommand> [TYPE] [IO] [CONFIGURATION]
+oat <component> [TYPE] [IO] [CONFIGURATION]
 ```
-The `<subcommand>` indicates the component that will be executed. Components
+The `<component>` indicates the component that will be executed. Components
 are classified according to their type signature. For instance, `framefilt`
 (frame filter) accepts a frame and produces a frame. `posifilt` (position
 filter) accepts a position and produces a position. `frameserve` (frame server)
 produces a frame, and so on.  The `TYPE` parameter specifies a concrete type of
-transform (e.g. for the `framefilt` subcommand, this could be `bsub` for
-background subtraction).  The `IO` specification indicates where the component
-will receive data from and to where the processed data should be published. The
-`CONFIGURATION` specification is used to provide parameters to shape the
-component's operation.  Aside from command line options and switches, which are
-listed using the `--help` option for each subcommand, the user can often
-provide an external file containing a configuration table to pass parameters to
-a component. Some configuration parameters can only be specified using a
-configuration file.  Configuration files are written in plain text using
-[TOML](https://github.com/toml-lang/toml). A multi-component processing script
-can share a configuration file because each component accesses parameter
-information using a file/key pair, like so
+transform (e.g. for the `framefilt` component, this could be `bsub` for
+background subtraction). The `IO` specification indicates where the component
+will receive data from and to where the processed data should be published. A
+description of a component's purpose, its available TYPEs and correct IO
+specification can be examined using the `--help` command line switch
+
+```bash
+oat <component> --help
+```
+
+The `CONFIGURATION` specification is used to provide parameters to shape the
+component's operation and are TYPE-specific. Information on program options for
+a particular concrete transform TYPE can be printed using
+
+```bash
+oat <component> <type> --help
+```
+
+In addition to command line input, all options can be specified using a
+configuration file which is provided to the program using the `-c` command line
+argument.
+
+```
+  -c [ --config ] arg             Configuration file/key pair.
+                                  e.g. 'config.toml mykey'
+```
+
+For instance:
+
+```bash
+oat frameserve gige raw -c config.toml gige-config
+```
+
+The configuration file may contain many configuration tables that specify
+options for multiple oat programs. These tables are addressed using a key
+(`gige-config`) in the example above.  Configuration files are written in plain
+text using [TOML](https://github.com/toml-lang/toml). A multi-component
+processing script can share a configuration file because each component
+accesses parameter information using a file/key pair, like so
 
 ```toml
 [key]
@@ -195,6 +225,13 @@ roi = [10, 10, 100, 100]        # Region of interest
 
 [framefilt-config]
 mask = "~/Desktop/mask.png"     # Path to mask file
+```
+
+These could then be used in a processing script as follows:
+
+```bash
+oat frameserve gige raw -c config.toml frameserve-config &
+oat framefilt mask raw filt -c config.toml framefilt-config
 ```
 
 The type and sanity of parameter values are checked by Oat before they are

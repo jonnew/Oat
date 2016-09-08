@@ -21,7 +21,7 @@
 
 pc() 
 {
-    pc_res=`echo "$1" | awk '/CONFIGURATION:/{y=1;next}y'`
+    pc_res=`echo "$1" | awk '/ mykey/{y=1;next}y'`
 }
 
 # oat-frameserve type configurations
