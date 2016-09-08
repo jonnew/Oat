@@ -26,16 +26,14 @@
 
 namespace oat {
 
-RandomAccel2D::RandomAccel2D(const std::string &position_sink_address,
-                             const double samples_per_second,
-                             const int64_t num_samples) :
-  PositionGenerator<oat::Position2D>(position_sink_address, samples_per_second, num_samples)
+RandomAccel2D::RandomAccel2D(const std::string &position_sink_address)
+: PositionGenerator<oat::Position2D>(position_sink_address)
 {
     createStaticMatracies();
 }
 
-bool RandomAccel2D::generatePosition(oat::Position2D &position) {
-
+bool RandomAccel2D::generatePosition(oat::Position2D &position)
+{
     if (it_ < num_samples_) {
 
         // Simulate one step of random, but smooth, motion
@@ -59,8 +57,8 @@ bool RandomAccel2D::generatePosition(oat::Position2D &position) {
     return true;
 }
 
-void RandomAccel2D::simulateMotion() {
-
+void RandomAccel2D::simulateMotion() 
+{
     // Generate random acceleration
     accel_vec_(0) = accel_distribution_(accel_generator_);
     accel_vec_(1) = accel_distribution_(accel_generator_);
@@ -85,8 +83,8 @@ void RandomAccel2D::simulateMotion() {
         state_(2) = room_.y;
 }
 
-void RandomAccel2D::createStaticMatracies() {
-
+void RandomAccel2D::createStaticMatracies() 
+{
     double Ts = sample_period_in_sec_.count();
 
     // State transition matrix

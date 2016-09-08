@@ -24,17 +24,17 @@
 #include <limits>
 #include <random>
 #include <string>
+
+#include <boost/program_options.hpp>
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Sink.h"
 
+namespace po = boost::program_options;
+
 namespace oat {
 
-/**
- * Abstract test position server.
- * All concrete test position server types implement this ABC.
- */
 template <class T>
 class PositionGenerator  {
 
@@ -46,20 +46,26 @@ public:
      * to server test positions with different motion characteristics to test
      * subsequent processing steps.
      * @param position_sink_name Position SINK to publish test positions
-     * @param samples_per_second Sample rate in Hz. Negative number indicates
-     * that samples should be served as rapidly as possible.
-     * @param num_samples Number of position samples to serve before
-     * automatically exiting. 
      */
-    PositionGenerator(const std::string& position_sink_address,
-                      const double samples_per_second,
-                      const int64_t num_samples);
+    PositionGenerator(const std::string &position_sink_address);
 
     /** 
      * @brief Pure virtual destructor makes this class abstract. Must be
      * implemented to allow destruction of base sub-object in derived classes.
      */
     virtual ~PositionGenerator() = 0;
+
+    /**
+     * @brief Append type-specific program options.
+     * @param opts Program option description to be specialized.
+     */
+    virtual void appendOptions(po::options_description &opts);
+
+    /**
+     * @brief Configure component parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    virtual void configure(const po::variables_map &vm);
 
     /**
      * PositionDetectors must be able to connect to a Source and Sink
@@ -74,20 +80,15 @@ public:
     bool process(void);
 
     /**
-     * Configure test position server parameters.
-     * @param config_file configuration file path
-     * @param config_key configuration key
-     */
-    virtual void configure(const std::string &file_name,
-                           const std::string &key);
-
-    /**
      * Get test position server name.
      * @return name
      */
     std::string name(void) const { return name_; }
 
 protected:
+
+    // List of allowed configuration options    
+    std::vector<std::string> config_keys_;
 
     /**
      * Generate test position.
@@ -106,8 +107,8 @@ protected:
     cv::Rect_<double> room_ {0, 0, 100, 100};
     
     // Sample count specification
-    int64_t num_samples_ {std::numeric_limits<int64_t>::max()};
-    int64_t it_ {0};
+    uint64_t num_samples_ {std::numeric_limits<uint64_t>::max()};
+    uint64_t it_ {0};
 
     /**
      * Configure the sample period

@@ -29,78 +29,72 @@
 
 namespace oat {
 
-template<typename T>
-PositionGenerator<T>::PositionGenerator(const std::string &position_sink_address,
-                                        const double samples_per_second,
-                                        const int64_t num_samples) :
-  num_samples_(num_samples - 1)
-, name_("posigen[*->" + position_sink_address + "]")
+template <typename T>
+PositionGenerator<T>::PositionGenerator(
+    const std::string &position_sink_address)
+: name_("posigen[*->" + position_sink_address + "]")
 , position_sink_address_(position_sink_address)
 {
-    if (samples_per_second > 0) {
-        enforce_sample_clock_ = true;
-        generateSamplePeriod(samples_per_second);
-    } else {
-
-        // Need something so that positions are not nonsense
-        generateSamplePeriod(10000.0);
-    }
-
     tick_ = clock_.now();
 }
 
 template <typename T>
-PositionGenerator<T>::~PositionGenerator() { }
-
-template <typename T>
-void PositionGenerator<T>::configure(const std::string &config_file,
-                                     const std::string &config_key) {
-
-    // Available options
-    std::vector<std::string> options {"rate-hz",
-                                      "num-samples",
-                                      "room"};
-
-    // This will throw cpptoml::parse_exception if a file
-    // with invalid TOML is provided
-    auto config = cpptoml::parse_file(config_file);
-
-    // See if a camera configuration was provided
-    if (config->contains(config_key)) {
-
-        // Get this components configuration table
-        auto this_config = config->get_table(config_key);
-
-        // Check for unknown options in the table and throw if you find them
-        oat::config::checkKeys(options, this_config);
-
-        // Sample generation period
-        double rate_hz;
-        if (oat::config::getValue(this_config, "rate-hz", rate_hz, 0))
-             generateSamplePeriod(rate_hz);
-
-        // Number of position samples
-        oat::config::getValue(this_config, "num-samples", num_samples_, 0);
-
-        // Periodic boundaries for the generated positions
-        oat::config::Array room_array;
-        if (oat::config::getArray(this_config, "room", room_array, 4, false)) {
-
-            auto room_vec = room_array->array_of<double>();
-            room_.x      = room_vec[0]->get();
-            room_.y      = room_vec[1]->get();
-            room_.width  = room_vec[2]->get();
-            room_.height = room_vec[3]->get();
-        }
-
-    } else {
-        throw (std::runtime_error(oat::configNoTableError(config_key, config_file)));
-    }
+PositionGenerator<T>::~PositionGenerator() 
+{ 
+    // Needed to prevent linking errors in derived classes
 }
 
-template<typename T>
-void PositionGenerator<T>::connectToNode() {
+template <typename T>
+void PositionGenerator<T>::appendOptions(po::options_description &opts)
+{
+    // Common program options
+    opts.add_options()
+        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
+        "Configuration file/key pair.\n"
+        "e.g. 'config.toml mykey'")
+        ("rate,r", po::value<double>(),
+        "Samples per second. Defaults to as fast as possible.")
+        ("num-samples,n", po::value<uint64_t>(),
+        "Number of position samples to generate and serve. Deafaults to "
+        "approximately infinite.")
+        ("room,R", po::value<std::string>(),
+         "Array of floats, [x0,y0,width,height], specifying the boundaries in "
+         "which generated positions reside. The room has periodic boundaries so "
+         "when a position leaves one side it will enter the opposing one.")
+        ;
+}
 
+template <typename T>
+void PositionGenerator<T>::configure(const po::variables_map &vm)
+{
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+    
+    // Rate
+    double fs = 10000;
+    if (oat::config::getNumericValue<double>(
+                vm, config_table, "rate", fs, 0)) {
+        enforce_sample_clock_ = true;
+    }
+    generateSamplePeriod(fs);
+
+    // Rate
+    oat::config::getNumericValue<uint64_t>(
+            vm, config_table, "num-samples", num_samples_, 0);
+
+    // Room
+    std::vector<double> r;
+    if (oat::config::getArray<double, 4>(vm, config_table, "room", r)) {
+        room_.x = r[0];
+        room_.y = r[1];
+        room_.width = r[2];
+        room_.height = r[3];
+    }
+}
+template <typename T>
+void PositionGenerator<T>::connectToNode()
+{
     // Bind to sink sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
@@ -109,8 +103,9 @@ void PositionGenerator<T>::connectToNode() {
     internal_position_.sample().set_rate_hz(1.0 / sample_period_in_sec_.count());
 }
 
-template<typename T>
-bool PositionGenerator<T>::process() {
+template <typename T>
+bool PositionGenerator<T>::process()
+{
 
     // Generate internal position
     bool eof = generatePosition(internal_position_);
@@ -141,13 +136,11 @@ bool PositionGenerator<T>::process() {
     return eof;
 }
 
-template<typename T>
-void PositionGenerator<T>::generateSamplePeriod(const double samples_per_second) {
-
+template <typename T>
+void PositionGenerator<T>::generateSamplePeriod(const double samples_per_second)
+{
     oat::Sample::Seconds period(1.0 / samples_per_second);
-
-    // Automatic conversion
-    sample_period_in_sec_ = period;
+    sample_period_in_sec_ = period; // Auto conversion
 }
 
 // Explicit declaration to get around link errors due to this being in its own

@@ -31,9 +31,6 @@
 
 namespace oat {
 
-/**
- * A 2D Gaussian random acceleration position generator.
- */
 class RandomAccel2D : public PositionGenerator<oat::Position2D> {
 
 public:
@@ -43,9 +40,7 @@ public:
      * Test positions are subject to random, uncorrelated 2D, Gaussian
      * accelerations.
      */
-    RandomAccel2D(const std::string &position_sink_address,
-                  const double samples_per_second,
-                  const int64_t num_samples);
+    RandomAccel2D(const std::string &position_sink_address);
 
 private:
 
@@ -69,4 +64,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_RANDOMACCEL2D_H */
-
