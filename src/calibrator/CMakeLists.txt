@@ -15,6 +15,7 @@ add_executable (oat-calibrate ${oat-calibrate_SOURCE} main.cpp)
 target_link_libraries (oat-calibrate
                        oatutility
                        ${OatCommon_LIBS})
+add_dependencies (oat-calibrate cpptoml)
 
 # Installation
 install (TARGETS oat-calibrate DESTINATION ../../oat/libexec COMPONENT oat-utlities)

@@ -24,6 +24,7 @@ target_link_libraries (oat-frameserve
                        oatutility
                        ${OatCommon_LIBS}
                        ${FLYCAPTURE2})
+add_dependencies (oat-frameserve cpptoml)
 
 # Installation
 install (TARGETS oat-frameserve DESTINATION ../../oat/libexec COMPONENT oat-processors)

@@ -12,6 +12,7 @@ add_executable (oat-posicom ${oat-posicom_SOURCE})
 target_link_libraries (oat-posicom
                        oatutility
                        ${OatCommon_LIBS})
+add_dependencies (oat-posicom cpptoml rapidjson)
 
 # Installation
 install (TARGETS oat-posicom DESTINATION ../../oat/libexec COMPONENT oat-processors)

@@ -13,6 +13,7 @@ add_executable (oat-buffer ${oat-buffer_SOURCE})
 target_link_libraries (oat-buffer 
                        oatutility 
                        ${OatCommon_LIBS})
+add_dependencies (oat-buffer cpptoml rapidjson)
 
 # Installation
 install (TARGETS oat-buffer DESTINATION ../../oat/libexec COMPONENT oat-processors)

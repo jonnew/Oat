@@ -12,6 +12,7 @@ add_executable (oat-view ${oat-view_SOURCE})
 target_link_libraries (oat-view
                        oatutility
                        ${OatCommon_LIBS})
+add_dependencies (oat-view cpptoml rapidjson)
 
 # Installation
 install (TARGETS oat-view DESTINATION ../../oat/libexec COMPONENT oat-processors)

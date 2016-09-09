@@ -15,6 +15,7 @@ add_executable (oat-framefilt ${oat-framefilt_SOURCE})
 target_link_libraries (oat-framefilt
                        oatutility
                        ${OatCommon_LIBS})
+add_dependencies (oat-framefilt cpptoml)
 
 # Installation
 install (TARGETS oat-framefilt DESTINATION ../../oat/libexec COMPONENT oat-processors)

@@ -32,9 +32,9 @@ template<typename T>
 struct NamedSource {
 
     explicit NamedSource(const std::string &name,
-                         std::unique_ptr<oat::Source<T>> &&source) :
-      name(name),
-      source(std::move(source))
+                         std::unique_ptr<oat::Source<T>> &&source)
+    : name(name)
+    , source(std::move(source))
     {
         // Nothing
     }

@@ -9,6 +9,7 @@ add_executable (oat-decorate ${oat-decorate_SOURCE})
 target_link_libraries (oat-decorate 
                        oatutility
                        ${OatCommon_LIBS})
+add_dependencies (oat-decorate cpptoml rapidjson)
 
 # Installation
 install (TARGETS oat-decorate DESTINATION ../../oat/libexec COMPONENT oat-processors)

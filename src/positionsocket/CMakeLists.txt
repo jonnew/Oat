@@ -19,6 +19,7 @@ target_link_libraries (oat-posisock
                        oatutility
                        zmq
                        ${OatCommon_LIBS})
+add_dependencies (oat-posisock cpptoml rapidjson)
 
 # Installation
 install (TARGETS oat-posisock DESTINATION ../../oat/libexec COMPONENT oat-processors)

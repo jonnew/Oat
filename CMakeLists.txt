@@ -31,9 +31,9 @@ set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall -Wextra")
 set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 # Make sure a build type has been specified
-if (NOT CMAKE_BUILD_TYPE )
+if (NOT CMAKE_BUILD_TYPE)
    set (CMAKE_BUILD_TYPE Release ... FORCE )
-endif()
+endif ()
 
 # Build type case insenstivity
 string(TOLOWER ${CMAKE_BUILD_TYPE} LOWERCASE_CMAKE_BUILD_TYPE)
@@ -44,9 +44,14 @@ if (LOWERCASE_CMAKE_BUILD_TYPE STREQUAL "debug")
 elseif (LOWERCASE_CMAKE_BUILD_TYPE STREQUAL "release")
     set (FULL_CXX_FLAG_LIST "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
     set (BUILD_TESTS OFF)
-else()
-    message (FATAL_ERROR "Set and acceptable build type using -DCMAKE_BUILD_TYPE=<debug or release>")
-endif()
+else ()
+    message (STATUS "No build type specified using -DCMAKE_BUILD_TYPE=<debug or release>.")
+    message (STATUS "Defaulting to release.")
+    set (LOWERCASE_CMAKE_BUILD_TYPE "release")
+    set (CMAKE_BUILD_TYPE release)
+    set (FULL_CXX_FLAG_LIST "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+    set (BUILD_TESTS OFF)
+endif ()
 
 # Configure a header file to pass CMake settings to source code containing
 # build options and version info
@@ -67,9 +72,9 @@ message (STATUS "  Build tests: ${BUILD_TESTS}")
 message (STATUS "  Build documentation: ${BUILD_DOCS}")
 
 # Threads
-set(THREADS_PREFER_PTHREAD_FLAG ON)
+set (THREADS_PREFER_PTHREAD_FLAG ON)
 find_package (Threads REQUIRED)
-if(CMAKE_THREAD_LIBS_INIT)
+if (CMAKE_THREAD_LIBS_INIT)
     set (Thread_LIBS ${CMAKE_THREAD_LIBS_INIT} rt)
     message (STATUS "Found threading libs: ${Thread_LIBS}")
 endif()
@@ -126,6 +131,10 @@ include_directories (${CPPTOML_INCLUDE_DIR})
 # Include rapidjson
 add_subdirectory (${EXT_PROJECTS_DIR}/rapidjson)
 include_directories (${RAPIDJSON_INCLUDE_DIR})
+
+##include zmq
+#add_subdirectory (${EXT_PROJECTS_DIR}/zmq)
+#include_directories (${RAPIDJSON_INCLUDE_DIR})
 
 # Include local libs
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)

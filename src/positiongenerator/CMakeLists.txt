@@ -12,6 +12,7 @@ add_executable (oat-posigen ${oat-posigen_SOURCE})
 target_link_libraries (oat-posigen 
                        oatutility
                        ${OatCommon_LIBS})
+add_dependencies (oat-posigen cpptoml rapidjson)
 
 # Installation
 install (TARGETS oat-posigen DESTINATION ../../oat/libexec COMPONENT oat-processors)
