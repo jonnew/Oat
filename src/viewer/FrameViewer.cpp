@@ -71,9 +71,9 @@ void FrameViewer::configure(const po::variables_map &vm) {
     oat::config::checkKeys(config_keys_, config_table);
 
     // Snapshot save path
-    std::string snapshot_path;
-    if (oat::config::getValue(vm, config_table, "snapshot-path", snapshot_path))
-        set_snapshot_path(snapshot_path);
+    std::string snapshot_path = "./";
+    oat::config::getValue(vm, config_table, "snapshot-path", snapshot_path);
+    set_snapshot_path(snapshot_path);
 }
 
 void FrameViewer::display(const oat::Frame &frame) {
