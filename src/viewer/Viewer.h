@@ -43,7 +43,6 @@ template <typename T>
 class Viewer {
 
     using Clock = std::chrono::high_resolution_clock;
-    using Milliseconds = std::chrono::milliseconds;
 
 public:
 
@@ -96,6 +95,10 @@ protected:
     // List of allowed configuration options
     std::vector<std::string> config_keys_;
 
+    // Mimumum display update period
+    using Milliseconds = std::chrono::milliseconds;
+    Milliseconds min_update_period_ms {33};
+
     /**
      * @brief Perform sample display. Override to implement display operation
      * in derived classes.
@@ -119,13 +122,10 @@ private:
     std::condition_variable display_cv_;
     std::thread display_thread_;
 
-    // Constants
-    const Milliseconds MIN_UPDATE_PERIOD_MS {33};
-
     /**
      * @brief Asynchronous execution of display(). This function is handled by
      * an asynchronous thread that throttles the GUI update period to
-     * MIN_UPDATE_PERIOD_MS.
+     * min_update_period_ms.
      */
     void processAsync(void);
 };

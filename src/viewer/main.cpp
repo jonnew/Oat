@@ -63,9 +63,8 @@ const char usage_io[] =
 const char purpose[] =
     "Graphical visualization of SOURCE stream.";
 
-void printUsage(const po::options_description &options,
-                const std::string &type) {
-
+void printUsage(const po::options_description &options, const std::string &type)
+{
     if (type.empty()) {
         std::cout <<
         "Usage: view [INFO]\n"
@@ -88,12 +87,13 @@ void printUsage(const po::options_description &options,
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int) {
+void sigHandler(int)
+{
     quit = 1;
 }
 
-void run(const std::shared_ptr<oat::ViewerBase> viewer) {
-
+void run(const std::shared_ptr<oat::ViewerBase> viewer)
+{
     try {
 
         viewer->connectToNode();
@@ -110,9 +110,8 @@ void run(const std::shared_ptr<oat::ViewerBase> viewer) {
     }
 }
 
-
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
     std::signal(SIGINT, sigHandler);
 
     std::string type;
@@ -180,8 +179,7 @@ int main(int argc, char *argv[]) {
                 case 'a':
                 {
                     viewer = std::make_shared<oat::ViewerBase>(
-                        std::in_place<oat::FrameViewer>(), source
-                    );
+                        std::in_place<oat::FrameViewer>(), source);
                     break;
                 }
                 // TODO

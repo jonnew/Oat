@@ -28,9 +28,9 @@
 
 namespace oat {
 
-template<typename T>
-Viewer<T>::Viewer(const std::string &source_address) :
-  name_("viewer[" + source_address + "]")
+template <typename T>
+Viewer<T>::Viewer(const std::string &source_address)
+: name_("viewer[" + source_address + "]")
 , source_address_(source_address)
 {
     // Initialize GUI update timers
@@ -41,7 +41,7 @@ Viewer<T>::Viewer(const std::string &source_address) :
     display_thread_ = std::thread( [this] {processAsync();} );
 }
 
-template<typename T>
+template <typename T>
 Viewer<T>::~Viewer()
 {
     running_ = false;
@@ -49,9 +49,9 @@ Viewer<T>::~Viewer()
     display_thread_.join();
 }
 
-template<typename T>
-void Viewer<T>::appendOptions(po::options_description &opts) {
-
+template <typename T>
+void Viewer<T>::appendOptions(po::options_description &opts)
+{
     // Common program options
     opts.add_options()
         ("config,c", po::value<std::vector<std::string> >()->multitoken(),
@@ -60,9 +60,9 @@ void Viewer<T>::appendOptions(po::options_description &opts) {
         ;
 }
 
-template<typename T>
-void Viewer<T>::connectToNode() {
-
+template <typename T>
+void Viewer<T>::connectToNode()
+{
     // Establish our a slot in the node
     source_.touch(source_address_);
 
@@ -70,9 +70,9 @@ void Viewer<T>::connectToNode() {
     source_.connect();
 }
 
-template<typename T>
-bool Viewer<T>::process() {
-
+template <typename T>
+bool Viewer<T>::process()
+{
     // START CRITICAL SECTION //
     ////////////////////////////
 
@@ -99,16 +99,16 @@ bool Viewer<T>::process() {
     // If the minimum update period has passed, and display thread is not busy,
     // show the new sample on the display thread. This prevents GUI updates
     // from holding up more important upstream processing.
-    if (duration > MIN_UPDATE_PERIOD_MS && display_complete_)
+    if (duration > min_update_period_ms && display_complete_)
         display_cv_.notify_one();
 
     // Sink was not at END state
     return false;
 }
 
-template<typename T>
-void Viewer<T>::processAsync() {
-
+template <typename T>
+void Viewer<T>::processAsync()
+{
     while (running_) {
 
         std::unique_lock<std::mutex> lk(display_mutex_);

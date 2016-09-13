@@ -36,20 +36,26 @@ namespace bfs = boost::filesystem;
 using namespace boost::interprocess;
 using msec = std::chrono::milliseconds;
 
-FrameViewer::FrameViewer(const std::string &source_address) :
-  Viewer<oat::Frame>(source_address)
+FrameViewer::FrameViewer(const std::string &source_address)
+: Viewer<oat::Frame>(source_address)
 {
     // Nothing
 }
 
-void FrameViewer::appendOptions(po::options_description &opts) {
-
+void FrameViewer::appendOptions(po::options_description &opts)
+{
     // Accepts a config file
     Viewer<oat::Frame>::appendOptions(opts);
 
     // Common program options
     po::options_description local_opts;
     opts.add_options()
+        ("display-rate,r", po::value<double>(),
+         "Maximum rate at which the viewer is updated irrespective of its "
+         "source's rate. If frames are supplied faster than this rate, they are "
+         "ignored. Setting this to a reasonably low value prevents the viewer "
+         "from consuming processing resorces in order to update the "
+         "display faster than is visually perceptable. Defaults to 30.")
         ("snapshot-path,f", po::value<std::string>(),
         "The path to which in which snapshots will be saved. "
         "If a folder is designated, the base file name will be SOURCE. "
@@ -64,11 +70,18 @@ void FrameViewer::appendOptions(po::options_description &opts) {
         config_keys_.push_back(o->long_name());
 }
 
-void FrameViewer::configure(const po::variables_map &vm) {
-
+void FrameViewer::configure(const po::variables_map &vm)
+{
     // Check for config file and entry correctness
     auto config_table = oat::config::getConfigTable(vm);
     oat::config::checkKeys(config_keys_, config_table);
+
+    // Display rate
+    double r;
+    if (oat::config::getNumericValue<double>(
+            vm, config_table, "display-rate", r, 0.001)) {
+        min_update_period_ms = Milliseconds(static_cast<int>(1000.0 / r));
+    }
 
     // Snapshot save path
     std::string snapshot_path = "./";
@@ -76,8 +89,8 @@ void FrameViewer::configure(const po::variables_map &vm) {
     set_snapshot_path(snapshot_path);
 }
 
-void FrameViewer::display(const oat::Frame &frame) {
-
+void FrameViewer::display(const oat::Frame &frame)
+{
     // NOTE: This inititalization is done here to enesure it is done by the same
     // thread that actually calls imshow(). If done in in the constructor, it will
     // not play nice with OpenGL.
@@ -124,8 +137,8 @@ void FrameViewer::display(const oat::Frame &frame) {
     }
 }
 
-void FrameViewer::set_snapshot_path(const std::string &snapshot_path) {
-
+void FrameViewer::set_snapshot_path(const std::string &snapshot_path)
+{
     bfs::path path(snapshot_path.c_str());
 
     // Check that the snapshot save folder is valid

@@ -34,7 +34,7 @@ class ViewerBase {
 
 public:
 
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     ViewerBase(std::in_place<T>, Args&&... args) :
       viewer(std::make_unique<ViewerModel<T>>(std::forward<Args>(args)...)) { }
     void appendOptions(po::options_description &opts) const
@@ -56,7 +56,7 @@ private:
         virtual std::string name(void) const = 0;
     };
 
-    template<typename T>
+    template <typename T>
     struct ViewerModel : ViewerConcept {
         template <typename... Args>
         ViewerModel(Args&&... args) : viewer(std::forward<Args>(args)...) { }
