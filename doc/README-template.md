@@ -490,7 +490,7 @@ oat-posicom-help
 #### Configuration Options
 __TYPE = `mean`__
 ```
-oat-posifilt-region-help
+oat-posicom-mean-help
 ```
 
 #### Example
