@@ -20,6 +20,8 @@
 #ifndef OAT_POSITIONDETECTOR_H
 #define	OAT_POSITIONDETECTOR_H
 
+#define OAT_POSIDET_MAX_OBJ_AREA_PIX 100000
+
 #include <string>
 
 #include <boost/program_options.hpp>
@@ -101,7 +103,7 @@ protected:
 
     // List of allowed configuration options    
     std::vector<std::string> config_keys_;
-
+    
 private:
 
     // Current frame

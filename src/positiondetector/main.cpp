@@ -35,6 +35,7 @@
 #include "PositionDetector.h"
 #include "HSVDetector.h"
 #include "DifferenceDetector.h"
+#include "SimpleThreshold.h"
 
 #define REQ_POSITIONAL_ARGS 3
 
@@ -45,8 +46,9 @@ volatile sig_atomic_t source_eof = 0;
 
 const char usage_type[] =
     "TYPE\n"
-    "  diff: Difference detector (grey-scale, motion)\n"
-    "  hsv : HSV detector (color)";
+    "  diff  : Difference detector (color or grey-scale, motion)\n"
+    "  hsv   : HSV color thresholds (color)\n"
+    "  thrsh : Simple amplitude threshold (mono)";
 
 const char usage_io[] =
     "SOURCE:\n"
@@ -60,9 +62,8 @@ const char purpose[] =
     "Perform object detection on frames from SOURCE "
     "and publish object positions to SINK.";
 
-void printUsage(const po::options_description &options,
-                const std::string &type) {
-
+void printUsage(const po::options_description &options, const std::string &type)
+{
     if (type.empty()) {
         std::cout <<
         "Usage: posidet [INFO]\n"
@@ -85,7 +86,8 @@ void printUsage(const po::options_description &options,
 }
 
 // Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int) {
+void sigHandler(int)
+{
     quit = 1;
 }
 
@@ -108,8 +110,8 @@ void run(const std::shared_ptr<oat::PositionDetector>& detector) {
     }
 }
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
     std::signal(SIGINT, sigHandler);
 
     // Results of command line input
@@ -121,6 +123,7 @@ int main(int argc, char *argv[]) {
     std::unordered_map<std::string, char> type_hash;
     type_hash["diff"] = 'a';
     type_hash["hsv"] = 'b';
+    type_hash["thrsh"] = 'c';
 
     // The component itself
     std::string comp_name = "posidet";
@@ -188,6 +191,11 @@ int main(int argc, char *argv[]) {
                 case 'b':
                 {
                     detector = std::make_shared<oat::HSVDetector>(source, sink);
+                    break;
+                }
+                case 'c':
+                {
+                    detector = std::make_shared<oat::SimpleThreshold>(source, sink);
                     break;
                 }
                 default:

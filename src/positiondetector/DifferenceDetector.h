@@ -43,11 +43,6 @@ public:
     DifferenceDetector(const std::string &frame_source_address,
                        const std::string &position_sink_address);
 
-    /**
-     * Perform motion-based object position detection.
-     * @param frame frame to look for object in.
-     * @return  detected object position.
-     */
     void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
 
     void appendOptions(po::options_description &opts) override;

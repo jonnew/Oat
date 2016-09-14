@@ -7,6 +7,7 @@ set (oat-posidet_SOURCE
      DetectorFunc.cpp
      DifferenceDetector.cpp
      HSVDetector.cpp
+     SimpleThreshold.cpp
      main.cpp)
 
 # Target

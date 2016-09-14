@@ -41,8 +41,8 @@ DifferenceDetector::DifferenceDetector(const std::string &frame_source_address,
     set_blur_size(2);
 }
 
-void DifferenceDetector::appendOptions(po::options_description &opts) {
-
+void DifferenceDetector::appendOptions(po::options_description &opts)
+{
     // Accepts a config file
     PositionDetector::appendOptions(opts);
 
@@ -64,12 +64,12 @@ void DifferenceDetector::appendOptions(po::options_description &opts) {
     opts.add(local_opts);
 
     // Return valid keys
-    for (auto &o: local_opts.options())
+    for (auto &o : local_opts.options())
         config_keys_.push_back(o->long_name());
 }
 
-void DifferenceDetector::configure(const po::variables_map &vm) {
-
+void DifferenceDetector::configure(const po::variables_map &vm)
+{
     // Check for config file and entry correctness
     auto config_table = oat::config::getConfigTable(vm);
     oat::config::checkKeys(config_keys_, config_table);
@@ -103,8 +103,9 @@ void DifferenceDetector::configure(const po::variables_map &vm) {
     oat::config::getValue<bool>(vm, config_table, "tune", tuning_on_);
 }
 
-void DifferenceDetector::detectPosition(cv::Mat &frame, oat::Position2D &position) {
-
+void DifferenceDetector::detectPosition(cv::Mat &frame,
+                                        oat::Position2D &position)
+{
     if (tuning_on_)
         tune_frame_ = frame.clone();
 
@@ -161,6 +162,8 @@ void DifferenceDetector::tune(cv::Mat &frame, const oat::Position2D &position) {
 void DifferenceDetector::applyThreshold(cv::Mat &frame) {
 
     if (last_image_set_) {
+        // TODO: Is this actually doing anything for mono frames? If so, we need to check
+        // for mono and branch
         cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
         cv::absdiff(frame, last_image_, threshold_frame_);
         cv::threshold(threshold_frame_, threshold_frame_, difference_intensity_threshold_, 255, cv::THRESH_BINARY);
@@ -192,14 +195,26 @@ void DifferenceDetector::createTuningWindows() {
 #endif
 
     // Create sliders and insert them into window
-    cv::createTrackbar("THRESH", tuning_image_title_,
-            &difference_intensity_threshold_, 256);
-    cv::createTrackbar("BLUR", tuning_image_title_,
-            &blur_size_.height, 50, &diffDetectorBlurSliderChangedCallback, this);
-    cv::createTrackbar("MIN AREA", tuning_image_title_,
-            &dummy0_, 10000, &diffDetectorMinAreaSliderChangedCallback, this);
-    cv::createTrackbar("MAX AREA", tuning_image_title_,
-            &dummy1_, 10000, &diffDetectorMaxAreaSliderChangedCallback, this);
+    cv::createTrackbar(
+        "THRESH", tuning_image_title_, &difference_intensity_threshold_, 256);
+    cv::createTrackbar("BLUR",
+                       tuning_image_title_,
+                       &blur_size_.height,
+                       50,
+                       &diffDetectorBlurSliderChangedCallback,
+                       this);
+    cv::createTrackbar("MIN AREA",
+                       tuning_image_title_,
+                       &dummy0_,
+                       OAT_POSIDET_MAX_OBJ_AREA_PIX,
+                       &diffDetectorMinAreaSliderChangedCallback,
+                       this);
+    cv::createTrackbar("MAX AREA",
+                       tuning_image_title_,
+                       &dummy1_,
+                       OAT_POSIDET_MAX_OBJ_AREA_PIX,
+                       &diffDetectorMaxAreaSliderChangedCallback,
+                       this);
     tuning_windows_created_ = true;
 }
 
