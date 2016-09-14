@@ -53,7 +53,7 @@ void PositionDetector::connectToNode()
     frame_source_.touch(frame_source_address_);
 
     // Wait for synchronous start with sink when it binds the node
-    frame_source_.connect(explicit_type_);
+    frame_source_.connect(required_color_);
 
     // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);

@@ -28,6 +28,30 @@
 
 namespace oat {
 
+enum class PixelColor : int {
+    undef = 0,
+    mono8,
+    color8,
+};
+
+inline int cv_type(oat::PixelColor col) {
+    switch (col) {
+        case PixelColor::mono8 : return CV_8UC1;
+        case PixelColor::color8 : return CV_8UC3;
+        case PixelColor::undef : // Fallthrough
+        default : return -1;
+    }
+}
+
+inline std::string to_string(oat::PixelColor col) {
+    switch (col) {
+        case PixelColor::mono8 : return "mono-8";
+        case PixelColor::color8 : return "color-8";
+        case PixelColor::undef : return "any-color";
+        default : return "";
+    }
+}
+
 /**
  * Wrapper class for cv::Mat that contains sample number information.
  *
@@ -121,6 +145,9 @@ private:
 
     // sample_ptr_ can point to either outside data (shmem) or sample_
     oat::Sample * sample_ptr_;
+
+    // Color profile of each pixel
+    PixelColor color {PixelColor::undef};
 };
 
 }      /* namespace oat */

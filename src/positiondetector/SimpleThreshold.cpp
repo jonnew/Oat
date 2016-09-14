@@ -43,7 +43,7 @@ SimpleThreshold::SimpleThreshold(const std::string &frame_source_address,
     set_dilate_size(0);
 
     // Set required frame type
-    explicit_type_ = CV_8UC1;
+    required_color_ = oat::PixelColor::mono8;
 }
 
 void SimpleThreshold::appendOptions(po::options_description &opts)

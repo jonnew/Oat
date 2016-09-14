@@ -53,6 +53,8 @@ pc "$(oat posidet diff --help)"
 opd_d="$pc_res"
 pc "$(oat posidet hsv --help)" 
 opd_h="$pc_res"
+pc "$(oat posidet thrsh --help)" 
+opd_t="$pc_res"
 
 # oat-posigen type configurations
 pc "$(oat posigen rand2D --help)" 
@@ -102,6 +104,7 @@ awk -v ofs="$(oat frameserve --help)" \
     -v opd="$(oat posidet --help)"   \
     -v opd_d="$opd_d" \
     -v opd_h="$opd_h" \
+    -v opd_t="$opd_t" \
     -v opg="$(oat posigen --help)"   \
     -v opg_r2="$opg_r2" \
     -v opf="$(oat posifilt --help)"  \
@@ -138,6 +141,7 @@ awk -v ofs="$(oat frameserve --help)" \
     sub(/oat-posidet-help/, opd);
     sub(/oat-posidet-diff-help/, opd_d);
     sub(/oat-posidet-hsv-help/, opd_h);
+    sub(/oat-posidet-thrsh-help/, opd_t);
     sub(/oat-posigen-help/, opg);
     sub(/oat-posigen-rand2D-help/, opg_r2);
     sub(/oat-posifilt-help/, opf);

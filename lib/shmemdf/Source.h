@@ -275,7 +275,7 @@ public:
     // new class here? This should be part of SharedFrameHeader so I can just
     // copy it out of there.
     void connect() override;
-    void connect(const int type);
+    void connect(const oat::PixelColor col);
 
     oat::Frame retrieve() const { return frame_; }
     oat::Frame clone() const { return frame_.clone(); }
@@ -290,14 +290,15 @@ private :
     FrameParams parameters_;
 };
 
-inline void Source<Frame>::connect(const int type)
+inline void Source<Frame>::connect(const oat::PixelColor color)
 {
     connect();
 
     // Check frame pixel type if required
-    if (type != -1 && parameters_.type != type) {
-        throw std::runtime_error("Component requires frames with pixels of type "
-                                 + std::to_string(type));
+    if (color != oat::PixelColor::undef && parameters_.type != cv_type(color)) {
+        throw std::runtime_error("Component requires frame source that "
+                                 "supplies frames with pixels of type "
+                                 + oat::to_string(color));
     }
 }
 

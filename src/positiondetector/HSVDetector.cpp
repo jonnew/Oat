@@ -43,7 +43,7 @@ HSVDetector::HSVDetector(const std::string &frame_source_address,
     set_dilate_size(10);
 
     // Set required frame type
-    explicit_type_ = CV_8UC3;
+    required_color_ = oat::PixelColor::color8;
 }
 
 void HSVDetector::appendOptions(po::options_description &opts)

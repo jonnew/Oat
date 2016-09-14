@@ -96,10 +96,8 @@ protected:
     // Detector name
     const std::string name_;
 
-    // Explicit frame data type (-1 means not required)
-    // TODO: Smells bad. Should be an automatic part of the connectToNode
-    // process
-    int explicit_type_ {-1};
+    // Explicit frame data type (undef means not required)
+    oat::PixelColor required_color_ {oat::PixelColor::undef};
 
     // List of allowed configuration options    
     std::vector<std::string> config_keys_;

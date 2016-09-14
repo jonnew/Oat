@@ -509,6 +509,13 @@ SOURCE:
 #### Configuration Options
 __TYPE = `frame`__
 ```
+  -r [ --display-rate ] arg   Maximum rate at which the viewer is updated 
+                              irrespective of its source's rate. If frames are 
+                              supplied faster than this rate, they are ignored.
+                              Setting this to a reasonably low value prevents 
+                              the viewer from consuming processing resorces in 
+                              order to update the display faster than is 
+                              visually perceptable. Defaults to 30.
   -f [ --snapshot-path ] arg  The path to which in which snapshots will be 
                               saved. If a folder is designated, the base file 
                               name will be SOURCE. The timestamp of the 
@@ -546,8 +553,9 @@ INFO:
   -v [ --version ]       Print version information.
 
 TYPE
-  diff: Difference detector (grey-scale, motion)
-  hsv : HSV detector (color)
+  diff  : Difference detector (color or grey-scale, motion)
+  hsv   : HSV color thresholds (color)
+  thrsh : Simple amplitude threshold (mono)
 
 SOURCE:
   User-supplied name of the memory segment to receive frames from (e.g. raw).
@@ -590,6 +598,20 @@ __TYPE = `diff`__
                                 detection parameters.
 ```
 
+__TYPE = `thrsh`__
+```
+
+  -T [ --thresh ] arg     Array of ints between 0 and 256, [min,max], 
+                          specifying the intensity passband.
+  -e [ --erode ] arg      Contour erode kernel size in pixels (normalized box 
+                          filter).
+  -d [ --dilate ] arg     Contour dilation kernel size in pixels (normalized 
+                          box filter).
+  -a [ --area ] arg       Array of floats, [min,max], specifying the minimum 
+                          and maximum object contour area in pixels^2.
+  -t [ --tune ]           If true, provide a GUI with sliders for tuning 
+                          detection parameters.
+```
 #### Example
 ```bash
 # Use color-based object detection on the 'raw' frame stream
@@ -779,33 +801,12 @@ SINK:
 __TYPE = `mean`__
 ```
 
-  --<regions> arg         !Config file only!
-                          Regions contours are specified as n-point matrices, 
-                          [[x0, y0],[x1, y1],...,[xn, yn]], which define the 
-                          vertices of a polygon:
-                          
-                            <region> = [[+float, +float],
-                                        [+float, +float],
-                                        ...              
-                                        [+float, +float]]
-                          
-                          The name of the contour is used as the region label. 
-                          For example,here is an octagonal region called CN and
-                          a tetragonal region called R0:
-                          
-                            CN = [[336.00, 272.50],
-                                  [290.00, 310.00],
-                                  [289.00, 369.50],
-                                  [332.67, 417.33],
-                                  [389.33, 413.33],
-                                  [430.00, 375.33],
-                                  [433.33, 319.33],
-                                  [395.00, 272.00]]
-                          
-                            R0 = [[654.00, 380.00],
-                                  [717.33, 386.67],
-                                  [714.00, 316.67],
-                                  [655.33, 319.33]]
+  -h [ --heading-anchor ] arg   Index of the SOURCE position to use as an 
+                                anchor when calculating object heading. In this
+                                case the heading equals the mean directional 
+                                vector between this anchor position and all 
+                                other SOURCE positions. If unspecified, the 
+                                heading is not calculated.
 ```
 
 #### Example
@@ -943,7 +944,46 @@ tends to be quite intense and (2) save to multiple locations simultaneously.
 
 #### Usage
 ```
+Usage: record [INFO]
+   or: record [CONFIGURATION]
+Record frame and/or position streams.
 
+INFO:
+  --help                         Produce help message.
+  -v [ --version ]               Print version information.
+
+CONFIGURATION:
+  -s [ --frame-sources ] arg     The names of the FRAME SOURCES that supply 
+                                 images to save to video.
+  -p [ --position-sources ] arg  The names of the POSITION SOURCES that supply 
+                                 object positions to be recorded.
+  -n [ --filename ] arg          The base file name. If not specified, defaults
+                                 to the SOURCE name.
+  -f [ --folder ] arg            The path to the folder to which the video 
+                                 stream and position data will be saved. If not
+                                 specified, defaults to the current directory.
+  -d [ --date ]                  If specified, YYYY-MM-DD-hh-mm-ss_ will be 
+                                 prepended to the filename.
+  -o [ --allow-overwrite ]       If set and save path matches and existing 
+                                 file, the file will be overwritten instead of 
+                                 a incremental numerical index being appended 
+                                 to the file name.
+  -c [ --concise-file ]          If set, indeterminate position data fields 
+                                 will not be written e.g. pos_xy will not be 
+                                 written even when pos_ok = false. This means 
+                                 that position objects will be of variable size
+                                 depending on the validity on whether a 
+                                 position was detected or not, potentially 
+                                 complicating file parsing.
+  --interactive                  Start recorder with interactive controls 
+                                 enabled.
+  --rpc-endpoint arg             Yield interactive control of the recorder to a
+                                 remote ZMQ REQ socket using an interal REP 
+                                 socket with ZMQ style endpoint specifier: 
+                                 '<transport>://<host>:<port>'. For instance, 
+                                 'tcp://*:5555' or 'ipc://*:5556' specify TCP 
+                                 and interprocess communication on ports 5555 
+                                 or 5556, respectively.
 ```
 
 #### Example

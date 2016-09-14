@@ -35,21 +35,10 @@ namespace oat {
 
 namespace pg = FlyCapture2;
 
-enum class PixelColor : int {
-    mono8 = 0,
-    color8,
-};
-
 template <typename T>
 class PointGreyCam : public FrameServer {
 
-
-    using rte = std::runtime_error;
-    using PixelMap = std::map<oat::PixelColor,
-                              std::tuple<pg::PixelFormat, pg::PixelFormat, int>>;
-
 public:
-
     /**
      * @brief Serve frames from a Point Grey GigE camera.
      * @param sink_address frame sink address
@@ -64,6 +53,10 @@ public:
     bool process(void) override;
 
 private:
+    using rte = std::runtime_error;
+    using PixelMap
+        = std::map<oat::PixelColor,
+                   std::tuple<pg::PixelFormat, pg::PixelFormat, int>>;
 
     // Timing stuff
     bool enforce_fps_ {false};

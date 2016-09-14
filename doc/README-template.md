@@ -394,6 +394,10 @@ __TYPE = `diff`__
 oat-posidet-diff-help
 ```
 
+__TYPE = `thrsh`__
+```
+oat-posidet-thrsh-help
+```
 #### Example
 ```bash
 # Use color-based object detection on the 'raw' frame stream
