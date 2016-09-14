@@ -394,7 +394,7 @@ template <typename T>
 void PointGreyCam<T>::setupWhiteBalance(int bal_red, int bal_blue, bool is_on, bool is_auto)
 {
     // Mono pixels do not support white balance
-    if (pix_col_ == oat::PixelColor::mono8) {
+    if (is_on && pix_col_ == oat::PixelColor::mono8) {
         std::cerr << oat::Warn(
             "You cannot adjust the white balance for mono frames.");
         return;

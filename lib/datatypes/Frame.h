@@ -29,16 +29,16 @@
 namespace oat {
 
 enum class PixelColor : int {
-    undef = 0,
-    mono8,
+    mono8 = 0,
     color8,
+    any
 };
 
 inline int cv_type(oat::PixelColor col) {
     switch (col) {
         case PixelColor::mono8 : return CV_8UC1;
         case PixelColor::color8 : return CV_8UC3;
-        case PixelColor::undef : // Fallthrough
+        case PixelColor::any : // Fallthrough
         default : return -1;
     }
 }
@@ -47,7 +47,7 @@ inline std::string to_string(oat::PixelColor col) {
     switch (col) {
         case PixelColor::mono8 : return "mono-8";
         case PixelColor::color8 : return "color-8";
-        case PixelColor::undef : return "any-color";
+        case PixelColor::any : return "any-color";
         default : return "";
     }
 }
@@ -147,7 +147,7 @@ private:
     oat::Sample * sample_ptr_;
 
     // Color profile of each pixel
-    PixelColor color {PixelColor::undef};
+    PixelColor color {PixelColor::any};
 };
 
 }      /* namespace oat */

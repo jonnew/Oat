@@ -92,16 +92,16 @@ protected:
      * @param position Detected object position.
      */
     virtual void detectPosition(cv::Mat &frame, oat::Position2D &position) = 0;
-    
+
     // Detector name
     const std::string name_;
 
-    // Explicit frame data type (undef means not required)
-    oat::PixelColor required_color_ {oat::PixelColor::undef};
+    // Explicit frame data type
+    oat::PixelColor required_color_ {oat::PixelColor::any};
 
-    // List of allowed configuration options    
+    // List of allowed configuration options
     std::vector<std::string> config_keys_;
-    
+
 private:
 
     // Current frame

@@ -295,7 +295,7 @@ inline void Source<Frame>::connect(const oat::PixelColor color)
     connect();
 
     // Check frame pixel type if required
-    if (color != oat::PixelColor::undef && parameters_.type != cv_type(color)) {
+    if (color != oat::PixelColor::any && parameters_.type != cv_type(color)) {
         throw std::runtime_error("Component requires frame source that "
                                  "supplies frames with pixels of type "
                                  + oat::to_string(color));
