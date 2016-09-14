@@ -24,16 +24,16 @@
 namespace oat {
 
 FrameFilter::FrameFilter(const std::string &frame_source_address,
-                         const std::string &frame_sink_address) :
-  name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
+                         const std::string &frame_sink_address)
+: name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
     // Nothing
 }
 
-void FrameFilter::appendOptions(po::options_description &opts) {
-
+void FrameFilter::appendOptions(po::options_description &opts)
+{
     // Common program options
     opts.add_options()
         ("config,c", po::value<std::vector<std::string> >()->multitoken(),
@@ -42,8 +42,8 @@ void FrameFilter::appendOptions(po::options_description &opts) {
         ;
 }
 
-void FrameFilter::connectToNode() {
-
+void FrameFilter::connectToNode()
+{
     // Establish our a slot in the source node
     frame_source_.touch(frame_source_address_);
 
@@ -51,17 +51,17 @@ void FrameFilter::connectToNode() {
     frame_source_.connect();
 
     // Get frame meta data to format sink
-    frame_parameters_ = frame_source_.parameters();
+    auto frame_parameters = frame_source_.parameters();
 
     // Bind to sink node and create a shared frame
-    frame_sink_.bind(frame_sink_address_, frame_parameters_.bytes);
-    shared_frame_ = frame_sink_.retrieve(frame_parameters_.rows,
-                                         frame_parameters_.cols,
-                                         frame_parameters_.type);
+    frame_sink_.bind(frame_sink_address_, frame_parameters.bytes);
+    shared_frame_ = frame_sink_.retrieve(frame_parameters.rows,
+                                         frame_parameters.cols,
+                                         frame_parameters.type);
 }
 
-bool FrameFilter::process() {
-
+bool FrameFilter::process()
+{
     // START CRITICAL SECTION //
     ////////////////////////////
 

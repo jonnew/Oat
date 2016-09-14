@@ -37,8 +37,8 @@ PositionDetector::PositionDetector(const std::string &frame_source_address,
   // Nothing
 }
 
-void PositionDetector::appendOptions(po::options_description &opts) {
-
+void PositionDetector::appendOptions(po::options_description &opts)
+{
     // Common program options
     opts.add_options()
         ("config,c", po::value<std::vector<std::string> >()->multitoken(),
@@ -47,21 +47,21 @@ void PositionDetector::appendOptions(po::options_description &opts) {
         ;
 }
 
-void PositionDetector::connectToNode() {
-
+void PositionDetector::connectToNode()
+{
     // Establish our a slot in the node
     frame_source_.touch(frame_source_address_);
 
     // Wait for synchronous start with sink when it binds the node
-    frame_source_.connect();
+    frame_source_.connect(explicit_type_);
 
     // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
 }
 
-bool PositionDetector::process() {
-
+bool PositionDetector::process()
+{
     // START CRITICAL SECTION //
     ////////////////////////////
 

@@ -28,9 +28,9 @@
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
 
-namespace po = boost::program_options;
-
 namespace oat {
+
+namespace po = boost::program_options;
 
 /**
  * @brief Abstract frame filter.
@@ -80,19 +80,12 @@ public:
      */
     std::string name(void) const { return name_; }
 
-    /**
-     * @brief Get parameters of frames being processed by this component
-     * @return Frame parameters
-     */
-    oat::Source<oat::Frame>::ConnectionParameters
-    frame_parameters(void) const { return frame_parameters_; }
-
 protected:
 
     // Filter name
     const std::string name_;
 
-    // List of allowed configuration options    
+    // List of allowed configuration options
     std::vector<std::string> config_keys_;
 
     /**
@@ -100,7 +93,7 @@ protected:
      * derived classes.
      * @param frame to be filtered
      */
-    virtual void filter(cv::Mat& frame) = 0;
+    virtual void filter(cv::Mat &frame) = 0;
 
 private:
 
@@ -115,8 +108,6 @@ private:
     // Currently acquired, shared frame
     oat::Frame shared_frame_;
 
-    // TODO: ugly...
-    oat::Source<oat::Frame>::ConnectionParameters frame_parameters_;
 };
 
 }      /* namespace oat */

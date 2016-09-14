@@ -31,14 +31,14 @@
 namespace oat {
 
 FrameMasker::FrameMasker(const std::string &frame_source_address,
-                         const std::string &frame_sink_address) :
-  FrameFilter(frame_source_address, frame_sink_address)
+                         const std::string &frame_sink_address)
+: FrameFilter(frame_source_address, frame_sink_address)
 {
     // Nothing
 }
 
-void FrameMasker::appendOptions(po::options_description &opts) {
-
+void FrameMasker::appendOptions(po::options_description &opts)
+{
     // Accepts a config file
     FrameFilter::appendOptions(opts);
 
@@ -55,12 +55,12 @@ void FrameMasker::appendOptions(po::options_description &opts) {
     opts.add(local_opts);
 
     // Return valid keys
-    for (auto &o: local_opts.options())
+    for (auto &o : local_opts.options())
         config_keys_.push_back(o->long_name());
 }
 
-void FrameMasker::configure(const po::variables_map &vm) {
-
+void FrameMasker::configure(const po::variables_map &vm)
+{
     // Check for config file and entry correctness
     auto config_table = oat::config::getConfigTable(vm);
     oat::config::checkKeys(config_keys_, config_table);
@@ -78,8 +78,8 @@ void FrameMasker::configure(const po::variables_map &vm) {
     }
 }
 
-void FrameMasker::filter(cv::Mat &frame) {
-
+void FrameMasker::filter(cv::Mat &frame)
+{
     if (mask_set_)
         frame.setTo(0, roi_mask_ == 0);
 }

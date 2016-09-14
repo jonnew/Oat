@@ -272,7 +272,7 @@ inline oat::Frame Sink<Frame>::retrieve(const size_t rows, const size_t cols, co
     // Make sure that the SINK is bound to a shared memory segment
     //assert(bound_);
     if (!bound_)
-        throw (std::runtime_error("SINK must be bound before shared cvMat is retrieved."));
+        throw (std::runtime_error("SINK must be bound before shared frame is retrieved."));
 
     // Allocate memory for sample number
     void * sample = obj_shmem_.allocate(sizeof(oat::Sample));

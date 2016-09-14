@@ -32,7 +32,6 @@ FrameBuffer::FrameBuffer(const std::string &source_address,
 
 void FrameBuffer::connectToNode()
 {
-
     // Establish our a slot in the node
     source_.touch(source_address_);
 
@@ -40,7 +39,7 @@ void FrameBuffer::connectToNode()
     source_.connect();
 
     // Get frame meta data to format sink
-    FrameParam param = source_.parameters();
+    auto param = source_.parameters();
 
     // Bind sink node
     sink_.bind(sink_address_, param.bytes);
@@ -52,7 +51,6 @@ void FrameBuffer::connectToNode()
 
 bool FrameBuffer::push()
 {
-
     // START CRITICAL SECTION //
     ////////////////////////////
 
@@ -82,7 +80,6 @@ bool FrameBuffer::push()
 
 void FrameBuffer::pop()
 {
-
     while (sink_running_) {
 
         // Proceed only if buffer_ has data

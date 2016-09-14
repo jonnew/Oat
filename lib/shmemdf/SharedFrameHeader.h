@@ -17,14 +17,21 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OAT_SHAREDCVMAT_H
-#define	OAT_SHAREDCVMAT_H
+#ifndef OAT_SHAREDFRAMEHEADER_H
+#define	OAT_SHAREDFRAMEHEADER_H
 
 #include <atomic>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 namespace oat {
 namespace bip = boost::interprocess;
+
+struct FrameParams {
+    size_t cols  {0};
+    size_t rows  {0};
+    int type  {0};
+    size_t bytes {0};
+};
 
 /** Header to facilitate zero-copy oat::Frame exchange through shared
   * memory.
@@ -36,22 +43,16 @@ namespace bip = boost::interprocess;
   * and rate information. Non-pointer members allow construction of Frames at
   * source and sink end contain this data and sample information.
   */
+
 class SharedFrameHeader {
 
     using handle_t = bip::managed_shared_memory::handle_t;
 
 public :
 
-    SharedFrameHeader() 
-    {
-        // Nothing
-    }
-
-    size_t rows() const { return rows_; }
-    size_t cols() const { return cols_; }
-    int type() const { return type_; }
     handle_t sample() const { return sample_; }
     handle_t data() const { return data_; }
+    FrameParams params() const { return params_; }
 
     /**
      * Set header data fields.
@@ -66,31 +67,29 @@ public :
                        const handle_t sample,
                        const size_t rows,
                        const size_t cols,
-                       const int type) {
+                       const int type)
+    {
         data_ = data;
         sample_ = sample;
-        rows_ = rows;
-        cols_ = cols;
-        type_ = type;
+        params_.rows = rows;
+        params_.cols = cols;
+        params_.type = type;
     }
 
 private :
 
     // TODO: Should these be atomic? They should already be protected by
     // the semaphores wrapping critical sections in the code. I guess they
-    // are manipulated by bind() and connect() methods without semaphore 
+    // are manipulated by bind() and connect() methods without semaphore
     // protection though.
 
     // Matrix metadata
-    std::atomic<int> rows_ {0};
-    std::atomic<int> cols_ {0};
-    std::atomic<int> type_ {0};
+    FrameParams params_;
 
     // Interprocess matrix data and sample handles
-    std::atomic<handle_t> data_;
-    std::atomic<handle_t> sample_;
+    handle_t data_;
+    handle_t sample_;
 };
 
 }       /* namespace oat */
-#endif	/* OAT_SHAREDCVMAT_H */
-
+#endif	/* OAT_SHAREDFRAMEHEADER_H */

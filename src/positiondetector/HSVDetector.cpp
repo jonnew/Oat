@@ -43,10 +43,13 @@ HSVDetector::HSVDetector(const std::string &frame_source_address,
     // dilate_on must be set to false
     set_erode_size(0);
     set_dilate_size(10);
+
+    // Set required frame type
+    explicit_type_ = CV_8UC3;
 }
 
-void HSVDetector::appendOptions(po::options_description &opts) {
-
+void HSVDetector::appendOptions(po::options_description &opts)
+{
     // Accepts a config file
     PositionDetector::appendOptions(opts);
 

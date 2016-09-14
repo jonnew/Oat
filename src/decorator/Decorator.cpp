@@ -140,7 +140,7 @@ void Decorator::connectToNodes() {
     }
 
     // Get frame meta data to format sink
-    oat::Source<oat::Frame>::ConnectionParameters param =
+    oat::Source<oat::Frame>::FrameParams param =
             frame_source_.parameters();
 
     // Bind to sink sink node and create a shared frame

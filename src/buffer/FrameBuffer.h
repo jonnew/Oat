@@ -30,8 +30,6 @@ namespace oat {
 
 class FrameBuffer : public Buffer {
 
-    using FrameParam =
-        oat::Source<oat::Frame>::ConnectionParameters;
     using SPSCBuffer =
         boost::lockfree::spsc_queue<oat::Frame, buffer_size_t>;
 

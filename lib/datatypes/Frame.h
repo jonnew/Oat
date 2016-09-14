@@ -105,10 +105,8 @@ public:
         *(f.sample_ptr_) = *sample_ptr_;
     }
 
-    Frame operator()( const cv::Rect &roi ) const {
-        return Frame(*this, roi);
-    }
-
+    // ROI
+    Frame operator()(const cv::Rect &roi) const { return Frame(*this, roi); }
 
     // Expose sample information
     oat::Sample & sample() const { return *sample_ptr_; };
@@ -127,4 +125,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_FRAME_H */
-

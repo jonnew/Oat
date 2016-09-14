@@ -94,6 +94,11 @@ protected:
     // Detector name
     const std::string name_;
 
+    // Explicit frame data type (-1 means not required)
+    // TODO: Smells bad. Should be an automatic part of the connectToNode
+    // process
+    int explicit_type_ {-1};
+
     // List of allowed configuration options    
     std::vector<std::string> config_keys_;
 
