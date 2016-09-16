@@ -35,8 +35,8 @@ WebCam::WebCam(const std::string &sink_name) :
     // Nothing
 }
 
-void WebCam::appendOptions(po::options_description &opts) {
-
+void WebCam::appendOptions(po::options_description &opts)
+{
     // Accepts default options
     FrameServer::appendOptions(opts);
 
@@ -44,7 +44,10 @@ void WebCam::appendOptions(po::options_description &opts) {
     po::options_description local_opts;
     local_opts.add_options()
         ("index,i", po::value<int>(),
-         "Camera index. Defaults to 0. Useful in multi-camera imaging configurations.")
+         "Camera index. Useful in multi-camera imaging "
+         "configurations. Defaults to 0.")
+        ("fps,r", po::value<double>(),
+         "Frames to serve per second. Defaults to 20.")
         ("roi", po::value<std::string>(),
          "Four element array of unsigned ints, [x0,y0,width,height],"
          "defining a rectangular region of interest. Origin"
@@ -55,12 +58,12 @@ void WebCam::appendOptions(po::options_description &opts) {
     opts.add(local_opts);
 
     // Return valid keys
-    for (auto &o: local_opts.options())
+    for (auto &o : local_opts.options())
         config_keys_.push_back(o->long_name());
 }
 
-void WebCam::configure(const po::variables_map &vm) {
-
+void WebCam::configure(const po::variables_map &vm)
+{
     // Check for config file and entry correctness
     auto config_table = oat::config::getConfigTable(vm);
     oat::config::checkKeys(config_keys_, config_table);
@@ -69,6 +72,10 @@ void WebCam::configure(const po::variables_map &vm) {
     oat::config::getNumericValue<int>(
         vm, config_table, "index", index_, 0
     );
+
+    // Frame rate
+    double fps {20};
+    oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0);
 
     // ROI
     std::vector<size_t> roi;
@@ -80,14 +87,20 @@ void WebCam::configure(const po::variables_map &vm) {
         region_of_interest_.width  = roi[2];
         region_of_interest_.height = roi[3];
     }
+
+    // Create camera and set options
+    cv_camera_ = oat::make_unique<cv::VideoCapture>(index_);
+    if (!cv_camera_->isOpened())
+        throw std::runtime_error("Could not open webcam "
+                                 + std::to_string(index_));
+
+    cv_camera_->set(cv::CAP_PROP_FPS, fps);
+    if (cv_camera_->get(cv::CAP_PROP_FPS) != fps)
+        std::cerr << oat::Warn("Not able to set webcam frame rate.\n");
 }
 
-void WebCam::connectToNode() {
-
-    cv_camera_ = std::make_unique<cv::VideoCapture>(index_);
-    if (!cv_camera_->isOpened())
-        throw (std::runtime_error("Could not open webcam " + std::to_string(index_)));
-
+void WebCam::connectToNode()
+{
     cv::Mat example_frame;
     *cv_camera_ >> example_frame;
 
@@ -99,6 +112,9 @@ void WebCam::connectToNode() {
 
     shared_frame_ = frame_sink_.retrieve(
             example_frame.rows, example_frame.cols, example_frame.type());
+
+    // Put the sample rate in the shared frame
+    internal_sample_.set_rate_hz(cv_camera_->get(cv::CAP_PROP_FPS));
 }
 
 bool WebCam::process() {
@@ -127,7 +143,7 @@ bool WebCam::process() {
         }
     }
 
-    //// Update sample count
+    // Update sample count
     shared_frame_.sample() = internal_sample_;
 
     // Tell sources there is new data
@@ -137,7 +153,8 @@ bool WebCam::process() {
     //  END CRITICAL SECTION  //
 
     // Pure SINKs increment sample count
-    // NOTE: webcams have unctrolled sample period, so it must be calculated.
+    // NOTE: webcams have poorly controlled sample period, so it must be
+    // calculated.
     if (internal_sample_.count() == 0)
         start_ = clock_.now();
 

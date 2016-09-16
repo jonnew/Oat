@@ -1027,7 +1027,9 @@ Finally, to compile and install OpenCV:
 ```bash
 # Install OpenCV's dependencies
 sudo apt-get install build-essential # Compiler
-sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev# Required
+sudo apt-get install cmake git # For building opencv and Oat
+sudo apt-get install libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libv4l-dev # Required
+sudo apt-get install libv4l-dev # Allows changing frame rate with webcams
 sudo apt-get install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
 sudo apt-get install # ffmpeg support [TODO]
 sudo apt-get install # OpenGL support [TODO]
@@ -1044,7 +1046,7 @@ cd release
 
 # Run cmake to generate Makefile
 # Add -DWITH_CUDA=ON for CUDA support and -DWITH_OPENGL for OpenGL support
-cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
+cmake -DWITH_LIBV4L=ON -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local ..
 
 # Build the project and install
 make
