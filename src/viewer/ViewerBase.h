@@ -24,7 +24,6 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/utility/in_place.h"
-#include "../../lib/utility/make_unique.h"
 
 namespace po = boost::program_options;
 
@@ -35,8 +34,8 @@ class ViewerBase {
 public:
 
     template <typename T, typename... Args>
-    ViewerBase(std::in_place<T>, Args&&... args) :
-      viewer(std::make_unique<ViewerModel<T>>(std::forward<Args>(args)...)) { }
+    ViewerBase(oat::in_place<T>, Args&&... args) :
+      viewer(std::make_shared<ViewerModel<T>>(std::forward<Args>(args)...)) { }
     void appendOptions(po::options_description &opts) const
         { viewer->appendOptions(opts); }
     void configure(const po::variables_map &vm) const
@@ -71,7 +70,9 @@ private:
         T viewer;
     };
 
-    std::unique_ptr<ViewerConcept> viewer;
+    // Destructor is type erased
+    std::shared_ptr<ViewerConcept> viewer;
 };
+
 }      /* namespace oat */
 #endif /* OAT_VIEWERBASE_H */

@@ -19,94 +19,12 @@
 
 #include "Writer.h"
 
-Writer<oat::Position2D>::~Writer
-{
-    json_writer_.EndArray();
-    json_writer_.EndObject();
-    file_stream_->Flush();
-}
+namespace oat {
 
-void Writer<oat::Position2D>::initialize(
-        const std::string &source_name,
-        const Position2D &sample_template) {
+const char Writer::overrun_msg[]
+    = "Record buffer overrun. You can:\n"
+      " - decrease the sample rate\n"
+      " - use multiple recorders on multiple disks\n"
+      " - or, get a faster hard disk";
 
-    // Position file
-    fd_ = fopen(path_.c_str(), "wb");
-
-    file_stream_.reset(new rapidjson::FileWriteStream(fd_,
-            position_write_buffer, sizeof(position_write_buffer)));
-    json_writer_.Reset(*file_stream_);
-
-    // Main object, end this object before write flush in destructor
-    json_writer_.StartObject();
-
-    // Version
-    json_writer_.StartObject();
-
-    // Oat version in header 
-    char version[255];
-    strcpy (version, Oat_VERSION_MAJOR);
-    strcat (version, ".");
-    strcat (version, Oat_VERSION_MINOR);
-    json_writer_.String("oat_version");
-    json_writer_.String(version);
-
-    // Complete header object
-    json_writer_.String("header");
-
-    json_writer_.String("date");
-    json_writer_.String("TODO");
-    //json_writer_.String(date.c_str());
-
-    auto fs = p.sample().rate_hz();
-    json_writer_.String("sample_rate_hz");
-    if (std::isfinite(fs))
-        json_writer_.Double(fs);
-    else
-        json_writer_.Double(-1.0);
-
-    json_writer_.String("source");
-    json_writer_.String(source_name.c_str());
-
-    json_writer_.EndObject();
-
-    // Start data object
-    json_writer_.String("positions");
-    json_writer_.StartArray();
-}
-
-void Writer<oat::Position2D>::write(void) {
-
-   oat::Position2D p("");
-   while (buffer_.pop(p)) {
-
-       // File desriptor must be avaiable for writing
-       assert(fd_);
-
-       json_writer_.StartObject();
-       json_writer_.String("TODO: timestamp");
-       //json_writer_.String(p.label());
-       p.Serialize(json_writer_, verbose_file_);
-
-       json_writer_.EndObject();
-   }
-}
-
-void Writer<oat::Frame>initialize(
-        const std::string &source_name,
-        const Position2D &sample_template) {
-
-   // Initialize writer using the first frame taken from server
-   int fourcc = cv::VideoWriter::fourcc('H', '2', '6', '4');
-   video_writer_.open(path_, fourcc, f.sample().rate_hz(), f.size());
-}
-
-void Writer<oat::Frame>::write(void) {
-
-   cv::Mat mat;
-   while (buffer_.pop(mat)) {
-
-       assert(video_writer_.isOpened());
-       video_writer_.write(mat);
-   }
-}
+} /* namespace oat */

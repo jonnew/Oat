@@ -22,37 +22,56 @@
 
 #include "Writer.h"
 
+#include <boost/lockfree/spsc_queue.hpp>
 #include <opencv2/videoio.hpp>
 
 #include "../../lib/datatypes/Frame.h"
+#include "../../lib/shmemdf/Source.h"
+#include "../../lib/utility/FileFormat.h"
 
 namespace oat {
 namespace blf = boost::lockfree;
 
-// Constants
-static constexpr int FRAME_WRITE_BUFFER_SIZE {1000};
-
 /**
  * Frame stream video file writer.
  */
-class FrameWriter : public Writer<oat::Frame> {
-
-    // Inherit constructor
-    using Writer<oat::Frame>::Writer;
+class FrameWriter : public Writer {
 
 public:
 
-    ~FrameWriter() { };
+    FrameWriter(const std::string &addr);
 
-    void initialize(const std::string &source_name,
-                    const oat::Frame &f) override;
+    void configure(const oat::config::OptionTable &t,
+                   const po::variables_map &vm) override;
+    void touch() override { source_.touch(addr_); }
+    void connect() override;
+    double sample_period_sec() override
+    {
+        // TODO: GROSS
+        return source_.retrieve()->sample().period_sec().count();
+    }
+    oat::NodeState wait() override { return source_.wait(); }
+    void post(void) override { source_.post(); }
 
+    void initialize(const std::string &path) override;
     void write(void) override;
-    
+    void push(void) override;
+
 private:
+    using SPSCBuffer = boost::lockfree::spsc_queue<oat::Frame,
+                                                   blf::capacity<BUFFER_SIZE>>;
+    SPSCBuffer buffer_;
 
-    cv::VideoWriter video_writer_; 
+    // Video writer and required parameters
+    std::string path_ {""};
+    int fourcc_ {0}; // Default to uncompressed
+    double fps_; 
+    oat::FrameParams frame_params_;
+    cv::VideoWriter video_writer_;
 
+    // The held frame source
+    oat::Source<oat::Frame> source_;
 };
+
 }      /* namespace oat */
 #endif /* OAT_FRAMEWRITER_H */

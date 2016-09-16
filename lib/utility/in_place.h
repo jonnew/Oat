@@ -1,12 +1,12 @@
 // C++11 in_place constructor argument substitute
-#ifndef STD_INPLACE_H
-#define STD_INPLACE_H
+#ifndef OAT_INPLACE_H
+#define OAT_INPLACE_H
 
-namespace std {
+namespace oat {
 
 template <typename T> 
 struct in_place {};
 
 }
 
-#endif /* STD_INPLACE_H */
+#endif /* OAT_INPLACE_H */

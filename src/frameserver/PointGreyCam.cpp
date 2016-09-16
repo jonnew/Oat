@@ -1101,7 +1101,7 @@ void PointGreyCam<pg::GigECamera>::connectToNode()
     // automatically propagated into shmem and 'converted' into a cv::Mat
     // (although this 'conversion' is simply filling in appropriate header info,
     // which was accomplished in the call to frame_sink_.retrieve())
-    shmem_image_ = std::make_unique<pg::Image>
+    shmem_image_ = oat::make_unique<pg::Image>
             (rows, cols, stride, shared_frame_.data, bytes, std::get<1>(pix_map_.at(pix_col_)));
 }
 
@@ -1277,7 +1277,7 @@ void PointGreyCam<pg::Camera>::connectToNode()
     // automatically propagated into shmem and 'converted' into a cv::Mat
     // (although this 'conversion' is simply filling in appropriate header info,
     // which was accomplished in the call to frame_sink_.retrieve())
-    shmem_image_ = std::make_unique<pg::Image>
+    shmem_image_ = oat::make_unique<pg::Image>
             (rows, cols, stride, shared_frame_.data, bytes, std::get<1>(pix_map_.at(pix_col_)));
 }
 

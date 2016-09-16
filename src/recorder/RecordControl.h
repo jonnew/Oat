@@ -54,4 +54,3 @@ void printRemoteUsage(std::ostream &out);
 
 }      /* namespace oat */
 #endif /* OAT_RECORDCONTROL_H */
-

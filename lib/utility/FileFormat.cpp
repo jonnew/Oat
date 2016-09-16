@@ -69,12 +69,8 @@ std::string createTimeStamp(bool use_msec) {
         auto msec = 
             std::chrono::duration_cast<std::chrono::milliseconds>(now - sec);
       
-        std::cout << "Msec: " << msec.count() << std::endl;
-
         snprintf(msec_buffer, sizeof msec_buffer, "-%ld", msec.count());
         strcat(buffer, msec_buffer);
-
-        std::cout << "Msec: " << msec_buffer << std::endl;
     }
 
     return std::string(buffer);

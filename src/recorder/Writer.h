@@ -23,73 +23,78 @@
 #include <string>
 
 #include <boost/lockfree/spsc_queue.hpp>
+#include <boost/program_options.hpp>
 #include <opencv2/videoio.hpp>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 
-#include "../../lib/datatypes/Frame.h"
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/shmemdf/Node.h"
 #include "../../lib/utility/FileFormat.h"
+#include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {
 namespace blf = boost::lockfree;
-
-static constexpr int SAMPLE_BUFFER_SIZE {1000};
+namespace po = boost::program_options;
 
 /**
- * Generic, abstract file writer for a single data source
+ * Abstract file writer for a single data source
  */
-template <typename T>
 class Writer {
-
-using SPSCBuffer =
-    boost::lockfree::spsc_queue<T, blf::capacity<SAMPLE_BUFFER_SIZE>>;
 
 public:
 
-    Writer(const std::string &path) :
-      path_(path) 
+    Writer(const std::string &addr)
+    : addr_(addr)
     {
-        if (!oat::checkWritePermission(path_))
-            throw (std::runtime_error("Write permission denied for " + path_));
+        // Nothing
     }
+
+    virtual ~Writer() { }
+
+    // Program option handling
+    virtual void configure(const oat::config::OptionTable &t,
+                           const po::variables_map &vm) = 0;
+
+    // Stuff for manipulating held source
+    virtual void touch(void) = 0;
+    virtual void connect(void) = 0;
+    virtual oat::NodeState wait(void) = 0;
+    virtual void post(void) = 0;
+    virtual double sample_period_sec(void) = 0;
 
     /**
      * @brief Create and initialize recording file(s). Must be called
      * before writeStreams.
      */
-    virtual void initialize(const std::string &source_name,
-                            const T &sample_template) = 0;
+    virtual void initialize(const std::string &path) = 0;
+
+    /**
+     * Push a new sample onto the write queue
+     */
+    virtual void push(void) = 0;
 
     /**
      * @brief Flush internal sample buffer to file.
      */
     virtual void write(void) = 0;
 
-    /**
-     * @brief Push a sample onto the internal, lock-free, thread-safe buffer
-     * @return False if there is an overflow condition. True otherwise.
-     */
-    void push(const T &sample) {
-        if (!buffer_.push(sample)) {
-            throw (std::runtime_error("Record buffer overrun. You can:\n"
-                                      " - decrease the sample rate\n"
-                                      " - use multiple recorders on multiple disks\n"
-                                      " - or, get a faster hard disk"));
-        }
-    }
+    std::string addr(void) const { return addr_; }
 
 protected:
 
-    /** 
-     * @brief Fully qualified to file this writer is writting to.
+    static constexpr int BUFFER_SIZE {1000};
+    static const char overrun_msg[];
+
+    /**
+     * @breif Address of shmem for held source
      */
-    std::string path_ {""};
+    std::string addr_;
 
     /** 
-     * @brief Lock-free, thread-safe buffer which is flushed to file with each call to write. 
+     * @brief Allow file overwrite if true. If false append numerical index to
+     * file name to make it unique.
      */
-    SPSCBuffer buffer_;
+    bool allow_overwrite_ {false};
 };
 
 }      /* namespace oat */

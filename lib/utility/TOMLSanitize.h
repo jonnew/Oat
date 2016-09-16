@@ -369,6 +369,15 @@ getArray(const OptionTable table,
     }
 }
 
+inline void
+checkForDuplicateSources(std::vector<std::string> &source_array) {
+
+    std::vector<std::string>::iterator it;
+    it = std::unique(source_array.begin(), source_array.end());
+    if (it != source_array.end())
+        throw std::runtime_error("Duplicate sources were specified.");
+}
+
 }      /* namespace config */
 }      /* namespace oat */
 #endif /* OAT_TOMLSANATIZE_H */

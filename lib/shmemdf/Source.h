@@ -20,19 +20,21 @@
 #ifndef OAT_SOURCE_H
 #define	OAT_SOURCE_H
 
-#include <thread>
+#include "ForwardsDecl.h"
+#include "Node.h"
+#include "SharedFrameHeader.h"
+
 #include <exception>
 #include <iostream>
-#include <string>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <thread>
+
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
 
 #include "../datatypes/Frame.h"
-
-#include "ForwardsDecl.h"
-#include "Node.h"
-#include "SharedFrameHeader.h"
 
 namespace oat {
 
@@ -235,12 +237,12 @@ class Source : public SourceBase<T> {
     using SourceBase<T>::state_;
 
 public:
-    T * retrieve();
+    T *retrieve() const;
     T clone() const;
 };
 
 template <typename T>
-inline T *Source<T>::retrieve()
+inline T *Source<T>::retrieve() const
 {
 #ifndef NDEBUG
     // Don't use Asserts because it does not clean shmem
@@ -277,11 +279,10 @@ public:
     void connect() override;
     void connect(const oat::PixelColor col);
 
-    oat::Frame retrieve() const { return frame_; }
+    const oat::Frame * retrieve() const { return &frame_; }
     oat::Frame clone() const { return frame_.clone(); }
     void copyTo(oat::Frame &frame) const { frame_.copyTo(frame); };
     FrameParams parameters() const { return parameters_; }
-    bool checkType(const int type) { return (parameters_.type == type); }
 
 private :
 

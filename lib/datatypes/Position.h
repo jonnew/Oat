@@ -66,6 +66,7 @@ public:
     }
 
     // Expose sample information for potential modification
+    // TODO: This is very ugly: why even make it protected??
     oat::Sample & sample() { return sample_; };
 
     // Accessors

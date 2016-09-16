@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
                 case 'a':
                 {
                     viewer = std::make_shared<oat::ViewerBase>(
-                        std::in_place<oat::FrameViewer>(), source);
+                        oat::in_place<oat::FrameViewer>(), source);
                     break;
                 }
                 // TODO

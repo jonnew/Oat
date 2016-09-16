@@ -3,9 +3,9 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create a SOURCE variable containing all required .cpp files:
 set (oat-record_SOURCE
-     #FrameWriter.cpp
-     #PositionWriter.cpp
-     #Writer.cpp
+     FrameWriter.cpp
+     PositionWriter.cpp
+     Writer.cpp
      #RecordControl.cpp
      Recorder.cpp
      main.cpp)

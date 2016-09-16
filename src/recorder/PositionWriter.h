@@ -22,56 +22,71 @@
 
 #include "Writer.h"
 
+#include <boost/lockfree/spsc_queue.hpp>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/shmemdf/Source.h"
+#include "../../lib/utility/FileFormat.h"
 
 namespace oat {
 namespace blf = boost::lockfree;
 
-// Constants
-static constexpr int POSITION_WRITE_BUFFER_SIZE {65536};
-
 /**
  * Position stream file writer.
  */
-class PositionWriter : public Writer<oat::Position2D> {
-
-    // Inherit constructor
-    using Writer<oat::Position2D>::Writer;
-
+class PositionWriter : public Writer{
 public:
+   
+    PositionWriter(const std::string &addr);
 
     ~PositionWriter();
 
-    void write(void) override;
+    void configure(const oat::config::OptionTable &t,
+                   const po::variables_map &vm) override;
+    void touch() override { source_.touch(addr_); }
+    void connect() override { source_.connect(); }
+    double sample_period_sec() override
+    {
+        // TODO: GROSS
+        return source_.retrieve()->sample().period_sec().count();
+    }
+    oat::NodeState wait() override { return source_.wait(); }
+    void post(void) override { source_.post(); }
 
-    void initialize(const std::string &source_name,
-                    const oat::Position2D &p) override;
+    void initialize(const std::string &path) override;
+    void write(void) override;
+    void push(void) override;
 
     // Accessors
-    void set_verbose_file(const bool value) { verbose_file_ = value; }
+    //void set_verbose_file(const bool value) { verbose_file_ = value; }
 
 private:
-
+    using SPSCBuffer = boost::lockfree::spsc_queue<oat::Position2D,
+                                                   blf::capacity<BUFFER_SIZE>>;
     /**
      * @brief Determines if indeterminate position data fields should be
      * written in spite of being indeterminate for sample parsing ease? e.g.
      * Should we write pos_xy when pos_ok = false?
      */
-    bool verbose_file_ {true};
+    bool concise_file_ {false};
 
-    // Timestamp clock
-    std::chrono::system_clock clock_;
-    std::chrono::system_clock::time_point start_;
+    std::string path_ {""};
+    SPSCBuffer buffer_;
+
+    //// Timestamp clock
+    //std::chrono::system_clock clock_;
+    //std::chrono::system_clock::time_point start_;
 
     // Position file
     // TODO: Position specialization
     FILE * fd_ {nullptr};
-    char position_write_buffer[POSITION_WRITE_BUFFER_SIZE];
+    char position_write_buffer[65536];
     std::unique_ptr<rapidjson::FileWriteStream> file_stream_;
     rapidjson::PrettyWriter<rapidjson::FileWriteStream> json_writer_ {*file_stream_};
+
+    oat::Source<Position2D> source_;
 };
 
 }      /* namespace oat */

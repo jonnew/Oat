@@ -37,7 +37,7 @@ class Sample {
 public:
 
     using Seconds = std::chrono::duration<double, std::ratio<1>>;
-    using Microseconds = std::chrono::microseconds; // duration<int64_t, std::micro>;
+    using Microseconds = std::chrono::microseconds; 
     using IEEE1394Tick = std::chrono::duration<float, std::ratio<1,8000>>;
 
     explicit Sample()

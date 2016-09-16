@@ -53,16 +53,6 @@ public:
     Node(Node&&) = default;
     Node & operator=(Node&&) = default;
 
-    //Node(Node&& n) :
-    //  sink_state_(std::move(n.sink_state_.load()))
-    //, source_slots_(std::move(n.source_slots_))
-    //, source_read_required_(std::move(n.source_read_required_))
-    //, source_ref_count_(std::move(n.source_ref_count_))
-    //, write_number_(std::move(n.write_number_))
-    //{
-    //    // Nothing
-    //}
-
     // Nodes are not copyable
     Node(const Node &) = delete;
     Node & operator=(const Node &) = delete;
@@ -76,8 +66,8 @@ public:
     //       be bound to a node, right?
     uint64_t write_number() const { return write_number_; }
 
-    void notifySinkWriteComplete() {
-
+    void notifySinkWriteComplete()
+    {
         mutex_.wait();
 
         // Require one read from all connected sources
@@ -94,8 +84,8 @@ public:
     }
 
     // SOURCE read counting
-    bool notifySourceReadComplete(size_t index) {
-
+    bool notifySourceReadComplete(size_t index)
+    {
         mutex_.wait();
 
         source_read_required_[index] = false;
@@ -109,8 +99,8 @@ public:
     // SOURCE slots
     static constexpr size_t NUM_SLOTS {10};
 
-    int acquireSlot(size_t &index) {
-
+    int acquireSlot(size_t &index)
+    {
         mutex_.wait();
 
         if (source_slots_.all()) {
@@ -130,8 +120,8 @@ public:
         return 0;
     }
 
-    int releaseSlot(size_t index) {
-
+    int releaseSlot(size_t index)
+    {
         if (index >= source_slots_.size())
             return -1;
 
@@ -155,43 +145,22 @@ public:
     // each semaphore to be copy-constructed to initialized the array.
     // Because of their nature, semaphores are NOT copy constructable, so
     // this approach does not work.
-    semaphore& read_barrier(size_t index) {
-
+    semaphore &read_barrier(size_t index)
+    {
         if (!source_slots_[index])
             throw std::runtime_error("Requested index refers to a SOURCE "
                                      "that is not bound to this node.");
 
         switch (index) {
-            case 0:
-                return rb0_;
-                break;
-            case 1:
-                return rb1_;
-                break;
-            case 2:
-                return rb2_;
-                break;
-            case 3:
-                return rb3_;
-                break;
-            case 4:
-                return rb4_;
-                break;
-            case 5:
-                return rb5_;
-                break;
-            case 6:
-                return rb6_;
-                break;
-            case 7:
-                return rb7_;
-                break;
-            case 8:
-                return rb8_;
-                break;
-            case 9:
-                return rb9_;
-                break;
+            case 0: return rb0_; break;
+            case 1: return rb1_; break;
+            case 2: return rb2_; break;
+            case 3: return rb3_; break;
+            case 4: return rb4_; break;
+            case 6: return rb6_; break;
+            case 7: return rb7_; break;
+            case 8: return rb8_; break;
+            case 9: return rb9_; break;
             default:
                 throw std::runtime_error("Source index out of range.");
                 break;
@@ -216,4 +185,3 @@ private:
 
 }       /* namespace oat */
 #endif	/* OAT_NODE_H */
-

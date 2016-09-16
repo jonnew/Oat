@@ -19,29 +19,82 @@
 
 #include "FrameWriter.h"
 
-#include <iostream>
 #include <cassert>
+
+#include "../../lib/utility/FileFormat.h"
+#include "../../lib/utility/IOFormat.h"
 
 namespace oat {
 
-void FrameWriter::initialize(const std::string &source_name,
-                             const oat::Frame &f) {
-
-    // Initialize writer using the first frame taken from server
-    int fourcc = cv::VideoWriter::fourcc('H', '2', '6', '4');
-    video_writer_.open(path_, fourcc, f.sample().rate_hz(), f.size());
+FrameWriter::FrameWriter(const std::string &addr)
+: Writer(addr)
+{
+    // Nothing
 }
 
-void FrameWriter::write(void) {
+void FrameWriter::configure(const oat::config::OptionTable &t,
+                            const po::variables_map &vm)
+{
+    // File overwrite
+    oat::config::getValue(vm, t, "allow-overwrite", allow_overwrite_);
 
-    cv::Mat mat;
-    while (buffer_.pop(mat)) {
+    // Compression level
+    std::string fcc;
+    if (oat::config::getValue(vm, t, "fourcc", fcc)) {
 
-        // File desriptor must be avaiable for writing
-        assert(video_writer_.isOpened());
+        if (fcc.size() != 4)
+            throw std::runtime_error("fourcc must be 4 characters long.");
 
-        video_writer_.write(mat);
+        if (fcc == "none" || fcc == "None" || fcc == "NONE")
+            fourcc_ = 0;
+        else
+            fourcc_ = cv::VideoWriter::fourcc(fcc[0], fcc[1], fcc[2], fcc[3]);
+
+        if (fourcc_ < 0)
+            throw std::runtime_error("Unsupported fourcc code.");
     }
+}
+
+void FrameWriter::connect()
+{
+    source_.connect();
+
+    // Get frame meta data to format video writer
+    frame_params_ = source_.parameters();
+    fps_ = source_.retrieve()->sample().rate_hz();
+    if (fps_ == 0) {
+        std::cerr << oat::Warn("Unknown sample rate for source " + addr());
+        fps_ = 20;
+    }
+}
+
+void FrameWriter::initialize(const std::string &path)
+{
+    path_ = path + ".avi";
+
+    if (!allow_overwrite_)
+       oat::ensureUniquePath(path_);
+
+    if (!oat::checkWritePermission(path_))
+        throw std::runtime_error("Write permission denied for " + path_);
+
+    auto sz = cv::Size(frame_params_.cols, frame_params_.rows);
+
+    if (!video_writer_.open(path_, fourcc_, fps_, sz))
+        throw std::runtime_error("Could open video writer.");
+}
+
+void FrameWriter::write(void)
+{
+    cv::Mat mat;
+    while (buffer_.pop(mat))
+        video_writer_.write(mat);
+}
+
+void FrameWriter::push(void )
+{
+    if (!buffer_.push(source_.clone()))
+        throw std::runtime_error(overrun_msg);
 }
 
 } /* namespace oat */

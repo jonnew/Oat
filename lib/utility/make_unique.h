@@ -9,12 +9,18 @@
 // make_unique<T[]>(n)
 // make_unique<T[N]>(args...) = delete
 
+#ifndef OAT_MAKEUNIQUE_H
+#define OAT_MAKEUNIQUE_H
+
 #include <cstddef>
 #include <memory>
 #include <type_traits>
 #include <utility>
 
-namespace std {
+namespace oat {
+
+    using namespace std;
+
     template<class T> struct _Unique_if {
         typedef unique_ptr<T> _Single_object;
     };
@@ -44,3 +50,4 @@ namespace std {
         typename _Unique_if<T>::_Known_bound
         make_unique(Args&&...) = delete;
 }
+#endif /* OAT_MAKEUNIQUE_H */

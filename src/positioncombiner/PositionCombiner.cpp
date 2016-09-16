@@ -65,7 +65,7 @@ void PositionCombiner::configure(const po::variables_map &vm) {
         position_sources_.push_back(
             oat::NamedSource<oat::Position2D>(
                 addr,
-                std::make_unique<oat::Source< oat::Position2D>>()
+                oat::make_unique<oat::Source< oat::Position2D>>()
             )
         );
     }
