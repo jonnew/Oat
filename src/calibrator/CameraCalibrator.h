@@ -62,6 +62,7 @@ public:
     void accept(OutputVisitor* visitor, std::ostream& out) override;
 
     // Interactive session mode type
+    static const std::vector<std::string> mode_strings_;
     enum class Mode : size_t
     {
         NORMAL = 0, //!< Top level commands available. Can enter/exit other modes.

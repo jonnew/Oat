@@ -42,6 +42,12 @@
 
 namespace oat {
 
+const std::vector<std::string> CameraCalibrator::mode_strings_ { 
+    "Normal", 
+    "Detect", 
+    "Undistort" 
+};
+
 CameraCalibrator::CameraCalibrator(const std::string &source_name) :
   Calibrator(source_name)
 {
@@ -265,6 +271,13 @@ void CameraCalibrator::undistortFrame(cv::Mat& frame) {
 
 void CameraCalibrator::generateCalibrationParameters() {
 
+    if (corners_.size() == 0) {
+        std::cerr << oat::Error("At least one chessboard detection "
+                                "is needed to generate calibration "
+                                "parameters.\n");
+        return;
+    }
+
     // Intermediates required by the calibration routines
     // but not used elsewhere currently
     std::vector<std::vector<cv::Point3f>> object_points;
@@ -312,9 +325,8 @@ void CameraCalibrator::generateCalibrationParameters() {
 
 void CameraCalibrator::decorateFrame(cv::Mat& frame) {
 
-    std::string mode_msg =
-        "Mode: " +
-        std::to_string(static_cast<std::underlying_type<Mode>::type>(mode_));
+    auto m_idx = static_cast<typename std::underlying_type<Mode>::type>(mode_);
+    std::string mode_msg =  "Mode: " + mode_strings_[m_idx];
     cv::Size txt_size = cv::getTextSize(mode_msg, 1, 1, 1, 0);
     cv::Point mode_origin(frame.cols - txt_size.width - 10, frame.rows - 10);
     cv::putText(frame, mode_msg, mode_origin, 1, 1, cv::Scalar(0, 0, 255));
