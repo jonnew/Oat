@@ -32,6 +32,18 @@
 
 namespace oat {
 
+/**
+ * @brief Maybe useful for tagging the T in source<T>. Not implemented.
+ */
+enum class TokenType : int {
+    Any = -1,
+    Frame,
+    Position
+};
+
+/**
+ * @brief Type erased source. Not yet used.
+ */
 class GenericSource {
 
 public:
@@ -80,13 +92,11 @@ private:
     std::shared_ptr<SourceConcept> source;
 };
 
-// TODO: Move to datatypes if you are going to use
-enum class TokenType : int {
-    Any = -1,
-    Frame,
-    Position
-};
-
+/**
+ * @brief Generic source package containing address, totken type and source.
+ * Not used and probably not very useful -- token type should be retrieabel
+ * from source without knowing anything about it except its address.
+ */
 struct TaggedSource {
 
     template <typename T>
@@ -131,10 +141,10 @@ using NamedSourceList = std::vector<NamedSource<T>>;
  * @return True if maximum difference between periods is within epsilon. False
  * otherwise.
  */
-inline
-bool checkSamplePeriods(const std::vector<double> &periods_sec,
-                        double &min_rate,
-                        double const epsilon=1e-6) {
+inline bool checkSamplePeriods(const std::vector<double> &periods_sec,
+                               double &min_rate,
+                               double const epsilon = 1e-6)
+{
 
     assert(periods_sec.size() > 0);
 
@@ -151,9 +161,8 @@ bool checkSamplePeriods(const std::vector<double> &periods_sec,
     return true;
 }
 
-inline
-std::string inconsistentSampleRateWarning(double min_rate) {
-
+inline std::string inconsistentSampleRateWarning(double min_rate)
+{
     return
         "WARNING: sample rates of sources are inconsistent.\n"
         " (1) This component forces synchronization at the lowest\n"

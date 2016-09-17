@@ -9,7 +9,10 @@
 [gige]
 index = 1               # Index of camera on the bus (there can be more than one)
 fps = 30.0              # Frames per second
+enforce-fps = false     # Ensure that frames are produced at the fps setting by retransmitting frames
+                        # if the requested period is exceeded. This is needed in the case of an external
 shutter = 3.0           # Shutter time (ms; ignored if exposure on)
+color = 1               # Pixel color (Mono = 0, Color = 1)
 gain = 10.0             # Sensor gain(dB; ignored if exposure on)
 white-bal = [500, 800]  # White balance, [red, blue], specified as 0-1000.
 roi = [0, 0, 100, 100]  # Region of interest ([x0, y0, w, h], pixels). These numbers must be even.
@@ -22,20 +25,19 @@ trigger-mode = 14       # FPGA implmented trigger mode
                         #   7  = Software trigger
                         #   14 = Overlapped Exposure/Readout Mode (see Camera manual)
 trigger-pin = 0         # GPIO pin that trigger will be sent to
-enforce-fps = false     # Ensure that frames are produced at the fps setting by retransmitting frames
-                        # if the requested period is exceeded. This is needed in the case of an external
                         # trigger because PG cameras sometimes just ignore them. I have opened a support
                         # ticket on this, but PG has no solution yet.
 shutter-pin = 1         # Pin to use for shutter output
 
 [file]
-fps = 100.0             # Hz
+fps = 100.0             # Frame rate in Hz
 roi = [0, 0, 50, 50]  # Region of interest ([x0, y0, w, h], pixels)
 
 [wcam]
 index = 0               # Index of camera on the bus (there can be more than one)
+fps = 20                # Frame rate in Hz
 roi = [0, 0, 100, 100]  # Region of interest ([x0, y0, w, h], pixels)
 
 [test]
-fps = 100.0             # Hz
+fps = 100.0             # Frame rate in Hz
 num-frames = 1000       # Number of frames to serve

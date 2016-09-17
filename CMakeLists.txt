@@ -183,8 +183,9 @@ endif()
 # API documentation
 if (${BUILD_DOCS})
     add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/doc")
-endif()
+endif ()
 
 # CPack Deb package
 set (CPACK_GENERATOR "DEB")
-set (CPACK_DEBIAN_PACKAGE_MAINTAINER "jonnew") #required
+set (CPACK_DEBIAN_PACKAGE_MAINTAINER "jpnewman@mit.edu")
+include (CPack)
