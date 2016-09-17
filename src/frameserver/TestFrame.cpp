@@ -46,6 +46,11 @@ void TestFrame::appendOptions(po::options_description &opts) {
     local_opts.add_options()
         ("test-image,f", po::value<std::string>(),
          "Path to test image used as frame source.")
+        ("color,C", po::value<int>(),
+         "Pixel color format. Defaults to 1.\n\n"
+         "Values:\n"
+         "  0:  \tMono 8-bit.\n"
+         "  1:  \tColor (BRG) 8-bit.\n")
         ("fps,r", po::value<double>(),
          "Frames to serve per second.")
         ("num-frames,n", po::value<uint64_t>(),
@@ -68,6 +73,9 @@ void TestFrame::configure(const po::variables_map &vm) {
     // Test image path
     oat::config::getValue(vm, config_table, "test-image", file_name_, true);
 
+    // Pixel color
+    oat::config::getNumericValue<int>(vm, config_table, "color", color_, 0);
+
     // Number of frames to serve
     oat::config::getNumericValue<uint64_t>(
         vm, config_table, "num-frames", num_samples_, 0
@@ -80,18 +88,24 @@ void TestFrame::configure(const po::variables_map &vm) {
 
 void TestFrame::connectToNode() {
 
-    cv::Mat example_frame = cv::imread(file_name_);
-    if (example_frame.data == NULL)
+    cv::Mat mat;
+    switch (color_) {
+        case 0: mat = cv::imread(file_name_, cv::IMREAD_GRAYSCALE); break;
+        case 1: mat = cv::imread(file_name_, cv::IMREAD_COLOR); break;
+        default: throw std::runtime_error("Unsupported image color specified.");
+    }
+
+    if (mat.data == NULL)
         throw (std::runtime_error("File \"" + file_name_ + "\" could not be read."));
 
     frame_sink_.bind(frame_sink_address_,
-            example_frame.total() * example_frame.elemSize());
+            mat.total() * mat.elemSize());
 
     shared_frame_ = frame_sink_.retrieve(
-            example_frame.rows, example_frame.cols, example_frame.type());
+            mat.rows, mat.cols, mat.type());
 
     // Static image, never changes
-    example_frame.copyTo(shared_frame_);
+    mat.copyTo(shared_frame_);
 
     // Put the sample rate in the shared frame
     internal_sample_.set_rate_hz(1.0 / frame_period_in_sec_.count());

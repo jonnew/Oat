@@ -57,6 +57,11 @@ components:
   - user	0m0.071s
   - sys	    0m0.067s
 
+- `trsh`
+  - real	0m0.545s
+  - user	0m0.028s
+  - sys	    0m0.012s
+
 ## Machine
 Lenovo ThinkPad X1 Carbon 3rdi<br />
 Intel Core i7-5600U CPU @ 2.60GHzi
@@ -117,3 +122,5 @@ runtime characteristics with no listening components:
   - real  0m7.422s
   - user  0m0.064s
   - sys   0m0.028s
+
+  

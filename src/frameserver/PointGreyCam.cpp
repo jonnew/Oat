@@ -90,7 +90,7 @@ void PointGreyCam<T>::appendOptions(po::options_description &opts)
         ("shutter,s", po::value<double>(),
          "Shutter time in milliseconds. Defaults to auto.")
         ("color,C", po::value<int>(),
-         "Pixel color format. Defaults to 0.\n\n"
+         "Pixel color format. Defaults to 1.\n\n"
          "Values:\n"
          "  0:  \tMono 8-bit.\n"
          "  1:  \tColor (BRG) 8-bit.\n")
@@ -181,7 +181,7 @@ void PointGreyCam<T>::configure(const po::variables_map &vm)
         pix_col_ = static_cast<oat::PixelColor>(pix_col);
 
     // Determine if color conversion is required
-    if (std::get<0>(pix_map_.at(pix_col_)) != std::get<1>(pix_map_.at(pix_col_)))
+    if (std::get<PG_FROM>(pix_map_.at(pix_col_)) != std::get<PG_TO>(pix_map_.at(pix_col_)))
         color_conversion_required_ = true;
 
     // Sensor gain
@@ -773,7 +773,7 @@ bool PointGreyCam<T>::process()
         frame_sink_.wait();
 
         if (color_conversion_required_)
-            raw_image.Convert(std::get<1>(pix_map_.at(pix_col_)), shmem_image_.get());
+            raw_image.Convert(std::get<PG_TO>(pix_map_.at(pix_col_)), shmem_image_.get());
         else
             shmem_image_->DeepCopy(&raw_image);
 
@@ -1001,7 +1001,7 @@ void PointGreyCam<pg::GigECamera>::setupImageFormat()
     imageSettings.offsetY = 0;
     imageSettings.width   = image_settings_info.maxWidth;
     imageSettings.height  = image_settings_info.maxHeight;
-    imageSettings.pixelFormat = std::get<0>(pix_map_.at(pix_col_));
+    imageSettings.pixelFormat = std::get<PG_FROM>(pix_map_.at(pix_col_));
 
     std::cout << "ROI set to [0 0 "
               << image_settings_info.maxWidth
@@ -1042,7 +1042,7 @@ void PointGreyCam<pg::GigECamera>::setupImageFormat(const std::vector<size_t> &r
     imageSettings.offsetY = roi_vec[1];
     imageSettings.height  = roi_vec[2];
     imageSettings.width   = roi_vec[3];
-    imageSettings.pixelFormat = std::get<0>(pix_map_.at(pix_col_)); //pg::PIXEL_FORMAT_RAW8;
+    imageSettings.pixelFormat = std::get<PG_FROM>(pix_map_.at(pix_col_)); //pg::PIXEL_FORMAT_RAW8;
 
     std::cout << "ROI set to ["
               << roi_vec[0]
@@ -1084,7 +1084,7 @@ void PointGreyCam<pg::GigECamera>::connectToNode()
 
     pg::Image temp(imageSettings.height,
                    imageSettings.width,
-                   std::get<1>(pix_map_.at(pix_col_)));
+                   std::get<PG_TO>(pix_map_.at(pix_col_)));
 
     const size_t bytes = temp.GetDataSize();
     const size_t rows = temp.GetRows();
@@ -1093,7 +1093,7 @@ void PointGreyCam<pg::GigECamera>::connectToNode()
 
     frame_sink_.bind(frame_sink_address_, bytes);
 
-    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<2>(pix_map_.at(pix_col_)));
+    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)));
     internal_sample_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
@@ -1102,7 +1102,7 @@ void PointGreyCam<pg::GigECamera>::connectToNode()
     // (although this 'conversion' is simply filling in appropriate header info,
     // which was accomplished in the call to frame_sink_.retrieve())
     shmem_image_ = oat::make_unique<pg::Image>
-            (rows, cols, stride, shared_frame_.data, bytes, std::get<1>(pix_map_.at(pix_col_)));
+            (rows, cols, stride, shared_frame_.data, bytes, std::get<PG_TO>(pix_map_.at(pix_col_)));
 }
 
 // 1. USB Camera
@@ -1122,7 +1122,7 @@ void PointGreyCam<pg::Camera>::setupImageFormat(
     if (error != pg::PGRERROR_OK)
          throw (rte(error.GetDescription()));
 
-    const pg::PixelFormat k_fmt7PixFmt = std::get<0>(pix_map_.at(pix_col_));
+    const pg::PixelFormat k_fmt7PixFmt = std::get<PG_FROM>(pix_map_.at(pix_col_));
 
     if ((k_fmt7PixFmt & image_settings_info.pixelFormatBitField) == 0) {
         std::cerr << "Pixel format is not supported\n";
@@ -1195,7 +1195,7 @@ void PointGreyCam<pg::Camera>::setupImageFormat()
     if (error != pg::PGRERROR_OK)
          throw (rte(error.GetDescription()));
 
-    const pg::PixelFormat k_fmt7PixFmt = std::get<0>(pix_map_.at(pix_col_));
+    const pg::PixelFormat k_fmt7PixFmt = std::get<PG_FROM>(pix_map_.at(pix_col_));
 
     if ((k_fmt7PixFmt & image_settings_info.pixelFormatBitField) == 0) {
         std::cerr << "Pixel format is not supported\n";
@@ -1242,6 +1242,8 @@ void PointGreyCam<pg::Camera>::setupImageFormat()
 template <>
 void PointGreyCam<pg::Camera>::setupPixelBinning(size_t x_bin, size_t y_bin)
 {
+    (void)x_bin; // Prevent unused parameter warning
+    (void)y_bin;
     std::cout << "Pixel binning is not implemented.\n";
 }
 
@@ -1260,7 +1262,7 @@ void PointGreyCam<pg::Camera>::connectToNode()
 
     pg::Image temp(pImageSettings.height,
                    pImageSettings.width,
-                   std::get<1>(pix_map_.at(pix_col_))); 
+                   std::get<PG_TO>(pix_map_.at(pix_col_))); 
 
     const size_t bytes = temp.GetDataSize();
     const size_t rows = temp.GetRows();
@@ -1269,7 +1271,7 @@ void PointGreyCam<pg::Camera>::connectToNode()
 
     frame_sink_.bind(frame_sink_address_, bytes);
 
-    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<2>(pix_map_.at(pix_col_)));
+    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)));
     internal_sample_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
@@ -1278,7 +1280,7 @@ void PointGreyCam<pg::Camera>::connectToNode()
     // (although this 'conversion' is simply filling in appropriate header info,
     // which was accomplished in the call to frame_sink_.retrieve())
     shmem_image_ = oat::make_unique<pg::Image>
-            (rows, cols, stride, shared_frame_.data, bytes, std::get<1>(pix_map_.at(pix_col_)));
+            (rows, cols, stride, shared_frame_.data, bytes, std::get<PG_TO>(pix_map_.at(pix_col_)));
 }
 
 // Explicit instantiation

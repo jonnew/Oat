@@ -59,7 +59,9 @@ private:
 
     // Sample count specification
     uint64_t num_samples_ {std::numeric_limits<int64_t>::max()};
-    //int64_t it_ {0};
+
+    // Color switch
+    int color_ {1};
 };
 
 }       /* namespace oat */

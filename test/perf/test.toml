@@ -1,5 +1,5 @@
 [test]
-num-samples = 1000
+num-frames = 1000
 
 [framefilt-undistort]
 camera-model = 0
