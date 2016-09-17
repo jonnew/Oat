@@ -398,6 +398,7 @@ __TYPE = `thrsh`__
 ```
 oat-posidet-thrsh-help
 ```
+
 #### Example
 ```bash
 # Use color-based object detection on the 'raw' frame stream
@@ -1168,8 +1169,8 @@ response to [this issue](https://github.com/jonnew/Oat/issues/14):
 >
 > The RAM is filling because your hard disk writes are not occurring fast
 > enough. Oat is pushing frames to be written into a FIFO in main memory that
-> the recorder threads are desperately trying to write to disk. Getting more
-> RAM will just make the process persist for a bit longer before failing . I
+> the recorder thread is desperately trying to write to disk. Getting more
+> RAM will just make the process persist for a bit longer before failing. I
 > would get an SSD for streaming video to and then transfer those videos to
 > a slower long term storage after recording.
 
@@ -1303,37 +1304,7 @@ RJ45 ------------
         - I need to come up with a series of scripts that configure and run
           components in odd and intensive, but legal, ways to ensure sample
           sychronization is maintained, graceful exits, etc
-- [ ] GigE interface cleanup
-    - ~~The PGGigeCam class is a big mess. It has has tons of code redundancy.~~
-        - EDIT: A lot of this is due to the PG API. I've cleaned up a bit, but
-          more would be a waste of time.
-    - ~~`oat frameserve gige` can wait indefinitely if the cameras use an
-      external trigger and that trigger source stops before the process is
-      interrupted. Need a timed wait there.~~
-        - EDIT: Fixed in
-          [a0c97e56bbe66227b03dd9253fdff33f0550465b](https://github.com/jonnew/Oat/commit/a0c97e56bbe66227b03dd9253fdff33f0550465b)
-    - Should I be using the generic [GenICam API](https://en.wikipedia.org/wiki/GenICam)
-      instead of PG's non-standard API? e.g. [Aravis](https://github.com/GNOME/aravis).
-    - ~~Additionally, it needs to be optimized for performance. Are their
-      unnessesary copies of images being made during conversion from PG Image
-      to cv::Mat? Can I employ some move casts to help?~~
-        - EDIT: shmemdf takes care of this.
-    - There are a couple examples of GigE interfaces in OpenCV targeting other
-      3rd party APIs: `modules/videoio/src/cap_giganetix.cpp` and
-      `opencv/modules/videoio/src/cap_pvapi.cpp`. I don't know that these are
-      great pieces of code, but I should at least use them for inspiration.
-    - `oat-frameserve gige` lacks the ability to set FPS in free running
-      (non-triggered mode)
-    - ~~Configuration of the camera can get into impossible states if oat is
-      used in combo with other programs that mess with the camera's registers.
-      Configuration via Oat should start with a clean slate by setting the
-      camera to a default register state.~~
-      - ~~See flycap --> advanced camera settings --> restor default memory
-        channel for how.~~
-    - Binning should be specified in terms of mode number (see pg. 66 of
-      blackfly tech ref) instead of bin size since not all bin sizes are
-      allowed.
-- [ ] Position type generalization
+- [ ] Position type correction
     - It might be a good idea to generalize the concept of a position to a
       multi-positional element
     - For things like the `oat-decorate`, `oat-posicom`, and potentially
@@ -1351,74 +1322,25 @@ RJ45 ------------
       stateless detection. However, it would make the concept of position
       combining hard to define (although that is even true now is just a design
       choice, really).
-- [ ] ~~Saving tuning parameters~~
-    - Components that have a `--tune` option should also allow for the user to
-      press a key and those tuning paramters to be injected into the current
-      `config.toml` file so that they don't have to write them down and
-      manually edit the file later
-    - EDIT: Counter argument: thinking about correct implementation brings to
-      mind GUI file dialogs or more command line switches to configure save
-      path. This makes me want to barf a little so maybe lets put this on hold
-      until its a big issue.
-- [x] Something is wrong with sample synchronization
-    - When working with Jennie's data, we found that position samples were
-      being recorded multiple times - they had the same sample number and
-      position info. Seems to be very intermittent, but points to a serious
-      issue with sample synchronization. It seems likely this occurring in the
-      recorder component due to its mulitthreaded implementation.
-    - EDIT: With `libshmemdf`, sample numbers now travel with samples. I need
-      to use this to implement `asserts` in each component that (1) check that
-      samples increase monotonically (buffer overflows means that samples can
-      be skipped, so uniary incrementation is not a given) and (2) that
-      multisource components are dealing with sychonized sample numbers when
-      pull-based sychornization strategy is enforced (no external clock driving
-      acqusition, so no chance for buffer overrun).
-- [ ] Command line switches should take precedence over TOML file options.
-  This is standard practice, but is not how Oat works currently.
-    - `oat-frameserve`
-    - `oat-framefilt`
-    - `oat-posifilt`
-    - `oat-posigen`
-    - `oat-posicom`
-    - `oat-posidet`
-    - NOTE: A way to do this is to create (or maybe find) and factory that
-      generates a dictionary of possible parameters in key/value pairs for a
-      given component. This dictionary is then modified first by the file-based
-      configuration method and then by command line switch input. Component
-      behavior is determined by dictioary values after these two steps.
-- [ ] ~~For (all?) most components, `configure` is pure abstract in the
-  component's base class. This doesn't make too much sense because options are
-  often common to many components. For instance, in `oat-posigen`, the sample
-  period, and number of samples parameters are certainly relevant to any
-  implementation of the position generator idea. Therefore, `configure` should
-  be abstract with a base implementation containing guaranteed-to-be-common
-  parameters. For components that have no common parameters, it can be left
-  pure-abstract for the time being.~~
-    - `oat-frameserve`
-    - `oat-framefilt`
-    - `oat-posifilt`
-    - ~~`oat-posigen`~~
-    - `oat-posicom`
-    - `oat-posidet`
-    - EDIT: There are not actually many components that have common
-      configuration parameters among concrete types. `oat-posidet` and possibly
-      `oat-frameserve` seem like the only candidates.
-    - EDIT: The [program option refactor branch](/jonnew/Oat/tree/program-opt-refactor)
-      may take care of this automatically
-- [ ] [CBOR](http://tools.ietf.org/html/rfc7049) binary messaging and data files
-  - CBOR is an extremely simple binary encoding scheme for JSON
-  - It would be great to allow the option to save CBOR files (`oat-record`) or
-    send CBOR messages (`oat-posisock`) by creating a CBOR `Writer` acceptable
-    to by `Position` datatype's serialization function.
-  - And, while I'm at it, Position's should be forced to support serialization,
-    so this should be a pure abstract member of the base class.
-  - Another option that is very similar is messagepack. Don't know which is
-    better.
+    - EDIT: Additionally, there should certainly not be `Position2D` vs
+      `Position3D`. Only `Position` which provides 3d specificaiton with Z axis
+      defaulting to 0.
+- [ ] [CBOR](http://tools.ietf.org/html/rfc7049) binary messaging and data
+  files
+    - CBOR is a simple binary encoding scheme for JSON
+    - It would be great to allow the option to save CBOR files (`oat-record`)
+      or send CBOR messages (`oat-posisock`) by creating a CBOR `Writer`
+      acceptable to by `Position` datatype's serialization function.
+    - And, while I'm at it, Position's should be forced to support
+      serialization, so this should be a pure abstract member of the base
+      class.
+    - Another option that is very similar is messagepack. Don't know which is
+      better.
 - [ ] `oat-framefilt undistort`
     - Very slow. Needs an OpenGL or CUDA implementation
-    - User supplied frame rotation occurs in a separate step from un-distortion.
-      Very inefficient. Should be able to combine rotation with camera matrix
-      to make this a lot faster.
+    - User supplied frame rotation occurs in a separate step from
+      un-distortion.  Very inefficient. Should be able to combine rotation with
+      camera matrix to make this a lot faster.
 - [ ] Should components always involve a user IO thread?
     - For instance, some generalization of `oat-record ... --interactive`
     - For instance, it would be nice if PURE SINKs (e.g. `oat frameserve`)
@@ -1427,4 +1349,7 @@ RJ45 ------------
     - For instance, it would be nice to be able to re-acquire the background
       image in `oat-framefilt bsub` without have to restart the program.
     - Where should this come from? Command line input?
-- [ ] Add past position line toggle in `oat-decorate`
+- [ ] Add position history toggle in `oat-decorate`
+- [ ] Type deduction in shmem Tokens
+    - Sources should have a static method for checking the token type of a
+      given address.

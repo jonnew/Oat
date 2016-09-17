@@ -40,13 +40,6 @@ namespace oat {
 
 Recorder::~Recorder()
 {
-    // NOTE: The cv::VideoWriter class has internal buffering. Its flushes its
-    // buffer on destruction. Because VideoWriter's are accessed via
-    // std::unique_ptr, this will happen automatically. However -- don't try to
-    // look at a video before the recorder destructs because it will be
-    // incomplete! Same with the position file.
-
-    // TODO: Join writer thread
     // Set running to false to trigger thread join
     running_ = false;
     writer_condition_variable_.notify_one();
@@ -92,7 +85,7 @@ void Recorder::appendOptions(po::options_description &opts)
          "possible options). Not all valid FOURCC codes will work: it "
          "must be implemented by the low  level writer. Common values are "
          "'DIVX' or 'H264'. Defaults to 'None' indicating uncompressed "
-         "video.") 
+         "video.")
         ("concise-file,c",
          "If set, indeterminate position data fields will not be written "
          "e.g. pos_xy will not be written even when pos_ok = false. This "
@@ -170,13 +163,6 @@ void Recorder::configure(const po::variables_map &vm)
 
 void Recorder::connectToNodes()
 {
-    // TODO: Sources should have a static method for checking the token type
-    // of a given address.
-    // For each address, generate source, touch/connect.  Then you can see the
-    // type Loop through the connected sources, checking token type Construct
-    // appropriate writers, switching on the token type, and move the sources
-    // into them
-
     // Touch frame and position source nodes
     for (auto &w : writers_)
         w->touch();
