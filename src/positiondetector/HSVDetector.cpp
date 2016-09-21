@@ -151,9 +151,6 @@ void HSVDetector::configure(const po::variables_map &vm)
 
 void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position)
 {
-    // Transform frame to HSV
-    // (Extremely expensive operation)
-    //cv::cvtColor(frame, frame, cv::COLOR_BGR2HSV);
 
     // Threshold HSV channels
     // (Very expensive operation)
