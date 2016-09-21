@@ -34,8 +34,8 @@
 
 namespace oat {
 
-void PositionCombiner::appendOptions(po::options_description &opts) {
-
+void PositionCombiner::appendOptions(po::options_description &opts)
+{
     // Common program options
     opts.add_options()
         ("config,c", po::value<std::vector<std::string> >()->multitoken(),
@@ -44,8 +44,8 @@ void PositionCombiner::appendOptions(po::options_description &opts) {
         ;
 }
 
-void PositionCombiner::configure(const po::variables_map &vm) {
-
+void PositionCombiner::configure(const po::variables_map &vm)
+{
     // Pull the sources and sink out as positional options
     auto sources = vm["sources-and-sink"].as< std::vector<std::string> >();
 
@@ -71,8 +71,8 @@ void PositionCombiner::configure(const po::variables_map &vm) {
     }
 }
 
-void PositionCombiner::connectToNodes() {
-
+void PositionCombiner::connectToNodes()
+{
     // Establish our slot in each node
     for (auto &ps : position_sources_)
         ps.source->touch(ps.name);
@@ -84,7 +84,7 @@ void PositionCombiner::connectToNodes() {
     // Wait for sychronous start with sink when it binds the node
     for (auto &ps : position_sources_) {
         ps.source->connect();
-        all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
+        all_ts.push_back(ps.source->retrieve()->sample_period_sec());
     }
 
     if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
@@ -96,8 +96,8 @@ void PositionCombiner::connectToNodes() {
     shared_position_ = position_sink_.retrieve();
 }
 
-bool PositionCombiner::process() {
-
+bool PositionCombiner::process()
+{
     for (pvec_size_t i = 0; i !=  position_sources_.size(); i++) {
 
         // START CRITICAL SECTION //

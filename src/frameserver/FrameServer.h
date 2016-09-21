@@ -92,9 +92,6 @@ protected:
     // Currently acquired, shared frame
     //bool frame_empty_ {true};
     oat::Frame shared_frame_;
-
-    // Internal sample number
-    oat::Sample internal_sample_;
 };
 
 }       /* namespace oat */

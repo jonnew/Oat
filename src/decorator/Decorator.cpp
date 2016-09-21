@@ -36,16 +36,16 @@
 namespace oat {
 
 Decorator::Decorator(const std::string &frame_source_address,
-                     const std::string &frame_sink_address) :
-  name_("decorator[" + frame_source_address+ "->" + frame_sink_address + "]")
+                     const std::string &frame_sink_address)
+: name_("decorator[" + frame_source_address+ "->" + frame_sink_address + "]")
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
     // Nothing
 }
 
-void Decorator::appendOptions(po::options_description &opts) {
-
+void Decorator::appendOptions(po::options_description &opts)
+{
     opts.add_options()
         ("config,c", po::value<std::vector<std::string> >()->multitoken(),
         "Configuration file/key pair.\n"
@@ -72,8 +72,8 @@ void Decorator::appendOptions(po::options_description &opts) {
         config_keys_.push_back(o->long_name());
 }
 
-void Decorator::configure(const po::variables_map &vm) {
-
+void Decorator::configure(const po::variables_map &vm)
+{
     // Check for config file and entry correctness
     auto config_table = oat::config::getConfigTable(vm);
     oat::config::checkKeys(config_keys_, config_table);
@@ -82,7 +82,7 @@ void Decorator::configure(const po::variables_map &vm) {
     // NOTE: not setable via configuration file
     if (vm.count("position-sources"))  {
 
-        auto p_source_addrs = 
+        auto p_source_addrs =
             vm["position-sources"].as< std::vector<std::string> >();
 
         // Setup position sources
@@ -119,8 +119,8 @@ void Decorator::configure(const po::variables_map &vm) {
     oat::config::getValue<bool>(vm, config_table, "history", show_position_history_);
 }
 
-void Decorator::connectToNodes() {
-
+void Decorator::connectToNodes()
+{
     // Examine sample period of sources to make sure they are the same
     double sample_rate_hz;
     std::vector<double> all_ts;
@@ -136,7 +136,7 @@ void Decorator::connectToNodes() {
 
     for (auto &ps : position_sources_) {
         ps.source->connect();
-        all_ts.push_back(ps.source->retrieve()->sample().period_sec().count());
+        all_ts.push_back(ps.source->retrieve()->sample_period_sec());
     }
 
     // Get frame meta data to format sink
@@ -145,8 +145,8 @@ void Decorator::connectToNodes() {
 
     // Bind to sink sink node and create a shared frame
     frame_sink_.bind(frame_sink_address_, param.bytes);
-    shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type);
-    all_ts.push_back(shared_frame_.sample().period_sec().count());
+    shared_frame_ = frame_sink_.retrieve(param.rows, param.cols, param.type, param.color);
+    all_ts.push_back(shared_frame_.sample_period_sec());
 
     if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
         std::cerr << oat::Warn(oat::inconsistentSampleRateWarning(sample_rate_hz));
@@ -157,7 +157,7 @@ void Decorator::connectToNodes() {
     position_circle_radius_ = std::ceil(symbol_scale_ * min_size);
     heading_line_length_ = std::ceil(symbol_scale_ * min_size);
     encode_bit_size_  =
-        std::ceil(param.cols / 3 / sizeof(internal_frame_.sample().count()) / 8);
+        std::ceil(param.cols / 3 / sizeof(internal_frame_.sample_count()) / 8);
 
     // If we are drawing positions, get ready for that
     if (decorate_position_) {
@@ -167,8 +167,8 @@ void Decorator::connectToNodes() {
     }
 }
 
-bool Decorator::process() {
-
+bool Decorator::process()
+{
     // 1. Get frame
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -222,8 +222,8 @@ bool Decorator::process() {
     return false;
 }
 
-void Decorator::drawOnFrame() {
-
+void Decorator::drawOnFrame()
+{
     if (decorate_position_) {
 
         drawPosition();
@@ -242,8 +242,8 @@ void Decorator::drawOnFrame() {
         encodeSampleNumber();
 }
 
-void Decorator::invertHomography(oat::Position2D &p) {
-
+void Decorator::invertHomography(oat::Position2D &p)
+{
     if (p.position_valid) {
 
         cv::Matx33d inv_homo = p.homography().inv();
@@ -281,8 +281,8 @@ void Decorator::invertHomography(oat::Position2D &p) {
     }
 }
 
-void Decorator::drawPosition() {
-
+void Decorator::drawPosition()
+{
     size_t i = 0;
 
     cv::Mat symbol_frame =
@@ -365,9 +365,8 @@ void Decorator::drawPosition() {
     internal_frame_ += result_frame;
 }
 
-
-void Decorator::printRegion() {
-
+void Decorator::printRegion()
+{
     // Create display string
     std::string reg_text;
 
@@ -403,8 +402,8 @@ void Decorator::printRegion() {
     }
 }
 
-void Decorator::printTimeStamp() {
-
+void Decorator::printTimeStamp()
+{
     std::time_t raw_time;
     struct tm * time_info;
     char buffer[80];
@@ -418,20 +417,20 @@ void Decorator::printTimeStamp() {
     cv::putText(internal_frame_, std::string(buffer), text_origin, 1, font_scale_, font_color_);
 }
 
-void Decorator::printSampleNumber() {
-
+void Decorator::printSampleNumber()
+{
     cv::Point text_origin(10, internal_frame_.rows - 10);
     cv::putText(internal_frame_,
-                std::to_string(internal_frame_.sample().count()),
+                std::to_string(internal_frame_.sample_count()),
                 text_origin,
                 1,
                 font_scale_,
                 font_color_);
 }
 
-void Decorator::encodeSampleNumber() {
-
-    uint64_t sample_count = internal_frame_.sample().count();
+void Decorator::encodeSampleNumber()
+{
+    uint64_t sample_count = internal_frame_.sample_count();
     int column = internal_frame_.cols - 64 * encode_bit_size_;
 
     if (column < 0)

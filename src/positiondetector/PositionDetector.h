@@ -97,7 +97,7 @@ protected:
     const std::string name_;
 
     // Explicit frame data type
-    oat::PixelColor required_color_ {oat::PixelColor::any};
+    oat::PixelColor required_color_ {PIX_BGR};
 
     // List of allowed configuration options
     std::vector<std::string> config_keys_;
@@ -105,8 +105,6 @@ protected:
 private:
 
     // Current frame
-    oat::Frame internal_frame_;
-    oat::Position2D internal_position_ {"internal"};
     oat::Position2D * shared_position_;
 
     // Frame source

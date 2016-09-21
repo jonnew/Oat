@@ -34,14 +34,14 @@ namespace oat {
 
 BackgroundSubtractor::BackgroundSubtractor(
             const std::string &frame_source_address,
-            const std::string &frame_sink_address) :
-  FrameFilter(frame_source_address, frame_sink_address)
+            const std::string &frame_sink_address)
+: FrameFilter(frame_source_address, frame_sink_address)
 {
     // Nothing
 }
 
-void BackgroundSubtractor::appendOptions(po::options_description &opts) {
-
+void BackgroundSubtractor::appendOptions(po::options_description &opts)
+{
     // Accepts a config file
     FrameFilter::appendOptions(opts);
 
@@ -64,8 +64,8 @@ void BackgroundSubtractor::appendOptions(po::options_description &opts) {
         config_keys_.push_back(o->long_name());
 }
 
-void BackgroundSubtractor::configure(const po::variables_map &vm) {
-
+void BackgroundSubtractor::configure(const po::variables_map &vm)
+{
     // Check for config file and entry correctness
     auto config_table = oat::config::getConfigTable(vm);
     oat::config::checkKeys(config_keys_, config_table);
@@ -87,15 +87,15 @@ void BackgroundSubtractor::configure(const po::variables_map &vm) {
     oat::config::getNumericValue<double>(vm, config_table, "adaptation-coeff", alpha_, 0.0, 1.0);
 }
 
-void BackgroundSubtractor::setBackgroundImage(const cv::Mat &frame) {
-
+void BackgroundSubtractor::setBackgroundImage(const cv::Mat &frame)
+{
     background_frame_ = frame.clone();
     frame.clone().convertTo(background_frame_f_, CV_32F);
     background_set_ = true;
 }
 
-void BackgroundSubtractor::filter(cv::Mat &frame) {
-
+void BackgroundSubtractor::filter(cv::Mat &frame)
+{
     // First image is always used as the default background image if one is
     // not provided in a configuration file
     if (!background_set_)

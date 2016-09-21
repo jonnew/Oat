@@ -24,17 +24,18 @@
 #include <unordered_map>
 #include <vector>
 
-#include <cpptoml.h>
-#include <boost/program_options.hpp>
 #include <boost/interprocess/exceptions.hpp>
+#include <boost/program_options.hpp>
+#include <cpptoml.h>
 #include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "FrameFilter.h"
 #include "BackgroundSubtractor.h"
 #include "BackgroundSubtractorMOG.h"
+#include "ColorConvert.h"
+#include "FrameFilter.h"
 #include "FrameMasker.h"
 #include "Undistorter.h"
 
@@ -48,6 +49,7 @@ volatile sig_atomic_t source_eof = 0;
 const char usage_type[] =
     "TYPE\n"
     "  bsub: Background subtraction\n"
+    "  col: Color conversion\n"
     "  mask: Binary mask\n"
     "  mog: Mixture of Gaussians background segmentation.\n"
     "  undistort: Correct for lens distortion using lens distortion model.";
@@ -127,6 +129,7 @@ int main(int argc, char *argv[]) {
     type_hash["mask"] = 'b';
     type_hash["mog"] = 'c';
     type_hash["undistort"] = 'd';
+    type_hash["col"] = 'e';
 
     // The component itself
     std::string comp_name = "framefilt";
@@ -203,6 +206,11 @@ int main(int argc, char *argv[]) {
                 case 'd':
                 {
                     filter = std::make_shared<oat::Undistorter>(source, sink);
+                    break;
+                }
+                case 'e':
+                {
+                    filter = std::make_shared<oat::ColorConvert>(source, sink);
                     break;
                 }
                 default:

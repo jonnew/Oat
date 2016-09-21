@@ -52,7 +52,7 @@ private:
      * @param frame Unfiltered frame
      * @return Filtered frame
      */
-    void filter(cv::Mat& frame) override;
+    void filter(cv::Mat &frame) override;
 
     cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
     std::vector<double> dist_coeff_;

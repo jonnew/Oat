@@ -29,8 +29,8 @@
 
 namespace oat {
 
-WebCam::WebCam(const std::string &sink_name) :
-  FrameServer(sink_name)
+WebCam::WebCam(const std::string &sink_name)
+: FrameServer(sink_name)
 {
     // Nothing
 }
@@ -52,7 +52,7 @@ void WebCam::appendOptions(po::options_description &opts)
          "Four element array of unsigned ints, [x0,y0,width,height],"
          "defining a rectangular region of interest. Origin"
          "is upper left corner. ROI must fit within acquired"
-         "frame size. Defaults to full sensor size.")
+         "mat size. Defaults to full sensor size.")
         ;
 
     opts.add(local_opts);
@@ -69,24 +69,7 @@ void WebCam::configure(const po::variables_map &vm)
     oat::config::checkKeys(config_keys_, config_table);
 
     // Camera index
-    oat::config::getNumericValue<int>(
-        vm, config_table, "index", index_, 0
-    );
-
-    // Frame rate
-    double fps {20};
-    oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0);
-
-    // ROI
-    std::vector<size_t> roi;
-    if (oat::config::getArray<size_t, 4>(vm, config_table, "roi", roi)) {
-
-        use_roi_ = true;
-        region_of_interest_.x      = roi[0];
-        region_of_interest_.y      = roi[1];
-        region_of_interest_.width  = roi[2];
-        region_of_interest_.height = roi[3];
-    }
+    oat::config::getNumericValue<int>(vm, config_table, "index", index_, 0);
 
     // Create camera and set options
     cv_camera_ = oat::make_unique<cv::VideoCapture>(index_);
@@ -94,9 +77,23 @@ void WebCam::configure(const po::variables_map &vm)
         throw std::runtime_error("Could not open webcam "
                                  + std::to_string(index_));
 
-    cv_camera_->set(cv::CAP_PROP_FPS, fps);
-    if (cv_camera_->get(cv::CAP_PROP_FPS) != fps)
-        std::cerr << oat::Warn("Not able to set webcam frame rate.\n");
+    // Frame rate
+    double fps;
+    if (oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0)) {
+        cv_camera_->set(cv::CAP_PROP_FPS, fps);
+        if (cv_camera_->get(cv::CAP_PROP_FPS) != fps)
+            std::cerr << oat::Warn("Not able to set webcam mat rate.\n");
+    }
+
+    // ROI
+    std::vector<size_t> roi;
+    if (oat::config::getArray<size_t, 4>(vm, config_table, "roi", roi)) {
+        use_roi_ = true;
+        region_of_interest_.x      = roi[0];
+        region_of_interest_.y      = roi[1];
+        region_of_interest_.width  = roi[2];
+        region_of_interest_.height = roi[3];
+    }
 }
 
 void WebCam::connectToNode()
@@ -108,43 +105,48 @@ void WebCam::connectToNode()
         example_frame = example_frame(region_of_interest_);
 
     frame_sink_.bind(frame_sink_address_,
-            example_frame.total() * example_frame.elemSize());
+                     example_frame.total() * oat::color_bytes(oat::PIX_BGR));
 
     shared_frame_ = frame_sink_.retrieve(
-            example_frame.rows, example_frame.cols, example_frame.type());
+        example_frame.rows, example_frame.cols, example_frame.type(), oat::PIX_BGR);
 
-    // Put the sample rate in the shared frame
-    internal_sample_.set_rate_hz(cv_camera_->get(cv::CAP_PROP_FPS));
+    // Put the sample rate in the shared mat
+    shared_frame_.set_rate_hz(cv_camera_->get(cv::CAP_PROP_FPS));
 }
 
-bool WebCam::process() {
+bool WebCam::process()
+{
+    // Frame decoding (if compression was performed) can be
+    // computationally expensive. So do this outside the critical section
+    cv::Mat mat;
+    if (!cv_camera_->read(mat)) 
+        return true;
 
-    bool frame_empty = false;
+    if (use_roi_ )
+        mat = mat(region_of_interest_);
+
+    if (first_frame_) 
+        start_ = clock_.now();
 
     // START CRITICAL SECTION //
     ////////////////////////////
-
+    
     // Wait for sources to read
     frame_sink_.wait();
 
-    if (!use_roi_) {
-
-        *cv_camera_ >> shared_frame_;
-        frame_empty = shared_frame_.empty();
-
+    // Pure SINKs increment sample count
+    // NOTE: webcams have poorly controlled sample period, so it must be
+    // calculated. This operation is very inexpensive
+    if (first_frame_) {
+        first_frame_ = false; 
     } else {
-
-        oat::Frame to_crop;
-        *cv_camera_ >> to_crop;
-        frame_empty = to_crop.empty();
-        if (!frame_empty) {
-            to_crop = to_crop(region_of_interest_);
-            to_crop.copyTo(shared_frame_);
-        }
+        auto time_since_start
+            = std::chrono::duration_cast<Sample::Microseconds>(clock_.now()
+                                                               - start_);
+        shared_frame_.incrementSampleCount(time_since_start);
     }
 
-    // Update sample count
-    shared_frame_.sample() = internal_sample_;
+    mat.copyTo(shared_frame_);
 
     // Tell sources there is new data
     frame_sink_.post();
@@ -152,17 +154,7 @@ bool WebCam::process() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Pure SINKs increment sample count
-    // NOTE: webcams have poorly controlled sample period, so it must be
-    // calculated.
-    if (internal_sample_.count() == 0)
-        start_ = clock_.now();
-
-    auto period =
-        std::chrono::duration_cast<Sample::Microseconds>(clock_.now() - start_);
-    internal_sample_.incrementCount(period);
-
-    return frame_empty;
+    return false;
 }
 
 } /* namespace oat */

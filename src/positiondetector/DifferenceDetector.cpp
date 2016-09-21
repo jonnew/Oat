@@ -39,6 +39,9 @@ DifferenceDetector::DifferenceDetector(const std::string &frame_source_address,
     // Cannot use initializer because if this is set to 0, blur_on
     // must be set to false
     set_blur_size(2);
+
+    // Set required frame type
+    required_color_ = PIX_GREY;
 }
 
 void DifferenceDetector::appendOptions(po::options_description &opts)
@@ -141,7 +144,7 @@ void DifferenceDetector::tune(cv::Mat &frame, const oat::Position2D &position) {
         cv::Point center;
         center.x = position.position.x;
         center.y = position.position.y;
-        cv::circle(frame, center, radius, cv::Scalar(0, 0, 255), 4);
+        cv::circle(frame, center, radius, cv::Scalar(255), 4);
         msg = cv::format("(%d, %d) pixels",
                 (int) position.position.x,
                 (int) position.position.y);
@@ -162,9 +165,6 @@ void DifferenceDetector::tune(cv::Mat &frame, const oat::Position2D &position) {
 void DifferenceDetector::applyThreshold(cv::Mat &frame) {
 
     if (last_image_set_) {
-        // TODO: Is this actually doing anything for mono frames? If so, we need to check
-        // for mono and branch
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
         cv::absdiff(frame, last_image_, threshold_frame_);
         cv::threshold(threshold_frame_, threshold_frame_, difference_intensity_threshold_, 255, cv::THRESH_BINARY);
         if (blur_on_) {
@@ -174,9 +174,7 @@ void DifferenceDetector::applyThreshold(cv::Mat &frame) {
         last_image_ = frame.clone(); // Get a copy of the last image
     } else {
         threshold_frame_ = frame.clone();
-        cv::cvtColor(threshold_frame_, threshold_frame_, cv::COLOR_BGR2GRAY);
         last_image_ = frame.clone();
-        cv::cvtColor(last_image_, last_image_, cv::COLOR_BGR2GRAY);
         last_image_set_ = true;
     }
 }

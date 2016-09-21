@@ -296,10 +296,11 @@ inline void Source<Frame>::connect(const oat::PixelColor color)
     connect();
 
     // Check frame pixel type if required
-    if (color != oat::PixelColor::any && parameters_.type != cv_type(color)) {
-        throw std::runtime_error("Component requires frame source that "
-                                 "supplies frames with pixels of type "
-                                 + oat::to_string(color));
+    if (frame_.color() != color) {
+        throw std::runtime_error("Component requires frame source "
+                                 "with pixels of type "
+                                 + oat::color_str(color)
+                                 + ". Maybe use oat-framefilt col?");
     }
 }
 
@@ -341,6 +342,7 @@ inline void Source<Frame>::connect()
     frame_ = oat::Frame(p.rows,
                         p.cols,
                         p.type,
+                        p.color,
                         obj_shmem_.get_address_from_handle(sh_object_->data()),
                         obj_shmem_.get_address_from_handle(sh_object_->sample()));
 
@@ -348,6 +350,7 @@ inline void Source<Frame>::connect()
     parameters_.cols = p.cols;
     parameters_.rows = p.rows;
     parameters_.type = p.type;
+    parameters_.color = p.color;
     parameters_.bytes = frame_.total() * frame_.elemSize();
 
     state_ = SourceState::CONNECTED;

@@ -43,7 +43,7 @@ HSVDetector::HSVDetector(const std::string &frame_source_address,
     set_dilate_size(10);
 
     // Set required frame type
-    required_color_ = oat::PixelColor::color8;
+    required_color_ = PIX_HSV;
 }
 
 void HSVDetector::appendOptions(po::options_description &opts)
@@ -153,7 +153,7 @@ void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position)
 {
     // Transform frame to HSV
     // (Extremely expensive operation)
-    cv::cvtColor(frame, frame, cv::COLOR_BGR2HSV);
+    //cv::cvtColor(frame, frame, cv::COLOR_BGR2HSV);
 
     // Threshold HSV channels
     // (Very expensive operation)

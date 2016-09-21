@@ -70,7 +70,7 @@ private:
 
     // Pixel color mapping
     bool color_conversion_required_ {false};
-    oat::PixelColor pix_col_ {oat::PixelColor::color8};
+    oat::PixelColor pix_col_ {PIX_BGR};
     enum Color { PG_FROM = 0, PG_TO, CV_TYPE }; // For readable pix_map_ indexing
     static const PixelMap pix_map_;
 

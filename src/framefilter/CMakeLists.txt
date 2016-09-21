@@ -6,6 +6,7 @@ set (oat-framefilt_SOURCE
      FrameFilter.cpp
      BackgroundSubtractor.cpp
      BackgroundSubtractorMOG.cpp
+     ColorConvert.cpp
      FrameMasker.cpp
      Undistorter.cpp
      main.cpp)

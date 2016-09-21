@@ -43,9 +43,9 @@ namespace oat {
 template <typename T>
 const typename PointGreyCam<T>::PixelMap PointGreyCam<T>::pix_map_ =
 {
-    {oat::PixelColor::mono8,
+    {PIX_GREY,
         std::make_tuple(pg::PIXEL_FORMAT_MONO8, pg::PIXEL_FORMAT_MONO8, CV_8UC1)},
-    {oat::PixelColor::color8,
+    {PIX_BGR,
         std::make_tuple(pg::PIXEL_FORMAT_RAW8, pg::PIXEL_FORMAT_BGR, CV_8UC3)}
 };
 
@@ -89,11 +89,11 @@ void PointGreyCam<T>::appendOptions(po::options_description &opts)
          "but PG has no solution yet.")
         ("shutter,s", po::value<double>(),
          "Shutter time in milliseconds. Defaults to auto.")
-        ("color,C", po::value<int>(),
-         "Pixel color format. Defaults to 1.\n\n"
+        ("color,C", po::value<std::string>(),
+         "Pixel color format. Defaults to BRG.\n"
          "Values:\n"
-         "  0:  \tMono 8-bit.\n"
-         "  1:  \tColor (BRG) 8-bit.\n")
+         "  GREY: \t 8-bit Greyscale image.\n"
+         "  BRG: \t8-bit, 3-chanel, BGR Color image.\n")
         ("gain,g", po::value<double>(),
          "Sensor gain value, specified in dB. Defaults to auto.")
         ("strobe-pin,S", po::value<size_t>(),
@@ -132,7 +132,7 @@ void PointGreyCam<T>::appendOptions(po::options_description &opts)
          "Two element array of unsigned integers, [red,blue], used to "
          "specify the white balance. Values are between 0 and 1000. "
          "Only works for color sensors. Defaults to off.")
-        ("auto-white-balance,W", 
+        ("auto-white-balance,W",
          "If specified, the white balance will be adjusted by the camera. "
          "This option overrides manual white-balance specification.")
         ;
@@ -176,9 +176,9 @@ void PointGreyCam<T>::configure(const po::variables_map &vm)
         setupShutter(shutter_ms, true);
 
     // Pixel color
-    int pix_col;
-    if(oat::config::getNumericValue<int>(vm, config_table, "color", pix_col, 0, 1))
-        pix_col_ = static_cast<oat::PixelColor>(pix_col);
+    std::string col;
+    if (oat::config::getValue<std::string>(vm, config_table, "color", col))
+        pix_col_ = oat::str_color(col);
 
     // Determine if color conversion is required
     if (std::get<PG_FROM>(pix_map_.at(pix_col_)) != std::get<PG_TO>(pix_map_.at(pix_col_)))
@@ -394,7 +394,7 @@ template <typename T>
 void PointGreyCam<T>::setupWhiteBalance(int bal_red, int bal_blue, bool is_on, bool is_auto)
 {
     // Mono pixels do not support white balance
-    if (is_on && pix_col_ == oat::PixelColor::mono8) {
+    if (is_on && pix_col_ == PIX_GREY) {
         std::cerr << oat::Warn(
             "You cannot adjust the white balance for mono frames.");
         return;
@@ -777,16 +777,13 @@ bool PointGreyCam<T>::process()
         else
             shmem_image_->DeepCopy(&raw_image);
 
-        shared_frame_.sample() = internal_sample_;
+        shared_frame_.incrementSampleCount(tick_);
 
         // Tell sources there is new data
         frame_sink_.post();
 
         ////////////////////////////
         //  END CRITICAL SECTION  //
-
-        // Pure SINKs increment sample count
-        internal_sample_.incrementCount(tick_);
 
     } while (i++ < rc);
 
@@ -1093,8 +1090,8 @@ void PointGreyCam<pg::GigECamera>::connectToNode()
 
     frame_sink_.bind(frame_sink_address_, bytes);
 
-    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)));
-    internal_sample_.set_rate_hz(frames_per_second_);
+    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)), pix_col_);
+    shared_frame_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
     // rbg_image's data buffer. When changes are made to shmem_image_, this is
@@ -1262,7 +1259,7 @@ void PointGreyCam<pg::Camera>::connectToNode()
 
     pg::Image temp(pImageSettings.height,
                    pImageSettings.width,
-                   std::get<PG_TO>(pix_map_.at(pix_col_))); 
+                   std::get<PG_TO>(pix_map_.at(pix_col_)));
 
     const size_t bytes = temp.GetDataSize();
     const size_t rows = temp.GetRows();
@@ -1271,8 +1268,8 @@ void PointGreyCam<pg::Camera>::connectToNode()
 
     frame_sink_.bind(frame_sink_address_, bytes);
 
-    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)));
-    internal_sample_.set_rate_hz(frames_per_second_);
+    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)), pix_col_);
+    shared_frame_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
     // rbg_image's data buffer. When changes are made to shmem_image_, this is

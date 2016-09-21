@@ -29,8 +29,8 @@
 namespace oat {
 
 PositionDetector::PositionDetector(const std::string &frame_source_address,
-                                   const std::string &position_sink_address) :
-  name_("posidet[" + frame_source_address + "->" + position_sink_address + "]")
+                                   const std::string &position_sink_address)
+: name_("posidet[" + frame_source_address + "->" + position_sink_address + "]")
 , frame_source_address_(frame_source_address)
 , position_sink_address_(position_sink_address)
 {
@@ -62,6 +62,9 @@ void PositionDetector::connectToNode()
 
 bool PositionDetector::process()
 {
+    oat::Frame internal_frame;
+    oat::Position2D internal_pos("");
+
     // START CRITICAL SECTION //
     ////////////////////////////
 
@@ -70,7 +73,7 @@ bool PositionDetector::process()
         return true;
 
     // Clone the shared frame
-    frame_source_.copyTo(internal_frame_);
+    frame_source_.copyTo(internal_frame);
 
     // Tell sink it can continue
     frame_source_.post();
@@ -79,8 +82,8 @@ bool PositionDetector::process()
     //  END CRITICAL SECTION  //
 
     // Propagate sample info and detect position
-    internal_position_.sample() = internal_frame_.sample_copy();
-    detectPosition(internal_frame_, internal_position_);
+    internal_pos.set_sample(internal_frame.sample());
+    detectPosition(internal_frame, internal_pos);
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -88,7 +91,7 @@ bool PositionDetector::process()
     // Wait for sources to read
     position_sink_.wait();
 
-    *shared_position_ = internal_position_;
+    *shared_position_ = internal_pos;
 
     // Tell sources there is new data
     position_sink_.post();

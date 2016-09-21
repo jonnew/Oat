@@ -23,6 +23,8 @@
 #include <atomic>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
+#include "../datatypes/Color.h"
+
 namespace oat {
 namespace bip = boost::interprocess;
 
@@ -30,6 +32,7 @@ struct FrameParams {
     size_t cols  {0};
     size_t rows  {0};
     int type  {0};
+    oat::PixelColor color {oat::PIX_BGR};
     size_t bytes {0};
 };
 
@@ -67,13 +70,15 @@ public :
                        const handle_t sample,
                        const size_t rows,
                        const size_t cols,
-                       const int type)
+                       const int type,
+                       const oat::PixelColor color)
     {
         data_ = data;
         sample_ = sample;
         params_.rows = rows;
         params_.cols = cols;
         params_.type = type;
+        params_.color = color;
     }
 
 private :
@@ -81,7 +86,7 @@ private :
     // TODO: Should these be atomic? They should already be protected by
     // the semaphores wrapping critical sections in the code. I guess they
     // are manipulated by bind() and connect() methods without semaphore
-    // protection though.
+    // protection though. But, only bind writes.
 
     // Matrix metadata
     FrameParams params_;

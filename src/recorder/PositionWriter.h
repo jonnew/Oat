@@ -49,8 +49,7 @@ public:
     void connect() override { source_.connect(); }
     double sample_period_sec() override
     {
-        // TODO: GROSS
-        return source_.retrieve()->sample().period_sec().count();
+        return source_.retrieve()->sample_period_sec();
     }
     oat::NodeState wait() override { return source_.wait(); }
     void post(void) override { source_.post(); }

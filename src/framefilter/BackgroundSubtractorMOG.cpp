@@ -42,14 +42,14 @@ namespace oat {
 
 BackgroundSubtractorMOG::BackgroundSubtractorMOG(
         const std::string &frame_source_address,
-        const std::string &frame_sink_address) :
-  FrameFilter(frame_source_address, frame_sink_address)
+        const std::string &frame_sink_address)
+: FrameFilter(frame_source_address, frame_sink_address)
 {
     // Nothing
 }
 
-void BackgroundSubtractorMOG::appendOptions(po::options_description &opts)  {
-
+void BackgroundSubtractorMOG::appendOptions(po::options_description &opts)
+{
     // Accepts a config file
     FrameFilter::appendOptions(opts);
 
@@ -73,8 +73,8 @@ void BackgroundSubtractorMOG::appendOptions(po::options_description &opts)  {
         config_keys_.push_back(o->long_name());
 }
 
-void BackgroundSubtractorMOG::configure(const po::variables_map &vm) {
-
+void BackgroundSubtractorMOG::configure(const po::variables_map &vm)
+{
     // Check for config file and entry correctness
     auto config_table = oat::config::getConfigTable(vm);
     oat::config::checkKeys(config_keys_, config_table);
@@ -95,8 +95,8 @@ void BackgroundSubtractorMOG::configure(const po::variables_map &vm) {
 }
 
 #ifdef HAVE_CUDA
-void BackgroundSubtractorMOG::configureGPU(size_t index) {
-
+void BackgroundSubtractorMOG::configureGPU(size_t index)
+{
     // Determine if a compatible device is available
     size_t num_devices = cv::cuda::getCudaEnabledDeviceCount();
     if (num_devices < 1)
@@ -117,8 +117,8 @@ void BackgroundSubtractorMOG::configureGPU(size_t index) {
 }
 #endif
 
-void BackgroundSubtractorMOG::filter(cv::Mat &frame) {
-
+void BackgroundSubtractorMOG::filter(cv::Mat &frame)
+{
 #ifdef HAVE_CUDA
     current_frame_.upload(frame);
     background_subtractor_->apply(current_frame_, background_mask_, learning_coeff_);

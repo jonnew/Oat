@@ -43,7 +43,8 @@ void FrameBuffer::connectToNode()
 
     // Bind sink node
     sink_.bind(sink_address_, param.bytes);
-    shared_frame_ = sink_.retrieve(param.rows, param.cols, param.type);
+    shared_frame_
+        = sink_.retrieve(param.rows, param.cols, param.type, param.color);
 
     // Start consumer thread
     sink_thread_ = std::thread(&FrameBuffer::pop, this);

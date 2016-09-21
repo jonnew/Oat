@@ -91,7 +91,7 @@ protected:
      * Get the number of SOURCE positions.
      * @return number of SOURCE positions
      */
-    int num_sources(void) const {return position_sources_.size(); };
+    int num_sources(void) const { return position_sources_.size(); };
 
 private:
 

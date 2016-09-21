@@ -20,37 +20,13 @@
 #ifndef OAT_FRAME_H
 #define	OAT_FRAME_H
 
-#include <algorithm>
-
 #include <opencv2/core/mat.hpp>
+#include <opencv2/imgproc.hpp>
 
+#include "Color.h"
 #include "Sample.h"
 
 namespace oat {
-
-enum class PixelColor : int {
-    mono8 = 0,
-    color8,
-    any
-};
-
-inline int cv_type(oat::PixelColor col) {
-    switch (col) {
-        case PixelColor::mono8 : return CV_8UC1;
-        case PixelColor::color8 : return CV_8UC3;
-        case PixelColor::any : // Fallthrough
-        default : return -1;
-    }
-}
-
-inline std::string to_string(oat::PixelColor col) {
-    switch (col) {
-        case PixelColor::mono8 : return "mono-8";
-        case PixelColor::color8 : return "color-8";
-        case PixelColor::any : return "any-color";
-        default : return "";
-    }
-}
 
 /**
  * Wrapper class for cv::Mat that contains sample number information.
@@ -64,82 +40,101 @@ inline std::string to_string(oat::PixelColor col) {
  */
 class Frame : public cv::Mat {
 
+using USec = Sample::Microseconds;
+
 public:
 
-    Frame() :
-      cv::Mat()
+    Frame()
+    : cv::Mat()
     , sample_ptr_(&sample_)
     {
         // Nothing
     }
 
-    explicit Frame(const double ts_sec) :
-      cv::Mat()
+    explicit Frame(const double ts_sec)
+    : cv::Mat()
     , sample_(ts_sec)
     , sample_ptr_(&sample_)
     {
         // Nothing
     }
 
-    Frame(cv::Mat m) :
-      cv::Mat(m)
+    Frame(cv::Mat m)
+    : cv::Mat(m)
     , sample_ptr_(&sample_)
     {
         // Nothing
     }
 
-    Frame(cv::Mat m, const double ts_sec) :
-      cv::Mat(m)
+    Frame(cv::Mat m, const double ts_sec)
+    : cv::Mat(m)
     , sample_(ts_sec)
     , sample_ptr_(&sample_)
     {
         // Nothing
     }
 
-    Frame(cv::Mat m, const cv::Rect &roi) :
-      cv::Mat(m, roi)
+    Frame(cv::Mat m, const cv::Rect &roi)
+    : cv::Mat(m, roi)
     , sample_ptr_(&sample_)
     {
         // Nothing
     }
 
-    Frame(cv::Mat m, const cv::Rect &roi, const double ts_sec) :
-      cv::Mat(m, roi)
+    Frame(cv::Mat m, const cv::Rect &roi, const double ts_sec)
+    : cv::Mat(m, roi)
     , sample_(ts_sec)
     , sample_ptr_(&sample_)
     {
         // Nothing
     }
 
-    Frame(int r, int c, int t, void * data, void * samp_ptr) :
-      cv::Mat(r, c, t, data)
+    Frame(const int r,
+          const int c,
+          const int t,
+          const oat::PixelColor col,
+          void *data,
+          void *samp_ptr)
+    : cv::Mat(r, c, t, data)
     , sample_ptr_(static_cast<Sample *>(samp_ptr))
+    , color_(col)
     {
         // Nothing
     }
 
-    Frame clone() const {
+    Frame clone() const
+    {
         Frame f(cv::Mat::clone());
         *(f.sample_ptr_) = *sample_ptr_;
+        f.color_ = color_;
         return f;
     }
 
-    void copyTo(Frame &f) const {
+    void copyTo(Frame &f) const
+    {
         cv::Mat::copyTo(f);
         *(f.sample_ptr_) = *sample_ptr_;
+        f.color_ = color_;
     }
 
     // ROI
     Frame operator()(const cv::Rect &roi) const { return Frame(*this, roi); }
 
-    // Expose sample information
-    oat::Sample & sample() const { return *sample_ptr_; };
+    // Set sample rate
+    void set_rate_hz(const double rate_hz) { sample_ptr_->set_rate_hz(rate_hz); }
+    double sample_period_sec() const { return sample_ptr_->period_sec().count(); }
+    uint64_t sample_count(void) const { return sample_ptr_->count(); }
+    void incrementSampleCount() { sample_ptr_->incrementCount(); }
+    void incrementSampleCount(USec us) { sample_ptr_->incrementCount(us); }
 
     // Provide copy of sample_
-    oat::Sample sample_copy() const { return *sample_ptr_; };
+    oat::Sample sample() const { return *sample_ptr_; };
+
+    // Color accessors
+    PixelColor color(void) const { return color_; }
+    void set_color(const PixelColor val) { color_ = val; }
 
 private:
-
     // Internal Sample
     oat::Sample sample_;
 
@@ -147,7 +142,7 @@ private:
     oat::Sample * sample_ptr_;
 
     // Color profile of each pixel
-    PixelColor color {PixelColor::any};
+    oat::PixelColor color_ {oat::PIX_BGR};
 };
 
 }      /* namespace oat */

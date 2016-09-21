@@ -101,7 +101,7 @@ protected:
     bool enforce_sample_clock_ {false};
     std::chrono::high_resolution_clock clock_;
     std::chrono::duration<double> sample_period_in_sec_;
-    std::chrono::high_resolution_clock::time_point tick_;
+    std::chrono::high_resolution_clock::time_point start_, tick_;
 
     // Periodic boundaries in which simulated particle resides.
     cv::Rect_<double> room_ {0, 0, 100, 100};
@@ -126,6 +126,9 @@ private:
 
     // Shared position
     T * shared_position_;
+
+    // First position
+    bool first_pos_ {true};
 
     // The test position SINK
     std::string position_sink_address_;

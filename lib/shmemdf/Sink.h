@@ -20,14 +20,15 @@
 #ifndef OAT_SINK_H
 #define	OAT_SINK_H
 
-#include <iostream>
-#include <string>
-#include <memory>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
+#include <iostream>
+#include <memory>
+#include <string>
 
-#include "../datatypes/Sample.h"
+#include "../datatypes/Color.h"
 #include "../datatypes/Frame.h"
+#include "../datatypes/Sample.h"
 
 #include "ForwardsDecl.h"
 #include "Node.h"
@@ -222,7 +223,8 @@ class Sink<Frame> : public SinkBase<SharedFrameHeader> {
 
 public:
     void bind(const std::string &address, const size_t bytes);
-    oat::Frame retrieve(const size_t rows, size_t cols, const int type);
+    oat::Frame retrieve(const size_t rows, size_t cols, const int type, const
+            oat::PixelColor color);
 };
 
 inline void Sink<Frame>::bind(const std::string &address, const size_t bytes) {
@@ -267,8 +269,11 @@ inline void Sink<Frame>::bind(const std::string &address, const size_t bytes) {
     }
 }
 
-inline oat::Frame Sink<Frame>::retrieve(const size_t rows, const size_t cols, const int type) {
-
+inline oat::Frame Sink<Frame>::retrieve(const size_t rows,
+                                        const size_t cols,
+                                        const int type,
+                                        const oat::PixelColor color)
+{
     // Make sure that the SINK is bound to a shared memory segment
     //assert(bound_);
     if (!bound_)
@@ -284,10 +289,10 @@ inline oat::Frame Sink<Frame>::retrieve(const size_t rows, const size_t cols, co
     handle_t data_handle = obj_shmem_.get_handle_from_address(data);
 
     // Reset the SharedFrameHeader's parameters now that we know what they should be
-    sh_object_->setParameters(data_handle, sample_handle, rows, cols, type);
+    sh_object_->setParameters(data_handle, sample_handle, rows, cols, type, color);
 
     // Return pointer to memory allocated for shared object
-    return oat::Frame(rows, cols, type, data, sample);
+    return oat::Frame(rows, cols, type, color, data, sample);
 }
 
 } // namespace oat

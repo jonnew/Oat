@@ -72,10 +72,12 @@ void PositionGenerator<T>::configure(const po::variables_map &vm)
     oat::config::checkKeys(config_keys_, config_table);
     
     // Rate
-    double fs = 10000;
+    double fs = 1e8; // Very fast s.t. process cannot keep up
     if (oat::config::getNumericValue<double>(
                 vm, config_table, "rate", fs, 0)) {
         enforce_sample_clock_ = true;
+    } else {
+        tick_ = clock_.now();
     }
     generateSamplePeriod(fs);
 
@@ -100,27 +102,25 @@ void PositionGenerator<T>::connectToNode()
     shared_position_ = position_sink_.retrieve();
 
     // Setup sample rate info on internal copy
-    internal_position_.sample().set_rate_hz(1.0 / sample_period_in_sec_.count());
+    internal_position_.set_rate_hz(1.0 / sample_period_in_sec_.count());
 }
 
 template <typename T>
 bool PositionGenerator<T>::process()
 {
-
     // Generate internal position
     bool eof = generatePosition(internal_position_);
-
-    if (enforce_sample_clock_) {
-        auto tock = clock_.now();
-        std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick_));
-        tick_ = clock_.now();
-    }
 
     // START CRITICAL SECTION //
     ////////////////////////////
 
     // Wait for sources to read
     position_sink_.wait();
+
+    if (first_pos_) {
+        first_pos_ = false; 
+        start_ = clock_.now();
+    }
 
     *shared_position_ = internal_position_;
 
@@ -130,8 +130,16 @@ bool PositionGenerator<T>::process()
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Pure SINK so it needs to update sample count
-    internal_position_.sample().incrementCount();
+    if (enforce_sample_clock_) {
+        auto tock = clock_.now();
+        std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick_));
+        tick_ = clock_.now();
+    }
+
+    // Pure SINKs increment sample count
+    auto time_since_start = std::chrono::duration_cast<Sample::Microseconds>(
+        clock_.now() - start_);
+    internal_position_.incrementSampleCount(time_since_start);
 
     return eof;
 }

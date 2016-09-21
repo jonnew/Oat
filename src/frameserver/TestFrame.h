@@ -20,11 +20,11 @@
 #ifndef OAT_TESTFRAME_H
 #define	OAT_TESTFRAME_H
 
+#include "FrameServer.h"
+
 #include <chrono>
 #include <limits>
 #include <string>
-
-#include "FrameServer.h"
 
 namespace oat {
 
@@ -61,7 +61,7 @@ private:
     uint64_t num_samples_ {std::numeric_limits<int64_t>::max()};
 
     // Color switch
-    int color_ {1};
+    oat::PixelColor color_ {oat::PIX_BGR};
 };
 
 }       /* namespace oat */

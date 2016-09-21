@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   WebCam.h
+//* File:   ColorConvert.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,43 +17,40 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OAT_WEBCAM_H
-#define OAT_WEBCAM_H
+#ifndef OAT_COLORCONVERT_H
+#define	OAT_COLORCONVERT_H
 
-#include "FrameServer.h"
-
-#include <chrono>
-#include <string>
-
-#include <opencv2/videoio.hpp>
+#include "FrameFilter.h"
 
 namespace oat {
 
-class WebCam : public FrameServer {
+/**
+ * A frame color converter
+ */
+class ColorConvert : public FrameFilter {
 public:
 
     /**
-     * @brief Serve test frames from a webcam.
-     * @param sink_address frame sink address
+     * @brief Pixel color conversion
+     *
+     * @param frame_souce_address raw frame source address
+     * @param frame_sink_address filtered frame source address
      */
-    explicit WebCam(const std::string &sink_address_);
+    ColorConvert(const std::string &frame_souce_address,
+                 const std::string &frame_sink_address);
 
+    void connectToNode(void) override;
     void appendOptions(po::options_description &opts) override;
     void configure(const po::variables_map &vm) override;
 
-    void connectToNode(void) override;
-    bool process(void) override;
-
 private:
+    void filter(cv::Mat &frame) override;
 
-    int index_ {0};
-    std::unique_ptr<cv::VideoCapture> cv_camera_;
-
-    // frame generation clock
-    bool first_frame_ {true};
-    std::chrono::steady_clock clock_;
-    std::chrono::steady_clock::time_point start_;
+    int conversion_code_;
+    oat::PixelColor color_;
 };
 
 }      /* namespace oat */
-#endif /* OAT_WEBCAM_H */
+#endif /* OAT_COLORCONVERT_H */
+
+

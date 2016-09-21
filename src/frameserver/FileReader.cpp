@@ -27,15 +27,15 @@
 
 namespace oat {
 
-FileReader::FileReader(const std::string &sink_address) :
-  FrameServer(sink_address)
+FileReader::FileReader(const std::string &sink_address)
+: FrameServer(sink_address)
 {
     // Initialize time
     tick_ = clock_.now();
 }
 
-void FileReader::appendOptions(po::options_description &opts) {
-
+void FileReader::appendOptions(po::options_description &opts)
+{
     // Accepts default options
     FrameServer::appendOptions(opts);
 
@@ -60,8 +60,8 @@ void FileReader::appendOptions(po::options_description &opts) {
         config_keys_.push_back(o->long_name());
 }
 
-void FileReader::configure(const po::variables_map &vm) {
-
+void FileReader::configure(const po::variables_map &vm)
+{
     // Check for config file and entry correctness
     auto config_table = oat::config::getConfigTable(vm);
     oat::config::checkKeys(config_keys_, config_table);
@@ -87,8 +87,8 @@ void FileReader::configure(const po::variables_map &vm) {
     }
 }
 
-void FileReader::connectToNode() {
-
+void FileReader::connectToNode()
+{
     cv::Mat example_frame;
     file_reader_ >> example_frame;
 
@@ -99,18 +99,23 @@ void FileReader::connectToNode() {
             example_frame.total() * example_frame.elemSize());
 
     shared_frame_ = frame_sink_.retrieve(
-            example_frame.rows, example_frame.cols, example_frame.type());
+            example_frame.rows, example_frame.cols, example_frame.type(), PIX_BGR);
 
     // Reset the video to the start
     file_reader_.set(cv::CAP_PROP_POS_AVI_RATIO, 0);
 
     // Put the sample rate in the shared frame
-    internal_sample_.set_rate_hz(1.0 / frame_period_in_sec_.count());
+    shared_frame_.set_rate_hz(1.0 / frame_period_in_sec_.count());
 }
 
-bool FileReader::process() {
+bool FileReader::process()
+{
+    cv::Mat frame;
+    if (!file_reader_.read(frame)) 
+        return true;
 
-    bool frame_empty = false;
+    if (use_roi_ )
+        frame = frame(region_of_interest_);
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -118,25 +123,8 @@ bool FileReader::process() {
     // Wait for sources to read
     frame_sink_.wait();
 
-    // Crop if necessary
-    if (!use_roi_) {
-
-        file_reader_ >> shared_frame_;
-        frame_empty = shared_frame_.empty();
-
-    } else {
-
-        oat::Frame to_crop;
-        file_reader_ >> to_crop;
-        frame_empty = to_crop.empty();
-        if (!frame_empty) {
-            to_crop = to_crop(region_of_interest_);
-            to_crop.copyTo(shared_frame_);
-        }
-    }
-
-    // Update sample count
-    shared_frame_.sample() = internal_sample_;
+    frame.copyTo(shared_frame_);
+    shared_frame_.incrementSampleCount();
 
     // Tell sources there is new data
     frame_sink_.post();
@@ -144,17 +132,14 @@ bool FileReader::process() {
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Pure SINKs increment sample count
-    internal_sample_.incrementCount();
-
     std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
     tick_ = clock_.now();
 
-    return frame_empty;
+    return false;
 }
 
-void FileReader::calculateFramePeriod() {
-
+void FileReader::calculateFramePeriod()
+{
     std::chrono::duration<double> frame_period {1.0 / frames_per_second_};
 
     // Automatic conversion

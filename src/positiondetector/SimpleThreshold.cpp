@@ -43,7 +43,7 @@ SimpleThreshold::SimpleThreshold(const std::string &frame_source_address,
     set_dilate_size(0);
 
     // Set required frame type
-    required_color_ = oat::PixelColor::mono8;
+    required_color_ = PIX_GREY;
 }
 
 void SimpleThreshold::appendOptions(po::options_description &opts)
@@ -131,7 +131,7 @@ void SimpleThreshold::detectPosition(cv::Mat &frame, oat::Position2D &position)
     // Threshold frame will be destroyed by the transform below, so we need to use
     // it to form the frame that will be shown in the tuning window here
     if (tuning_on_)
-         tune_frame_.setTo(cv::Scalar(255, 0, 255), threshold_frame_ > 0);
+         tune_frame_.setTo(0, threshold_frame_ == 0);
 
     siftContours(threshold_frame_,
                  position,
@@ -158,7 +158,7 @@ void SimpleThreshold::tune(cv::Mat &frame, const oat::Position2D &position)
         cv::Point center;
         center.x = position.position.x;
         center.y = position.position.y;
-        cv::circle(frame, center, radius, cv::Scalar(0, 0, 255), 4);
+        cv::circle(frame, center, radius, cv::Scalar(255), 4);
         msg = cv::format("(%d, %d) pixels",
                 (int) position.position.x,
                 (int) position.position.y);

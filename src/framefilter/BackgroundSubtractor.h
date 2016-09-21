@@ -61,7 +61,7 @@ private:
      * @param frame unfiltered frame
      * @return filtered frame
      */
-    void filter(cv::Mat& frame) override;
+    void filter(cv::Mat &frame) override;
 
     // Set the background frame
     void setBackgroundImage(const cv::Mat&);

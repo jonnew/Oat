@@ -22,8 +22,9 @@
 
 #include <string>
 
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/datatypes/Color.h"
 #include "../../lib/shmemdf/SharedFrameHeader.h"
+#include "../../lib/shmemdf/Sink.h"
 
 const std::string node_addr = "test";
 
@@ -157,6 +158,7 @@ SCENARIO ("Sink<SharedFrameHeader> must bind() before waiting, posting, or alloc
         size_t cols {100};
         size_t rows {100};
         int type {1};
+        oat::PixelColor color {oat::PIX_BGR};
 
         WHEN ("When the sink calls wait() before binding a segment") {
 
@@ -175,7 +177,7 @@ SCENARIO ("Sink<SharedFrameHeader> must bind() before waiting, posting, or alloc
         WHEN ("When the sink calls retrieve() before binding a segment") {
 
             THEN ("The the sink shall throw") {
-                REQUIRE_THROWS( mat = sink.retrieve(cols, rows, type); );
+                REQUIRE_THROWS( mat = sink.retrieve(cols, rows, type, color); );
             }
         }
     }

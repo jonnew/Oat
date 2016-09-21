@@ -35,8 +35,9 @@ enum class DistanceUnit
 
 class Position {
 
-public:
+    using USec = Sample::Microseconds;
 
+public:
     explicit Position(const std::string &label)
     {
         strncpy(label_, label.c_str(), sizeof(label_));
@@ -67,7 +68,7 @@ public:
 
     // Expose sample information for potential modification
     // TODO: This is very ugly: why even make it protected??
-    oat::Sample & sample() { return sample_; };
+    //oat::Sample & sample() { return sample_; };
 
     // Accessors
     char *label() { return label_; }
@@ -82,8 +83,15 @@ public:
     bool velocity_valid {false};
     bool heading_valid {false};
 
-protected:
+    // Set sample rate
+    void set_sample(const Sample &val) { sample_ = val; }
+    void set_rate_hz(const double rate_hz) { sample_.set_rate_hz(rate_hz); }
+    double sample_period_sec() const { return sample_.period_sec().count(); }
+    uint64_t sample_count(void) const { return sample_.count(); }
+    void incrementSampleCount() { sample_.incrementCount(); }
+    void incrementSampleCount(USec us) { sample_.incrementCount(us); }
 
+protected:
     char label_[100] {0}; //!< Position label (e.g. "anterior")
     DistanceUnit unit_of_length_ {DistanceUnit::PIXELS};
 

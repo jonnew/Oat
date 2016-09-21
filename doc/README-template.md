@@ -333,6 +333,10 @@ oat-framefilt-undistort-help
 oat framefilt bsub raw sub
 
 # Receive frames from 'raw' stream
+# Change the underlying pixel color to single-channel GREY
+oat framefilt col raw gry -C GREY
+
+# Receive frames from 'raw' stream
 # Apply a mask specified in a configuration file
 # Publish result to 'roi' stream
 oat framefilt mask raw roi -c config.toml mask-config

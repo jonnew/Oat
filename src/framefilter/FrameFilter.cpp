@@ -57,11 +57,14 @@ void FrameFilter::connectToNode()
     frame_sink_.bind(frame_sink_address_, frame_parameters.bytes);
     shared_frame_ = frame_sink_.retrieve(frame_parameters.rows,
                                          frame_parameters.cols,
-                                         frame_parameters.type);
+                                         frame_parameters.type,
+                                         frame_parameters.color);
 }
 
 bool FrameFilter::process()
 {
+    oat::Frame internal_frame;
+
     // START CRITICAL SECTION //
     ////////////////////////////
 
@@ -70,7 +73,6 @@ bool FrameFilter::process()
         return true;
 
     // Clone the shared frame
-    oat::Frame internal_frame;
     frame_source_.copyTo(internal_frame);
 
     // Tell sink it can continue

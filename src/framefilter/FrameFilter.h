@@ -30,6 +30,7 @@
 
 namespace oat {
 
+class ColorConvert; // Forward decl.
 namespace po = boost::program_options;
 
 /**
@@ -37,6 +38,7 @@ namespace po = boost::program_options;
  * All concrete frame filter types implement this ABC.
  */
 class FrameFilter {
+    friend ColorConvert;
 public:
 
     /**
@@ -64,7 +66,7 @@ public:
     /**
      * @brief Connect to shared memory node.
      */
-    void connectToNode(void);
+    virtual void connectToNode(void);
 
     /**
      * @breif Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
@@ -107,7 +109,6 @@ private:
 
     // Currently acquired, shared frame
     oat::Frame shared_frame_;
-
 };
 
 }      /* namespace oat */

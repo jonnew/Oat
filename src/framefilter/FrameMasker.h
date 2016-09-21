@@ -47,10 +47,6 @@ public:
 
 private:
 
-    /**
-     * @brief Apply binary frame mask.
-     * @param frame Frame to filter.
-     */
     void filter(cv::Mat& frame) override;
 
     // Mask frames with an arbitrary ROI
