@@ -41,6 +41,7 @@ namespace po = boost::program_options;
 
 volatile sig_atomic_t quit = 0;
 volatile sig_atomic_t source_eof = 0;
+bool first_loop = true;
 
 // Needed by both threads
 std::string file_name;
@@ -55,12 +56,6 @@ using zmq_ostream_t = boost::iostreams::stream<oat::zmq_ostream>;
 
 // Interactive commands
 bool recording_on = true;
-enum class ControlMode : int16_t
-{
-    NONE = 0,
-    LOCAL = 1,
-    RPC = 2,
-} control_mode;
 
 void printUsage(std::ostream &out, po::options_description options)
 {
@@ -112,125 +107,123 @@ int main(int argc, char *argv[]) {
 
     // The component itself
     std::string comp_name = "recorder";
-    auto recorder = std::make_shared<oat::Recorder>();
 
     // Program options
     po::options_description options;
-    options.add(oat::config::ComponentInfo::instance()->get());
 
-    // Config options
-    po::options_description detail_opts {"CONFIGURATION"};
-    recorder->appendOptions(detail_opts);
-    options.add(detail_opts);
-
-    // Parse options, including unrecognized options which may be
-    // type-specific
-    auto parsed_opt = po::command_line_parser(argc, argv)
-        .options(options)
-        .run();
-
-    po::variables_map option_map;
-    po::store(parsed_opt, option_map);
-
-    // Check options for errors and bind options to local variables
-    po::notify(option_map);
-
-    // Check INFO arguments
-    if (option_map.count("help")) {
-        printUsage(std::cout, options);
-        return 0;
-    }
-
-    if (option_map.count("version")) {
-        std::cout << oat::config::VERSION_STRING;
-        return 0;
-    }
-
-    // The business
     try {
-
-        // Configure recorder parameters
-        recorder->configure(option_map);
-
-        // Ger real name
-        comp_name = recorder->name();
 
         int rc = 1;
         while (rc == 1) {
 
+
             // We may be coming around for another recording so reset quit
-            // flag
+            // flag and remove all options
             quit = 0;
+
+            auto recorder = std::make_shared<oat::Recorder>();
+
+            // Config options
+            if (first_loop) {
+                options.add(oat::config::ComponentInfo::instance()->get());
+                po::options_description detail_opts {"CONFIGURATION"};
+                recorder->appendOptions(detail_opts);
+                options.add(detail_opts);
+            }
+
+            // Parse options, including unrecognized options which may be
+            // type-specific
+            auto parsed_opt = po::command_line_parser(argc, argv)
+                .options(options)
+                .run();
+
+            po::variables_map option_map;
+            po::store(parsed_opt, option_map);
+
+            // Check options for errors and bind options to local variables
+            po::notify(option_map);
+
+            // Check INFO arguments
+            if (option_map.count("help")) {
+                printUsage(std::cout, options);
+                return 0;
+            }
+
+            if (option_map.count("version")) {
+                std::cout << oat::config::VERSION_STRING;
+                return 0;
+            }
+
+            // Configure recorder parameters
+            recorder->configure(option_map);
+
+            // Ger real name
+            comp_name = recorder->name();
+
 
             std::cout << oat::whoMessage(recorder->name(),
                     "Press CTRL+C to exit.\n");
 
-            // Set recording parameters
-            //recorder->set_save_path(save_path);
-            //recorder->set_file_name(file_name);
-            //recorder->set_prepend_timestamp(prepend_timestamp);
-            //recorder->set_allow_overwrite(allow_overwrite);
-            //recorder->set_verbose_file(!concise_file);
-
-            //switch (control_mode)
-            //{
-            //    case ControlMode::NONE :
-            //    {
+            switch (recorder->control_mode)
+            {
+                case oat::Recorder::ControlMode::NONE :
+                {
                     // Start the recorder w/o controls
-                    run(recorder);
                     rc = 0;
+                    run(recorder);
+                    break;
+                }
+                case oat::Recorder::ControlMode::LOCAL :
+                {
+                    // For interactive control, recorder must be started by user
+                    recorder->set_record_on(false);
+
+                    // Start recording in background
+                    std::thread process(run, std::ref(recorder));
+                    try {
+                      // Interact using stdin
+                      oat::printInteractiveUsage(std::cout);
+                      rc = oat::controlRecorder(std::cin, std::cout, *recorder, true);
+                    } catch (...) {
+                      // Interrupt and join threads
+                      cleanup(process);
+                      throw;
+                    }
+                    cleanup(process);
 
                     break;
-            //    }
-            //    case ControlMode::LOCAL :
-            //    {
-            //        // For interactive control, recorder must be started by user
-            //        recorder->set_record_on(false);
+                }
+                case oat::Recorder::ControlMode::RPC :
+                {
+                    // For interactive control, recorder must be started by user
+                    recorder->set_record_on(false);
 
-            //        // Start recording in background
-            //        std::thread process(run, std::ref(recorder));
-            //        try {
-            //          // Interact using stdin
-            //          oat::printInteractiveUsage(std::cout);
-            //          rc = oat::controlRecorder(std::cin, std::cout, *recorder, true);
-            //        } catch (...) {
-            //          // Interrupt and join threads
-            //          cleanup(process);
-            //          throw;
-            //        }
-            //        cleanup(process);
+                    // Start recording in background
+                    std::thread process(run, std::ref(recorder));
 
-            //        break;
-            //    }
-            //    case ControlMode::RPC :
-            //    {
-            //        // For interactive control, recorder must be started by user
-            //        recorder->set_record_on(false);
+                    try {
+                        auto ctx = std::make_shared<zmq::context_t>(1);
+                        auto sock = std::make_shared<zmq::socket_t>(*ctx, ZMQ_REP);
+                        sock->bind(recorder->rpc_endpoint().c_str());
+                        zmq_istream_t in(ctx, sock);
+                        zmq_ostream_t out(ctx, sock);
+                        oat::printRemoteUsage(std::cout);
+                        rc = oat::controlRecorder(in, out, *recorder, false);
+                    } catch (const zmq::error_t &ex) {
+                        std::cerr << oat::whoError(recorder->name(), "zeromq error: "
+                                + std::string(ex.what())) << "\n";
+                        cleanup(process);
+                        return -1;
+                    }
 
-            //        // Start recording in background
-            //        std::thread process(run, std::ref(recorder));
+                    // Interupt and join threads
+                    cleanup(process);
 
-            //        try {
-            //            auto ctx = std::make_shared<zmq::context_t>(1);
-            //            auto sock = std::make_shared<zmq::socket_t>(*ctx, ZMQ_REP);
-            //            sock->bind(rpc_endpoint);
-            //            zmq_istream_t in(ctx, sock);
-            //            zmq_ostream_t out(ctx, sock);
-            //            oat::printRemoteUsage(std::cout);
-            //            rc = oat::controlRecorder(in, out, *recorder, false);
-            //        } catch (const zmq::error_t &ex) {
-            //            std::cerr << oat::whoError(recorder->name(), "zeromq error: "
-            //                    + std::string(ex.what())) << "\n";
-            //            cleanup(process);
-            //            return -1;
-            //        }
+                    break;
+                }
+            }
 
-            //        // Interupt and join threads
-            //        cleanup(process);
-
-            //        break;
-            //    }
-            //}
+            first_loop = false;
         }
 
         // Exit

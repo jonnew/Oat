@@ -63,7 +63,7 @@ public:
     virtual double sample_period_sec(void) = 0;
 
     /**
-     * @brief Create and initialize recording file(s). Must be called
+     * @brief Create and initialize recording file. Must be called
      * before writeStreams.
      */
     virtual void initialize(const std::string &path) = 0;
@@ -77,6 +77,11 @@ public:
      * @brief Flush internal sample buffer to file.
      */
     virtual void write(void) = 0;
+
+    /** 
+     * @brief Delete file 
+     */
+    virtual void deleteFile(void) = 0;
 
     std::string addr(void) const { return addr_; }
 

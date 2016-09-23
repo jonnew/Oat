@@ -33,33 +33,17 @@
 namespace oat {
 namespace po = boost::program_options;
 
-//// TODO: Move to datatypes if you are going to use
-//enum class TokenType : int {
-//    Any = -1,
-//    Frame,
-//    Position
-//};
-
 /**
- * Position and frame recorder.
+ * General token recorder
  */
 class Recorder {
 
     //// The controlRecorder routine needs access to Recorder's private members
-    //friend
-    //int controlRecorder(std::istream &in,
-    //                    oat::Recorder &recorder,
-    //                    bool print_cmd);
+    friend
+    int controlRecorder(std::istream &in,
+                        oat::Recorder &recorder,
+                        bool print_cmd);
 public:
-    /**
-     * Position and frame recorder.
-     * @param position_source_addresses Addresses specifying position SOURCES
-     * to record
-     * @param frame_source_addresses Addresses specifying frame SOURCES to
-     * record
-     */
-    //Recorder(const std::vector<std::string> &position_source_addresses,
-    //         const std::vector<std::string> &frame_source_addresses);
 
     ~Recorder();
 
@@ -95,13 +79,22 @@ public:
      */
     bool writeStreams(void);
 
+    enum ControlMode : int
+    {
+        NONE = 0,
+        LOCAL = 1,
+        RPC = 2,
+    } control_mode {NONE};
+    
+    // Source EOF (needed for RecordControl)
+    bool source_eof {false};
+
     // Accessors for control thread
-    std::string name(void) { return name_; }
+    std::string name(void) const { return name_; }
     bool record_on(void) const { return record_on_; }
     void set_record_on(const bool value) { record_on_ = value; }
-    //void set_save_path(const std::string &value) { save_path_ = value; }
-    //void set_file_name(const std::string &value) { file_name_ = value; }
-    //
+    std::string rpc_endpoint(void) const { return rpc_endpoint_; }
+
 protected:
     // List of allowed configuration options
     std::vector<std::string> config_keys_;
@@ -130,11 +123,14 @@ private:
     // Base file name
     std::string file_name_ {""};
 
+    // RPC endpoint for interactive control
+    std::string rpc_endpoint_ {""};
+
     // Determines if should file_name be prepended with a timestamp
     bool prepend_timestamp_ {false};
 
-    // Files must be initialized before first write
-    bool initialization_required_ {true};
+    // True on first file write
+    bool files_have_data_ {false};
 
     // Executed by writer_thread_
     void writeLoop(void);
@@ -148,6 +144,7 @@ private:
     std::thread writer_thread_;
     std::mutex writer_mutex_;
     std::condition_variable writer_condition_variable_;
+
 
     // Create file name from components
     std::string generateFileName(const std::string timestamp,

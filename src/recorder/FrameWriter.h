@@ -47,8 +47,7 @@ public:
     void connect() override;
     double sample_period_sec() override
     {
-        // TODO: GROSS
-        return source_.retrieve()->sample().period_sec().count();
+        return source_.retrieve()->sample_period_sec();
     }
     oat::NodeState wait() override { return source_.wait(); }
     void post(void) override { source_.post(); }
@@ -56,6 +55,11 @@ public:
     void initialize(const std::string &path) override;
     void write(void) override;
     void push(void) override;
+    void deleteFile() override
+    {
+        if (!path_.empty())
+            std::remove(path_.c_str());
+    }
 
 private:
     using SPSCBuffer = boost::lockfree::spsc_queue<oat::Frame,
