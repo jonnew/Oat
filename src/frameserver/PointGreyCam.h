@@ -108,7 +108,7 @@ private:
                                   int ieee_1394_cycle);
 
     // Physical camera control
-    //void turnCameraOn(void);
+    void turnCameraOn(void);
     void connectToCamera(int index);
     void startCapture(void);
 

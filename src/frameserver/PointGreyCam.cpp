@@ -158,7 +158,7 @@ void PointGreyCam<T>::configure(const po::variables_map &vm)
         vm, config_table, "index", index, 0, num_cams - 1);
 
     connectToCamera(index);
-    //turnCameraOn();
+    turnCameraOn();
 
     // Frame rate
     if (oat::config::getNumericValue<double>(
@@ -282,7 +282,6 @@ void PointGreyCam<T>::connectToCamera(int index)
     pg::Error error = busMgr.GetCameraFromIndex(index, &guid);
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
-
     error = camera_.Connect(&guid);
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
@@ -491,55 +490,57 @@ void PointGreyCam<T>::setupPixelBinning(size_t x_bin, size_t y_bin)
 //}
 
 // TODO: Required??
-//template <typename T>
-//void PointGreyCam<T>::turnCameraOn()
-//{
-//    // Power on the camera_
-//    const unsigned int k_cameraPower = 0x610;
-//    const unsigned int k_powerVal = 0x80000000;
-//    pg::Error error = camera_.WriteRegister(k_cameraPower, k_powerVal);
-//    if (error != pg::PGRERROR_OK && error != pg::PGRERROR_NOT_IMPLEMENTED)
-//        throw (rte(error.GetDescription()));
-//
-//    unsigned int regVal = 0;
-//    unsigned int retries = 10;
-//
-//    // Wait for camera_ to complete power-up
-//    do {
-//
-//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//        error = camera_.ReadRegister(k_cameraPower, &regVal);
-//        if (error == pg::PGRERROR_TIMEOUT) {
-//            // ignore timeout errors, camera_ may not be responding to
-//            // register reads during power-up
-//        } else if (error != pg::PGRERROR_OK) {
-//            throw (rte(error.GetDescription()));
-//        }
-//
-//        retries--;
-//    } while ((regVal & k_powerVal) == 0 && retries > 0);
-//
-//    // Check for timeout errors after retrying
-//    if (error == pg::PGRERROR_TIMEOUT)
-//        throw (rte(error.GetDescription()));
-//}
+template <typename T>
+void PointGreyCam<T>::turnCameraOn()
+{
+    // Power on the camera_
+    const unsigned int k_cameraPower = 0x610;
+    const unsigned int k_powerVal = 0x80000000;
+    pg::Error error = camera_.WriteRegister(k_cameraPower, k_powerVal);
+    if (error != pg::PGRERROR_OK && error != pg::PGRERROR_NOT_IMPLEMENTED)
+        throw (rte(error.GetDescription()));
+
+    unsigned int regVal = 0;
+    unsigned int retries = 10;
+
+    // Wait for camera_ to complete power-up
+    do {
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        error = camera_.ReadRegister(k_cameraPower, &regVal);
+        if (error == pg::PGRERROR_TIMEOUT) {
+            // ignore timeout errors, camera_ may not be responding to
+            // register reads during power-up
+        } else if (error != pg::PGRERROR_OK) {
+            throw (rte(error.GetDescription()));
+        }
+
+        retries--;
+    } while ((regVal & k_powerVal) == 0 && retries > 0);
+
+    // Check for timeout errors after retrying
+    if (error == pg::PGRERROR_TIMEOUT)
+        throw (rte(error.GetDescription()));
+}
 
 template <typename T>
 void PointGreyCam<T>::setupAsyncTrigger(int trigger_mode,
                                         bool trigger_rising,
                                         int trigger_pin)
 {
+    std::cout << "Setting up async trigger mode "<< trigger_mode << " \n";
     // Free Running
     if (trigger_mode < 0 ) {
         use_trigger_ = false;
         return;
     }
 
-    if (trigger_mode != 0  ||
-        trigger_mode != 1  ||
-        trigger_mode != 13 ||
+    if (trigger_mode != -1 &&
+        trigger_mode != 0  &&
+        trigger_mode != 1  &&
+        trigger_mode != 13 &&
         trigger_mode != 14) {
-        throw (rte("Trigger mode is unsupported."));
+      throw (rte("Trigger mode is unsupported."));
     }
 
     // Get current trigger settings
@@ -580,6 +581,7 @@ void PointGreyCam<T>::setupGrabSettings()
     // NOTE: For some reason grabMode = pg::BUFFER_FRAMES does not play nicely
     // with the time-stamp correction for dropped triggers. I have yet to
     // understand why.
+    std::cout << "setting up grab...\n";
     pg::FC2Config flyCapConfig;
     pg::Error error = camera_.GetConfiguration(&flyCapConfig);
     if (error != pg::PGRERROR_OK)
@@ -614,14 +616,19 @@ void PointGreyCam<T>::setupGrabSettings()
 template <typename T>
 void PointGreyCam<T>::startCapture()
 {
+  
+    std::cout << "Starting capture...\n";
     // Camera is ready, start capturing images
     pg::Error error = camera_.StartCapture();
-    if (error == pg::PGRERROR_ISOCH_BANDWIDTH_EXCEEDED)
+    if (error == pg::PGRERROR_ISOCH_BANDWIDTH_EXCEEDED) { 
         throw (rte("Interface bandwidth exceeded. Cannot start camera_..\n"));
-    else if (error != pg::PGRERROR_OK)
+    } else if (error != pg::PGRERROR_OK) {
+        std::cout << "Error starting capture: \n";
         throw (rte(error.GetDescription()));
+    }
 
     acquisition_started_ = true;
+    std::cout << "Capture started \n";
 }
 
 template <typename T>
@@ -633,6 +640,7 @@ void PointGreyCam<T>::setupStrobeOutput(int strobe_pin)
     strobe.polarity = 1;
     strobe.delay = 0.0f;
     strobe.duration = 0.0f;
+    //camera_.WriteRegister(0x19D0, 0x80000001); // start strobe on Blackfly: needed for strobe output in my model --mmyros
 
     pg::Error error = camera_.SetStrobe(&strobe);
     if (error != pg::PGRERROR_OK)
@@ -677,7 +685,6 @@ int PointGreyCam<T>::grabImage(pg::Image *raw_image)
 {
     assert (acquisition_started_ &&
             "Cannot grab image because acquisition has not been started.");
-
     pg::Error error;
     error = camera_.RetrieveBuffer(raw_image);
 
@@ -935,6 +942,7 @@ void PointGreyCam<pg::GigECamera>::connectToCamera(int index)
 
     unsigned int numStreamChannels = 0;
     error = camera_.GetNumStreamChannels(&numStreamChannels);
+    std::cout << "Default settings restored.\n";
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
 
