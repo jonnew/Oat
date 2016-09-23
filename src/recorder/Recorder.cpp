@@ -45,6 +45,12 @@ Recorder::~Recorder()
     writer_condition_variable_.notify_one();
     if (writer_thread_.joinable())
         writer_thread_.join();
+
+    // If files were never written to, get rid of them
+    if (!files_have_data_) {
+        for (auto &w : writers_)
+            w->deleteFile();
+    }
 }
 
 void Recorder::appendOptions(po::options_description &opts)
@@ -92,13 +98,12 @@ void Recorder::appendOptions(po::options_description &opts)
          "means that position objects will be of variable size depending on "
          "the validity of whether a position was detected or not, "
          "potentially complicating file parsing.")
-        //("interactive", "Start recorder with interactive controls enabled.")
-        //("rpc-endpoint", po::value<std::string>(&rpc_endpoint),
-        // "Yield interactive control of the recorder to a remote ZMQ REQ "
-        // "socket using an interal REP socket with ZMQ style endpoint "
-        // "specifier: '<transport>://<host>:<port>'. For instance, "
-        // "'tcp://*:5555' or 'ipc://*:5556' specify TCP and interprocess "
-        // "communication on ports 5555 or 5556, respectively.")
+        ("interactive", "Start recorder with interactive controls enabled.")
+        ("rpc-endpoint", po::value<std::string>(),
+         "Yield interactive control of the recorder to a remote ZMQ REQ "
+         "socket using an interal REP socket with ZMQ style endpoint "
+         "specifier: '<transport>://<host>:<port>'. For instance, "
+         "'tcp://*:5555' to specify TCP communication on ports 5555.")
         ;
 
     opts.add(local_opts);
@@ -153,9 +158,25 @@ void Recorder::configure(const po::variables_map &vm)
     // Date
     oat::config::getValue(vm, config_table, "date", prepend_timestamp_);
 
+    // Interactive control
+    bool is_interactive = false;
+    if (oat::config::getValue(vm, config_table, "interactive", is_interactive))
+        control_mode = LOCAL;
+
+    // RPC control
+    if (oat::config::getValue(vm, config_table, "rpc-endpoint", rpc_endpoint_))
+        control_mode = RPC;
+
+    if (is_interactive && !rpc_endpoint_.empty()) {
+        throw std::runtime_error("Recorder cannot be interactive and remote "
+                                 "controlled at the same time. Choose either "
+                                 "interactive or rpc-endpoint.");
+    }
+
     // Writer specific options
     for (auto &w : writers_)
         w->configure(config_table, vm);
+
 
     // Start the recording tread
     writer_thread_ = std::thread( [this] { writeLoop(); } );
@@ -176,26 +197,24 @@ void Recorder::connectToNodes()
     // Examine sample period of sources to make sure they are the same
     if (!oat::checkSamplePeriods(all_ts, sample_rate_hz_))
         std::cerr << oat::Warn(oat::inconsistentSampleRateWarning(sample_rate_hz_));
+
+    // Setup file, etc
+    initializeRecording();
 }
 
 bool Recorder::writeStreams()
 {
-    if (record_on_ && initialization_required_) {
-        initializeRecording();
-        initialization_required_ = false;
-    }
-
-    bool source_eof = false;
-
-    // TODO: Read sources
+    // Read sources, push samples to write buffers
     for (auto &w : writers_) {
 
         // START CRITICAL SECTION //
         ////////////////////////////
         source_eof |= w->wait() == oat::NodeState::END;
 
-        if (record_on_)
+        if (record_on_) {
            w->push();
+           files_have_data_ = true;
+        }
 
         w->post();
         ////////////////////////////
@@ -241,11 +260,10 @@ std::string Recorder::generateFileName(const std::string timestamp,
     int err = oat::createSavePath(
         full_path, save_path_, base_fid, timestamp + "_", prepend_timestamp_);
 
-    if (err) {
-        throw std::runtime_error("Recording file initialization exited "
-                                 "with error "
-                                 + std::to_string(err));
-    }
+    if (err == 1)
+        throw std::runtime_error("Requested save path does not exist.");
+    if (err == 3)
+        throw std::runtime_error("File name empty.");
 
     return full_path;
 }

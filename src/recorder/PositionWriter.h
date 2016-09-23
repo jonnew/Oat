@@ -57,9 +57,11 @@ public:
     void initialize(const std::string &path) override;
     void write(void) override;
     void push(void) override;
-
-    // Accessors
-    //void set_verbose_file(const bool value) { verbose_file_ = value; }
+    void deleteFile() override
+    {
+        if (!path_.empty())
+            std::remove(path_.c_str());
+    }
 
 private:
     using SPSCBuffer = boost::lockfree::spsc_queue<oat::Position2D,
@@ -79,7 +81,6 @@ private:
     //std::chrono::system_clock::time_point start_;
 
     // Position file
-    // TODO: Position specialization
     FILE * fd_ {nullptr};
     char position_write_buffer[65536];
     std::unique_ptr<rapidjson::FileWriteStream> file_stream_;

@@ -60,7 +60,7 @@ int controlRecorder(std::istream &in,
     // Means to exit via user input
     bool interactive_quit = false;
 
-    while (!interactive_quit && !::quit && !recorder.source_eof()) {
+    while (!interactive_quit && !::quit && !recorder.source_eof) {
 
         if (pretty_cmd)
             out << ">>> " << std::flush;
@@ -73,7 +73,6 @@ int controlRecorder(std::istream &in,
 
         if (cmd.empty()) {
             out << "No command...\n";
-            out << "source_eof: " << recorder.source_eof() << std::endl;
             continue;
         }
 

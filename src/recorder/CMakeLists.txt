@@ -6,7 +6,7 @@ set (oat-record_SOURCE
      FrameWriter.cpp
      PositionWriter.cpp
      Writer.cpp
-     #RecordControl.cpp
+     RecordControl.cpp
      Recorder.cpp
      main.cpp)
 

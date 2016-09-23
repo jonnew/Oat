@@ -52,16 +52,16 @@ void PositionWriter::configure(const oat::config::OptionTable &t,
 
 void PositionWriter::initialize(const std::string &path)
 {
-    auto full_path =  path + ".json";
+    auto path_ =  path + ".json";
 
     if (!allow_overwrite_)
-       oat::ensureUniquePath(full_path);
+       oat::ensureUniquePath(path_);
 
-    if (!oat::checkWritePermission(full_path))
-        throw std::runtime_error("Write permission denied for " + full_path);
+    if (!oat::checkWritePermission(path_))
+        throw std::runtime_error("Write permission denied for " + path_);
 
     // Position file
-    fd_ = fopen(full_path.c_str(), "wb");
+    fd_ = fopen(path_.c_str(), "wb");
 
     // File descriptor must be available for writing
     assert(fd_);

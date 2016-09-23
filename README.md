@@ -141,7 +141,7 @@ oat posidet hsv filt pos --tune &
 oat decorate -p pos raw dec &
 
 # View the 'dec' stream
-oat view dec &
+oat view frame dec &
 
 # Record the 'dec' and 'pos' streams to file in the current directory
 oat record -i dec -p pos -f ./
@@ -998,6 +998,14 @@ CONFIGURATION:
                                  depending on the validity of whether a 
                                  position was detected or not, potentially 
                                  complicating file parsing.
+  --interactive                  Start recorder with interactive controls 
+                                 enabled.
+  --rpc-endpoint arg             Yield interactive control of the recorder to a
+                                 remote ZMQ REQ socket using an interal REP 
+                                 socket with ZMQ style endpoint specifier: 
+                                 '<transport>://<host>:<port>'. For instance, 
+                                 'tcp://*:5555' to specify TCP communication on
+                                 ports 5555.
 ```
 
 #### Example

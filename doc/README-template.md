@@ -141,7 +141,7 @@ oat posidet hsv filt pos --tune &
 oat decorate -p pos raw dec &
 
 # View the 'dec' stream
-oat view dec &
+oat view frame dec &
 
 # Record the 'dec' and 'pos' streams to file in the current directory
 oat record -i dec -p pos -f ./
