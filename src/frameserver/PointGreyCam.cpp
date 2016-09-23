@@ -1189,7 +1189,7 @@ void PointGreyCam<pg::Camera>::setupImageFormat()
 {
     std::cout << "Setting image parameters...\n";
 
-    const pg::Mode k_fmt7Mode = pg::MODE_1;
+    const pg::Mode k_fmt7Mode = pg::MODE_0;
 
     pg::Format7Info image_settings_info;
     bool supported;
