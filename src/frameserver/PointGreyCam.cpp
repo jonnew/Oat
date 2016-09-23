@@ -535,11 +535,12 @@ void PointGreyCam<T>::setupAsyncTrigger(int trigger_mode,
         return;
     }
 
-    if (trigger_mode != 0  ||
-        trigger_mode != 1  ||
-        trigger_mode != 13 ||
+    if (trigger_mode != -1 &&
+        trigger_mode != 0  &&
+        trigger_mode != 1  &&
+        trigger_mode != 13 &&
         trigger_mode != 14) {
-      //throw (rte("Trigger mode is unsupported."));
+      throw (rte("Trigger mode is unsupported."));
     }
 
     // Get current trigger settings
@@ -626,6 +627,7 @@ void PointGreyCam<T>::startCapture()
     }
 
     acquisition_started_ = true;
+    std::cout << "Capture started \n";
 }
 
 template <typename T>
@@ -682,7 +684,7 @@ int PointGreyCam<T>::grabImage(pg::Image *raw_image)
 {
     assert (acquisition_started_ &&
             "Cannot grab image because acquisition has not been started.");
-
+    std::cout << "grabbing image  \n";
     pg::Error error;
     error = camera_.RetrieveBuffer(raw_image);
 
