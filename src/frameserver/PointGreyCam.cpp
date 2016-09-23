@@ -616,6 +616,7 @@ void PointGreyCam<T>::setupGrabSettings()
 template <typename T>
 void PointGreyCam<T>::startCapture()
 {
+  
     std::cout << "Starting capture...\n";
     // Camera is ready, start capturing images
     pg::Error error = camera_.StartCapture();
