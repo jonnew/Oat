@@ -685,7 +685,6 @@ int PointGreyCam<T>::grabImage(pg::Image *raw_image)
 {
     assert (acquisition_started_ &&
             "Cannot grab image because acquisition has not been started.");
-    std::cout << "grabbing image  \n";
     pg::Error error;
     error = camera_.RetrieveBuffer(raw_image);
 
