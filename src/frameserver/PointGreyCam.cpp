@@ -282,7 +282,6 @@ void PointGreyCam<T>::connectToCamera(int index)
     pg::Error error = busMgr.GetCameraFromIndex(index, &guid);
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
-    pg::Camera camera_;
     error = camera_.Connect(&guid);
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
@@ -530,7 +529,6 @@ void PointGreyCam<T>::setupAsyncTrigger(int trigger_mode,
                                         int trigger_pin)
 {
     std::cout << "Setting up async trigger mode "<< trigger_mode << " \n";
-  
     // Free Running
     if (trigger_mode < 0 ) {
         use_trigger_ = false;
@@ -582,7 +580,7 @@ void PointGreyCam<T>::setupGrabSettings()
     // NOTE: For some reason grabMode = pg::BUFFER_FRAMES does not play nicely
     // with the time-stamp correction for dropped triggers. I have yet to
     // understand why.
-  std::cout << "setting up grab...\n";
+    std::cout << "setting up grab...\n";
     pg::FC2Config flyCapConfig;
     pg::Error error = camera_.GetConfiguration(&flyCapConfig);
     if (error != pg::PGRERROR_OK)
@@ -620,14 +618,12 @@ void PointGreyCam<T>::startCapture()
     std::cout << "Starting capture...\n";
     // Camera is ready, start capturing images
     pg::Error error = camera_.StartCapture();
-    if (error == pg::PGRERROR_ISOCH_BANDWIDTH_EXCEEDED)
-      { 
-        throw (rte("Interface bandwidth exceeded. Cannot start camera_..\n"));}
-    else if (error != pg::PGRERROR_OK)
-      {
-	std::cout << "Error starting capture: \n";
+    if (error == pg::PGRERROR_ISOCH_BANDWIDTH_EXCEEDED) { 
+        throw (rte("Interface bandwidth exceeded. Cannot start camera_..\n"));
+    } else if (error != pg::PGRERROR_OK) {
+        std::cout << "Error starting capture: \n";
         throw (rte(error.GetDescription()));
-      }
+    }
 
     acquisition_started_ = true;
 }
@@ -641,6 +637,7 @@ void PointGreyCam<T>::setupStrobeOutput(int strobe_pin)
     strobe.polarity = 1;
     strobe.delay = 0.0f;
     strobe.duration = 0.0f;
+    //camera_.WriteRegister(0x19D0, 0x80000001); // start strobe on Blackfly: needed for strobe output in my model --mmyros
 
     pg::Error error = camera_.SetStrobe(&strobe);
     if (error != pg::PGRERROR_OK)
@@ -945,6 +942,7 @@ void PointGreyCam<pg::GigECamera>::connectToCamera(int index)
 
     unsigned int numStreamChannels = 0;
     error = camera_.GetNumStreamChannels(&numStreamChannels);
+    std::cout << "Default settings restored.\n";
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
 
@@ -1193,7 +1191,7 @@ void PointGreyCam<pg::Camera>::setupImageFormat()
 {
     std::cout << "Setting image parameters...\n";
 
-    const pg::Mode k_fmt7Mode = pg::MODE_0;
+    const pg::Mode k_fmt7Mode = pg::MODE_1;
 
     pg::Format7Info image_settings_info;
     bool supported;
