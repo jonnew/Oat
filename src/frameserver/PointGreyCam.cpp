@@ -930,8 +930,6 @@ void PointGreyCam<pg::GigECamera>::connectToCamera(int index)
 
     printCameraInfo();
 
-    
-
     std::cout << "Restoring default acqusition settings...\n";
 
     error = camera_.RestoreFromMemoryChannel(0);
