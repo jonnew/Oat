@@ -18,6 +18,7 @@
 //******************************************************************************
 
 #include "PointGreyCam.h"
+#include "PointGreySettings.h"
 
 #include <cassert>
 #include <chrono>
@@ -300,135 +301,87 @@ void PointGreyCam<T>::connectToCamera(int index)
 template <typename T>
 void PointGreyCam<T>::setupFrameRate(double fps, bool is_auto)
 {
-    std::cout << "Setting up frame rate...\n";
 
-    pg::Property prop;
-    prop.type = pg::FRAME_RATE;
-    pg::Error error = camera_.GetProperty(&prop);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
+    std::cout << "Setting up frame rate...";
 
-    prop.autoManualMode = is_auto;
-
-    if (!is_auto) {
-        prop.absValue = fps;
-        std::cout << "Frame rate set to " + std::to_string(prop.absValue) + " FPS.\n";
-    } else {
-        std::cout << "Frame rate set to auto.\n";
-    }
-
-    error = camera_.SetProperty(&prop);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    // If set to auto, then get the automatically configured frame frame rate
     if (is_auto) {
-        error = camera_.GetProperty(&prop);
-        if (error != pg::PGRERROR_OK)
-            throw (rte(error.GetDescription()));
-
-        frames_per_second_ = prop.absValue;
+        setPGAuto(camera_, pg::FRAME_RATE);
+        std::cout << "set to auto.\n";
+    } else {
+        auto value = setPGAbsValue(camera_, pg::FRAME_RATE, fps);
+        std::cout << "set to "
+                  << std::fixed
+                  << std::setprecision(2)
+                  << value << " FPS.\n";
     }
+
+    frames_per_second_ = getPGAbsValue(camera_, pg::FRAME_RATE);
 }
 
 template <typename T>
 void PointGreyCam<T>::setupShutter(float shutter_ms, bool is_auto)
 {
-    std::cout << "Setting up shutter...\n";
-
-    pg::Property prop;
-    prop.type = pg::SHUTTER;
-    pg::Error error = camera_.GetProperty(&prop);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    prop.autoManualMode = is_auto;
-    prop.absControl = true;
-    prop.absValue = shutter_ms;
-
-    error = camera_.SetProperty(&prop);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
+    std::cout << "Setting up shutter...";
 
     if (is_auto) {
-        std::cout << "Shutter set to auto.\n";
+        setPGAuto(camera_, pg::SHUTTER);
+        std::cout << "set to auto.\n";
     } else {
-        std::cout << "Shutter time set to "
+        auto value = setPGAbsValue(camera_, pg::SHUTTER, shutter_ms);
+        std::cout << "set to "
                   << std::fixed
                   << std::setprecision(2)
-                  << shutter_ms << " ms.\n";
+                  << value << " ms.\n";
     }
 }
 
 template <typename T>
 void PointGreyCam<T>::setupGain(float gain_db, bool is_auto)
 {
-    std::cout << "Setting camera gain...\n";
-
-    pg::Property prop;
-    prop.type = pg::GAIN;
-    pg::Error error = camera_.GetProperty(&prop);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    prop.autoManualMode = is_auto;
-    prop.absControl = true;
-    prop.absValue = gain_db;
-
-    error = camera_.SetProperty(&prop);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
+    std::cout << "Setting up sensor gain...";
 
     if (is_auto) {
-        std::cout << "Gain set to auto.\n";
+        setPGAuto(camera_, pg::GAIN);
+        std::cout << "set to auto.\n";
     } else {
-        std::cout << "Gain set to "
+        auto value = setPGAbsValue(camera_, pg::GAIN, gain_db);
+        std::cout << "set to "
                   << std::fixed
                   << std::setprecision(2)
-                  << gain_db << " dB.\n";
+                  << value << " dB.\n";
     }
 }
 
 template <typename T>
 void PointGreyCam<T>::setupWhiteBalance(int bal_red, int bal_blue, bool is_on, bool is_auto)
 {
+    std::cout << "Setting camera white balance...";
+
+    if (!is_on) {
+        setPGOff(camera_, pg::WHITE_BALANCE);
+        std::cout << "set to off.\n";
+        return;
+    }
+
     // Mono pixels do not support white balance
-    if (is_on && pix_col_ == PIX_GREY) {
+    if (pix_col_ == PIX_GREY) {
         std::cerr << oat::Warn(
             "You cannot adjust the white balance for mono frames.");
         return;
     }
 
-    std::cout << "Setting camera white balance...\n";
-
-    pg::Property prop;
-    prop.type = pg::WHITE_BALANCE;
-    pg::Error error = camera_.GetProperty(&prop);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    prop.onOff = is_on;
-    prop.autoManualMode = is_auto;
-    prop.absControl = false;
-    prop.valueA = bal_red;
-    prop.valueB = bal_blue;
-
-    error = camera_.SetProperty(&prop);
-    if (error != pg::PGRERROR_OK)
-        throw (rte(error.GetDescription()));
-
-    if (is_on) {
-        std::cout << "White balance set to: \n";
-        std::cout << "\tRed: "
-                  << std::fixed
-                  << std::setprecision(2)
-                  << bal_red << "\n";
-        std::cout << "\tBlue: "
-                  << std::fixed
-                  << std::setprecision(2)
-                  << bal_blue << "\n";
+    if (is_auto) {
+        setPGAuto(camera_, pg::WHITE_BALANCE);
+        std::cout << "set to auto.\n";
     } else {
-        std::cout << "White balance turned off.\n";
+        auto values = setPGValue(camera_, pg::WHITE_BALANCE, bal_red, bal_blue);
+        std::cout << "set to: \n";
+        std::cout << std::fixed
+                  << std::setprecision(2)
+                  << values[0] << "(red), ";
+        std::cout << std::fixed
+                  << std::setprecision(2)
+                  << values[1] << "(blue)\n";
     }
 }
 
@@ -528,10 +481,12 @@ void PointGreyCam<T>::setupAsyncTrigger(int trigger_mode,
                                         bool trigger_rising,
                                         int trigger_pin)
 {
-    std::cout << "Setting up async trigger mode "<< trigger_mode << " \n";
+    std::cout << "Setting up trigger mode...";
+
     // Free Running
     if (trigger_mode < 0 ) {
         use_trigger_ = false;
+        std::cout << "set to free run.\n";
         return;
     }
 
@@ -540,7 +495,7 @@ void PointGreyCam<T>::setupAsyncTrigger(int trigger_mode,
         trigger_mode != 1  &&
         trigger_mode != 13 &&
         trigger_mode != 14) {
-      throw (rte("Trigger mode is unsupported."));
+        throw(rte("Trigger mode is unsupported."));
     }
 
     // Get current trigger settings
@@ -559,7 +514,7 @@ void PointGreyCam<T>::setupAsyncTrigger(int trigger_mode,
 
     triggerMode.onOff = true;
     triggerMode.polarity = trigger_rising;
-    triggerMode.mode = trigger_mode;
+    triggerMode.mode = static_cast<unsigned int>(trigger_mode);
     triggerMode.parameter = 0;
     triggerMode.source = trigger_pin;
 
@@ -568,7 +523,11 @@ void PointGreyCam<T>::setupAsyncTrigger(int trigger_mode,
         throw (rte(error.GetDescription()));
 
     // Trigger info
-    std::cout << "Trigger the camera by sending a trigger pulse to GPIO_"
+    std::cout << "set to mode " << triggerMode.mode
+              << ", pin " << triggerMode.source
+              << ", polarity " << triggerMode.polarity 
+              << ".\n"
+              << "Trigger the camera by sending a trigger pulse to GPIO "
               << triggerMode.source << "\n";
 
     use_trigger_ = true;
@@ -581,13 +540,14 @@ void PointGreyCam<T>::setupGrabSettings()
     // NOTE: For some reason grabMode = pg::BUFFER_FRAMES does not play nicely
     // with the time-stamp correction for dropped triggers. I have yet to
     // understand why.
-    std::cout << "setting up grab...\n";
+    std::cout << "Setting up grab...";
+
     pg::FC2Config flyCapConfig;
     pg::Error error = camera_.GetConfiguration(&flyCapConfig);
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
 
-    flyCapConfig.grabTimeout = 10;
+    flyCapConfig.grabTimeout = 5;
     flyCapConfig.grabMode = pg::DROP_FRAMES;
     flyCapConfig.highPerformanceRetrieveBuffer = true;
     //flyCapConfig.numBuffers = 1;
@@ -596,31 +556,17 @@ void PointGreyCam<T>::setupGrabSettings()
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
 
-    // TODO: Custom frame rate
-    // VideoMode videoMode;
-    // FrameRate frameRate;
-    // camera_.GetVideoModeAndFrameRate ( &videoMode, &frameRate);
-
-    // TODO: This hangs...
-    // Poll to ensure camera_ is ready
-    //    if (use_trigger_) { // If false, camera_ will free run
-    //        bool retVal = pollForTriggerReady();
-    //        if (!retVal) {
-    //            std::cout << "\n";
-    //            std::cout << "Error polling for trigger ready. Exiting...\n";
-    //            exit(EXIT_FAILURE);
-    //        }
-    //    }
+    std::cout << "done.\n";
 }
 
 template <typename T>
 void PointGreyCam<T>::startCapture()
 {
-  
-    std::cout << "Starting capture...\n";
+
+    std::cout << "Starting capture...";
     // Camera is ready, start capturing images
     pg::Error error = camera_.StartCapture();
-    if (error == pg::PGRERROR_ISOCH_BANDWIDTH_EXCEEDED) { 
+    if (error == pg::PGRERROR_ISOCH_BANDWIDTH_EXCEEDED) {
         throw (rte("Interface bandwidth exceeded. Cannot start camera_..\n"));
     } else if (error != pg::PGRERROR_OK) {
         std::cout << "Error starting capture: \n";
@@ -628,12 +574,14 @@ void PointGreyCam<T>::startCapture()
     }
 
     acquisition_started_ = true;
-    std::cout << "Capture started \n";
+    std::cout << "started.\n";
 }
 
 template <typename T>
 void PointGreyCam<T>::setupStrobeOutput(int strobe_pin)
 {
+    std::cout << "Setting up strobe output...";
+
     pg::StrobeControl strobe;
     strobe.source = strobe_pin;
     strobe.onOff = true;
@@ -645,11 +593,15 @@ void PointGreyCam<T>::setupStrobeOutput(int strobe_pin)
     pg::Error error = camera_.SetStrobe(&strobe);
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
+
+    std::cout << "set to pin " << strobe.source << ".\n";
 }
 
 template <typename T>
 void PointGreyCam<T>::setupEmbeddedImageData()
 {
+    std::cout << "Setting up embedded image data...";
+
     pg::EmbeddedImageInfo embeddedInfo;
     pg::Error error = camera_.GetEmbeddedImageInfo(&embeddedInfo);
     if (error != pg::PGRERROR_OK)
@@ -664,9 +616,12 @@ void PointGreyCam<T>::setupEmbeddedImageData()
 
     // TODO: HACK! See https://github.com/jonnew/Oat/issues/11
     int i = 0;
-    while (use_trigger_ && (error == pg::PGRERROR_OK || i < 10)) {
+    pg::Image temp;
+    while (use_trigger_ && error == pg::PGRERROR_OK && i < 5) {
+        error = camera_.RetrieveBuffer(&temp);
         i++;
     }
+    std::cout << "done.\n";
 }
 
 // TODO: event driven acquisition.
@@ -902,7 +857,7 @@ void PointGreyCam<T>::printCameraInfo(void)
     std::cout << "MAC address: " << macAddress.str() << "\n";
     std::cout << "IP address: " << ipAddress.str() << "\n";
     std::cout << "Subnet mask: " << subnetMask.str() << "\n";
-    std::cout << "Default gateway: " << defaultGateway.str() << "\n\n";
+    std::cout << "Default gateway: " << defaultGateway.str() << "\n";
 }
 
 /* SPECIALIZATIONS */
@@ -942,7 +897,6 @@ void PointGreyCam<pg::GigECamera>::connectToCamera(int index)
 
     unsigned int numStreamChannels = 0;
     error = camera_.GetNumStreamChannels(&numStreamChannels);
-    std::cout << "Default settings restored.\n";
     if (error != pg::PGRERROR_OK)
         throw (rte(error.GetDescription()));
 

@@ -7,7 +7,6 @@ if (${USE_FLYCAP})
          FrameServer.cpp
          TestFrame.cpp
          PointGreyCam.cpp
-         #PointGreyGigE.cpp
          WebCam.cpp
          FileReader.cpp)
 else (${USE_FLYCAP})

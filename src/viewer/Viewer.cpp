@@ -33,8 +33,7 @@ Viewer<T>::Viewer(const std::string &source_address)
 : name_("viewer[" + source_address + "]")
 , source_address_(source_address)
 {
-    // Initialize GUI update timers
-    tick_ = Clock::now();
+    // Initialize GUI update timer
     tock_ = Clock::now();
 
     // Start display thread
@@ -80,8 +79,14 @@ bool Viewer<T>::process()
     if (source_.wait() == oat::NodeState::END)
         return true;
 
-    // Clone the shared frame
-    source_.copyTo(sample_);
+    // Figure out the time since we last updated the viewer
+    Milliseconds duration
+        = std::chrono::duration_cast<Milliseconds>(Clock::now() - tock_);
+    bool refresh_needed = duration > min_update_period_ms && display_complete_;
+
+    // Clone the shared frame if needed
+    if (refresh_needed)
+        source_.copyTo(sample_);
 
     // Tell sink it can continue
     source_.post();
@@ -89,18 +94,13 @@ bool Viewer<T>::process()
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    // Get current time
-    tick_ = Clock::now();
-
-    // Figure out the time since we last updated the viewer
-    Milliseconds duration =
-        std::chrono::duration_cast<Milliseconds>(tick_ - tock_);
-
     // If the minimum update period has passed, and display thread is not busy,
     // show the new sample on the display thread. This prevents GUI updates
     // from holding up more important upstream processing.
-    if (duration > min_update_period_ms && display_complete_)
+    if (refresh_needed) {
         display_cv_.notify_one();
+        tock_ = Clock::now();
+    }
 
     // Sink was not at END state
     return false;
@@ -121,7 +121,6 @@ void Viewer<T>::processAsync()
 
         display_complete_ = false;
         display(sample_); // Implemented in concrete class
-        tock_ = Clock::now();
         display_complete_ = true;
     }
 }
