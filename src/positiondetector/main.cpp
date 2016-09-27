@@ -46,9 +46,9 @@ volatile sig_atomic_t source_eof = 0;
 
 const char usage_type[] =
     "TYPE\n"
-    "  diff  : Difference detector (color or grey-scale, motion)\n"
-    "  hsv   : HSV color thresholds (color)\n"
-    "  thrsh : Simple amplitude threshold (mono)";
+    "  diff: Difference detector (color or grey-scale, motion)\n"
+    "  hsv: HSV color thresholds (color)\n"
+    "  thresh: Simple amplitude threshold (mono)";
 
 const char usage_io[] =
     "SOURCE:\n"

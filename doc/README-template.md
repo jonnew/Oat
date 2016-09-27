@@ -305,14 +305,14 @@ oat-framefilt-help
 ```
 
 #### Configuration Options
-__TYPE = `mask`__
-```
-oat-framefilt-mask-help
-
-```
 __TYPE = `bsub`__
 ```
 oat-framefilt-bsub-help
+```
+
+__TYPE = `mask`__
+```
+oat-framefilt-mask-help
 ```
 
 __TYPE = `mog`__
@@ -323,6 +323,11 @@ oat-framefilt-mog-help
 __TYPE = `undistort`__
 ```
 oat-framefilt-undistort-help
+```
+
+__TYPE = `thresh`__
+```
+oat-framefilt-thresh-help
 ```
 
 #### Examples
@@ -398,9 +403,9 @@ __TYPE = `diff`__
 oat-posidet-diff-help
 ```
 
-__TYPE = `thrsh`__
+__TYPE = `thresh`__
 ```
-oat-posidet-thrsh-help
+oat-posidet-thresh-help
 ```
 
 #### Example

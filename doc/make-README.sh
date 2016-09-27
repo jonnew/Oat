@@ -43,6 +43,8 @@ pc "$(oat framefilt mog --help)"
 off_mo="$pc_res"
 pc "$(oat framefilt undistort --help)" 
 off_u="$pc_res"
+pc "$(oat framefilt thresh --help)" 
+off_t="$pc_res"
 
 # oat-view type configurations
 pc "$(oat view frame --help)" 
@@ -99,6 +101,7 @@ awk -v ofs="$(oat frameserve --help)" \
     -v off_ma="$off_ma" \
     -v off_mo="$off_mo" \
     -v off_u="$off_u" \
+    -v off_t="$off_t" \
     -v ovi="$(oat view --help)"      \
     -v ovi_f="$ovi_f" \
     -v opd="$(oat posidet --help)"   \
@@ -136,12 +139,13 @@ awk -v ofs="$(oat frameserve --help)" \
     sub(/oat-framefilt-mask-help/, off_ma);
     sub(/oat-framefilt-mog-help/, off_mo);
     sub(/oat-framefilt-undistort-help/, off_u);
+    sub(/oat-framefilt-thresh-help/, off_t);
     sub(/oat-view-help/, ovi);
     sub(/oat-view-frame-help/, ovi_f);
     sub(/oat-posidet-help/, opd);
     sub(/oat-posidet-diff-help/, opd_d);
     sub(/oat-posidet-hsv-help/, opd_h);
-    sub(/oat-posidet-thrsh-help/, opd_t);
+    sub(/oat-posidet-thresh-help/, opd_t);
     sub(/oat-posigen-help/, opg);
     sub(/oat-posigen-rand2D-help/, opg_r2);
     sub(/oat-posifilt-help/, opf);

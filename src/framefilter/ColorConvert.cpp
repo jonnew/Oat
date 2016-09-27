@@ -31,9 +31,8 @@
 
 namespace oat {
 
-ColorConvert::ColorConvert(
-            const std::string &frame_source_address,
-            const std::string &frame_sink_address)
+ColorConvert::ColorConvert(const std::string &frame_source_address,
+                           const std::string &frame_sink_address)
 : FrameFilter(frame_source_address, frame_sink_address)
 {
     // Nothing
@@ -114,7 +113,6 @@ void ColorConvert::filter(cv::Mat &frame)
 {
     cv::Mat out; // Might change underlying element type
     cv::cvtColor(frame, out, conversion_code_);
-
     frame = out;
     static_cast<oat::Frame &>(frame).set_color(color_);
 }

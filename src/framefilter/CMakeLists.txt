@@ -9,6 +9,7 @@ set (oat-framefilt_SOURCE
      ColorConvert.cpp
      FrameMasker.cpp
      Undistorter.cpp
+     Threshold.cpp
      main.cpp)
 
 # Target

@@ -3,6 +3,11 @@ cmake_minimum_required (VERSION 2.8)
 # Project data
 project (Oat C CXX)
 
+# Build options
+option (USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
+option (BUILD_TESTS "Build and run tests." ON)
+option (BUILD_DOCS "Build doxygen documentation." OFF)
+
 # Internal version list
 set (VERSION_LIST "${GIT_BRANCH}.${GIT_COMMIT_HASH}")
 
@@ -57,11 +62,6 @@ endif ()
 # build options and version info
 configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
 include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
-
-# Build options
-option (USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
-option (BUILD_TESTS "Build and run tests." ON)
-option (BUILD_DOCS "Build doxygen documentation." OFF)
 
 # Show options summary
 message (STATUS "Oat version: ${VERSION_LIST}")
@@ -172,6 +172,7 @@ if (${BUILD_TESTS})
         include_directories(${TESTING_INCLUDES})
         add_executable(${name}_test ${name}_test.cpp)
         target_link_libraries (${name}_test ${libs})
+        add_dependencies (${name}_test ${TESTING_INCLUDES})
         add_test(${name}_test ${name}_test)
     endfunction()
 

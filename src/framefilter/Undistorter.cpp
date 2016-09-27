@@ -17,6 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "Undistorter.h"
+
 #include <string>
 
 #include <opencv2/core.hpp>
@@ -26,8 +28,6 @@
 
 #include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
-
-#include "Undistorter.h"
 
 namespace oat {
 

@@ -38,6 +38,7 @@
 #include "FrameFilter.h"
 #include "FrameMasker.h"
 #include "Undistorter.h"
+#include "Threshold.h"
 
 #define REQ_POSITIONAL_ARGS 3
 
@@ -52,7 +53,8 @@ const char usage_type[] =
     "  col: Color conversion\n"
     "  mask: Binary mask\n"
     "  mog: Mixture of Gaussians background segmentation.\n"
-    "  undistort: Correct for lens distortion using lens distortion model.";
+    "  undistort: Correct for lens distortion using lens distortion model.\n"
+    "  thresh: Simple intensity threshold.";
 
 const char usage_io[] =
     "SOURCE:\n"
@@ -130,6 +132,7 @@ int main(int argc, char *argv[]) {
     type_hash["mog"] = 'c';
     type_hash["undistort"] = 'd';
     type_hash["col"] = 'e';
+    type_hash["thresh"] = 'f';
 
     // The component itself
     std::string comp_name = "framefilt";
@@ -211,6 +214,11 @@ int main(int argc, char *argv[]) {
                 case 'e':
                 {
                     filter = std::make_shared<oat::ColorConvert>(source, sink);
+                    break;
+                }
+                case 'f':
+                {
+                    filter = std::make_shared<oat::Threshold>(source, sink);
                     break;
                 }
                 default:

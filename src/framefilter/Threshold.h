@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   Undistorter.h
+//* File:   Threshold.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,46 +17,38 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OAT_UNDISTORTER_H
-#define	OAT_UNDISTORTER_H
+#ifndef OAT_THRESHOLD_H
+#define	OAT_THRESHOLD_H
 
 #include "FrameFilter.h"
 
 namespace oat {
 
 /**
- * Lens distortion compensation.
+ * A frame intensity thresholder
  */
-class Undistorter : public FrameFilter {
+class Threshold : public FrameFilter {
 public:
 
     /**
-     * @breif Lens distortion compensation. Uses the results of oat-calibrate.
-     * To reverse radial and tangential distortion introduced by the camera
-     * lens and CMOS array mounting imperfections.  Typically uses the results
-     * of oat-calibrate.
-     *
+     * A basic intensity thresholder.
      * @param frame_source_address raw frame source address
      * @param frame_sink_address filtered frame sink address
      */
-    Undistorter(const std::string &frame_source_address,
-                const std::string &frame_sink_address);
+    Threshold(const std::string &frame_source_address,
+              const std::string &frame_sink_address);
 
     void appendOptions(po::options_description &opts) override;
     void configure(const po::variables_map &vm) override;
 
 private:
 
-    /**
-     * Apply undistortion filter.
-     * @param frame Unfiltered frame
-     * @return Filtered frame
-     */
     void filter(cv::Mat &frame) override;
 
-    cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
-    std::vector<double> dist_coeff_;
+    // Intensity threshold boundaries
+    int i_min_ {0};
+    int i_max_ {256};
 };
 
 }      /* namespace oat */
-#endif /* OAT_UNDISTORTER_H */
+#endif /* OAT_THRESHOLD_H */
