@@ -670,10 +670,10 @@ oat-posisock-udp-help
 #### Example
 ```bash
 # Reply to requests for positions from the 'pos' stream to port 5555 using TCP
-oat posisock rep pos tcp://*:5555
+oat posisock rep pos -e tcp://*:5555
 
 # Asychronously publish positions from the 'pos' stream to port 5556 using TCP
-oat posisock pub pos tcp://*:5556
+oat posisock pub pos -e tcp://*:5556
 
 # Dump positions from the 'pos' stream to stdout
 oat posisock std pos
