@@ -393,14 +393,19 @@ oat-posidet-help
 ```
 
 #### Configuration Options
-__TYPE = `hsv`__
+__TYPE = `board`__
 ```
-oat-posidet-hsv-help
+oat-posidet-board-help
 ```
 
 __TYPE = `diff`__
 ```
 oat-posidet-diff-help
+```
+
+__TYPE = `hsv`__
+```
+oat-posidet-hsv-help
 ```
 
 __TYPE = `thresh`__

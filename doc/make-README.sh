@@ -51,6 +51,8 @@ pc "$(oat view frame --help)"
 ovi_f="$pc_res"
 
 # oat-posidet type configurations
+pc "$(oat posidet board --help)" 
+opd_b="$pc_res"
 pc "$(oat posidet diff --help)" 
 opd_d="$pc_res"
 pc "$(oat posidet hsv --help)" 
@@ -105,6 +107,7 @@ awk -v ofs="$(oat frameserve --help)" \
     -v ovi="$(oat view --help)"      \
     -v ovi_f="$ovi_f" \
     -v opd="$(oat posidet --help)"   \
+    -v opd_b="$opd_b" \
     -v opd_d="$opd_d" \
     -v opd_h="$opd_h" \
     -v opd_t="$opd_t" \
@@ -143,6 +146,7 @@ awk -v ofs="$(oat frameserve --help)" \
     sub(/oat-view-help/, ovi);
     sub(/oat-view-frame-help/, ovi_f);
     sub(/oat-posidet-help/, opd);
+    sub(/oat-posidet-board-help/, opd_b);
     sub(/oat-posidet-diff-help/, opd_d);
     sub(/oat-posidet-hsv-help/, opd_h);
     sub(/oat-posidet-thresh-help/, opd_t);
