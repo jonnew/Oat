@@ -32,8 +32,8 @@
 namespace oat {
 
 DifferenceDetector::DifferenceDetector(const std::string &frame_source_address,
-                                       const std::string &position_sink_address) :
-  PositionDetector(frame_source_address, position_sink_address)
+                                       const std::string &position_sink_address)
+: PositionDetector(frame_source_address, position_sink_address)
 , tuning_image_title_(position_sink_address + "_tuning")
 {
     // Cannot use initializer because if this is set to 0, blur_on

@@ -32,9 +32,10 @@
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "PositionDetector.h"
-#include "HSVDetector.h"
+#include "ArucoBoard.h"
 #include "DifferenceDetector.h"
+#include "HSVDetector.h"
+#include "PositionDetector.h"
 #include "SimpleThreshold.h"
 
 #define REQ_POSITIONAL_ARGS 3
@@ -46,7 +47,8 @@ volatile sig_atomic_t source_eof = 0;
 
 const char usage_type[] =
     "TYPE\n"
-    "  diff: Difference detector (color or grey-scale, motion)\n"
+    "  board: Aruco board detection (mono)\n"
+    "  diff: Motion detector (mono)\n"
     "  hsv: HSV color thresholds (color)\n"
     "  thresh: Simple amplitude threshold (mono)";
 
@@ -124,6 +126,7 @@ int main(int argc, char *argv[])
     type_hash["diff"] = 'a';
     type_hash["hsv"] = 'b';
     type_hash["thrsh"] = 'c';
+    type_hash["board"] = 'd';
 
     // The component itself
     std::string comp_name = "posidet";
@@ -196,6 +199,11 @@ int main(int argc, char *argv[])
                 case 'c':
                 {
                     detector = std::make_shared<oat::SimpleThreshold>(source, sink);
+                    break;
+                }
+                case 'd':
+                {
+                    detector = std::make_shared<oat::ArucoBoard>(source, sink);
                     break;
                 }
                 default:

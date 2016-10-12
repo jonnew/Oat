@@ -8,10 +8,10 @@ option (USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
 option (BUILD_TESTS "Build and run tests." ON)
 option (BUILD_DOCS "Build doxygen documentation." OFF)
 
-# Internal version list
+# Generate Oat version number: Branch.Commit
 set (VERSION_LIST "${GIT_BRANCH}.${GIT_COMMIT_HASH}")
 
-# Generate Oat version number: Major.Branch.Commit
+# Needed for version creation and to pull down dependencies
 find_package (Git REQUIRED)
 
 # Get the current working branch
