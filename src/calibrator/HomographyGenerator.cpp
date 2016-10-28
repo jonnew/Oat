@@ -193,7 +193,7 @@ int HomographyGenerator::addDataPoint() {
         }
 
         // Instruct
-        std::cout << "Enter <x y> world coordinate followed by <enter>: ";
+        std::cout << "Enter <x y> world coordinate, in meters, followed by <enter>: ";
 
         // Receive 2 doubles, throw if not
         double p;
@@ -204,7 +204,8 @@ int HomographyGenerator::addDataPoint() {
             if (std::cin >> p)
                 dst_pt[i] = p;
             else
-                throw std::invalid_argument("World coordinates must be a pair of numerical values.");
+                throw std::invalid_argument("World coordinates must be a pair "
+                                            "of numerical values in meters.");
         }
 
         // Check if dst_pt is already in the world_points_ vector
@@ -308,7 +309,7 @@ void HomographyGenerator::printDataPoints(std::ostream& out) {
         << "Index  "
         << std::setw(entry_width)
         << "Pixels"
-        << "World\n";
+        << "World (m)\n";
 
     for(point_size_t i = 0; i != pixels_.size(); i++) {
 

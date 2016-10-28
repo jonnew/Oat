@@ -24,26 +24,27 @@
 
 namespace oat {
 
-/**
- * Unit of length used to specify position.
- */
-enum class DistanceUnit
-{
-    PIXELS = 0,   //!< Position measured in pixels. Origin is upper left.
-    METERS = 1    //!< Position measured in units specified via homography
-};
 
 /** 
  * @brief Generic position. Positions are defined in terms of a 3D cartesian
  * coordinate system along with the information required to map back to the
  * reference frame of the image used to deduce that position.
  */
-class Position {
+class Pose {
 
 public:
 
     using Point3D = cv::Point3d;
     using Velocity3D = cv::Point3d;
+
+    /**
+     * Unit of length used to specify position.
+     */
+    enum class DistanceUnit
+    {
+        PIXELS = 0,   //!< Position measured in pixels. Origin is upper left.
+        METERS = 1    //!< Position measured in units specified via homography
+    };
 
     //explicit Position(const std::string &label) 
     //{
@@ -51,7 +52,7 @@ public:
     //    label_[sizeof(label_) - 1] = '\0';
     //}
 
-    virtual ~Position() { };
+    //virtual ~Pose() { };
 
     // TODO: Why is label in here?
     //Position &operator=(const Position &p)
@@ -101,26 +102,28 @@ public:
      * its coordinate frame, back to pixels with respect to the camera's
      * coordinate frame. Apply transform using `cv::Affine3f`.
      */
-    double rotation_vec[3] {0, 0, 0};
-    //std::vector<double> rotation_vec {0, 0, 0};
+    cv::Matx13d rvec {0, 0, 0};
+    //double rvec[3] {0, 0, 0};
+    //std::vector<double> rvec {0, 0, 0};
 
     /** 
      * @brief Translation vector used for mapping the position, with respect to
      * its coordinate frame, back to pixels with respect to the camera's
      * coordinate frame. Apply transform using `cv::Affine3f`.
      */
-    double translation_vec[3] {0, 0, 0};
-    //std::vector<double> translation_vec {0, 0, 0};
+    cv::Matx13d tvec {0, 0, 0};
+    //double tvec[3] {0, 0, 0};
+    //std::vector<double> tvec {0, 0, 0};
 
     /** 
      * @brief Camera matrix
      */
-    cv::Matx33d camera {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
+    //cv::Matx33d camera {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
 
     /** 
      * @brief Camera lens distortion coefficients       
      */
-    std::vector<double> distortion_coefficients {0, 0, 0, 0, 0};
+    //std::vector<double> distortion_coefficients {0, 0, 0, 0, 0};
 
     /**
      * @brief JSON Serializer
@@ -157,7 +160,7 @@ public:
         writer.Bool(position_valid || verbose);
 
         if (position_valid || verbose) {
-            writer.String("pos_xy");
+            writer.String("pos");
             writer.StartArray();
             writer.Double(position.x);
             writer.Double(position.y);
@@ -170,7 +173,7 @@ public:
         writer.Bool(velocity_valid || verbose);
 
         if (velocity_valid || verbose) {
-            writer.String("vel_xy");
+            writer.String("vel");
             writer.StartArray();
             writer.Double(velocity.x);
             writer.Double(velocity.y);
@@ -178,27 +181,27 @@ public:
             writer.EndArray(3);
         }
 
-        // Head direction
+        // Pose
         writer.String("head_ok");
         writer.Bool(heading_valid);
 
         if (heading_valid || verbose) {
             writer.String("rvec");
             writer.StartArray();
-            writer.Double(rotation_vec[0]);
-            writer.Double(rotation_vec[1]);
-            writer.Double(rotation_vec[2]);
+            writer.Double(rvec(0));
+            writer.Double(rvec(1));
+            writer.Double(rvec(2));
             writer.EndArray(3);
 
             writer.String("tvec");
             writer.StartArray();
-            writer.Double(translation_vec[0]);
-            writer.Double(translation_vec[1]);
-            writer.Double(translation_vec[2]);
+            writer.Double(tvec(0));
+            writer.Double(tvec(1));
+            writer.Double(tvec(2));
             writer.EndArray(3);
         }
 
-        // Head direction
+        // Region
         writer.String("reg_ok");
         writer.Bool(region_valid);
 
@@ -218,11 +221,21 @@ public:
 
 protected:
    
-    // TODO: What is the label even used for?
+    // TODO: What is the label even used for? For decoration, but really it
+    // just refects to source of the signal, which we should be able to get
+    // from the source anyway
     //char label_[100] {0}; //!< Position label (e.g. "anterior")
     DistanceUnit unit_of_length_ {DistanceUnit::PIXELS};
     
+    /** 
+     * @brief Timing information
+     */
     oat::Sample sample_;
+
+    /** 
+     * @brief Homography
+     */
+    cv::Matx33d homography_ {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
 };
 
 }      /* namespace oat */

@@ -62,7 +62,7 @@ private:
     cv::Ptr<cv::aruco::Board> board_;
     cv::Ptr<cv::aruco::DetectorParameters> detection_params_;
 
-    cv::Matx33d camera_matrix_  {cv::Matx33d::eye()};
+    cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
     std::vector<double> dist_coeff_ {0, 0, 0, 0, 0, 0, 0, 0};
 
     // TODO: program option

@@ -47,7 +47,7 @@ void ColorConvert::appendOptions(po::options_description &opts)
     po::options_description local_opts;
     local_opts.add_options()
         ("color,C", po::value<std::string>(),
-         "Pixel color format." 
+         "Pixel color format.\n" 
          "Values:\n"
          "  GREY: \t 8-bit Greyscale image.\n"
          "  BRG: \t8-bit, 3-chanel, BGR Color image.\n"

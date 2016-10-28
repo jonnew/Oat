@@ -549,11 +549,8 @@ oat decorate raw -p pos1 pos2
 ### Recorder
 `oat-record` - Save frame and position streams to file.
 
-* `frame` streams are compressed and saved as individual video files (
-  [H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI
-  file).
-* `position` streams are combined into a single [JSON](http://json.org/) file.
-  Position files have the following structure:
+* `frame` streams are saved as individual video files
+* `position` streams are saved as individual [JSON](http://json.org/) files. 
 
 ```
 {oat-version: X.X},
@@ -1126,7 +1123,7 @@ down the following definition
 
 If this condition is not met, then frames will eventually be dropped. There is
 no way around this. The guts of Oat consist of a simple, but very efficient
-[message passing library](src/lib/shmemdf) that links together processing
+[message passing library](/lib/shmemdf) that links together processing
 routines taken from a variety of sources (some written by me, some by third
 party projects such as OpenCV). The speed of each processing step is determined
 both by its computational complexity and deftness of implementation, both of
