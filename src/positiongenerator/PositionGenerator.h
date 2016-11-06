@@ -35,7 +35,6 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-template <class T>
 class PositionGenerator  {
 
 public:
@@ -49,11 +48,7 @@ public:
      */
     PositionGenerator(const std::string &position_sink_address);
 
-    /** 
-     * @brief Pure virtual destructor makes this class abstract. Must be
-     * implemented to allow destruction of base sub-object in derived classes.
-     */
-    virtual ~PositionGenerator() = 0;
+    virtual ~PositionGenerator() { };
 
     /**
      * @brief Append type-specific program options.
@@ -65,7 +60,7 @@ public:
      * @brief Configure component parameters.
      * @param vm Previously parsed program option value map.
      */
-    virtual void configure(const po::variables_map &vm);
+    virtual void configure(const po::variables_map &vm) = 0;
 
     /**
      * PositionDetectors must be able to connect to a Source and Sink
@@ -87,7 +82,7 @@ public:
 
 protected:
 
-    // List of allowed configuration options    
+    // List of allowed configuration options
     std::vector<std::string> config_keys_;
 
     /**
@@ -95,7 +90,7 @@ protected:
      * @param position Generated position.
      * @return true if EOF has been genereated, false otherwise.
      */
-    virtual bool generatePosition(T &position) = 0;
+    virtual bool generatePosition(oat::Position2D &position) = 0;
 
     // Test position sample clock
     bool enforce_sample_clock_ {false};
@@ -105,7 +100,7 @@ protected:
 
     // Periodic boundaries in which simulated particle resides.
     cv::Rect_<double> room_ {0, 0, 100, 100};
-    
+
     // Sample count specification
     uint64_t num_samples_ {std::numeric_limits<uint64_t>::max()};
     uint64_t it_ {0};
@@ -122,17 +117,17 @@ private:
     std::string name_;
 
     // Internally generated position
-    T internal_position_ {"internal"};
+    oat::Position2D internal_position_ {"internal"};
 
     // Shared position
-    T * shared_position_;
+    oat::Position2D * shared_position_;
 
     // First position
     bool first_pos_ {true};
 
     // The test position SINK
     std::string position_sink_address_;
-    oat::Sink<T> position_sink_;
+    oat::Sink<oat::Position2D> position_sink_;
 };
 
 }      /* namespace oat */

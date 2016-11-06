@@ -85,7 +85,7 @@ void sigHandler(int)
 }
 
 // Processing loop
-void run(std::shared_ptr<oat::PositionGenerator<oat::Position2D>> posigen)
+void run(std::shared_ptr<oat::PositionGenerator> posigen)
 {
 
     try {
@@ -118,9 +118,8 @@ int main(int argc, char *argv[])
     type_hash["rand2D"] = 'a';
 
     // The component itself
-    // TODO: type erasure to make generic
     std::string comp_name = "posigen";
-    std::shared_ptr<oat::PositionGenerator<oat::Position2D>> posigen;
+    std::shared_ptr<oat::PositionGenerator> posigen;
 
     // Program options
     po::options_description visible_options;

@@ -29,23 +29,14 @@
 
 namespace oat {
 
-template <typename T>
-PositionGenerator<T>::PositionGenerator(
-    const std::string &position_sink_address)
+PositionGenerator::PositionGenerator(const std::string &position_sink_address)
 : name_("posigen[*->" + position_sink_address + "]")
 , position_sink_address_(position_sink_address)
 {
     tick_ = clock_.now();
 }
 
-template <typename T>
-PositionGenerator<T>::~PositionGenerator() 
-{ 
-    // Needed to prevent linking errors in derived classes
-}
-
-template <typename T>
-void PositionGenerator<T>::appendOptions(po::options_description &opts)
+void PositionGenerator::appendOptions(po::options_description &opts)
 {
     // Common program options
     opts.add_options()
@@ -64,38 +55,7 @@ void PositionGenerator<T>::appendOptions(po::options_description &opts)
         ;
 }
 
-template <typename T>
-void PositionGenerator<T>::configure(const po::variables_map &vm)
-{
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-    
-    // Rate
-    double fs = 1e8; // Very fast s.t. process cannot keep up
-    if (oat::config::getNumericValue<double>(
-                vm, config_table, "rate", fs, 0)) {
-        enforce_sample_clock_ = true;
-    } else {
-        tick_ = clock_.now();
-    }
-    generateSamplePeriod(fs);
-
-    // Rate
-    oat::config::getNumericValue<uint64_t>(
-            vm, config_table, "num-samples", num_samples_, 0);
-
-    // Room
-    std::vector<double> r;
-    if (oat::config::getArray<double, 4>(vm, config_table, "room", r)) {
-        room_.x = r[0];
-        room_.y = r[1];
-        room_.width = r[2];
-        room_.height = r[3];
-    }
-}
-template <typename T>
-void PositionGenerator<T>::connectToNode()
+void PositionGenerator::connectToNode()
 {
     // Bind to sink sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
@@ -105,8 +65,7 @@ void PositionGenerator<T>::connectToNode()
     internal_position_.set_rate_hz(1.0 / sample_period_in_sec_.count());
 }
 
-template <typename T>
-bool PositionGenerator<T>::process()
+bool PositionGenerator::process()
 {
     // Generate internal position
     bool eof = generatePosition(internal_position_);
@@ -144,15 +103,10 @@ bool PositionGenerator<T>::process()
     return eof;
 }
 
-template <typename T>
-void PositionGenerator<T>::generateSamplePeriod(const double samples_per_second)
+void PositionGenerator::generateSamplePeriod(const double samples_per_second)
 {
     oat::Sample::Seconds period(1.0 / samples_per_second);
     sample_period_in_sec_ = period; // Auto conversion
 }
-
-// Explicit declaration to get around link errors due to this being in its own
-// implementation file
-template class PositionGenerator<oat::Position2D>;
 
 } /* namespace oat */

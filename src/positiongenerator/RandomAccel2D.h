@@ -31,7 +31,7 @@
 
 namespace oat {
 
-class RandomAccel2D : public PositionGenerator<oat::Position2D> {
+class RandomAccel2D : public PositionGenerator {
 
 public:
 
@@ -41,6 +41,8 @@ public:
      * accelerations.
      */
     RandomAccel2D(const std::string &position_sink_address);
+    void appendOptions(po::options_description &opts) override;
+    void configure(const po::variables_map &vm) override;
 
 private:
 

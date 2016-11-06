@@ -20,6 +20,7 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/datatypes/Position2D.h"
 
 #include "RandomAccel2D.h"
@@ -27,13 +28,73 @@
 namespace oat {
 
 RandomAccel2D::RandomAccel2D(const std::string &position_sink_address)
-: PositionGenerator<oat::Position2D>(position_sink_address)
+: PositionGenerator(position_sink_address)
 {
+    // Nothing
+}
+
+void RandomAccel2D::appendOptions(po::options_description &opts)
+{
+    // Accepts a config file and common opts
+    PositionGenerator::appendOptions(opts);
+
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("sigma-accel,a", po::value<double>(),
+         "Standard deviation of normally-distributed random accelerations")
+        ;
+     
+    opts.add(local_opts);
+
+    // Return valid keys
+    for (auto &o : local_opts.options())
+        config_keys_.push_back(o->long_name());
+}
+
+void RandomAccel2D::configure(const po::variables_map &vm)
+{
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+    
+    // Rate
+    double fs = 1e8; // Very fast s.t. process cannot keep up
+    if (oat::config::getNumericValue<double>(
+                vm, config_table, "rate", fs, 0)) {
+        enforce_sample_clock_ = true;
+    } else {
+        tick_ = clock_.now();
+    }
+    generateSamplePeriod(fs);
+
+    // Rate
+    oat::config::getNumericValue<uint64_t>(
+        vm, config_table, "num-samples", num_samples_, 0);
+
+    // Room
+    std::vector<double> r;
+    if (oat::config::getArray<double, 4>(vm, config_table, "room", r)) {
+        room_.x = r[0];
+        room_.y = r[1];
+        room_.width = r[2];
+        room_.height = r[3];
+    }
+
+    // Acceleration
+    double a;
+    if (oat::config::getNumericValue<double>(vm, config_table, "sigma-accel", a)) {
+        accel_distribution_.param(
+            std::normal_distribution<double>::param_type(0, a));
+    }
+
+    // Configure STM
     createStaticMatracies();
 }
 
 bool RandomAccel2D::generatePosition(oat::Position2D &position)
 {
+
     if (it_ < num_samples_) {
 
         // Simulate one step of random, but smooth, motion
@@ -48,7 +109,7 @@ bool RandomAccel2D::generatePosition(oat::Position2D &position)
         position.velocity_valid = true;
         position.velocity.x = state_(1);
         position.velocity.y = state_(3);
-
+        
         it_++;
 
         return false;
