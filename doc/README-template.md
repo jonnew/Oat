@@ -547,26 +547,32 @@ oat decorate raw -p pos1 pos2
 * `frame` streams are compressed and saved as individual video files (
   [H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI
   file).
-* `position` streams are combined into a single [JSON](http://json.org/) file.
-  Position files have the following structure:
+* `position` streams saved to separate [JSON](http://json.org/) file. Optionally,
+  they can be saved to [numpy binary files](https://docs.scipy.org/doc/numpy/neps/npy-format.html)
+  JSON position files have the following structure:
 
 ```
-{oat-version: X.X},
-{header: {timestamp: YYYY-MM-DD-hh-mm-ss},
-         {sample_rate_hz: X.X},
-         {sources: [ID_1, ID_2, ..., ID_N]} }
-{positions: [ [ID_1: position, ID_2: position, ..., ID_N: position ],
-              [ID_1: position, ID_2: position, ..., ID_N: position ],
-
-              [ID_1: position, ID_2: position, ..., ID_N: position ] }
+{
+    oat-version: X.X,
+    header: {
+        timestamp: YYYY-MM-DD-hh-mm-ss,
+        sample_rate_hz: X.X
+    },
+    positions: [
+        position, 
+        position, 
+        ..., 
+        position 
+    ]
 }
 ```
 where each `position` object is defined as:
 
 ```
 {
-  samp: Int,                  | Sample number
-  unit: Int,                  | Enum spcifying length units (0=pixels, 1=meters)
+  tick: Int,                  | Sample number
+  usec: Int,                  | Microseconds associated with current sample number
+  unit: Int,                  | Enum specifying length units (0=pixels, 1=meters)
   pos_ok: Bool,               | Boolean indicating if position is valid
   pos_xy: [Double, Double],   | Position x,y values
   vel_ok: Bool,               | Boolean indicating if velocity is valid
@@ -577,12 +583,14 @@ where each `position` object is defined as:
   reg: String                 | Region tag
 }
 ```
-Data fields are only populated if the values are valid. For instance, in the
-case that only object position is valid, and the object velocity, heading, and
-region information are not calculated, an example position data point would
-look like this:
+When using JSON and the `consise-file` option is specified, data fields are
+only populated if the values are valid. For instance, in the case that only
+object position is valid, and the object velocity, heading, and region
+information are not calculated, an example position data point would look like
+this:
 ```
-{ samp: 501,
+{ tick: 501,
+  usec: 50100000,
   unit: 0,
   pos_ok: True,
   pos_xy: [300.0, 100.0],
@@ -591,10 +599,27 @@ look like this:
   reg_ok: False }
 ```
 
-All streams are saved with a single recorder have the same base file name and
-save location (see usage). Of course, multiple recorders can be used in
-parallel to (1) parallelize the computational load of video compression, which
-tends to be quite intense and (2) save to multiple locations simultaneously.
+When using binary file format, position entries occupy single elements of a
+numpy structured array with the following
+[`dtype`](https://docs.scipy.org/doc/numpy/reference/generated/numpy.dtype.html):
+```
+[('tick', '<u8'), 
+ ('usec', '<u8'), 
+ ('unit', '<i4'), 
+ ('pos_ok', 'i1'), 
+ ('pos_xy', '<f8', (2,)), 
+ ('vel_ok', 'i1'), 
+ ('vel_xy', '<f8', (2,)), 
+ ('head_ok', 'i1'), 
+ ('head_xy', '<f8', (2,)), 
+ ('reg_ok', 'i1'), 
+ ('reg', 'S10')]
+```
+
+Multiple recorders can be used in parallel to (1) parallelize the computational
+load of video compression, which tends to be quite intense and (2) save to
+multiple locations simultaneously (3) to save the same data stream multiple
+times in different formats.
 
 #### Signature
     position 0 --> |
@@ -631,6 +656,11 @@ oat record -s raw
 # Save frame stream 'raw' and positional stream 'pos' to Desktop
 # directory and prepend the timestamp and the word 'test' to each filename
 oat record -s raw -p pos -d -f ~/Desktop -n test
+
+# Save the pos stream twice, one binary and one JSON file, in the current
+# directory
+oat record -p pos &
+oat record -p pos -b
 ```
 
 \newpage

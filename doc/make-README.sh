@@ -55,7 +55,7 @@ pc "$(oat posidet diff --help)"
 opd_d="$pc_res"
 pc "$(oat posidet hsv --help)" 
 opd_h="$pc_res"
-pc "$(oat posidet thrsh --help)" 
+pc "$(oat posidet thresh --help)" 
 opd_t="$pc_res"
 
 # oat-posigen type configurations
