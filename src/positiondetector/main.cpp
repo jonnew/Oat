@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
     std::unordered_map<std::string, char> type_hash;
     type_hash["diff"] = 'a';
     type_hash["hsv"] = 'b';
-    type_hash["thrsh"] = 'c';
+    type_hash["thresh"] = 'c';
 
     // The component itself
     std::string comp_name = "posidet";

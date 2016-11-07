@@ -78,8 +78,8 @@ public:
      */
     virtual void write(void) = 0;
 
-    /** 
-     * @brief Delete file 
+    /**
+     * @brief Delete file
      */
     virtual void deleteFile(void) = 0;
 
@@ -95,7 +95,7 @@ protected:
      */
     std::string addr_;
 
-    /** 
+    /**
      * @brief Allow file overwrite if true. If false append numerical index to
      * file name to make it unique.
      */

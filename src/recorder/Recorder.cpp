@@ -92,12 +92,17 @@ void Recorder::appendOptions(po::options_description &opts)
          "must be implemented by the low  level writer. Common values are "
          "'DIVX' or 'H264'. Defaults to 'None' indicating uncompressed "
          "video.")
+        ("binary-file,b",
+         "Position data will be written as numpy data file (version 1.0) "
+         "instead of JSON. Each position data point occupies a single entry "
+         "in a structured numpy array. Individual position characteristics "
+         "are described in the arrays dtype.")
         ("concise-file,c",
-         "If set, indeterminate position data fields will not be written "
-         "e.g. pos_xy will not be written even when pos_ok = false. This "
-         "means that position objects will be of variable size depending on "
-         "the validity of whether a position was detected or not, "
-         "potentially complicating file parsing.")
+         "If set and using JSON file format, indeterminate position data fields "
+         "will not be written e.g. pos_xy will not be written even when "
+         "pos_ok = false. This means that position objects will be of "
+         "variable size depending on the validity of whether a position was "
+         "detected or not, potentially complicating file parsing.")
         ("interactive", "Start recorder with interactive controls enabled.")
         ("rpc-endpoint", po::value<std::string>(),
          "Yield interactive control of the recorder to a remote ZMQ REQ "
@@ -211,7 +216,7 @@ bool Recorder::writeStreams()
         ////////////////////////////
         source_eof |= w->wait() == oat::NodeState::END;
 
-        if (record_on_) {
+        if (record_on_ && !source_eof) {
            w->push();
            files_have_data_ = true;
         }

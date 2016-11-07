@@ -139,6 +139,7 @@ include_directories (${RAPIDJSON_INCLUDE_DIR})
 # Include local libs
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/utility)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/datatypes)
 
 # Common libraries for all Oat components
 set (OatCommon_LIBS ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Thread_LIBS})

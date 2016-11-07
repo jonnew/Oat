@@ -77,7 +77,7 @@ void PositionReplier::sendPosition(const oat::Position2D& position)
     // Serialize the current position
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    position.Serialize(writer);
+    oat::serializePosition(position, writer);
 
     //  Wait for next request from client
     // TODO: Use incoming string to decide which part of the position to send

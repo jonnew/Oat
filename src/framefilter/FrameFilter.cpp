@@ -32,8 +32,6 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
     // Nothing
 }
 
-FrameFilter::~FrameFilter() { }
-
 void FrameFilter::appendOptions(po::options_description &opts)
 {
     // Common program options

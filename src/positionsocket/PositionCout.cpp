@@ -74,10 +74,10 @@ void PositionCout::sendPosition(const oat::Position2D &position)
 
     if (pretty_) {
         rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
-        position.Serialize(writer);
+        oat::serializePosition(position, writer);
     } else {
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        position.Serialize(writer);
+        oat::serializePosition(position, writer);
     }
 
     std::cout << buffer.GetString() << std::flush;

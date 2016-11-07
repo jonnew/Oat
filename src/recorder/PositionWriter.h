@@ -38,7 +38,7 @@ namespace blf = boost::lockfree;
  */
 class PositionWriter : public Writer{
 public:
-   
+
     PositionWriter(const std::string &addr);
 
     ~PositionWriter();
@@ -51,6 +51,7 @@ public:
     {
         return source_.retrieve()->sample_period_sec();
     }
+
     oat::NodeState wait() override { return source_.wait(); }
     void post(void) override { source_.post(); }
 
@@ -82,9 +83,19 @@ private:
 
     // Position file
     FILE * fd_ {nullptr};
+    int64_t completed_writes_ {0};
+
+    // JSON-specific
+    void initializeJSON(const std::string &path);
     char position_write_buffer[65536];
     std::unique_ptr<rapidjson::FileWriteStream> file_stream_;
     rapidjson::PrettyWriter<rapidjson::FileWriteStream> json_writer_ {*file_stream_};
+
+    // Binary-specific
+    void initializeBinary(const std::string &path);
+    bool use_binary_ {false};
+    static constexpr int header_prefix_size_ {10};
+    static constexpr int shape_end_byte_ {10};
 
     oat::Source<Position2D> source_;
 };

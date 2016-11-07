@@ -27,7 +27,7 @@
 
 namespace oat {
 
-const char interactive_record_control_usage_string[] =
+static constexpr char interactive_record_control_usage_string[] =
     "COMMANDS\n"
     "CMD         FUNCTION\n"
     " help       Print this information.\n"
@@ -39,7 +39,7 @@ const char interactive_record_control_usage_string[] =
     "            options as provided in command line arguements.\n"
     " quit       Exit the program.\n";
 
-const char remote_record_control_usage_string[] =
+static constexpr char remote_record_control_usage_string[] =
     "Recorder is under remote control.\n"
     "Commands provided through STDIN have no effect.\n"
     "except Ctrl+C to quit.\n";

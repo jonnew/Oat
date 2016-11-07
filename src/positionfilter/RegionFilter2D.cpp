@@ -59,9 +59,9 @@ void RegionFilter2D::appendOptions(po::options_description &opts)
          "              [+float, +float],\n"
          "              ...              \n"
          "              [+float, +float]]\n\n"
-         "The name of the contour is used as the region label. For example,"
-         "here is an octagonal region called CN and a tetragonal region called "
-         "R0:\n\n"
+         "The name of the contour is used as the region label (10 characters "
+         "max). For example, here is an octagonal region called CN and a "
+         "tetragonal region called R0:\n\n"
          "  CN = [[336.00, 272.50],\n"
          "        [290.00, 310.00],\n"
          "        [289.00, 369.50],\n"
@@ -103,6 +103,9 @@ void RegionFilter2D::configure(const po::variables_map &vm) {
 
         // Push the name of this region onto the id list
         region_ids_.push_back(it->first);
+        if (region_ids_.back().size() > oat::Position2D::REGION_LEN)
+            std::cerr << oat::Warn("Region names are limited to 10 characters.");
+
         region_contours_.push_back(new std::vector<cv::Point>());
 
         auto region = region_array->nested_array();

@@ -49,7 +49,7 @@ public:
      */
     explicit FrameFilter(const std::string &frame_source_address,
                          const std::string &frame_sink_address);
-    virtual ~FrameFilter();
+    virtual ~FrameFilter() { };
 
     /**
      * @brief Append type-specific program options.

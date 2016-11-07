@@ -76,7 +76,7 @@ void PositionPublisher::sendPosition(const oat::Position2D &position)
     // Serialize the current position
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    position.Serialize(writer);
+    oat::serializePosition(position, writer);
 
     // Publish update
     zmq::message_t zmsg(buffer.GetSize());

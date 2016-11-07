@@ -116,7 +116,6 @@ int main(int argc, char *argv[]) {
         int rc = 1;
         while (rc == 1) {
 
-
             // We may be coming around for another recording so reset quit
             // flag and remove all options
             quit = 0;

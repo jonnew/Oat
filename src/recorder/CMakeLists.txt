@@ -3,6 +3,7 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create a SOURCE variable containing all required .cpp files:
 set (oat-record_SOURCE
+     Format.cpp
      FrameWriter.cpp
      PositionWriter.cpp
      Writer.cpp
@@ -14,6 +15,7 @@ set (oat-record_SOURCE
 add_executable (oat-record ${oat-record_SOURCE})
 target_link_libraries (oat-record
                        oatutility
+                       datatypes
                        zmq
                        ${OatCommon_LIBS})
 add_dependencies (oat-record cpptoml rapidjson)

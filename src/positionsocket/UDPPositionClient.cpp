@@ -87,12 +87,12 @@ void UDPPositionClient::configure(const po::variables_map &vm)
 }
 
 // Each position is sent in a single UDP packet
-void UDPPositionClient::sendPosition(const oat::Position2D& current_position) {
-
+void UDPPositionClient::sendPosition(const oat::Position2D &current_position)
+{
     rapidjson::Writer < rapidjson::SocketWriteStream
                       < UDPSocket, UDPEndpoint > > udp_writer_ {*udp_stream_};
 
-    current_position.Serialize(udp_writer_);
+    oat::serializePosition(current_position, udp_writer_);
 
     // Flush the stream after each Serialization call so that each UDP packet
     // corresponds to a single position value
