@@ -906,7 +906,7 @@ oat decorate raw -p pos1 pos2
   [H.264](http://en.wikipedia.org/wiki/H.264/MPEG-4_AVC) compression format AVI
   file).
 * `position` streams saved to separate [JSON](http://json.org/) file. Optionally,
-  they can be saved to [numpy binary files](https://docs.scipy.org/doc/numpy/neps/npy-format.html)
+  they can be saved to [numpy binary files](https://docs.scipy.org/doc/numpy/neps/npy-format.html).
   JSON position files have the following structure:
 
 ```
@@ -1876,16 +1876,16 @@ RJ45 ------------
         - I need to come up with a series of scripts that configure and run
           components in odd and intensive, but legal, ways to ensure sample
           sychronization is maintained, graceful exits, etc
-- [ ] Position type correction
-    - It might be a good idea to generalize the concept of a position to a
-      multi-positional element
-    - For things like the `oat-decorate`, `oat-posicom`, and potentially
+- [ ] Position type correction and generalization to 3D pose
+    - ~~It might be a good idea to generalize the concept of a position to a
+      multi-positional element~~
+    - ~~For things like the `oat-decorate`, `oat-posicom`, and potentially
       `oat-detect`, this could increase performance and decrease user script
       complexity if multiple targets common detection features needed to be
-      tracked at once.
-    - Down side is that it potentially increases code complexity and would
-      require a significant refactor.
-    - Additionally, position detection might no longer be stateless. E.g. think
+      tracked at once.~~
+    - ~~Down side is that it potentially increases code complexity and would
+      require a significant refactor.~~
+    - ~~Additionally, position detection might no longer be stateless. E.g. think
       of the case when two detected objects cross paths. In order to ID the
       objects correctly in subsequent detections, the path of the objects would
       need to be taken into account (and there is not guarantee this result
@@ -1893,26 +1893,19 @@ RJ45 ------------
       groups' with annoymous position members. This would get us back to
       stateless detection. However, it would make the concept of position
       combining hard to define (although that is even true now is just a design
-      choice, really).
+      choice, really).~~
     - EDIT: Additionally, there should certainly not be `Position2D` vs
       `Position3D`. Only `Position` which provides 3d specificaiton with Z axis
       defaulting to 0.
-- [ ] [CBOR](http://tools.ietf.org/html/rfc7049) binary messaging and data
-  files
-    - CBOR is a simple binary encoding scheme for JSON
-    - It would be great to allow the option to save CBOR files (`oat-record`)
-      or send CBOR messages (`oat-posisock`) by creating a CBOR `Writer`
-      acceptable to by `Position` datatype's serialization function.
-    - And, while I'm at it, Position's should be forced to support
-      serialization, so this should be a pure abstract member of the base
-      class.
-    - Another option that is very similar is messagepack. Don't know which is
-      better.
+    - EDIT: In fact, positions should simply be generalize two a 3D pose. I've
+      started a branch to do this.
 - [ ] `oat-framefilt undistort`
     - Very slow. Needs an OpenGL or CUDA implementation
     - User supplied frame rotation occurs in a separate step from
       un-distortion.  Very inefficient. Should be able to combine rotation with
       camera matrix to make this a lot faster.
+    - EDIT: Also should provide an `oat-posifilt` version which only applies
+      undistortion to position rather than the entire frame.
 - [ ] Should components always involve a user IO thread?
     - For instance, some generalization of `oat-record ... --interactive`
     - For instance, it would be nice if PURE SINKs (e.g. `oat frameserve`)
@@ -1921,7 +1914,11 @@ RJ45 ------------
     - For instance, it would be nice to be able to re-acquire the background
       image in `oat-framefilt bsub` without have to restart the program.
     - Where should this come from? Command line input?
+    - EDIT: Shea and I have been brainstorming ways to use unix sockets to
+      allow general runtime control of oat components. This will doing things
+      like easy, in general.
 - [ ] Add position history toggle in `oat-decorate`
+    - Answer will come with solution to TODO above this one.
 - [ ] Type deduction in shmem Tokens
     - Sources should have a static method for checking the token type of a
       given address.
