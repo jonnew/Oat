@@ -35,7 +35,6 @@ TokenBuffer<T>::TokenBuffer(const std::string &source_address,
 template <typename T>
 void TokenBuffer<T>::connectToNode()
 {
-
     // Establish our a slot in the node
     source_.touch(source_address_);
 
@@ -50,15 +49,14 @@ void TokenBuffer<T>::connectToNode()
 }
 
 template <typename T>
-bool TokenBuffer<T>::push()
+int TokenBuffer<T>::process()
 {
-
     // START CRITICAL SECTION //
     ////////////////////////////
 
     // Wait for sink to write to node
     if (source_.wait() == oat::NodeState::END)
-        return true;
+        return 1;
 
     if (!buffer_.push(source_.clone()))
         std::cerr << "Buffer overrun.\n";
@@ -77,13 +75,12 @@ bool TokenBuffer<T>::push()
 #endif
 
     // Sink was not at END state
-    return false;
+    return 0;
 }
 
 template <typename T>
 void TokenBuffer<T>::pop()
 {
-
     while (sink_running_) {
 
         // Proceed only if buffer_ has data

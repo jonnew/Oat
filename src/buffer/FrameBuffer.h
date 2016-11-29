@@ -43,9 +43,10 @@ public:
     FrameBuffer(const std::string &source_address,
                 const std::string &sink_address);
 
+protected:
 
     void connectToNode(void) override;
-    bool push(void) override;
+    int process(void) override;
 
 private:
 

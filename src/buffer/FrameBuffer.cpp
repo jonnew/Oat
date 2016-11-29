@@ -50,14 +50,14 @@ void FrameBuffer::connectToNode()
     sink_thread_ = std::thread(&FrameBuffer::pop, this);
 }
 
-bool FrameBuffer::push()
+int FrameBuffer::process()
 {
     // START CRITICAL SECTION //
     ////////////////////////////
 
     // Wait for sink to write to node
     if (source_.wait() == oat::NodeState::END)
-        return true;
+        return 1;
 
     if (!buffer_.push(source_.clone()))
         std::cerr << "Buffer overrun.\n";
@@ -76,7 +76,7 @@ bool FrameBuffer::push()
 #endif
 
     // Sink was not at END state
-    return false;
+    return 0;
 }
 
 void FrameBuffer::pop()

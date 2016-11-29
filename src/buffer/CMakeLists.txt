@@ -11,6 +11,7 @@ set (oat-buffer_SOURCE
 # Target
 add_executable (oat-buffer ${oat-buffer_SOURCE})
 target_link_libraries (oat-buffer 
+                       oat-base
                        oatutility 
                        ${OatCommon_LIBS})
 add_dependencies (oat-buffer cpptoml rapidjson)

@@ -28,6 +28,8 @@
 
 #include <boost/lockfree/spsc_queue.hpp>
 
+#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
 
@@ -36,9 +38,10 @@ namespace oat {
 /**
  * Abstract Buffer.
  */
-class Buffer {
+class Buffer : public Component {
 
 public:
+
     /**
      * @brief Abstract Buffer. All concrete buffers implement this ABC.
      * @param source_address SOURCE node address
@@ -49,21 +52,8 @@ public:
 
     virtual ~Buffer();
 
-    /**
-     * @brief Connect to shared memory NODES.
-     */
-    virtual void connectToNode(void) = 0;
-
-    /**
-     * Obtain new object from SOURCE and push onto FIFO.
-     * @return SOURCE end-of-stream signal. If true, this component should exit.
-     */
-    virtual bool push(void) = 0;
-
-    /**
-     * @brief Get buffer name
-     */
-    std::string name(void) const { return name_; }
+    std::string name() const override { return name_; }
+    ComponentType type() const override { return ComponentType::buffer; }
 
 protected:
     static constexpr size_t BUFFSIZE{1000};
@@ -87,6 +77,8 @@ protected:
     std::mutex cv_m_;
     std::condition_variable cv_;
     const std::string sink_address_;
+
+    virtual int control(const char *msg) override;
 };
 
 #ifndef NDEBUG
@@ -94,8 +86,7 @@ protected:
 static constexpr size_t PROGRESS_BAR_WIDTH{80};
 
 template <typename T>
-void
-showBufferState(const T & buffer, size_t buffer_size)
+void showBufferState(const T &buffer, size_t buffer_size)
 {
 
     std::cout << "[";
@@ -108,10 +99,10 @@ showBufferState(const T & buffer, size_t buffer_size)
     for (int i = 0; i < remaining; ++i)
         std::cout << " ";
 
-    std::cout << "] " 
-              + std::to_string(buffer.read_available()) 
+    std::cout << "] "
+              + std::to_string(buffer.read_available())
               + "/"
-              + std::to_string(buffer_size) 
+              + std::to_string(buffer_size)
               + "\n";
 }
 #endif

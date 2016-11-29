@@ -23,10 +23,10 @@
 #include <string>
 #include <unordered_map>
 
-#include <boost/interprocess/exceptions.hpp>
 #include <boost/program_options.hpp>
 #include <cpptoml.h>
 #include <opencv2/core.hpp>
+#include <zmq.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/IOFormat.h"
@@ -39,9 +39,6 @@
 #define REQ_POSITIONAL_ARGS 3
 
 namespace po = boost::program_options;
-
-volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t source_eof = 0;
 
 using Pos2DBuffer = oat::TokenBuffer<oat::Position2D>;
 
@@ -86,36 +83,8 @@ void printUsage(const po::options_description &options, const std::string &type)
     }
 }
 
-// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int)
-{
-    quit = 1;
-}
-
-// Processing loop
-void run(const std::shared_ptr<oat::Buffer> buffer)
-{
-
-    try {
-
-        buffer->connectToNode();
-
-        while (!quit && !source_eof)
-            source_eof = buffer->push();
-
-    } catch (const boost::interprocess::interprocess_exception &ex) {
-
-        // Error code 1 indicates a SIGINT during a call to wait(), which
-        // is normal behavior
-        if (ex.get_error_code() != 1)
-            throw;
-    }
-}
-
 int main(int argc, char *argv[])
 {
-
-    std::signal(SIGINT, sigHandler);
 
     // Results of command line input
     std::string type;
@@ -253,15 +222,15 @@ int main(int argc, char *argv[])
         po::notify(option_map);
 
         // Tell user
-        std::cout << oat::whoMessage(buffer->name(),
+        std::cout << oat::whoMessage(comp_name,
                 "Listening to source " + oat::sourceText(source) + ".\n")
-                << oat::whoMessage(buffer->name(),
+                << oat::whoMessage(comp_name,
                 "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(buffer->name(),
+                << oat::whoMessage(comp_name,
                 "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
-        run(buffer);
+        buffer->run();
 
         // Tell user
         std::cout << oat::whoMessage(comp_name, "Exiting.")
@@ -274,12 +243,14 @@ int main(int argc, char *argv[])
         printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
-    } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(TOML) ", ex.what()) << std::endl;
+    } catch (const zmq::error_t &ex) {
+        std::cerr << oat::whoError(comp_name + "(ZMQ) " , ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(OPENCV) ", ex.what()) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(comp_name + "(SHMEM) ", ex.what()) << std::endl;
+    } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
         std::cerr << oat::whoError(comp_name, "Unknown exception.")
