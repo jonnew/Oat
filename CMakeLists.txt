@@ -140,12 +140,14 @@ include_directories (${RAPIDJSON_INCLUDE_DIR})
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/utility)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/datatypes)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/base)
 
 # Common libraries for all Oat components
-set (OatCommon_LIBS ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Thread_LIBS})
+set (OatCommon_LIBS ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Thread_LIBS} zmq)
 
 # Oat components
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/cleaner)
+add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/controller)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/decorator)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/framefilter)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/frameserver)
