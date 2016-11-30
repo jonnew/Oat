@@ -13,7 +13,7 @@ set (oat-posidet_SOURCE
 # Target
 add_executable (oat-posidet ${oat-posidet_SOURCE})
 target_link_libraries (oat-posidet
-                       oatutility
+                       oat-utility
                        ${OatCommon_LIBS})
 add_dependencies (oat-posidet cpptoml rapidjson)
 

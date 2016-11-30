@@ -22,13 +22,15 @@
 
 #include <string>
 #include <vector>
+
 #include <boost/program_options.hpp>
 
+#include "../../lib/base/Component.h"
 #include "../../lib/datatypes/Frame.h"
-#include "../../lib/shmemdf/Helpers.h"
-#include "../../lib/shmemdf/Source.h"
-#include "../../lib/shmemdf/Sink.h"
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/shmemdf/Helpers.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
 
 namespace po = boost::program_options;
 
@@ -38,9 +40,8 @@ static const constexpr double PI {3.141592653589793238463};
 
 /**
  * Frame decorator.
- * Adds positional, sample, and date information to frames.
  */
-class Decorator {
+class Decorator { //public Component {
 
     using pvec_size_t = oat::NamedSourceList<oat::Position2D>::size_type;
 
@@ -55,6 +56,9 @@ public:
      */
     Decorator(const std::string &frame_source_address,
               const std::string &frame_sink_address);
+
+    std::string name() const  { return name_; }
+    //oat::ComponentType type() const override { return oat::decorator; }
 
     /**
      * @brief Append type-specific program options.
@@ -81,14 +85,6 @@ public:
      */
     bool process(void);
 
-    //Accessors
-    //void set_print_region(bool value) { print_region_ = value; }
-    //void set_print_timestamp(bool value) { print_timestamp_ = value; }
-    //void set_print_sample_number(bool value) { print_sample_number_ = value; }
-    //void set_encode_sample_number(bool value) { encode_sample_number_ = value; }
-    //void set_show_position_history(bool value) { show_position_history_ = value; }
-
-    std::string name(void) const { return name_; }
 
 private:
 

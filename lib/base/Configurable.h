@@ -27,6 +27,8 @@
 #include <boost/program_options.hpp>
 #include <zmq.hpp>
 
+#include "../utility/TOMLSanitize.h"
+
 namespace oat {
 
 namespace po = boost::program_options;
@@ -59,9 +61,12 @@ protected:
     /**
      * @brief Apply type-specific component configurations using a pre-parsed program option map.
      * @param vm Pre-parse program option map.
+     * @param config_table Parsed TOML options table.
      */
-    virtual void applyConfiguration(const po::variables_map &vm) = 0;
+    virtual void applyConfiguration(const po::variables_map &vm,
+                                    const config::OptionTable &config_table) = 0;
 
+    // Allowable configuration keys
     std::vector<std::string> config_keys_;
 };
 } /* namespace oat */

@@ -10,7 +10,8 @@ set (oat-control_SOURCE
 add_executable (oat-control ${oat-control_SOURCE})
 target_link_libraries (oat-control
                        oat-base
-                       oatutility 
+                       oat-utility 
+
                        ${OatCommon_LIBS})
 add_dependencies (oat-control cpptoml rapidjson)
 

@@ -10,7 +10,7 @@ set (oat-view_SOURCE
 # Target
 add_executable (oat-view ${oat-view_SOURCE})
 target_link_libraries (oat-view
-                       oatutility
+                       oat-utility
                        ${OatCommon_LIBS})
 add_dependencies (oat-view cpptoml rapidjson)
 

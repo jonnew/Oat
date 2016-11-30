@@ -92,11 +92,8 @@ protected:
      * @param ZMQ endpoint
      */
     void runController(zmq::context_t &context,
-                       const char *endpoint = "ipc:///tmp/oat-network.pipe");
+                       const char *endpoint = "ipc:///tmp/oatcomms.pipe");
 
-    /**
-     * @brief Return unique, controllable id for this component
-     */
     /**
      * @brief Get unique, controllable ID for this component
      * @param n Number of characters to copy to id

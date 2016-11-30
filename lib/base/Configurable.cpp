@@ -19,8 +19,6 @@
 
 #include "Configurable.h"
 
-#include "../utility/TOMLSanitize.h"
-
 namespace oat {
 
 void Configurable::appendOptions(po::options_description &opts) {
@@ -37,15 +35,15 @@ void Configurable::appendOptions(po::options_description &opts) {
          "communication: '<transport>://<user-named-pipe>. For instance "
          "'ipc:///tmp/test.pipe'. Internally, this is used to construct a "
          "ZMQ REQ socket that that receives commands from oat-control. "
-         "Defaults to ipc:///tmp/oat.pipe.")
+         "Defaults to ipc:///tmp/oatcomms.pipe.")
         ;
 
     // Get type-specific options
-    auto specific_options = options();
-    opts.add(specific_options);
+    auto local_options = options();
+    opts.add(local_options);
 
     // Create valid keys
-    for (auto &o : specific_options.options())
+    for (auto &o : local_options.options())
         config_keys_.push_back(o->long_name());
 }
 
@@ -56,6 +54,7 @@ void Configurable::configure(const po::variables_map &vm) {
     oat::config::checkKeys(config_keys_, config_table);
 
     // Concrete component uses configuration map to configure itself
-    applyConfiguration(vm);
+    applyConfiguration(vm, config_table);
 }
+
 } /* namespace oat */

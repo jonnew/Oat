@@ -25,21 +25,13 @@ namespace oat {
 
 FrameFilter::FrameFilter(const std::string &frame_source_address,
                          const std::string &frame_sink_address)
-: name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
+: Component()
+, Configurable()
+, name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
 , frame_source_address_(frame_source_address)
 , frame_sink_address_(frame_sink_address)
 {
     // Nothing
-}
-
-void FrameFilter::appendOptions(po::options_description &opts)
-{
-    // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
 }
 
 void FrameFilter::connectToNode()
@@ -61,7 +53,7 @@ void FrameFilter::connectToNode()
                                          frame_parameters.color);
 }
 
-bool FrameFilter::process()
+int FrameFilter::process()
 {
     oat::Frame internal_frame;
 
@@ -70,7 +62,7 @@ bool FrameFilter::process()
 
     // Wait for sink to write to node
     if (frame_source_.wait() == oat::NodeState::END)
-        return true;
+        return 1;
 
     // Clone the shared frame
     frame_source_.copyTo(internal_frame);
@@ -99,7 +91,17 @@ bool FrameFilter::process()
     //  END CRITICAL SECTION  //
 
     // Sink was not at END state
-    return false;
+    return 0;
+}
+
+// TODO: Mock
+int FrameFilter::control(const char *msg)
+{
+    char id[32];
+    identity(id, 32);
+    std::cout << "[" << id << "] received: " << msg << std::endl;
+
+    return 0; // Continue
 }
 
 } /* namespace oat */

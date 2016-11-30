@@ -16,7 +16,7 @@ set (oat-posisock_SOURCE
 # Target
 add_executable (oat-posisock ${oat-posisock_SOURCE})
 target_link_libraries (oat-posisock 
-                       oatutility
+                       oat-utility
                        zmq
                        ${OatCommon_LIBS})
 add_dependencies (oat-posisock cpptoml rapidjson)

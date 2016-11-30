@@ -13,7 +13,7 @@ set (oat-calibrate_SOURCE
 # Targets
 add_executable (oat-calibrate ${oat-calibrate_SOURCE} main.cpp)
 target_link_libraries (oat-calibrate
-                       oatutility
+                       oat-utility
                        ${OatCommon_LIBS})
 add_dependencies (oat-calibrate cpptoml)
 

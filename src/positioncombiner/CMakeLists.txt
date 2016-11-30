@@ -10,7 +10,7 @@ set (oat-posicom_SOURCE
 # Target
 add_executable (oat-posicom ${oat-posicom_SOURCE})
 target_link_libraries (oat-posicom
-                       oatutility
+                       oat-utility
                        ${OatCommon_LIBS})
 add_dependencies (oat-posicom cpptoml rapidjson)
 

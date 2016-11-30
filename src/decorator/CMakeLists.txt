@@ -7,7 +7,7 @@ set (oat-decorate_SOURCE Decorator.cpp main.cpp)
 # Target
 add_executable (oat-decorate ${oat-decorate_SOURCE})
 target_link_libraries (oat-decorate 
-                       oatutility
+                       oat-utility 
                        ${OatCommon_LIBS})
 add_dependencies (oat-decorate cpptoml rapidjson)
 

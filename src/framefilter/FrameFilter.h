@@ -22,11 +22,11 @@
 
 #include <string>
 
-#include <boost/program_options.hpp>
-
+#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Frame.h"
-#include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
 
 namespace oat {
 
@@ -35,10 +35,11 @@ namespace po = boost::program_options;
 
 /**
  * @brief Abstract frame filter.
- * All concrete frame filter types implement this ABC.
  */
-class FrameFilter {
-    friend ColorConvert;
+class FrameFilter : public Component, public Configurable {
+
+friend ColorConvert;
+
 public:
 
     /**
@@ -51,44 +52,17 @@ public:
                          const std::string &frame_sink_address);
     virtual ~FrameFilter() { };
 
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    virtual void appendOptions(po::options_description &opts);
-
-    /**
-     * @brief Configure component parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    virtual void configure(const po::variables_map &vm) = 0;
-
-    /**
-     * @brief Connect to shared memory node.
-     */
-    virtual void connectToNode(void);
-
-    /**
-     * @breif Obtain raw frame from SOURCE. Apply filter function to raw frame. Publish
-     * filtered frame to SINK.
-     * @return SOURCE end-of-stream signal. If true, this component should
-     * exit.
-     */
-    bool process(void);
-
-    /**
-     * @breif Get frame filter name
-     * @return name
-     */
-    std::string name(void) const { return name_; }
+    // Implement control interface
+    virtual void connectToNode(void) override;
+    int process(void) override;
+    std::string name(void) const override { return name_; }
+    oat::ComponentType type(void) const override { return oat::framefilter; };
+    virtual int control(const char* msg) override;
 
 protected:
 
     // Filter name
     const std::string name_;
-
-    // List of allowed configuration options
-    std::vector<std::string> config_keys_;
 
     /**
      * Perform frame filtering. Override to implement filtering operation in

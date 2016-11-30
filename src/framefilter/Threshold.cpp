@@ -36,11 +36,8 @@ Threshold::Threshold(const std::string &frame_source_address,
     // Nothing
 }
 
-void Threshold::appendOptions(po::options_description &opts)
+po::options_description Threshold::options() const
 {
-    // Accepts a config file
-    FrameFilter::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -49,19 +46,12 @@ void Threshold::appendOptions(po::options_description &opts)
          "intensity passband.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o : local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void Threshold::configure(const po::variables_map &vm)
+void Threshold::applyConfiguration(const po::variables_map &vm,
+                                   const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Intensity
     std::vector<int> i;
     if (oat::config::getArray<int, 2>(vm, config_table, "intensity", i)) {

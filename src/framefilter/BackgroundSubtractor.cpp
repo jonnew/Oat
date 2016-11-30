@@ -40,11 +40,8 @@ BackgroundSubtractor::BackgroundSubtractor(
     // Nothing
 }
 
-void BackgroundSubtractor::appendOptions(po::options_description &opts)
+po::options_description BackgroundSubtractor::options() const
 {
-    // Accepts a config file
-    FrameFilter::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -57,19 +54,12 @@ void BackgroundSubtractor::appendOptions(po::options_description &opts)
          "first frame is used as the background image.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void BackgroundSubtractor::configure(const po::variables_map &vm)
+void BackgroundSubtractor::applyConfiguration(const po::variables_map &vm,
+                                              const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Background image path
     std::string img_path;
     if (oat::config::getValue(vm, config_table, "background", img_path)) {
@@ -77,7 +67,7 @@ void BackgroundSubtractor::configure(const po::variables_map &vm)
         // TODO: Color image only?
         background_frame_ = cv::imread(img_path, CV_LOAD_IMAGE_COLOR);
 
-        if (background_frame_.data == NULL)
+        if (background_frame_.data == nullptr)
             throw (std::runtime_error("File \"" + img_path + "\" could not be read."));
 
         background_set_ = true;

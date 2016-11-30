@@ -14,7 +14,7 @@ set (oat-record_SOURCE
 # Target
 add_executable (oat-record ${oat-record_SOURCE})
 target_link_libraries (oat-record
-                       oatutility
+                       oat-utility
                        datatypes
                        zmq
                        ${OatCommon_LIBS})

@@ -40,8 +40,9 @@ public:
                  const std::string &frame_sink_address);
 
     void connectToNode(void) override;
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
 private:
     void filter(cv::Mat &frame) override;

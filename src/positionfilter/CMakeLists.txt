@@ -11,7 +11,7 @@ set (oat-posifilt_SOURCE
 # Target
 add_executable (oat-posifilt ${oat-posifilt_SOURCE})
 target_link_libraries (oat-posifilt
-                       oatutility
+                       oat-utility
                        ${OatCommon_LIBS})
 add_dependencies (oat-posifilt cpptoml rapidjson)
 

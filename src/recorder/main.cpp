@@ -21,7 +21,7 @@
 #include <csignal>
 #include <thread>
 #include <pthread.h> // TODO: POSIX specific
-//#include <functional>
+
 #include <memory>
 #include <unordered_map>
 #include <string>

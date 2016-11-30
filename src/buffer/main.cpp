@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <boost/program_options.hpp>
 #include <cpptoml.h>
@@ -85,7 +86,6 @@ void printUsage(const po::options_description &options, const std::string &type)
 
 int main(int argc, char *argv[])
 {
-
     // Results of command line input
     std::string type;
     std::string source;

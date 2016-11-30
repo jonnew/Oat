@@ -68,7 +68,7 @@ void RandomAccel2D::configure(const po::variables_map &vm)
     }
     generateSamplePeriod(fs);
 
-    // Rate
+    // Number of samples
     oat::config::getNumericValue<uint64_t>(
         vm, config_table, "num-samples", num_samples_, 0);
 

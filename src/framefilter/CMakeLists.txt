@@ -15,7 +15,8 @@ set (oat-framefilt_SOURCE
 # Target
 add_executable (oat-framefilt ${oat-framefilt_SOURCE})
 target_link_libraries (oat-framefilt
-                       oatutility
+                       oat-base
+                       oat-utility
                        ${OatCommon_LIBS})
 add_dependencies (oat-framefilt cpptoml)
 
