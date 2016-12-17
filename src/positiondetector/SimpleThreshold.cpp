@@ -41,10 +41,16 @@ SimpleThreshold::SimpleThreshold(const std::string &frame_source_address,
     // dilate_on must be set to false
     set_erode_size(0);
     set_dilate_size(0);
+    set_mincomp_size(0);
 
     // Set required frame type
     required_color_ = PIX_GREY;
 }
+
+
+//,
+//        ("mincomp,m", po::value<int>(),
+//        "Minimum compensation, optionally adjust thresholds by the darkest pixels in the region."),
 
 void SimpleThreshold::appendOptions(po::options_description &opts)
 {
@@ -64,6 +70,10 @@ void SimpleThreshold::appendOptions(po::options_description &opts)
         ("area,a", po::value<std::string>(),
          "Array of floats, [min,max], specifying the minimum and maximum "
          "object contour area in pixels^2.")
+
+        ("mincomp,m", po::value<int>(),
+        "Minimum compensation, optionally adjust thresholds by the darkest pixels in the region.")
+
         ("tune,t",
          "If true, provide a GUI with sliders for tuning detection parameters.")
         ;
@@ -101,6 +111,12 @@ void SimpleThreshold::configure(const po::variables_map &vm)
     int dilate;
     if (oat::config::getNumericValue<int>(vm, config_table, "dilate", dilate, 0))
         set_dilate_size(dilate);
+
+    // Mincomp  value
+    int mincomp;
+    if (oat::config::getNumericValue<int>(vm, config_table, "mincomp", mincomp, 0))
+        set_mincomp_size(mincomp);
+
 
     // Min/max object area
     std::vector<double> area;
@@ -178,9 +194,21 @@ void SimpleThreshold::tune(cv::Mat &frame, const oat::Position2D &position)
 
 void SimpleThreshold::applyThreshold(cv::Mat &frame)
 {
+
     cv::inRange(frame,
-                t_min_,
-                t_max_,
+                1,
+                255,
+                nonmasked_frame_);
+
+    double mincomp_brightness =0;
+    if (mincomp_on_)
+        cv::minMaxIdx(frame, &mincomp_brightness,NULL,NULL,NULL,nonmasked_frame_);       
+    
+    //std::cout << " br " << mincomp_brightness <<"\n";
+
+    cv::inRange(frame,
+                t_min_+static_cast<int>(mincomp_brightness),
+                t_max_+static_cast<int>(mincomp_brightness),
                 threshold_frame_);
 
     // Filter the resulting threshold image
@@ -256,6 +284,18 @@ void SimpleThreshold::set_dilate_size(int value)
         dilate_element_ = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(dilate_px_, dilate_px_));
     } else {
         dilate_on_ = false;
+    }
+}
+
+void SimpleThreshold::set_mincomp_size(int value)
+{
+    std::cout << "mincomp set to " << value<<"\n";
+    if (value != 0) {
+        mincomp_on_ = true;
+
+        mincomp_val_ = value;
+    } else {
+        mincomp_on_ = false;
     }
 }
 
