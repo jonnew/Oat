@@ -195,14 +195,14 @@ void PointGreyCam<T>::configure(const po::variables_map &vm)
 
     // Set white balance
     // TODO: Needs three states: On, Auto, manual
-    std::vector<double> wb;
-    bool auto_wb;
-    if (oat::config::getValue<bool>(vm, config_table, "auto-white-balance", auto_wb))
-        setupWhiteBalance(0, 0, true, true);
-    else if (oat::config::getArray<double, 2>(vm, config_table, "white-balance", wb))
-        setupWhiteBalance(wb[0], wb[1], true, false);
-    else
-        setupWhiteBalance(0, 0, false, false);
+    //std::vector<double> wb;
+    //bool auto_wb;
+    //if (oat::config::getValue<bool>(vm, config_table, "auto-white-balance", auto_wb))
+    //    setupWhiteBalance(0, 0, true, true);
+    //else if (oat::config::getArray<double, 2>(vm, config_table, "white-balance", wb))
+    //    setupWhiteBalance(wb[0], wb[1], true, false);
+    //else
+    //    setupWhiteBalance(0, 0, false, false);
 
     // Pixel binning
     std::vector<size_t> bin_size;
@@ -357,16 +357,16 @@ void PointGreyCam<T>::setupWhiteBalance(int bal_red, int bal_blue, bool is_on, b
 {
     std::cout << "Setting camera white balance...";
 
-    if (!is_on) {
-        setPGOff(camera_, pg::WHITE_BALANCE);
-        std::cout << "set to off.\n";
-        return;
-    }
-
     // Mono pixels do not support white balance
     if (pix_col_ == PIX_GREY) {
         std::cerr << oat::Warn(
             "You cannot adjust the white balance for mono frames.");
+        return;
+    }
+
+    if (!is_on) {
+        setPGOff(camera_, pg::WHITE_BALANCE);
+        std::cout << "set to off.\n";
         return;
     }
 

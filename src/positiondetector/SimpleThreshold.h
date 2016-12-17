@@ -54,18 +54,20 @@ public:
     void set_max_object_area(double value) { max_object_area_ = value; }
     void set_erode_size(int erode_px);
     void set_dilate_size(int dilate_px);
+    void set_mincomp_size(int mincomp_val);
 
 private:
 
     // Intermediate variables
     cv::Mat threshold_frame_;
+    cv::Mat nonmasked_frame_;
 
     // Object detection
     double object_area_ {0.0};
 
     // Sizes of the erode and dilate blocks
-    int erode_px_ {0}, dilate_px_ {0};
-    bool erode_on_ {false}, dilate_on_ {false};
+    int erode_px_ {0}, dilate_px_ {0}, mincomp_val_ {0};
+    bool erode_on_ {false}, dilate_on_ {false}, mincomp_on_ {false};
 
     // Internal matricies
     cv::Mat erode_element_, dilate_element_;
