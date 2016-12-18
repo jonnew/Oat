@@ -23,12 +23,14 @@
 #include <memory>
 #include <boost/program_options.hpp>
 
+#include "../../lib/base/Component.h"
 #include "../../lib/utility/in_place.h"
 
 namespace po = boost::program_options;
 
 namespace oat {
 
+// Viewer<T> type erasure
 class ViewerBase {
 
 public:
@@ -40,9 +42,9 @@ public:
         { viewer->appendOptions(opts); }
     void configure(const po::variables_map &vm) const
         { viewer->configure(vm); }
-    void connectToNode(void) const { viewer->connectToNode(); }
-    bool process(void) const { return viewer->process(); }
+    void run() { viewer->run(); }
     std::string name() const { return viewer->name(); }
+    oat::ComponentType type() const { return viewer->type(); }
 
 private:
 
@@ -50,9 +52,9 @@ private:
         virtual ~ViewerConcept() { }
         virtual void appendOptions(po::options_description &opts) = 0;
         virtual void configure(const po::variables_map &vm) = 0;
-        virtual void connectToNode(void) = 0;
-        virtual bool process(void) = 0;
+        virtual void run(void) = 0;
         virtual std::string name(void) const = 0;
+        virtual oat::ComponentType type(void) const = 0;
     };
 
     template <typename T>
@@ -63,9 +65,9 @@ private:
             { viewer.appendOptions(opts); }
         void configure(const po::variables_map &vm) override
             { viewer.configure(vm); }
-        void connectToNode(void) override { viewer.connectToNode();}
-        bool process(void) override { return viewer.process(); }
+        void run() override { viewer.run(); }
         std::string name() const override { return viewer.name(); }
+        oat::ComponentType type() const override { return viewer.type(); }
     private:
         T viewer;
     };

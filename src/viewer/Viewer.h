@@ -28,19 +28,16 @@
 #include <thread>
 #include <boost/program_options.hpp>
 
-#include "../../lib/datatypes/Frame.h"
+#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace po = boost::program_options;
 
 namespace oat {
 
-/**
- * @brief Abstract viewer.
- * All concrete viewer types implement this ABC.
- */
 template <typename T>
-class Viewer {
+class Viewer : public Component, public Configurable<false> {
 
     using Clock = std::chrono::high_resolution_clock;
 
@@ -49,40 +46,16 @@ public:
     /**
      * @brief Abstract viewer.
      * All concrete viewer types implement this ABC.
-     * @param source_address Frame SOURCE node address
+     * @param source_address SOURCE node address
      */
     explicit Viewer(const std::string &source_name);
-
     virtual ~Viewer();
 
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    virtual void appendOptions(po::options_description &opts);
-
-    /**
-     * @brief Configure filter parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    virtual void configure(const po::variables_map &vm) = 0;
-    /**
-     * @brief Connect to SOURCE node from which to get samples
-     */
-    void connectToNode(void);
-
-    /**
-     * @brief Obtain sample from SOURCE and view.
-     * @return SOURCE end-of-stream signal. If true, this component should
-     * exit.
-     */
-    bool process(void);
-
-    /**
-     * @brief Get viewer name
-     * @return name
-     */
-    std::string name(void) const { return name_; }
+    // Implement Component interface
+    oat::ComponentType type(void) const override { return oat::viewer; };
+    std::string name(void) const override { return name_; }
+    bool connectToNode(void) override;
+    int process(void) override;
 
 protected:
 
@@ -91,9 +64,6 @@ protected:
 
     // Source address
     const std::string source_address_;
-
-    // List of allowed configuration options
-    std::vector<std::string> config_keys_;
 
     // Mimumum display update period
     using Milliseconds = std::chrono::milliseconds;

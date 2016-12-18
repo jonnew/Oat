@@ -25,7 +25,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "../../lib/base/Component.h"
+//#include "../../lib/base/Component.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Helpers.h"

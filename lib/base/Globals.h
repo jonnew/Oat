@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   Threshold.h
+//* File:   Globals.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -15,40 +15,17 @@
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
-//******************************************************************************
+//****************************************************************************
 
-#ifndef OAT_THRESHOLD_H
-#define	OAT_THRESHOLD_H
+#ifndef OAT_GLOBALS_H
+#define OAT_GLOBALS_H
 
-#include "FrameFilter.h"
+#include <csignal>
 
 namespace oat {
 
-/**
- * A frame intensity thresholder
- */
-class Threshold : public FrameFilter {
-public:
-
-    /**
-     * A basic intensity thresholder.
-     * @param frame_source_address raw frame source address
-     * @param frame_sink_address filtered frame sink address
-     */
-    Threshold(const std::string &frame_source_address,
-              const std::string &frame_sink_address);
-
-private:
-    po::options_description options() const override;
-    void applyConfiguration(const po::variables_map &vm,
-                            const config::OptionTable &config_table) override;
-
-    void filter(cv::Mat &frame) override;
-
-    // Intensity threshold boundaries
-    int i_min_ {0};
-    int i_max_ {256};
-};
+// Global, atomic quit flag
+extern volatile std::sig_atomic_t quit;
 
 }      /* namespace oat */
-#endif /* OAT_THRESHOLD_H */
+#endif /* OAT_GLOBALS_H */

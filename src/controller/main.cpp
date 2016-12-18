@@ -129,7 +129,11 @@ int main(int argc, char *argv[]) {
             
             oat::Controller ctrl(endpoint.c_str());
             ctrl.scan();
-            ctrl.send(command, id);
+
+            if (id[0] == 'O')
+                ctrl.send(command, id);
+            else
+                ctrl.send(command, std::stoi(id));
 
         } else {
 
@@ -137,7 +141,6 @@ int main(int argc, char *argv[]) {
             std::cout << "Error: Invalid program option specification.\n";
             return -1;
         }
-
 
     } catch (const po::error &ex) {
         printUsage(visible_options);

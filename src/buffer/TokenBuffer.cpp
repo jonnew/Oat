@@ -33,19 +33,22 @@ TokenBuffer<T>::TokenBuffer(const std::string &source_address,
 }
 
 template <typename T>
-void TokenBuffer<T>::connectToNode()
+bool TokenBuffer<T>::connectToNode()
 {
     // Establish our a slot in the node
     source_.touch(source_address_);
 
     // Wait for sychronous start with sink when it binds the node
-    source_.connect();
+    if (source_.connect() != SourceState::CONNECTED)
+        return false;
 
     sink_.bind(sink_address_, sink_address_);
     shared_token_ = sink_.retrieve();
 
     // Start consumer thread
     sink_thread_ = std::thread(&TokenBuffer<T>::pop, this);
+
+    return true;
 }
 
 template <typename T>

@@ -35,6 +35,7 @@ Controller::Controller(const char *endpoint)
 : ctx_(1)
 , router_(ctx_, ZMQ_ROUTER)
 {
+    router_.setsockopt(ZMQ_LINGER, 0);
     router_.bind(endpoint);
 }
 
@@ -50,6 +51,19 @@ void Controller::send(const std::string &command, const std::string &target_id)
         sendReqEnvelope(&router_, target_id, command);
     else
         std::cerr << oat::Warn("Target is not available: " + target_id) << "\n";
+}
+
+void Controller::send(const std::string &command, const Subs::size_type idx)
+{
+    if (subscriptions_.size() <= idx) {
+        std::cerr
+            << oat::Warn("Target index out of range: " + std::to_string(idx))
+            << "\n";
+    } else {
+        auto s = subscriptions_.begin();
+        std::advance(s, idx);
+        send(command, s->first);
+    }
 }
 
 void Controller::scan()
@@ -82,26 +96,28 @@ void Controller::scan()
             break;
         }
     }
-
-    // Acknowledge each subscriber's existance
-    send("ACK");
 }
 
 std::string Controller::list()
 {
     const char sep = ' ';
-    const int id_width = 25;
-    const int name_width = 25;
+    const int idx_width = 8;
+    const int id_width = 22;
+    const int name_width = 30;
     const int type_width = 3;
+    int idx = 0;
 
     std::stringstream ss;
+    ss << std::left << std::setw(idx_width) << std::setfill(sep) << "Index";
     ss << std::left << std::setw(id_width) << std::setfill(sep) << "ID";
     ss << std::left << std::setw(name_width) << std::setfill(sep) << "Name";
     ss << std::left << std::setw(type_width) << std::setfill(sep) << "Type";
     ss << "\n";
+
     for (const auto &p : subscriptions_) {
 
         auto sub = p.second;
+        ss << std::left << std::setw(idx_width) << std::setfill(sep) << idx++;
         ss << std::left << std::setw(id_width) << std::setfill(sep) << p.first;
         ss << std::left << std::setw(name_width) << std::setfill(sep) << sub.name;
         ss << std::left << std::setw(type_width) << std::setfill(sep) << (int)sub.type;

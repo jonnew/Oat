@@ -45,7 +45,8 @@ public:
 
 protected:
 
-    void connectToNode(void) override;
+    // Implement Component interface
+    bool connectToNode(void) override;
     int process(void) override;
 
 private:

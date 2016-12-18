@@ -30,13 +30,14 @@ FrameBuffer::FrameBuffer(const std::string &source_address,
     // Nothing
 }
 
-void FrameBuffer::connectToNode()
+bool FrameBuffer::connectToNode()
 {
     // Establish our a slot in the node
     source_.touch(source_address_);
 
     // Wait for sychronous start with sink when it binds the node
-    source_.connect();
+    if (source_.connect() != SourceState::CONNECTED)
+        return false;
 
     // Get frame meta data to format sink
     auto param = source_.parameters();
@@ -48,6 +49,8 @@ void FrameBuffer::connectToNode()
 
     // Start consumer thread
     sink_thread_ = std::thread(&FrameBuffer::pop, this);
+
+    return true;
 }
 
 int FrameBuffer::process()

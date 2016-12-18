@@ -24,12 +24,12 @@
 #include <unordered_map>
 #include <vector>
 
+#include <boost/interprocess/exceptions.hpp>
 #include <boost/program_options.hpp>
 #include <cpptoml.h>
 #include <opencv2/core.hpp>
 #include <zmq.hpp>
 
-#include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 

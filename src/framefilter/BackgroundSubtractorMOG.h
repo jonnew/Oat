@@ -46,11 +46,10 @@ public:
     BackgroundSubtractorMOG(const std::string &frame_souce_address,
                             const std::string &frame_sink_address);
 
+private:
     po::options_description options() const override;
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
-
-private:
 
     /**
      * Apply background subtraction.

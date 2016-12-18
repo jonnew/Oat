@@ -77,8 +77,6 @@ protected:
     std::mutex cv_m_;
     std::condition_variable cv_;
     const std::string sink_address_;
-
-    virtual int control(const char *msg) override;
 };
 
 #ifndef NDEBUG

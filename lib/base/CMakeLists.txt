@@ -1,3 +1,3 @@
 add_library(oat-base
-            Configurable.cpp
+            ControllableComponent.cpp
             Component.cpp)

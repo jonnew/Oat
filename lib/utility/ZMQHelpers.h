@@ -17,7 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#pragma once
+#ifndef OAT_ZMQHELPERS_H
+#define OAT_ZMQHELPERS_H
 
 #include <zmq.hpp>
 
@@ -74,4 +75,5 @@ inline bool recvReqEnvelope(zmq::socket_t *socket,
    else
        return true;
 }
-} /* namespace oat */
+}      /* namespace oat */
+#endif /* OAT_ZMQHELPERS_H */

@@ -22,8 +22,8 @@
 
 #include <string>
 
-#include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
+#include "../../lib/base/ControllableComponent.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
@@ -36,7 +36,7 @@ namespace po = boost::program_options;
 /**
  * @brief Abstract frame filter.
  */
-class FrameFilter : public Component, public Configurable {
+class FrameFilter : public ControllableComponent, public Configurable<true> {
 
 friend ColorConvert;
 
@@ -52,12 +52,12 @@ public:
                          const std::string &frame_sink_address);
     virtual ~FrameFilter() { };
 
-    // Implement control interface
-    virtual void connectToNode(void) override;
-    int process(void) override;
-    std::string name(void) const override { return name_; }
+    // Implement ControllableComponent interface
     oat::ComponentType type(void) const override { return oat::framefilter; };
-    virtual int control(const char* msg) override;
+    std::string name(void) const override { return name_; }
+    virtual bool connectToNode(void) override;
+    int process(void) override;
+    virtual void applyCommand(const std::string &command) override;
 
 protected:
 

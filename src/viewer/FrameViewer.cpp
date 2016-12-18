@@ -42,40 +42,30 @@ FrameViewer::FrameViewer(const std::string &source_address)
     // Nothing
 }
 
-void FrameViewer::appendOptions(po::options_description &opts)
+po::options_description FrameViewer::options(void) const
 {
-    // Accepts a config file
-    Viewer<oat::Frame>::appendOptions(opts);
-
     // Common program options
     po::options_description local_opts;
-    opts.add_options()
+    local_opts.add_options()
         ("display-rate,r", po::value<double>(),
-         "Maximum rate at which the viewer is updated irrespective of its "
-         "source's rate. If frames are supplied faster than this rate, they are "
-         "ignored. Setting this to a reasonably low value prevents the viewer "
-         "from consuming processing resorces in order to update the "
-         "display faster than is visually perceptable. Defaults to 30.")
+         "Maximum rate, in Hz, at which the viewer is updated irrespective of "
+         "its source's rate. If frames are supplied faster than this rate, "
+         "they are ignored. Setting this to a reasonably low value prevents "
+         "the viewer from consuming processing resources in order to update "
+         "the display faster than is visually perceptible. Defaults to 30.")
         ("snapshot-path,f", po::value<std::string>(),
         "The path to which in which snapshots will be saved. "
         "If a folder is designated, the base file name will be SOURCE. "
-        "The timestamp of the snapshot will be prepended to the file name. "
+        "The time stamp of the snapshot will be prepended to the file name. "
         "Defaults to the current directory.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void FrameViewer::configure(const po::variables_map &vm)
+void FrameViewer::applyConfiguration(const po::variables_map &vm,
+                                     const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Display rate
     double r;
     if (oat::config::getNumericValue<double>(
@@ -91,9 +81,9 @@ void FrameViewer::configure(const po::variables_map &vm)
 
 void FrameViewer::display(const oat::Frame &frame)
 {
-    // NOTE: This inititalization is done here to enesure it is done by the same
-    // thread that actually calls imshow(). If done in in the constructor, it will
-    // not play nice with OpenGL.
+    // NOTE: This initialization is done here to ensure it is done by the same
+    // thread that actually calls imshow(). If done in in the constructor, it
+    // will not play nice with OpenGL.
     if (!gui_inititalized_) {
 #ifdef HAVE_OPENGL
         try {
@@ -131,7 +121,7 @@ void FrameViewer::display(const oat::Frame &frame)
             cv::imwrite(fid, frame);
             std::cout << "Snapshot saved to " << fid << "\n";
         } else {
-            std::cerr << oat::Error("Snapshop file creation exited "
+            std::cerr << oat::Error("Snapshot file creation exited "
                     "with error " + std::to_string(err) + "\n");
         }
     }
@@ -143,8 +133,8 @@ void FrameViewer::set_snapshot_path(const std::string &snapshot_path)
 
     // Check that the snapshot save folder is valid
     if (!bfs::exists(path.parent_path())) {
-        throw (std::runtime_error ("Requested snapshot save directory "
-                                   "does not exist.\n"));
+        throw(std::runtime_error("Requested snapshot save directory "
+                                 "does not exist.\n"));
     }
 
     // Get folder from path

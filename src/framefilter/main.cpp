@@ -45,9 +45,6 @@
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t source_eof = 0;
-
 const char usage_type[] =
     "TYPE\n"
     "  bsub: Background subtraction\n"
@@ -160,8 +157,8 @@ int main(int argc, char *argv[]) {
         // Check options for errors and bind options to local variables
         po::notify(option_map);
 
-        // If a TYPE was provided, then specialize the filter and corresponding
-        // program options
+        // If a TYPE was provided, then specialize the component and
+        // corresponding program options
         if (option_map.count("type")) {
 
             // Refine component type

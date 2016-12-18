@@ -43,13 +43,6 @@
 #define REQ_POSITIONAL_ARGS 2
 
 namespace po = boost::program_options;
-namespace bfs = boost::filesystem;
-
-using GenericViewer =
-    boost::variant<oat::FrameViewer>;
-
-volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t source_eof = 0;
 
 const char usage_type[] =
     "TYPE\n"
@@ -86,33 +79,27 @@ void printUsage(const po::options_description &options, const std::string &type)
     }
 }
 
-// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int)
-{
-    quit = 1;
-}
-
-void run(const std::shared_ptr<oat::ViewerBase> viewer)
-{
-    try {
-
-        viewer->connectToNode();
-
-        while (!quit && !source_eof)
-            source_eof = viewer->process();
-
-    } catch (const boost::interprocess::interprocess_exception &ex) {
-
-        // Error code 1 indicates a SIGNINT during a call to wait(), which
-        // is normal behavior
-        if (ex.get_error_code() != 1)
-            throw;
-    }
-}
+//void run(const std::shared_ptr<oat::ViewerBase> viewer)
+//{
+//    try {
+//
+//        viewer->connectToNode();
+//
+//        while (!quit && !source_eof)
+//            source_eof = viewer->process();
+//
+//    } catch (const boost::interprocess::interprocess_exception &ex) {
+//
+//        // Error code 1 indicates a SIGNINT during a call to wait(), which
+//        // is normal behavior
+//        if (ex.get_error_code() != 1)
+//            throw;
+//    }
+//}
 
 int main(int argc, char *argv[])
 {
-    std::signal(SIGINT, sigHandler);
+    //std::signal(SIGINT, sigHandler);
 
     std::string type;
     std::string source;
@@ -258,7 +245,7 @@ int main(int argc, char *argv[])
                       "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of messages signal
-        run(viewer);
+        viewer->run();
 
         // Tell user
         std::cout << oat::whoMessage(comp_name, "Exiting.")
@@ -271,14 +258,12 @@ int main(int argc, char *argv[])
         printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(comp_name,"Invalid TOML syntax\n")
-                  << oat::whoError(comp_name, ex.what())
-                  << std::endl;
-    } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(TOML) ", ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.msg) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(OPENCV) ", ex.what()) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(comp_name + "(SHMEM) ", ex.what()) << std::endl;
+    } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
         std::cerr << oat::whoError(comp_name, "Unknown exception.")

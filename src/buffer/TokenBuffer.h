@@ -44,7 +44,7 @@ public:
 
 protected:
 
-    void connectToNode(void) override;
+    bool connectToNode(void) override;
     int process(void) override;
 
 private:

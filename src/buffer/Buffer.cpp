@@ -41,31 +41,4 @@ Buffer::~Buffer()
         sink_thread_.join();
 }
 
-int Buffer::control(const char *msg)
-{
-    char id[32];
-    identity(id, 32);
-    std::cout << "[" << id << "] received: " << msg << std::endl;
-
-    return 0; // Continue
-}
-
-//po::options_description Buffer::options()
-//{
-//    po::options_description local_opts;
-//    local_opts.add_options()
-//        ("buffer-size,n", po::value<uint64_t>(),
-//        "Maximal size of buffer before overflow. Defaults to 1000.")
-//        ;
-//
-//    return local_opts;
-//}
-//
-//void Buffer::applyConfiguratio(const po::variables_map &vm)
-//{
-//    // Buffer size
-//    size_t n;
-//    if (oat::config::getNumericValue<size_t>(vm, config_table, "buffer-size", n, 0))
-//        std::cout << "Setting buffer size not implemented.\n";
-//}
 } /* namespace oat */

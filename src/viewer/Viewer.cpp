@@ -49,35 +49,27 @@ Viewer<T>::~Viewer()
 }
 
 template <typename T>
-void Viewer<T>::appendOptions(po::options_description &opts)
-{
-    // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-}
-
-template <typename T>
-void Viewer<T>::connectToNode()
+bool Viewer<T>::connectToNode()
 {
     // Establish our a slot in the node
     source_.touch(source_address_);
 
     // Wait for synchronous start with sink when it binds the node
-    source_.connect();
+    if (source_.connect() != SourceState::CONNECTED)
+        return false;
+
+    return true;
 }
 
 template <typename T>
-bool Viewer<T>::process()
+int Viewer<T>::process()
 {
     // START CRITICAL SECTION //
     ////////////////////////////
 
     // Wait for sink to write to node
     if (source_.wait() == oat::NodeState::END)
-        return true;
+        return 1;
 
     // Figure out the time since we last updated the viewer
     Milliseconds duration
@@ -103,7 +95,7 @@ bool Viewer<T>::process()
     }
 
     // Sink was not at END state
-    return false;
+    return 0;
 }
 
 template <typename T>

@@ -27,8 +27,6 @@
 #include "../../lib/utility/ProgramOptions.h"
 #include "../../lib/utility/TOMLSanitize.h"
 
-// Populate available conversion
-
 namespace oat {
 
 ColorConvert::ColorConvert(const std::string &frame_source_address,
@@ -40,11 +38,10 @@ ColorConvert::ColorConvert(const std::string &frame_source_address,
 
 po::options_description ColorConvert::options() const
 {
-    // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
         ("color,C", po::value<std::string>(),
-         "Pixel color format." 
+         "Pixel color format."
          "Values:\n"
          "  GREY: \t 8-bit Greyscale image.\n"
          "  BRG: \t8-bit, 3-chanel, BGR Color image.\n"
@@ -65,13 +62,14 @@ void ColorConvert::applyConfiguration(const po::variables_map &vm,
     }
 }
 
-void ColorConvert::connectToNode()
+bool ColorConvert::connectToNode()
 {
     // Establish our a slot in the source node
     frame_source_.touch(frame_source_address_);
 
     // Wait for synchronous start with sink when it binds its node
-    frame_source_.connect();
+    if (frame_source_.connect() != SourceState::CONNECTED)
+        return false;
 
     // Get frame meta data to format sink
     auto frame_parameters = frame_source_.parameters();
@@ -97,6 +95,7 @@ void ColorConvert::connectToNode()
                                          frame_parameters.cols,
                                          oat::cv_type(color_),
                                          color_);
+    return true;
 }
 
 void ColorConvert::filter(cv::Mat &frame)
@@ -108,4 +107,3 @@ void ColorConvert::filter(cv::Mat &frame)
 }
 
 } /* namespace oat */
-

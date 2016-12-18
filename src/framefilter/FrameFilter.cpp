@@ -25,7 +25,7 @@ namespace oat {
 
 FrameFilter::FrameFilter(const std::string &frame_source_address,
                          const std::string &frame_sink_address)
-: Component()
+: ControllableComponent()
 , Configurable()
 , name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
 , frame_source_address_(frame_source_address)
@@ -34,13 +34,14 @@ FrameFilter::FrameFilter(const std::string &frame_source_address,
     // Nothing
 }
 
-void FrameFilter::connectToNode()
+bool FrameFilter::connectToNode()
 {
     // Establish our a slot in the source node
     frame_source_.touch(frame_source_address_);
 
     // Wait for synchronous start with sink when it binds its node
-    frame_source_.connect();
+    if (frame_source_.connect() != SourceState::CONNECTED)
+        return false;
 
     // Get frame meta data to format sink
     auto frame_parameters = frame_source_.parameters();
@@ -51,6 +52,8 @@ void FrameFilter::connectToNode()
                                          frame_parameters.cols,
                                          frame_parameters.type,
                                          frame_parameters.color);
+
+    return true;
 }
 
 int FrameFilter::process()
@@ -94,14 +97,19 @@ int FrameFilter::process()
     return 0;
 }
 
-// TODO: Mock
-int FrameFilter::control(const char *msg)
+void FrameFilter::applyCommand(const std::string &command) 
 {
-    char id[32];
-    identity(id, 32);
-    std::cout << "[" << id << "] received: " << msg << std::endl;
+    const oat::CommandHash commands{{"clear", 0}};
+    
+    if (!commands.count(command)) {
+        std::cout << "got invalid command " << command <<"\n";
+        return;
+    }
 
-    return 0; // Continue
+    switch (commands.at(command)) {
+        case 0: {
+            std::cout << "got " << command << "\n";
+        }
+    }
 }
-
 } /* namespace oat */

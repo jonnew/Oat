@@ -42,11 +42,10 @@ public:
     Undistorter(const std::string &frame_source_address,
                 const std::string &frame_sink_address);
 
+private:
     po::options_description options() const override;
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
-
-private:
 
     /**
      * Apply undistortion filter.
@@ -57,6 +56,8 @@ private:
 
     cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
     std::vector<double> dist_coeff_;
+
+    static const std::map<std::string, int> commands_;
 };
 
 }      /* namespace oat */

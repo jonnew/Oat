@@ -35,11 +35,13 @@
 #include <boost/thread/thread_time.hpp>
 
 #include "../datatypes/Frame.h"
+#include "../base/Globals.h"
 
 namespace oat {
 
 enum class SourceState : std::int16_t
 {
+    ERR_CONNECT     = -3,
     ERR_NODEFULL    = -2,
     ERR_TYPEMIS     = -1,
     VIRGIN          = 0,
@@ -55,7 +57,7 @@ public:
 
     // Node connection
     void touch(const std::string &address);
-    virtual void connect(void);
+    virtual SourceState connect(void);
 
     // Sychronization
     NodeState wait();
@@ -145,7 +147,7 @@ inline void SourceBase<T>::touch(const std::string &address)
 }
 
 template <typename T>
-inline void SourceBase<T>::connect()
+inline SourceState SourceBase<T>::connect()
 {
     // Make sure we did not connect already
     if (state_ != SourceState::TOUCHED)
@@ -154,7 +156,10 @@ inline void SourceBase<T>::connect()
 
     // Wait for the SINK to bind and construct the shared object
     if (node_->sink_state() != NodeState::SINK_BOUND) {
-        wait();
+
+        if (wait() != NodeState::SINK_BOUND)
+            return SourceState::ERR_CONNECT; // No throw because this can occur
+                                             // at quit
 
         // Self post since all loops start with wait() and we just
         // finished our wait(). This will make the first call to
@@ -176,6 +181,7 @@ inline void SourceBase<T>::connect()
     }
 
     state_ = SourceState::CONNECTED;
+    return SourceState::CONNECTED;
 }
 
 template <typename T>
@@ -193,7 +199,7 @@ inline NodeState SourceBase<T>::wait()
 
     // Only wait if there is a SOURCE attached to the node
     // Wait with timed wait with period check to prevent deadlocks
-    while (!node_->read_barrier(slot_index_).timed_wait(timeout)) {
+    while (!node_->read_barrier(slot_index_).timed_wait(timeout) && !quit) {
 
         // Loops checking if wait has been released
         timeout = boost::get_system_time() + msec_t(10);
@@ -276,8 +282,8 @@ public:
     // TODO: This info is sitting inside SharedFrameHeader. Why am I creating a
     // new class here? This should be part of SharedFrameHeader so I can just
     // copy it out of there.
-    void connect() override;
-    void connect(const oat::PixelColor col);
+    SourceState connect() override;
+    SourceState connect(const oat::PixelColor col);
 
     const oat::Frame * retrieve() const { return &frame_; }
     oat::Frame clone() const { return frame_.clone(); }
@@ -291,9 +297,9 @@ private :
     FrameParams parameters_;
 };
 
-inline void Source<Frame>::connect(const oat::PixelColor color)
+inline SourceState Source<Frame>::connect(const oat::PixelColor color)
 {
-    connect();
+    auto rc = connect();
 
     // Check frame pixel type if required
     if (frame_.color() != color) {
@@ -302,9 +308,11 @@ inline void Source<Frame>::connect(const oat::PixelColor color)
                                  + oat::color_str(color)
                                  + ". Maybe use oat-framefilt col?");
     }
+    
+    return rc;
 }
 
-inline void Source<Frame>::connect()
+inline SourceState Source<Frame>::connect()
 {
     // Make sure we did not connect already
     if (state_ != SourceState::TOUCHED)
@@ -315,7 +323,9 @@ inline void Source<Frame>::connect()
     // header info.
     if (node_->sink_state() != NodeState::SINK_BOUND) {
 
-        wait();
+        if (wait() != NodeState::SINK_BOUND)
+            return SourceState::ERR_CONNECT; // No throw because this can occur
+                                             // at quit
 
         // Self post since all loops start with wait() and we just
         // finished our wait(). This will make the first call to
@@ -354,6 +364,7 @@ inline void Source<Frame>::connect()
     parameters_.bytes = frame_.total() * frame_.elemSize();
 
     state_ = SourceState::CONNECTED;
+    return SourceState::CONNECTED;
 }
 
 }      /* namespace oat */

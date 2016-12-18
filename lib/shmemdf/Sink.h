@@ -29,6 +29,7 @@
 #include "../datatypes/Color.h"
 #include "../datatypes/Frame.h"
 #include "../datatypes/Sample.h"
+#include "../base/Globals.h"
 
 #include "ForwardsDecl.h"
 #include "Node.h"
@@ -36,7 +37,7 @@
 
 namespace oat {
 
-template<typename T>
+template <typename T>
 class SinkBase {
 public:
     SinkBase();
@@ -62,15 +63,15 @@ private:
     bool did_wait_need_post_ {false};
 };
 
-template<typename T>
+template <typename T>
 inline SinkBase<T>::SinkBase()
 {
     // Nothing
 }
 
-template<typename T>
-inline SinkBase<T>::~SinkBase() {
-
+template <typename T>
+inline SinkBase<T>::~SinkBase()
+{
     // Detach this server from shared mat header
     if (bound_) {
 
@@ -89,9 +90,9 @@ inline SinkBase<T>::~SinkBase() {
     }
 }
 
-template<typename T>
-inline void SinkBase<T>::wait() {
-
+template <typename T>
+inline void SinkBase<T>::wait()
+{
 #ifndef NDEBUG
     // Don't use Asserts because it does not clean shmem
     if(!bound_)
@@ -105,7 +106,8 @@ inline void SinkBase<T>::wait() {
     // Only wait if there is a SOURCE attached to the node
     // Wait with timed wait with period check to prevent deadlocks
     while (node_->source_ref_count() > 0 &&
-          !node_->write_barrier.timed_wait(timeout)) {
+          !node_->write_barrier.timed_wait(timeout) &&
+          !quit) {
         // Loops checking if wait has been released
         timeout = boost::get_system_time() + msec_t(10);
     }
@@ -113,9 +115,9 @@ inline void SinkBase<T>::wait() {
     did_wait_need_post_ = true;
 }
 
-template<typename T>
-inline void SinkBase<T>::post() {
-
+template <typename T>
+inline void SinkBase<T>::post()
+{
 #ifndef NDEBUG
     // Don't use Asserts because it does not clean shmem
     if(!bound_)
@@ -139,7 +141,7 @@ inline void SinkBase<T>::post() {
 
 // 0. Generic without need for zero-copy storage
 
-template<typename T>
+template <typename T>
 class Sink : public SinkBase<T> {
 
     using SinkBase<T>::address_;
@@ -159,10 +161,10 @@ public:
 
 };
 
-template<typename T>
-template<typename ...Targs>
-inline void Sink<T>::bind(const std::string &address, Targs... args) {
-
+template <typename T>
+template <typename... Targs>
+inline void Sink<T>::bind(const std::string &address, Targs... args)
+{
     if (bound_)
         throw std::runtime_error("A sink can only bind a "
                                  "single time to a single node.");
@@ -204,9 +206,9 @@ inline void Sink<T>::bind(const std::string &address, Targs... args) {
     }
 }
 
-template<typename T>
-inline T * Sink<T>::retrieve() {
-
+template <typename T>
+inline T *Sink<T>::retrieve()
+{
 #ifndef NDEBUG
     // Don't use Asserts because it does not clean shmem
     if (!bound_)
@@ -218,7 +220,7 @@ inline T * Sink<T>::retrieve() {
 
 // 1. SharedFrameHeader
 
-template<>
+template <>
 class Sink<Frame> : public SinkBase<SharedFrameHeader> {
 
 public:
@@ -227,8 +229,8 @@ public:
             oat::PixelColor color);
 };
 
-inline void Sink<Frame>::bind(const std::string &address, const size_t bytes) {
-
+inline void Sink<Frame>::bind(const std::string &address, const size_t bytes)
+{
     if (bound_)
         throw std::runtime_error("A sink can only bind a "
                                  "single time to a single node.");

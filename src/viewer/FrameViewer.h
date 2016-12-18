@@ -29,28 +29,22 @@
 
 namespace oat {
 
-/**
- * View a frame stream on the monitor.
- */
 class FrameViewer : public Viewer<oat::Frame> {
 
 public:
 
+    /** 
+     * @brief View a frame stream on the monitor.
+     * @param source_name Frame source node.
+     */
     FrameViewer(const std::string &source_name);
 
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    void appendOptions(po::options_description &opts) override;
-
-    /**
-     * @brief Configure filter parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    void configure(const po::variables_map &vm) override;
-
 private:
+
+    // Implement Configurable Interface
+    po::options_description options(void) const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     bool gui_inititalized_ {false};
 
