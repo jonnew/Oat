@@ -36,70 +36,26 @@ Calibrator::Calibrator(const std::string &source_address) :
     // Nothing
 }
 
-void Calibrator::connectToNode() {
-
+bool Calibrator::connectToNode()
+{
     // Establish our a slot in the node
     frame_source_.touch(source_address_);
 
     // Wait for sychronous start with sink when it binds the node
-    frame_source_.connect();
+    if (frame_source_.connect() != SourceState::CONNECTED)
+        return false;
+
+    return true; 
 }
 
-void Calibrator::appendOptions(po::options_description &opts) {
-
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-
-    // Common program options
-    po::options_description local_opts;
-    local_opts.add_options()
-        ("calibration-key,k", po::value<std::string>(),
-        "The key name for the calibration entry that will be inserted "
-        "into the calibration file. e.g. 'camera-1-homography'\n")
-        ("calibration-path,f", po::value<std::string>(),
-        "The calibration file location. If not is specified,"
-        "defaults to './calibration.toml'. If a folder is specified, "
-        "defaults to '<folder>/calibration.toml\n. If a full path "
-        "including file in specified, then it will be that path "
-        "without modification.")
-        ;
-
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
-}
-
-void Calibrator::configure(const po::variables_map &vm) {
-
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
-    // Square width (must come before chessboard size because it is used there)
-    oat::config::getValue<std::string>(
-        vm, config_table, "calibration-key", calibration_key_
-    );
-
-    oat::config::getValue<std::string>(
-        vm, config_table, "calibration-path", calibration_save_path_
-    );
-
-    generateSavePath(calibration_save_path_, "calibration");
-}
-
-bool Calibrator::process(void) {
-
+int Calibrator::process(void)
+{
     // START CRITICAL SECTION //
     ////////////////////////////
 
     // Wait for sink to write to node
     if (frame_source_.wait() == oat::NodeState::END)
-        return true;
+        return 1;
 
     // Clone the shared frame
     frame_source_.copyTo(internal_frame_);
@@ -113,12 +69,13 @@ bool Calibrator::process(void) {
     calibrate(internal_frame_);
 
     // Sink was not at END state
-    return false;
+    return 0;
 }
 
 // TODO: Replace with common utility?
 bool Calibrator::generateSavePath(const std::string &save_path,
-                                  const std::string &default_name) {
+                                  const std::string &default_name)
+{
 
     // Create folder and file name
     bfs::path path(save_path.c_str());

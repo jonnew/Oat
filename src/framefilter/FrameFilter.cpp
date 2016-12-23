@@ -25,7 +25,7 @@ namespace oat {
 
 FrameFilter::FrameFilter(const std::string &frame_source_address,
                          const std::string &frame_sink_address)
-: ControllableComponent()
+: Component()
 , Configurable()
 , name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
 , frame_source_address_(frame_source_address)
@@ -97,19 +97,4 @@ int FrameFilter::process()
     return 0;
 }
 
-void FrameFilter::applyCommand(const std::string &command) 
-{
-    const oat::CommandHash commands{{"clear", 0}};
-    
-    if (!commands.count(command)) {
-        std::cout << "got invalid command " << command <<"\n";
-        return;
-    }
-
-    switch (commands.at(command)) {
-        case 0: {
-            std::cout << "got " << command << "\n";
-        }
-    }
-}
 } /* namespace oat */

@@ -67,14 +67,20 @@ HomographyGenerator::HomographyGenerator(const std::string &source_name) :
     accept(&usage, std::cout);
 }
 
-void HomographyGenerator::appendOptions(po::options_description &opts) {
-
-    // Accepts a config file and calibration save path options
-    Calibrator::appendOptions(opts);
-
-    // Update CLI options
+po::options_description HomographyGenerator::options() const
+{
+    // Common program options
     po::options_description local_opts;
     local_opts.add_options()
+        ("calibration-key,k", po::value<std::string>(),
+        "The key name for the calibration entry that will be inserted "
+        "into the calibration file. e.g. 'camera-1-homography'\n")
+        ("calibration-path,f", po::value<std::string>(),
+        "The calibration file location. If not is specified,"
+        "defaults to './calibration.toml'. If a folder is specified, "
+        "defaults to '<folder>/calibration.toml\n. If a full path "
+        "including file in specified, then it will be that path "
+        "without modification.")
         ("method,m", po::value<size_t>(),
         "Homography estimation method. Defaults to 0.\n\n"
         "Values:\n"
@@ -85,30 +91,27 @@ void HomographyGenerator::appendOptions(po::options_description &opts) {
         "frames contain known fiducial marks.\n")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void HomographyGenerator::configure(const po::variables_map &vm) {
+void HomographyGenerator::applyConfiguration(
+    const po::variables_map &vm, const config::OptionTable &config_table)
+{
+    oat::config::getValue<std::string>(
+        vm, config_table, "calibration-key", calibration_key_);
 
-    // Accepts default configuration
-    Calibrator::configure(vm);
+    oat::config::getValue<std::string>(
+        vm, config_table, "calibration-path", calibration_save_path_);
 
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
+    generateSavePath(calibration_save_path_, "calibration");
 
     // Estimation method
     oat::config::getNumericValue<size_t>(
-            vm, config_table, "method", method_, 0, 2
-    );
+        vm, config_table, "method", method_, 0, 2);
 }
 
-void HomographyGenerator::calibrate(cv::Mat &frame) {
-
+void HomographyGenerator::calibrate(cv::Mat &frame)
+{
     if (clicked_)
         frame = drawMousePoint(frame);
 
@@ -163,16 +166,18 @@ void HomographyGenerator::calibrate(cv::Mat &frame) {
     }
 }
 
-void HomographyGenerator::accept(CalibratorVisitor* visitor) {
+void HomographyGenerator::accept(CalibratorVisitor *visitor)
+{
     visitor->visit(this);
 }
 
-void HomographyGenerator::accept(OutputVisitor* visitor, std::ostream& out) {
+void HomographyGenerator::accept(OutputVisitor *visitor, std::ostream &out)
+{
     visitor->visit(this, out);
 }
 
-int HomographyGenerator::addDataPoint() {
-
+int HomographyGenerator::addDataPoint()
+{
     try {
 
         // Make sure the user has actually selected a point on the image
@@ -231,8 +236,8 @@ int HomographyGenerator::addDataPoint() {
     return 0;
 }
 
-int HomographyGenerator::removeDataPoint() {
-
+int HomographyGenerator::removeDataPoint()
+{
     if (pixels_.size() == 0) {
         std::cerr << oat::Error("No data points to delete.\n");
         return -1;
@@ -270,8 +275,8 @@ int HomographyGenerator::removeDataPoint() {
     return 0;
 }
 
-int HomographyGenerator::selectHomographyMethod() {
-
+int HomographyGenerator::selectHomographyMethod()
+{
     std::cout << "Available homgraphy estimation methods:\n"
               << "[0] Robust\n"
               << "[1] Regular\n"
@@ -293,8 +298,8 @@ int HomographyGenerator::selectHomographyMethod() {
     }
 }
 
-void HomographyGenerator::printDataPoints(std::ostream& out) {
-
+void HomographyGenerator::printDataPoints(std::ostream &out)
+{
     // Save stream state. When ifs is destructed, the stream will
     // return to default format.
     boost::io::ios_flags_saver ifs(out);
@@ -342,8 +347,8 @@ void HomographyGenerator::printDataPoints(std::ostream& out) {
     out << "\n";
 }
 
-int HomographyGenerator::generateHomography() {
-
+int HomographyGenerator::generateHomography()
+{
     // Check if there are enough points to try
     if (pixels_.size() < 4) {
         std::cerr << oat::Error("At least 4 data points are required to compute a homography. \n");
@@ -394,8 +399,8 @@ int HomographyGenerator::generateHomography() {
     }
 }
 
-cv::Mat HomographyGenerator::drawMousePoint(cv::Mat& frame) {
-
+cv::Mat HomographyGenerator::drawMousePoint(cv::Mat &frame)
+{
     // Write the click point coords on the frame
     cv::circle(frame, mouse_pt_, 2, cv::Scalar(0, 0, 255), -1);
     std::string coord = "(" + std::to_string(mouse_pt_.x) +
@@ -420,12 +425,14 @@ cv::Mat HomographyGenerator::drawMousePoint(cv::Mat& frame) {
     return frame;
 }
 
-void HomographyGenerator::onMouseEvent(int event, int x, int y, int, void* _this) {
+void HomographyGenerator::onMouseEvent(
+    int event, int x, int y, int, void *_this)
+{
     static_cast<HomographyGenerator*>(_this)->onMouseEvent(event, x, y);
 }
 
-void HomographyGenerator::onMouseEvent(int event, int x, int y) {
-
+void HomographyGenerator::onMouseEvent(int event, int x, int y)
+{
     if (event == cv::EVENT_LBUTTONDOWN) {
         mouse_pt_.x = x;
         mouse_pt_.y = y;

@@ -34,11 +34,10 @@
 
 #define REQUEST_RETRIES 1e6
 #define REQUEST_TIMEOUT_MS 500
-#define OAT_CONTROLLABLE
 
 namespace oat {
 
-using CommandHash = std::map<std::string, int>;
+typedef std::map<std::string, std::string> CommandDescription;
 
 class ControllableComponent : public Component {
 
@@ -55,14 +54,6 @@ public:
 protected:
 
     /**
-     * @brief Start component controller on a separate thread.
-     *  - Generate fresh socket basked upon socket_id
-     *
-     * @param ZMQ endpoint
-     */
-    void runController(const char *endpoint = "ipc:///tmp/oatcomms.pipe");
-
-    /**
      * @brief Get unique, controllable ID for this component
      * @param n Number of characters to copy to id
      * @param ASCII string ID consisting of the character 'C' followed by a
@@ -74,14 +65,32 @@ protected:
 
     /**
      * @brief Mutate component according to the requested user input. Message
-     * header provides location of control struct.
-     * @note This function must be thread-safe with processing thread
+     * header provides location of control struct. 
+     * @note Only commands supplied as keys via the overridden commands()
+     * function will be passed to this function. 
+     * @note This function must be thread-safe with processing thread.
      * @param message_header Control message
      * @return Return code. 0 = More. 1 = Quit received.
      */
     virtual void applyCommand(const std::string &command) = 0;
 
+    /** 
+     * @brief Return map comtaining a runtime commands and description of
+     * action on the component as implmented with the applyCommand function.
+     * @return commands/description map.
+     */
+    virtual oat::CommandDescription commands() = 0;
+
 private:
+
+    /**
+     * @brief Start component controller on a separate thread.
+     * @param endpoint Endpoint over which communicaiton with an oat-control
+     * instance will occur.
+     */
+    void runController(const char *endpoint = "ipc:///tmp/oatcomms.pipe");
+
+    std::string whoAmI();
 
     int control(const std::string &command);
 

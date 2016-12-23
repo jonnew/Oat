@@ -26,6 +26,7 @@
 
 #include "Controller.h"
 
+#include "../../lib/base/ControllableComponent.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ZMQHelpers.h"
 
@@ -41,16 +42,20 @@ Controller::Controller(const char *endpoint)
 
 void Controller::send(const std::string &command)
 {
-    for (auto &s : subscriptions_)
+    for (const auto &s : subscriptions_)
         sendReqEnvelope(&router_, s.first, command);
 }
 
 void Controller::send(const std::string &command, const std::string &target_id)
 {
-    if (subscriptions_.count(target_id))
-        sendReqEnvelope(&router_, target_id, command);
-    else
+    if (subscriptions_.count(target_id)) {
+        if (command == "help" || command == "Help")
+            help(target_id);
+        else
+            sendReqEnvelope(&router_, target_id, command);
+    } else {
         std::cerr << oat::Warn("Target is not available: " + target_id) << "\n";
+    }
 }
 
 void Controller::send(const std::string &command, const Subs::size_type idx)
@@ -98,7 +103,7 @@ void Controller::scan()
     }
 }
 
-std::string Controller::list()
+std::string Controller::list() const
 {
     const char sep = ' ';
     const int idx_width = 8;
@@ -135,28 +140,74 @@ int Controller::addSubscriber(const std::string &id_string,
     if (header != "OAT")
         return -1;
 
-    // Get the name and type from the data string
-    auto delim_pos = data.find("/");
-    if (delim_pos == std::string::npos)
-        return -1;
+    // Parse the JSON string containing type, name, and usage info
+    rapidjson::Document sub_info;
+    sub_info.Parse(data.c_str());
+    assert(sub_info.IsObject());
 
-    auto type = std::atoi(data.substr(0, delim_pos).c_str());
-    auto name = data.substr(delim_pos+1);
+    // Get subscriber type
+    assert(sub_info.HasMember("type"));
+    assert(sub_info["type"].IsInt());
+    assert(sub_info["type"].GetInt() < oat::COMP_N);
+    assert(sub_info["type"].GetInt() >= oat::mock);
+    auto ctype = static_cast<oat::ComponentType>(sub_info["type"].GetInt());
 
-    if (type <= oat::mock || type >= oat::COMP_N)
-        return -1;
+    // Get subscriber type
+    assert(sub_info.HasMember("name"));
+    assert(sub_info["name"].IsString());
+    auto name = std::string(sub_info["name"].GetString());
 
-    auto ctype = static_cast<oat::ComponentType>(type);
+    // Get description and format
+    assert(sub_info.HasMember("commands"));
+    const rapidjson::Value &desc = sub_info["commands"];
+    assert(desc.IsObject());
 
-    // Add if this component is not already
-    // Check if already in list
+    oat::CommandDescription desc_map;
+    for (auto &d : desc.GetObject()) {
+
+        assert(d.value.IsString());
+        desc_map.emplace(d.name.GetString(), d.value.GetString());
+    }
+
+    // Add if this component is not already in hash
     if (!subscriptions_.count(id_string)) {
         subscriptions_.emplace(std::piecewise_construct,
                      std::make_tuple(id_string),
-                     std::make_tuple(ctype, name));
+                     std::make_tuple(ctype, name, desc_map));
     }
 
     return 0;
+}
+
+void Controller::help(const std::string &target_id) const
+{
+    if (subscriptions_.count(target_id)) {
+
+        auto cmds = subscriptions_.at(target_id).commands;
+
+        size_t max_len = 7; // For "COMMAND"
+        std::vector<std::string> keys;
+
+        for (const auto &c : cmds) {
+            if (c.first.size() > max_len)
+                max_len = c.first.size();
+        }
+        max_len += 2;
+
+        std::stringstream out;
+
+        out << std::left << std::setw(max_len) << "COMMAND "
+            << "FUNCTION // " << subscriptions_.at(target_id).name << "\n";
+
+        for (const auto &c : cmds) {
+            out << std::left << std::setw(max_len) << c.first << c.second
+                << "\n";
+        }
+
+        std::cout << out.str();
+    } else {
+        std::cerr << oat::Warn("Target is not available: " + target_id) << "\n";
+    }
 }
 
 } /* namespace oat */

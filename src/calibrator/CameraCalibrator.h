@@ -54,9 +54,6 @@ public:
      */
     CameraCalibrator(const std::string &source_name);
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
     // Accept visitors
     void accept(CalibratorVisitor* visitor) override;
     void accept(OutputVisitor* visitor, std::ostream& out) override;
@@ -85,6 +82,10 @@ protected:
 
 private:
 
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     Mode mode_ {Mode::NORMAL};
 

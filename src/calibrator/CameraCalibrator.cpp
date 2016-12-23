@@ -70,14 +70,20 @@ CameraCalibrator::CameraCalibrator(const std::string &source_name) :
     std::cout << "Starting interactive session.\n";
 }
 
-void CameraCalibrator::appendOptions(po::options_description &opts) {
-
-    // Accepts a config file and calibration save path options
-    Calibrator::appendOptions(opts);
-
-    // Update CLI options
+po::options_description CameraCalibrator::options() const
+{
+    // Common program options
     po::options_description local_opts;
     local_opts.add_options()
+        ("calibration-key,k", po::value<std::string>(),
+        "The key name for the calibration entry that will be inserted "
+        "into the calibration file. e.g. 'camera-1-homography'\n")
+        ("calibration-path,f", po::value<std::string>(),
+        "The calibration file location. If not is specified,"
+        "defaults to './calibration.toml'. If a folder is specified, "
+        "defaults to '<folder>/calibration.toml\n. If a full path "
+        "including file in specified, then it will be that path "
+        "without modification.")
         ("chessboard-size,s", po::value<std::string>(),
         "Int array, [x,y], specifying the number of inside corners in "
         "the horizontal and vertical demensions of the chessboard used for calibration.\n")
@@ -85,21 +91,19 @@ void CameraCalibrator::appendOptions(po::options_description &opts) {
         "The length/width of a single chessboard square in meters.\n")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void CameraCalibrator::configure(const po::variables_map &vm) {
+void CameraCalibrator::applyConfiguration(
+    const po::variables_map &vm, const config::OptionTable &config_table)
+{
+    oat::config::getValue<std::string>(
+        vm, config_table, "calibration-key", calibration_key_);
 
-    // Accepts default configuration
-    Calibrator::configure(vm);
+    oat::config::getValue<std::string>(
+        vm, config_table, "calibration-path", calibration_save_path_);
 
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
+    generateSavePath(calibration_save_path_, "calibration");
 
     // Square width (must come before chessboard size because it is used there)
     oat::config::getNumericValue<double>(vm, config_table, "square-width",
@@ -110,6 +114,8 @@ void CameraCalibrator::configure(const po::variables_map &vm) {
     if (oat::config::getArray<double, 2>(vm, config_table, "chessboard-size", s, true)) {
 
         if (s[0] <= 2 || s[1] <= 2)
+            throw(std::runtime_error(
+                "Chessboard width and height should be greater than 2."));
 
         chessboard_size_.height = s[0];
         chessboard_size_.width  = s[1];
@@ -127,8 +133,8 @@ void CameraCalibrator::configure(const po::variables_map &vm) {
     }
 }
 
-void CameraCalibrator::calibrate(cv::Mat& frame) {
-
+void CameraCalibrator::calibrate(cv::Mat &frame)
+{
     tick_ = Clock::now();
 
     // TODO: Is it possible to get frame metadata before any loops? Might
@@ -203,20 +209,23 @@ void CameraCalibrator::calibrate(cv::Mat& frame) {
     }
 }
 
-void CameraCalibrator::accept(CalibratorVisitor* visitor) {
+void CameraCalibrator::accept(CalibratorVisitor *visitor)
+{
     visitor->visit(this);
 }
 
-void CameraCalibrator::accept(OutputVisitor* visitor, std::ostream& out) {
+void CameraCalibrator::accept(OutputVisitor *visitor, std::ostream &out)
+{
     visitor->visit(this, out);
 }
 
-void CameraCalibrator::clearDataPoints() {
+void CameraCalibrator::clearDataPoints()
+{
     corners_.clear();
 }
 
-void CameraCalibrator::detectChessboard(cv::Mat& frame) {
-
+void CameraCalibrator::detectChessboard(cv::Mat &frame)
+{
     // Extract the chessboard from the current image
     std::vector<cv::Point2f> point_buffer;
     bool detected =
@@ -262,15 +271,15 @@ void CameraCalibrator::detectChessboard(cv::Mat& frame) {
     }
 }
 
-void CameraCalibrator::undistortFrame(cv::Mat& frame) {
-
+void CameraCalibrator::undistortFrame(cv::Mat &frame)
+{
     // NOTE: For cv::undistort, src must not be the same Mat as dest.
     cv::Mat temp = frame.clone();
     cv::undistort(temp, frame, camera_matrix_, distortion_coefficients_);
 }
 
-void CameraCalibrator::generateCalibrationParameters() {
-
+void CameraCalibrator::generateCalibrationParameters()
+{
     if (corners_.size() == 0) {
         std::cerr << oat::Error("At least one chessboard detection "
                                 "is needed to generate calibration "
@@ -323,8 +332,8 @@ void CameraCalibrator::generateCalibrationParameters() {
         printCalibrationResults(std::cout);
 }
 
-void CameraCalibrator::decorateFrame(cv::Mat& frame) {
-
+void CameraCalibrator::decorateFrame(cv::Mat &frame)
+{
     auto m_idx = static_cast<typename std::underlying_type<Mode>::type>(mode_);
     std::string mode_msg =  "Mode: " + mode_strings_[m_idx];
     cv::Size txt_size = cv::getTextSize(mode_msg, 1, 1, 1, 0);
@@ -332,8 +341,8 @@ void CameraCalibrator::decorateFrame(cv::Mat& frame) {
     cv::putText(frame, mode_msg, mode_origin, 1, 1, cv::Scalar(0, 0, 255));
 }
 
-void CameraCalibrator::printCalibrationResults(std::ostream& out) {
-
+void CameraCalibrator::printCalibrationResults(std::ostream &out)
+{
     // Save stream state. When ifs is destructed, the stream will
     // return to default format.
     boost::io::ios_flags_saver ifs(out);
@@ -351,7 +360,8 @@ void CameraCalibrator::printCalibrationResults(std::ostream& out) {
         << "RMS Reconstruction Error: " << rms_error_ << "\n\n";
 }
 
-void CameraCalibrator::toggleMode(Mode mode) {
+void CameraCalibrator::toggleMode(Mode mode)
+{
     if (mode_ != mode)
         mode_ = mode;
     else

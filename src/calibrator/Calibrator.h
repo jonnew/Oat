@@ -20,12 +20,14 @@
 #ifndef OAT_CALIBRATOR_H
 #define OAT_CALIBRATOR_H
 
-#include <string>
 #include <iosfwd>
+#include <string>
 
 #include <boost/program_options.hpp>
 #include <opencv2/core/mat.hpp>
 
+#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Source.h"
 
@@ -38,46 +40,19 @@ class CalibratorVisitor;
 class OutputVisitor;
 class SharedFrameHeader;
 
-/**
- * Abstract calibrator.
- * All concrete calibrator types implement this ABC.
- */
-class Calibrator {
+class Calibrator : public Component, public Configurable<false> {
 
 public:
-
     /**
      * Abstract calibrator.
      * All concrete calibrator types implement this ABC.
      * @param source_address Frame SOURCE address
      */
     Calibrator(const std::string &source_address);
-
     virtual ~Calibrator() {};
 
-    /**
-     * Calibrator SOURCE must be able to connect to a NODE from
-     * which to receive frames.
-     */
-    virtual void connectToNode(void);
-
-    /**
-     * Run the calibration routine on the frame SOURCE.
-     * @return True if SOURCE signals EOF
-     */
-    virtual bool process(void);
-
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    virtual void appendOptions(po::options_description &opts);
-
-    /**
-     * @brief Configure filter parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    virtual void configure(const po::variables_map &vm);
+    std::string name() const override { return name_; }
+    ComponentType type() const override { return ComponentType::calibrator; }
 
     /**
      * Create the calibration file path using a specified path.
@@ -95,19 +70,13 @@ public:
     virtual void accept(OutputVisitor* visitor, std::ostream& out) = 0;
 
     // Accessors
-    //const std::string & name() const { return name_; }
-    std::string calibration_save_path() const {
-        return calibration_save_path_;
-    }
+    std::string calibration_save_path() const { return calibration_save_path_; }
 
     void set_calibration_key(const std::string& value) {
         calibration_key_ = value;
     }
 
-    std::string name() const { return name_; }
-
 protected:
-
     // List of allowed configuration options, including those
     // specified only via config file
     std::vector<std::string> config_keys_;
@@ -121,14 +90,15 @@ protected:
     std::string calibration_save_path_ {"."};      //!< Calibration parameter save path
 
 private:
+    // Component Interface
+    virtual bool connectToNode(void) override;
+    int process(void) override;
 
     std::string name_;                  //!< Calibrator name
     oat::Frame internal_frame_;         //!< Current frame provided by SOURCE
     std::string source_address_;        //!< Frame source address
     oat::Source<Frame> frame_source_;   //!< The calibrator frame SOURCE
 
-    //std::string calibration_key_;       //!< Key name of calibration table entry
-    //std::string calibration_save_path_; //!< Calibration parameter save path
 };
 
 }      /* namespace oat */

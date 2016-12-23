@@ -17,7 +17,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include <csignal>
 #include <iostream>
 #include <memory>
 #include <string>

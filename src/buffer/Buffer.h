@@ -35,9 +35,6 @@
 
 namespace oat {
 
-/**
- * Abstract Buffer.
- */
 class Buffer : public Component {
 
 public:

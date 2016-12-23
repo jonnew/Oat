@@ -23,27 +23,32 @@
 #include <string>
 #include <unordered_map>
 
+#include "rapidjson/document.h"
 #include "zmq.hpp"
 
-#include "../../lib/base/Component.h"
+#include "../../lib/base/ControllableComponent.h"
 
 namespace oat {
 
-struct Subscriber {
-    Subscriber(const oat::ComponentType type, const std::string &name)
-    : type(type)
-    , name(name) { }
-
-    oat::ComponentType type;
-    std::string name;
-};
-
 class Controller {
+
+    struct Subscriber {
+        Subscriber(const oat::ComponentType type,
+                   const std::string &name,
+                   const oat::CommandDescription &commands)
+        : type(type)
+        , name(name)
+        , commands(commands) { }
+
+        const oat::ComponentType type;
+        const std::string name;
+        const oat::CommandDescription commands;
+    };
 
 public:
 
     using Identity = std::string;
-    using Subs = std::map<Identity, oat::Subscriber>;
+    using Subs = std::map<Identity, Subscriber>;
 
     Controller(const char *endpoint);
 
@@ -57,19 +62,23 @@ public:
     void send(const std::string &cmd, const Subs::size_type idx);
     void send(const std::string &cmd);
 
-    std::string list(void);
+    std::string list(void) const;
 
     int addSubscriber(const std::string &identity,
                       const std::string &name);
 
 private:
 
-    // Hashed subscriptions 
+    void help(const std::string &target_id) const;
+    //void printHelp(const oat::CommandDescription &cmds) const;
+
+    // Hashed subscriptions
     Subs subscriptions_;
 
     // Router socket
     zmq::context_t ctx_;
     zmq::socket_t router_;
 };
+
 }      /* namespace oat */
 #endif /* OAT_CONTROLLER_H */

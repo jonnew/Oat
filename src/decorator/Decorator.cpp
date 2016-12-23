@@ -44,14 +44,8 @@ Decorator::Decorator(const std::string &frame_source_address,
     // Nothing
 }
 
-void Decorator::appendOptions(po::options_description &opts)
+po::options_description Decorator::options() const
 {
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -63,23 +57,17 @@ void Decorator::appendOptions(po::options_description &opts)
         ("region,R", "Write region information on each frame "
         "if there is a position stream that contains it.\n")
         ("history,h", "Display position history.\n")
+        ("invert-font,i", "Invert font color.\n")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void Decorator::configure(const po::variables_map &vm)
+void Decorator::applyConfiguration(const po::variables_map &vm,
+                                   const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Position sources
-    // NOTE: not setable via configuration file
+    // NOTE: not settable via configuration file
     if (vm.count("position-sources"))  {
 
         auto p_source_addrs =
@@ -117,9 +105,14 @@ void Decorator::configure(const po::variables_map &vm)
 
     // Path history
     oat::config::getValue<bool>(vm, config_table, "history", show_position_history_);
+
+    // Invert font
+    bool invert_font;
+    if (oat::config::getValue<bool>(vm, config_table, "invert-font", invert_font))
+        font_color_ = cv::Scalar(0,0,0);
 }
 
-void Decorator::connectToNodes()
+bool Decorator::connectToNode()
 {
     // Examine sample period of sources to make sure they are the same
     double sample_rate_hz;
@@ -132,7 +125,8 @@ void Decorator::connectToNodes()
         ps.source->touch(ps.name);
 
     // Wait for synchronous start with sink when it binds the node
-    frame_source_.connect();
+    if (frame_source_.connect() != SourceState::CONNECTED)
+        return false;
 
     for (auto &ps : position_sources_) {
         ps.source->connect();
@@ -165,9 +159,11 @@ void Decorator::connectToNodes()
         positions_found_.push_back(false);
         history_frame_ = cv::Mat::zeros(shared_frame_.size(), shared_frame_.type());
     }
+
+    return true;
 }
 
-bool Decorator::process()
+int Decorator::process()
 {
     // 1. Get frame
     // START CRITICAL SECTION //
@@ -175,7 +171,7 @@ bool Decorator::process()
 
     // Wait for sink to write to node
     if (frame_source_.wait() == oat::NodeState::END)
-        return true;
+        return 1;
 
     // Clone the shared frame
     frame_source_.copyTo(internal_frame_);
@@ -192,7 +188,7 @@ bool Decorator::process()
         // START CRITICAL SECTION //
         ////////////////////////////
         if (position_sources_[i].source->wait() == oat::NodeState::END)
-            return true;
+            return 1;
 
         positions_[i] = position_sources_[i].source->clone();
 
@@ -219,7 +215,24 @@ bool Decorator::process()
     //  END CRITICAL SECTION  //
 
     // None of the sink's were at the END state
-    return false;
+    return 0;
+}
+
+oat::CommandDescription Decorator::commands() 
+{
+    const oat::CommandDescription commands{
+        {"clear", "Clear path history."}
+    };
+
+    return commands;
+}
+
+void Decorator::applyCommand(const std::string &command)
+{
+    const auto cmds = commands();
+    if (cmds.at(command) == "clear") {
+        history_frame_ = cv::Scalar::all(0);
+    }
 }
 
 void Decorator::drawOnFrame()

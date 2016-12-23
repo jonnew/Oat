@@ -43,7 +43,7 @@ static void sigHandler(int)
 
 Component::Component()
 {
-    // Install Ctrl-C signal handler
+    // Install Ctrl-c signal handler
     std::signal(SIGINT, sigHandler);
 }
 

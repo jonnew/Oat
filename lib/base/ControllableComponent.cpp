@@ -22,6 +22,7 @@
 
 #include <chrono>
 #include <exception>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -37,12 +38,11 @@ static std::exception_ptr ctrl_ex = nullptr;
 
 void ControllableComponent::identity(char *id, const size_t n) const
 {
-    auto tid = std::this_thread::get_id();
     std::stringstream ping_msg;
     ping_msg << std::hex << std::uppercase;
     ping_msg << "OAT"; // Must not start with binary 0, ZMQ rule
     ping_msg << "/";
-    ping_msg << tid;
+    ping_msg << std::this_thread::get_id();
     std::strncpy(id, ping_msg.str().data(), n);
 }
 
@@ -61,9 +61,8 @@ void ControllableComponent::run()
 
     // If an exception occured in control thread, rethrow it on the joined
     // thread
-    if (ctrl_ex) {
+    if (ctrl_ex)
         std::rethrow_exception(ctrl_ex);
-    }
 }
 
 void ControllableComponent::runController(const char *endpoint)
@@ -74,14 +73,8 @@ void ControllableComponent::runController(const char *endpoint)
 
         auto ctrl_socket = getCtrlSocket(ctx, endpoint);
 
-        // Construct ping message: type/name
-        std::stringstream ping_msg;
-        ping_msg << std::to_string(static_cast<uint16_t>(type()));
-        ping_msg << "/";
-        ping_msg << name();
-
         oat::sendStringMore(ctrl_socket, ""); // Delimeter
-        oat::sendString(ctrl_socket, ping_msg.str());
+        oat::sendString(ctrl_socket, whoAmI());
 
         // Execute control loop
         while (!quit) {
@@ -92,17 +85,10 @@ void ControllableComponent::runController(const char *endpoint)
 
             if (p[0].revents & ZMQ_POLLIN && !quit) {
 
+                // Found a command, run it.
                 oat::recvString(ctrl_socket); // Delimeter
-                auto reply = oat::recvString(ctrl_socket);
-
-                // Interpret message
-                if (!reply.empty()) {
-                    quit = control(reply);
-                    control(reply);
-                }
-
-                oat::sendStringMore(ctrl_socket, ""); // Delimeter
-                oat::sendString(ctrl_socket, ping_msg.str());
+                auto command = oat::recvString(ctrl_socket);
+                quit = control(command);
 
             } else {
                 // If we did not get a reply on this socket
@@ -110,7 +96,7 @@ void ControllableComponent::runController(const char *endpoint)
                 delete ctrl_socket;
                 ctrl_socket = getCtrlSocket(ctx, endpoint);
                 oat::sendStringMore(ctrl_socket, ""); // Delimeter
-                oat::sendString(ctrl_socket, ping_msg.str());
+                oat::sendString(ctrl_socket, whoAmI());
             }
         }
 
@@ -129,16 +115,45 @@ void ControllableComponent::runController(const char *endpoint)
 
 int ControllableComponent::control(const std::string &command)
 {
-    if (command == "quit" || command == "Quit")
+    if (command == "quit" || command == "Quit") {
         return 1;
-    else
-        applyCommand(command);
+    } else {
+
+        // Check that command is in hash
+        if (commands().count(command))
+            applyCommand(command);
+    }
 
     return 0;
 }
 
+std::string ControllableComponent::whoAmI()
+{
+    // JSON string with name, type, and command/description map
+    std::stringstream whoami;
+    whoami << "{";
+    whoami << "\"name\":\"" << name() << "\",";
+    whoami << "\"type\":" << std::to_string(static_cast<uint16_t>(type())) << ",";
+
+    auto cmds = commands();
+    if (!cmds.empty()) {
+
+        whoami << "\"commands\":{";
+        for (const auto &c : cmds)
+            whoami << "\"" << c.first << "\":\"" << c.second << "\",";
+        whoami.seekp(-1, whoami.cur); // Delete trailing comma
+        whoami << "}";
+    } else {
+        whoami.seekp(-1, whoami.cur); // Delete trailing comma
+    }
+
+    whoami << "}";
+
+    return whoami.str();
+}
+
 zmq::socket_t *ControllableComponent::getCtrlSocket(zmq::context_t &context,
-                                        const char *endpoint)
+                                                    const char *endpoint)
 {
     zmq::socket_t *socket = new zmq::socket_t(context, ZMQ_DEALER);
     char id[32];

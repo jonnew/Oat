@@ -33,10 +33,7 @@ namespace oat {
 class ColorConvert; // Forward decl.
 namespace po = boost::program_options;
 
-/**
- * @brief Abstract frame filter.
- */
-class FrameFilter : public ControllableComponent, public Configurable<true> {
+class FrameFilter : public Component, public Configurable<false> {
 
 friend ColorConvert;
 
@@ -52,12 +49,9 @@ public:
                          const std::string &frame_sink_address);
     virtual ~FrameFilter() { };
 
-    // Implement ControllableComponent interface
+    // Component Interface
     oat::ComponentType type(void) const override { return oat::framefilter; };
     std::string name(void) const override { return name_; }
-    virtual bool connectToNode(void) override;
-    int process(void) override;
-    virtual void applyCommand(const std::string &command) override;
 
 protected:
 
@@ -72,6 +66,10 @@ protected:
     virtual void filter(cv::Mat &frame) = 0;
 
 private:
+
+    // Component Interface
+    virtual bool connectToNode(void) override;
+    int process(void) override;
 
     // Frame source
     const std::string frame_source_address_;

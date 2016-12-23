@@ -25,7 +25,8 @@
 
 #include <boost/program_options.hpp>
 
-//#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
+#include "../../lib/base/ControllableComponent.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Helpers.h"
@@ -38,10 +39,7 @@ namespace oat {
 
 static const constexpr double PI {3.141592653589793238463};
 
-/**
- * Frame decorator.
- */
-class Decorator { //public Component {
+class Decorator : public ControllableComponent, public Configurable<true> {
 
     using pvec_size_t = oat::NamedSourceList<oat::Position2D>::size_type;
 
@@ -57,34 +55,20 @@ public:
     Decorator(const std::string &frame_source_address,
               const std::string &frame_sink_address);
 
-    std::string name() const  { return name_; }
-    //oat::ComponentType type() const override { return oat::decorator; }
+    // Implement ControllableComponent interface
+    oat::ComponentType type(void) const override { return oat::decorator; };
+    std::string name(void) const override { return name_; }
 
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    void appendOptions(po::options_description &opts);
+private:
+    virtual bool connectToNode(void) override;
+    int process(void) override;
+    void applyCommand(const std::string &command) override;
+    oat::CommandDescription commands(void) override;
 
-    /**
-     * @brief Configure decorator parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    void configure(const po::variables_map &vm);
-
-    /**
-     * Calibrator SOURCE must be able to connect to a NODEs from
-     * which to receive frames and positions.
-     */
-    void connectToNodes(void);
-
-    /**
-     * Acquire frame and positions from all SOURCES. Decorate the frame with
-     * information specified by user options. Publish decorated frame to SINK.
-     * @return SOURCE end-of-stream signal. If true, this component should exit.
-     */
-    bool process(void);
-
+    // Implement Configurable interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
 private:
 
@@ -106,9 +90,6 @@ private:
     // Positions to be added to the image stream
     std::vector<oat::Position2D> positions_;
     oat::NamedSourceList<oat::Position2D> position_sources_;
-
-    // List of allowed configuration options
-    std::vector<std::string> config_keys_;
 
     // Options
     bool decorate_position_ {true};
@@ -145,7 +126,7 @@ private:
     const double font_scale_ {1.0};
     const int font_thickness_ {1};
     const int line_thickness_ {2};
-    const cv::Scalar font_color_ {255, 255, 255};
+    cv::Scalar font_color_ {255, 255, 255};
     const int font_type_ {cv::FONT_HERSHEY_SIMPLEX};
 
     // Sample number encoding
@@ -158,8 +139,7 @@ private:
      */
     void invertHomography(oat::Position2D &pos);
 
-    // TODO: Look at these glorious type signatures. These are 'subroutines'
-    // rather than functions...
+    // Frame mutating subroutines
     void drawPosition(void);
     void printRegion(void);
     void drawOnFrame(void);

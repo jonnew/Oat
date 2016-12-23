@@ -29,17 +29,13 @@
 
 namespace oat {
 
-/**
- * Interactive homography generator.
- */
 class HomographyGenerator : public Calibrator {
 
     using point_size_t = std::vector<cv::Point2f>::size_type;
 
 public:
 
-    /**
-     * Interactive homography transform generator.  The user is presented with
+    /** Interactive homography transform generator. The user is presented with
      * a video display of the frame stream. The user then select points on the
      * video feed and enter their equivalent world-unit equivalent. Upon each
      * selection, the a best-fit homography matrix relating pixels to work
@@ -48,9 +44,6 @@ public:
      * @param source_name imaging setup frame source name
      */
     HomographyGenerator(const std::string &source_name);
-
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
 
     // Accept visitors
     void accept(CalibratorVisitor* visitor) override;
@@ -69,6 +62,11 @@ protected:
     void calibrate(cv::Mat& frame) override;
 
 private:
+
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     // Is homography well-defined?
     bool homography_valid_ {false};

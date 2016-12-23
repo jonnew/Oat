@@ -53,7 +53,7 @@ po::options_description FrameMasker::options() const
 }
 
 void FrameMasker::applyConfiguration(const po::variables_map &vm,
-                                              const config::OptionTable &config_table)
+                                     const config::OptionTable &config_table)
 {
     // Background image path
     std::string img_path;

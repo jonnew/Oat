@@ -47,6 +47,7 @@ enum ComponentType : uint16_t {
     positionsocket,
     recorder,
     viewer,
+    decorator,
     COMP_N // Number of components
 };
 
@@ -58,7 +59,7 @@ public:
     virtual ~Component() { };
 
     /**
-     * @brief Run the component's processing and control loops.
+     * @brief Run the component's processing loop.
      */
     virtual void run();
 

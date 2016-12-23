@@ -14,6 +14,7 @@ set (oat-calibrate_SOURCE
 add_executable (oat-calibrate ${oat-calibrate_SOURCE} main.cpp)
 target_link_libraries (oat-calibrate
                        oat-utility
+                       oat-base
                        ${OatCommon_LIBS})
 add_dependencies (oat-calibrate cpptoml)
 
