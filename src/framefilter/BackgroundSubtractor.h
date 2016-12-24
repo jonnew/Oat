@@ -26,7 +26,6 @@ namespace oat {
 
 class BackgroundSubtractor : public FrameFilter {
 public:
-
     /**
      * A basic background subtractor.
      * Subtract a frame image from a frame stream. The background frame is
@@ -39,6 +38,7 @@ public:
                          const std::string &frame_sink_address);
 
 private:
+    // Configurable Interface
     po::options_description options() const override;
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;

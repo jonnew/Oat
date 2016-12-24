@@ -37,6 +37,10 @@ namespace pg = FlyCapture2;
 
 template <typename T>
 class PointGreyCam : public FrameServer {
+    using rte = std::runtime_error;
+    using PixelMap
+        = std::map<oat::PixelColor,
+                   std::tuple<pg::PixelFormat, pg::PixelFormat, int>>;
 
 public:
     /**
@@ -46,17 +50,15 @@ public:
     explicit PointGreyCam(const std::string &sink_address);
     ~PointGreyCam() final;
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
-    void connectToNode(void) override;
-    bool process(void) override;
-
 private:
-    using rte = std::runtime_error;
-    using PixelMap
-        = std::map<oat::PixelColor,
-                   std::tuple<pg::PixelFormat, pg::PixelFormat, int>>;
+    // Component Interface
+    bool connectToNode(void) override;
+    int process(void) override;
+
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     // Timing stuff
     bool enforce_fps_ {false};

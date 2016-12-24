@@ -24,23 +24,20 @@
 #include <unordered_map>
 #include <vector>
 
-#include <cpptoml.h>
-#include <boost/program_options.hpp>
 #include <boost/interprocess/exceptions.hpp>
+#include <boost/program_options.hpp>
+#include <cpptoml.h>
 #include <opencv2/core.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "PositionCombiner.h"
 #include "MeanPosition.h"
+#include "PositionCombiner.h"
 
 #define REQ_POSITIONAL_ARGS 1
 
 namespace po = boost::program_options;
-
-volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t source_eof = 0;
 
 const char usage_type[] =
     "TYPE\n"
@@ -80,33 +77,7 @@ void printUsage(const po::options_description &options,
     }
 }
 
-// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int) {
-    quit = 1;
-}
-
-// Processing loop
-void run(const std::shared_ptr<oat::PositionCombiner>& combiner) {
-
-    try {
-
-        combiner->connectToNodes();
-
-        while (!quit && !source_eof)
-            source_eof = combiner->process();
-
-    } catch (const boost::interprocess::interprocess_exception &ex) {
-
-        // Error code 1 indicates a SIGNINT during a call to wait(), which
-        // is normal behavior
-        if (ex.get_error_code() != 1)
-            throw;
-    }
-}
-
 int main(int argc, char *argv[]) {
-
-    std::signal(SIGINT, sigHandler);
 
     // Results of command line input
     std::vector<std::string> sources;
@@ -200,9 +171,6 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        // Get specialized component name
-        comp_name = combiner->name();
-
         // Check IO arguments
         bool io_error {false};
         std::string io_error_msg;
@@ -219,7 +187,9 @@ int main(int argc, char *argv[]) {
         // Reparse specialized component options
         auto special_opt =
             po::collect_unrecognized(parsed_opt.options, po::include_positional);
-        special_opt.erase(special_opt.begin(),special_opt.begin() + REQ_POSITIONAL_ARGS);
+
+        if (special_opt.size() >= REQ_POSITIONAL_ARGS)
+            special_opt.erase(special_opt.begin(),special_opt.begin() + REQ_POSITIONAL_ARGS);
 
         po::store(po::command_line_parser(special_opt)
                  .options(options)
@@ -241,8 +211,13 @@ int main(int argc, char *argv[]) {
 
         combiner->configure(option_map);
 
+        // Get specialized component name
+        comp_name = combiner->name();
+
         std::cout << oat::whoMessage(combiner->name(), "Listening to sources ");
-        for (auto s : sources) { std::cout << oat::sourceText(s) << " "; }
+        for (auto s : sources) {
+            std::cout << oat::sourceText(s) << " ";
+        }
         std::cout << ".\n"
                   << oat::whoMessage(combiner->name(),
                      "Steaming to sink " + oat::sinkText(sink) + ".\n")
@@ -250,7 +225,7 @@ int main(int argc, char *argv[]) {
                      "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or server end-of-stream signal
-        run(combiner);
+        combiner->run();
 
         // Tell user
         std::cout << oat::whoMessage(comp_name, "Exiting.")
@@ -263,12 +238,12 @@ int main(int argc, char *argv[]) {
         printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
-    } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(TOML) ", ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(OPENCV) ", ex.what()) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(comp_name + "(SHMEM) ", ex.what()) << std::endl;
+    } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
         std::cerr << oat::whoError(comp_name, "Unknown exception.")

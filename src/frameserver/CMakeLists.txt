@@ -21,6 +21,7 @@ endif (${USE_FLYCAP})
 add_executable (oat-frameserve ${oat-frameserve_SOURCE} main.cpp)
 target_link_libraries (oat-frameserve
                        oat-utility
+                       oat-base
                        ${OatCommon_LIBS}
                        ${FLYCAPTURE2})
 add_dependencies (oat-frameserve cpptoml)

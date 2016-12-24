@@ -30,20 +30,21 @@ namespace oat {
 
 class TestFrame : public FrameServer {
 public:
-
     /**
      * @brief Serve test frames using a static image.
      * @param sink_address frame sink address
      */
     explicit TestFrame(const std::string &sink_address);
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
-    void connectToNode(void) override;
-    bool process(void) override;
-
 private:
+    // Component Interface
+    bool connectToNode(void) override;
+    int process(void) override;
+    
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     // Image file
     std::string file_name_;

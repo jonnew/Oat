@@ -68,11 +68,8 @@ PointGreyCam<T>::~PointGreyCam()
 }
 
 template <typename T>
-void PointGreyCam<T>::appendOptions(po::options_description &opts)
+po::options_description PointGreyCam<T>::options() const
 {
-    // Accepts default options
-    FrameServer::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -138,20 +135,13 @@ void PointGreyCam<T>::appendOptions(po::options_description &opts)
          "This option overrides manual white-balance specification.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o : local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
 template <typename T>
-void PointGreyCam<T>::configure(const po::variables_map &vm)
+void PointGreyCam<T>::applyConfiguration(
+    const po::variables_map &vm, const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Camera index
     auto num_cams = findNumCameras();
     int index = 0;
@@ -525,7 +515,7 @@ void PointGreyCam<T>::setupAsyncTrigger(int trigger_mode,
     // Trigger info
     std::cout << "set to mode " << triggerMode.mode
               << ", pin " << triggerMode.source
-              << ", polarity " << triggerMode.polarity 
+              << ", polarity " << triggerMode.polarity
               << ".\n"
               << "Trigger the camera by sending a trigger pulse to GPIO "
               << triggerMode.source << "\n";
@@ -703,13 +693,14 @@ uint64_t PointGreyCam<T>::uncycle1394Timestamp(int ieee_1394_sec,
 }
 
 template <typename T>
-void PointGreyCam<T>::connectToNode()
+bool PointGreyCam<T>::connectToNode()
 {
     static_assert(sizeof(T) == 0, "Not a valid PoinGreyCam type.");
+    return true;
 }
 
 template <typename T>
-bool PointGreyCam<T>::process()
+int PointGreyCam<T>::process()
 {
     pg::Image raw_image;
     int rc = grabImage(&raw_image);
@@ -717,7 +708,7 @@ bool PointGreyCam<T>::process()
     // There was a grab timeout.
     // Allow check to see if SIGINT occurred.
     if (rc == -1)
-        return false;
+        return 0;
 
     if (rc > 0) {
         std::cerr << oat::Warn("Frame re-transmission due to " +
@@ -749,7 +740,7 @@ bool PointGreyCam<T>::process()
 
     } while (i++ < rc);
 
-    return false;
+    return 0;
 }
 
 template <typename T>
@@ -1033,7 +1024,7 @@ void PointGreyCam<pg::GigECamera>::setupPixelBinning(size_t x_bin, size_t y_bin)
 }
 
 template <>
-void PointGreyCam<pg::GigECamera>::connectToNode()
+bool PointGreyCam<pg::GigECamera>::connectToNode()
 {
     pg::GigEImageSettings imageSettings;
 
@@ -1052,7 +1043,8 @@ void PointGreyCam<pg::GigECamera>::connectToNode()
 
     frame_sink_.bind(frame_sink_address_, bytes);
 
-    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)), pix_col_);
+    shared_frame_ = frame_sink_.retrieve(
+        rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)), pix_col_);
     shared_frame_.set_rate_hz(frames_per_second_);
 
     // Use the shared_frame_.data, which points to a block of shared memory as
@@ -1060,8 +1052,14 @@ void PointGreyCam<pg::GigECamera>::connectToNode()
     // automatically propagated into shmem and 'converted' into a cv::Mat
     // (although this 'conversion' is simply filling in appropriate header info,
     // which was accomplished in the call to frame_sink_.retrieve())
-    shmem_image_ = oat::make_unique<pg::Image>
-            (rows, cols, stride, shared_frame_.data, bytes, std::get<PG_TO>(pix_map_.at(pix_col_)));
+    shmem_image_
+        = oat::make_unique<pg::Image>(rows,
+                                      cols,
+                                      stride,
+                                      shared_frame_.data,
+                                      bytes,
+                                      std::get<PG_TO>(pix_map_.at(pix_col_)));
+    return true;
 }
 
 // 1. USB Camera
@@ -1207,7 +1205,7 @@ void PointGreyCam<pg::Camera>::setupPixelBinning(size_t x_bin, size_t y_bin)
 }
 
 template <>
-void PointGreyCam<pg::Camera>::connectToNode()
+bool PointGreyCam<pg::Camera>::connectToNode()
 {
     pg::Format7ImageSettings pImageSettings;
     unsigned int pPacketSize;
@@ -1240,6 +1238,8 @@ void PointGreyCam<pg::Camera>::connectToNode()
     // which was accomplished in the call to frame_sink_.retrieve())
     shmem_image_ = oat::make_unique<pg::Image>
             (rows, cols, stride, shared_frame_.data, bytes, std::get<PG_TO>(pix_map_.at(pix_col_)));
+
+    return true;
 }
 
 // Explicit instantiation

@@ -20,10 +20,10 @@
 #ifndef OAT_MEANPOSITION_H
 #define	OAT_MEANPOSITION_H
 
+#include "PositionCombiner.h"
+
 #include <string>
 #include <vector>
-
-#include "PositionCombiner.h"
 
 namespace oat {
 
@@ -34,19 +34,18 @@ namespace oat {
  * using a specified anchor position as a reference.
  */
 class MeanPosition : public PositionCombiner {
-public:
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
-private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     /**
      * Calculate the mean of SOURCE positions.
      * @param sources SOURCE positions to combine
      * @param combined_position Combined position output
      */
-    void combine(const std::vector<oat::Position2D>& source_positions,
+    void combine(const std::vector<oat::Position2D> &source_positions,
                  oat::Position2D &combined_position) override;
 
     /// Should a heading be generated?

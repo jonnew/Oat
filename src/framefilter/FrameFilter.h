@@ -38,7 +38,6 @@ class FrameFilter : public Component, public Configurable<false> {
 friend ColorConvert;
 
 public:
-
     /**
      * @brief Abstract frame filter.
      * All concrete frame filter types implement this ABC.
@@ -54,7 +53,6 @@ public:
     std::string name(void) const override { return name_; }
 
 protected:
-
     // Filter name
     const std::string name_;
 
@@ -66,7 +64,6 @@ protected:
     virtual void filter(cv::Mat &frame) = 0;
 
 private:
-
     // Component Interface
     virtual bool connectToNode(void) override;
     int process(void) override;

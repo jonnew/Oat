@@ -23,8 +23,8 @@
 
 #include <cpptoml.h>
 
-#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {
 
@@ -35,11 +35,8 @@ TestFrame::TestFrame(const std::string &sink_address)
     tick_ = clock_.now();
 }
 
-void TestFrame::appendOptions(po::options_description &opts)
+po::options_description TestFrame::options() const
 {
-    // Accepts default options
-    FrameServer::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -56,19 +53,12 @@ void TestFrame::appendOptions(po::options_description &opts)
          "Number of frames to serve before exiting.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void TestFrame::configure(const po::variables_map &vm) {
-
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
+void TestFrame::applyConfiguration(const po::variables_map &vm,
+                                   const config::OptionTable &config_table)
+{
     // Test image path
     oat::config::getValue(vm, config_table, "test-image", file_name_, true);
 
@@ -88,7 +78,7 @@ void TestFrame::configure(const po::variables_map &vm) {
         calculateFramePeriod();
 }
 
-void TestFrame::connectToNode() {
+bool TestFrame::connectToNode() {
 
     auto mat = cv::imread(file_name_, oat::imread_code(color_));
 
@@ -106,9 +96,11 @@ void TestFrame::connectToNode() {
 
     // Put the sample rate in the shared frame
     shared_frame_.set_rate_hz(1.0 / frame_period_in_sec_.count());
+
+    return true;
 }
 
-bool TestFrame::process()
+int TestFrame::process()
 {
     if (shared_frame_.sample_count() < num_samples_) {
 
@@ -130,17 +122,15 @@ bool TestFrame::process()
         std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
         tick_ = clock_.now();
 
-        return false;
+        return 0;
     }
-
-    return true;
+    return 1;
 }
 
 void TestFrame::calculateFramePeriod()
 {
+    // Copy assignment provides automatic unit conversion
     std::chrono::duration<double> frame_period {1.0 / frames_per_second_};
-
-    // Automatic conversion
     frame_period_in_sec_ = frame_period;
 }
 

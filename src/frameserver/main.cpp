@@ -45,9 +45,6 @@
 
 namespace po = boost::program_options;
 
-volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t source_eof = 0;
-
 const char usage_type[] =
     "TYPE\n"
     "  wcam: Onboard or USB webcam.\n"
@@ -88,34 +85,8 @@ void printUsage(const po::options_description &options, const std::string &type)
     }
 }
 
-// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int)
-{
-    quit = 1;
-}
-
-void run(const std::shared_ptr<oat::FrameServer> &server)
-{
-    try {
-
-        server->connectToNode();
-
-        while (!quit && !source_eof)
-            source_eof = server->process();
-
-    } catch (const boost::interprocess::interprocess_exception &ex) {
-
-        // Error code 1 indicates a SIGNINT during a call to wait(), which
-        // is normal behavior
-        if (ex.get_error_code() != 1)
-            throw;
-    }
-}
-
 int main(int argc, char *argv[])
 {
-    std::signal(SIGINT, sigHandler);
-
     // Results of command line input
     std::string type;
     std::string sink;
@@ -294,7 +265,7 @@ int main(int argc, char *argv[])
                   "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
-        run(server);
+        server->run();
 
         // Tell user
         std::cout << oat::whoMessage(server->name(), "Exiting.\n");

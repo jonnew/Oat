@@ -31,20 +31,21 @@ namespace oat {
 
 class WebCam : public FrameServer {
 public:
-
     /**
      * @brief Serve test frames from a webcam.
      * @param sink_address frame sink address
      */
     explicit WebCam(const std::string &sink_address_);
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
-    void connectToNode(void) override;
-    bool process(void) override;
-
 private:
+    // Component Interface
+    bool connectToNode(void) override;
+    int process(void) override;
+
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     int index_ {0};
     std::unique_ptr<cv::VideoCapture> cv_camera_;

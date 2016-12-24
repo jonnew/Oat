@@ -25,6 +25,8 @@
 #include <boost/program_options.hpp>
 #include <opencv2/core.hpp>
 
+#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Sink.h"
 
@@ -32,54 +34,22 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-/**
- * Abstract base class to be implemented by any FrameServer
- * @param frame_sink_address Address of node to publish shared frames to.
- */
-class FrameServer {
+class FrameServer : public Component, public Configurable<false> {
 public:
-
     /**
      * @brief Abstract frame server
-     * @param sink_address frame sink address
+     * @param frame_sink_address Address of node to publish shared frames to.
      */
     explicit FrameServer(const std::string &sink_address);
     virtual ~FrameServer() { };
 
-    /**
-     * @brief Connect to shared memory node.
-     */
-    virtual void connectToNode(void) = 0;
-
-    /**
-     * FrameServers must be able to serve cv::Mat frames.
-     * @return running state. true = stream EOF . false = stream not exhausted.
-     */
-    virtual bool process(void) = 0;
-
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    virtual void appendOptions(po::options_description &opts);
-
-    /**
-     * @brief Configure frame server parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    virtual void configure(const po::variables_map &vm) = 0;
-
-    // Accessors
-    std::string name() const { return name_; }
+    // Component Interface
+    oat::ComponentType type(void) const override { return oat::frameserver; };
+    std::string name(void) const override { return name_; }
 
 protected:
-
     // Component name
     std::string name_;
-
-    // List of allowed configuration options, including those
-    // specified only via config file
-    std::vector<std::string> config_keys_;
 
     // Cameras can have a region of interest to crop incoming frames
     bool use_roi_ {false};

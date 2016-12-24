@@ -29,15 +29,4 @@ FrameServer::FrameServer(const std::string &frame_sink_address) :
 {
     // Nothing
 }
-
-void FrameServer::appendOptions(po::options_description &opts) {
-
-    // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-}
-
 } /* namespace oat */

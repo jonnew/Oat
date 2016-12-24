@@ -34,11 +34,8 @@ FileReader::FileReader(const std::string &sink_address)
     tick_ = clock_.now();
 }
 
-void FileReader::appendOptions(po::options_description &opts)
+po::options_description FileReader::options() const
 {
-    // Accepts default options
-    FrameServer::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -53,19 +50,12 @@ void FileReader::appendOptions(po::options_description &opts)
          "frame size. Defaults to full video size.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void FileReader::configure(const po::variables_map &vm)
+void FileReader::applyConfiguration(const po::variables_map &vm,
+                                    const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Video file
     std::string file_name;
     oat::config::getValue(vm, config_table, "video-file", file_name, true);
@@ -87,7 +77,7 @@ void FileReader::configure(const po::variables_map &vm)
     }
 }
 
-void FileReader::connectToNode()
+bool FileReader::connectToNode()
 {
     cv::Mat example_frame;
     file_reader_ >> example_frame;
@@ -106,13 +96,15 @@ void FileReader::connectToNode()
 
     // Put the sample rate in the shared frame
     shared_frame_.set_rate_hz(1.0 / frame_period_in_sec_.count());
+
+    return true;
 }
 
-bool FileReader::process()
+int FileReader::process()
 {
     cv::Mat frame;
     if (!file_reader_.read(frame)) 
-        return true;
+        return 1;
 
     if (use_roi_ )
         frame = frame(region_of_interest_);
@@ -135,14 +127,13 @@ bool FileReader::process()
     std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
     tick_ = clock_.now();
 
-    return false;
+    return 0;
 }
 
 void FileReader::calculateFramePeriod()
 {
+    // Copy assignment provides automatic unit conversion
     std::chrono::duration<double> frame_period {1.0 / frames_per_second_};
-
-    // Automatic conversion
     frame_period_in_sec_ = frame_period;
 }
 

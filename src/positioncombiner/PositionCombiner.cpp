@@ -17,6 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "PositionCombiner.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -24,27 +26,15 @@
 #include <thread>
 #include <future>
 
-#include "../../lib/shmemdf/Source.h"
-#include "../../lib/shmemdf/Sink.h"
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/make_unique.h"
 
-#include "PositionCombiner.h"
-
 namespace oat {
 
-void PositionCombiner::appendOptions(po::options_description &opts)
-{
-    // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-}
-
-void PositionCombiner::configure(const po::variables_map &vm)
+void PositionCombiner::resolvePositionSources(const po::variables_map &vm)
 {
     // Pull the sources and sink out as positional options
     auto sources = vm["sources-and-sink"].as< std::vector<std::string> >();
@@ -53,10 +43,10 @@ void PositionCombiner::configure(const po::variables_map &vm)
         throw std::runtime_error("At least two SOURCES and a SINK must be specified.");
 
     // Last positional argument is the sink.
-    auto sink_addr = sources.back();
+    position_sink_address_ = sources.back();
     sources.pop_back();
 
-    name_ = "posicom[" + sources[0] + "...->" + sink_addr+ "]";
+    name_ = "posicom[" + sources[0] + "...->" + position_sink_address_ + "]";
 
     for (auto &addr : sources) {
 
@@ -71,7 +61,7 @@ void PositionCombiner::configure(const po::variables_map &vm)
     }
 }
 
-void PositionCombiner::connectToNodes()
+bool PositionCombiner::connectToNode()
 {
     // Establish our slot in each node
     for (auto &ps : position_sources_)
@@ -83,27 +73,29 @@ void PositionCombiner::connectToNodes()
 
     // Wait for sychronous start with sink when it binds the node
     for (auto &ps : position_sources_) {
-        ps.source->connect();
+        if (ps.source->connect() != SourceState::CONNECTED)
+            return false;
         all_ts.push_back(ps.source->retrieve()->sample_period_sec());
     }
 
-    if (!oat::checkSamplePeriods(all_ts, sample_rate_hz)) {
+    if (!oat::checkSamplePeriods(all_ts, sample_rate_hz))
         std::cerr << oat::Warn(oat::inconsistentSampleRateWarning(sample_rate_hz));
-    }
 
     // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
+
+    return true;
 }
 
-bool PositionCombiner::process()
+int PositionCombiner::process()
 {
-    for (pvec_size_t i = 0; i !=  position_sources_.size(); i++) {
+    for (pvec_size_t i = 0; i != position_sources_.size(); i++) {
 
         // START CRITICAL SECTION //
         ////////////////////////////
         if (position_sources_[i].source->wait() == oat::NodeState::END)
-            return true;
+            return 1;
 
         positions_[i] = position_sources_[i].source->clone();
 
@@ -129,7 +121,7 @@ bool PositionCombiner::process()
     //  END CRITICAL SECTION  //
 
     // Sink was not at END state
-    return false;
+    return 0;
 }
 
 } /* namespace oat */

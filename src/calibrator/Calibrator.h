@@ -51,6 +51,7 @@ public:
     Calibrator(const std::string &source_address);
     virtual ~Calibrator() {};
 
+    // Component Interface
     std::string name() const override { return name_; }
     ComponentType type() const override { return ComponentType::calibrator; }
 

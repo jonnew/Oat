@@ -35,13 +35,15 @@ public:
 
     FileReader(const std::string &sink_name);
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
-    void connectToNode(void) override;
-    bool process(void) override;
-
 private:
+    // Component Interface
+    bool connectToNode(void) override;
+    int process(void) override;
+    
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     // Video file
     cv::VideoCapture file_reader_;

@@ -35,11 +35,8 @@ WebCam::WebCam(const std::string &sink_name)
     // Nothing
 }
 
-void WebCam::appendOptions(po::options_description &opts)
+po::options_description WebCam::options() const
 {
-    // Accepts default options
-    FrameServer::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -55,19 +52,12 @@ void WebCam::appendOptions(po::options_description &opts)
          "mat size. Defaults to full sensor size.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o : local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts; 
 }
 
-void WebCam::configure(const po::variables_map &vm)
+void WebCam::applyConfiguration(const po::variables_map &vm,
+                                const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Camera index
     oat::config::getNumericValue<int>(vm, config_table, "index", index_, 0);
 
@@ -96,7 +86,7 @@ void WebCam::configure(const po::variables_map &vm)
     }
 }
 
-void WebCam::connectToNode()
+bool WebCam::connectToNode()
 {
     cv::Mat example_frame;
     *cv_camera_ >> example_frame;
@@ -112,15 +102,17 @@ void WebCam::connectToNode()
 
     // Put the sample rate in the shared mat
     shared_frame_.set_rate_hz(cv_camera_->get(cv::CAP_PROP_FPS));
+
+    return true;
 }
 
-bool WebCam::process()
+int WebCam::process()
 {
     // Frame decoding (if compression was performed) can be
     // computationally expensive. So do this outside the critical section
     cv::Mat mat;
     if (!cv_camera_->read(mat)) 
-        return true;
+        return 1;
 
     if (use_roi_ )
         mat = mat(region_of_interest_);
@@ -154,7 +146,7 @@ bool WebCam::process()
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    return false;
+    return 0;
 }
 
 } /* namespace oat */

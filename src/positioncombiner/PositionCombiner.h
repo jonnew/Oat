@@ -27,10 +27,12 @@
 
 #include <boost/program_options.hpp>
 
-#include "../../lib/shmemdf/Helpers.h"
-#include "../../lib/shmemdf/Source.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Position2D.h"
+#include "../../lib/shmemdf/Helpers.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
 
 namespace po = boost::program_options;
 
@@ -40,44 +42,22 @@ namespace oat {
  * Abstract position combiner.
  * All concrete position combiner types implement this ABC.
  */
-class PositionCombiner {
-
-public:
+class PositionCombiner : public Component, public Configurable<false> {
 
     using pvec_size_t = oat::NamedSourceList<oat::Position2D>::size_type;
 
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    virtual void appendOptions(po::options_description &opts);
-
-    /**
-     * @brief Configure component parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    virtual void configure(const po::variables_map &vm);
-
-    /**
-     * Position combiner SOURCEs must be able to connect to a NODEs from
-     * which to receive positions and a SINK to send combined positions.
-     */
-    virtual void connectToNodes(void);
-
-    /**
-     * Obtain positions from all SOURCES. Combine positions. Publish combined position
-     * to SINK.
-     * @return SOURCE end-of-stream signal. If true, this component should exit.
-     * TODO: check that position length units are the same before combination
-     */
-    bool process(void);
-
-    std::string name(void) const { return name_; }
+public:
+    // Component Interface
+    oat::ComponentType type(void) const override { return oat::positioncombiner; };
+    std::string name(void) const override { return name_; }
 
 protected:
-
-    // List of allowed configuration options
-    std::vector<std::string> config_keys_;
+    /** 
+     * @brief Makes a list of position sources from a parsed program options
+     * variable map.
+     * @param vm Program options variable map containing the position source list.
+     */
+    void resolvePositionSources(const po::variables_map &vm);
 
     /**
      * Perform position combination.
@@ -94,6 +74,9 @@ protected:
     int num_sources(void) const { return position_sources_.size(); };
 
 private:
+    // Component Interface
+    virtual bool connectToNode(void) override;
+    int process(void) override;
 
     // Combiner name
     std::string name_;
@@ -107,9 +90,9 @@ private:
 
     // Position SINK object for publishing combined position
     oat::Position2D * shared_position_ {nullptr};
-    const std::string position_sink_address_;
+    std::string position_sink_address_;
     oat::Sink<oat::Position2D> position_sink_;
 };
 
 }      /* namespace oat */
-#endif	/* OAT_POSITIONCOMBINER_H */
+#endif /* OAT_POSITIONCOMBINER_H */

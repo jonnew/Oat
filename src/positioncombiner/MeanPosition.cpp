@@ -29,13 +29,8 @@
 
 namespace oat {
 
-void MeanPosition::appendOptions(po::options_description &opts) {
-
-    // Accepts a config file and sources/sinks
-    // TODO: Code smell -- this is required in order for specializations to
-    // function at runtime...
-    PositionCombiner::appendOptions(opts);
-
+po::options_description MeanPosition::options() const
+{
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -46,23 +41,15 @@ void MeanPosition::appendOptions(po::options_description &opts) {
          "unspecified, the heading is not calculated.")
         ;
 
-    opts.add(local_opts);
-
-    // Populate valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void MeanPosition::configure(const po::variables_map &vm) {
-
+void MeanPosition::applyConfiguration(const po::variables_map &vm,
+                                      const config::OptionTable &config_table)
+{
     // Setup sources and sink
-    // TODO: Code smell -- this is required in order for specializations to
-    // function at runtime...
-    PositionCombiner::configure(vm);
-
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    //oat::config::checkKeys(config_keys_, config_table);
+    // TODO: Code smell -- this is required to get a source and sink list
+    PositionCombiner::resolvePositionSources(vm);
 
     // Adaptation coefficient
     generate_heading_ = oat::config::getNumericValue<int>(

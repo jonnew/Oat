@@ -49,6 +49,7 @@ public:
 
     virtual ~Buffer();
 
+    // Component Interface
     std::string name() const override { return name_; }
     ComponentType type() const override { return ComponentType::buffer; }
 
