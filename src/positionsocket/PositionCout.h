@@ -31,14 +31,15 @@ class Position2D;
 
 class PositionCout : public PositionSocket {
 
-public:
-    PositionCout(const std::string &position_source_address);
+    // Use base constructor
+    using PositionSocket::PositionSocket;
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
-private:
-
+    // Format std out stream
     bool pretty_ {false};
 
     void sendPosition(const oat::Position2D &position) override;

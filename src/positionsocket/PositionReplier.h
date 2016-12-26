@@ -34,14 +34,15 @@ class PositionReplier : public PositionSocket {
 public:
     PositionReplier(const std::string &position_source_address);
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
 private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
-    // ZMQ context
-    zmq::context_t context_ {1};
-
+    // TODO: ZMQ_DEALER for multiple clients?
     // REP socket
+    zmq::context_t context_ {1};
     zmq::socket_t replier_;
 
     void sendPosition(const oat::Position2D& position) override;

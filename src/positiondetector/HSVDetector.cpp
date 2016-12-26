@@ -46,11 +46,8 @@ HSVDetector::HSVDetector(const std::string &frame_source_address,
     required_color_ = PIX_HSV;
 }
 
-void HSVDetector::appendOptions(po::options_description &opts)
+po::options_description HSVDetector::options() const
 {
-    // Accepts a config file
-    PositionDetector::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -74,19 +71,12 @@ void HSVDetector::appendOptions(po::options_description &opts)
          "If true, provide a GUI with sliders for tuning detection parameters.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o : local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void HSVDetector::configure(const po::variables_map &vm)
+void HSVDetector::applyConfiguration(const po::variables_map &vm,
+                                     const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Hue
     std::vector<int> h;
     if (oat::config::getArray<int, 2>(vm, config_table, "h-thresh", h)) {
@@ -151,7 +141,6 @@ void HSVDetector::configure(const po::variables_map &vm)
 
 void HSVDetector::detectPosition(cv::Mat &frame, oat::Position2D &position)
 {
-
     // Threshold HSV channels
     // (Very expensive operation)
     cv::inRange(frame,
@@ -287,13 +276,13 @@ void HSVDetector::set_dilate_size(int value)
 void hsvDetectorMinAreaSliderChangedCallback(int value, void *object)
 {
     auto hsv_detector = static_cast<HSVDetector *>(object);
-    hsv_detector->set_min_object_area(static_cast<double>(value));
+    hsv_detector->min_object_area_  = static_cast<double>(value);
 }
 
 void hsvDetectorMaxAreaSliderChangedCallback(int value, void *object)
 {
     auto hsv_detector = static_cast<HSVDetector *>(object);
-    hsv_detector->set_max_object_area(static_cast<double>(value));
+    hsv_detector->max_object_area_ = static_cast<double>(value);
 }
 
 void hsvDetectorErodeSliderChangedCallback(int value, void *object)

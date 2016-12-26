@@ -26,6 +26,7 @@
 #include <boost/program_options.hpp>
 #include <cpptoml.h>
 #include <opencv2/core.hpp>
+#include <zmq.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
@@ -184,6 +185,9 @@ int main(int argc, char *argv[]) {
         std::cerr << oat::whoError(comp_name + "(OPENCV) ", ex.what()) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
         std::cerr << oat::whoError(comp_name + "(SHMEM) ", ex.what()) << std::endl;
+    } catch (const zmq::error_t &ex) {
+        if (ex.num() != EINTR)
+            std::cerr << oat::whoError(comp_name + "(ZMQ) " , ex.what()) << std::endl;
     } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {

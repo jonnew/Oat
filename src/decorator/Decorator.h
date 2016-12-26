@@ -24,6 +24,7 @@
 #include <vector>
 
 #include <boost/program_options.hpp>
+#include <zmq/zmq.hpp>
 
 #include "../../lib/base/Configurable.h"
 #include "../../lib/base/ControllableComponent.h"

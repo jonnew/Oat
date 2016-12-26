@@ -42,11 +42,6 @@ class UDPPositionServer : public PositionSocket {
 
 public:
 
-    /**
-     *
-     * @param position_source_name
-     * @param port
-     */
     UDPPositionServer(const std::string& position_source_name,
              const unsigned short port);
 

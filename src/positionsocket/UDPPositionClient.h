@@ -33,7 +33,6 @@ namespace oat {
 // Forward decl.
 class Position2D;
 
-// TODO: What if user requests port less than 1000 without sudo?
 class UDPPositionClient : public PositionSocket {
 
     using UDPSocket = boost::asio::ip::udp::socket;
@@ -44,19 +43,19 @@ class UDPPositionClient : public PositionSocket {
 public:
     UDPPositionClient(const std::string &position_source_name);
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
 private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     // IO service
     boost::asio::io_service io_service_;
+    UDPSocket socket_;
 
     // Custom RapidJSON UDP stream
     static constexpr size_t MAX_LENGTH {65507}; // max udp buffer size
     char buffer_[MAX_LENGTH]; // Buffer is flushed after each position read
-
-    UDPSocket socket_;
     std::unique_ptr<SocketWriter> udp_stream_;
 
     void sendPosition(const oat::Position2D& position) override;

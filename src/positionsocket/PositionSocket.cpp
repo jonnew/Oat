@@ -34,32 +34,25 @@ PositionSocket::PositionSocket(const std::string &position_source_address)
     // Nothing
 }
 
-void PositionSocket::appendOptions(po::options_description &opts)
-{
-    // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-}
-
-void PositionSocket::connectToNode()
+bool PositionSocket::connectToNode()
 {
     // Establish our a slot in the node 
     position_source_.touch(position_source_address_);
 
-    // Wait for sychronous start with sink when it binds the node
-    position_source_.connect();
+    // Wait for synchronous start with sink when it binds its node
+    if (position_source_.connect() != SourceState::CONNECTED)
+        return false;
+
+    return true;
 }
 
-bool PositionSocket::process()
+int PositionSocket::process()
 {
     // START CRITICAL SECTION //
     ////////////////////////////
     node_state_ = position_source_.wait();
     if (node_state_ == oat::NodeState::END)
-        return true;
+        return 1;
 
     // Clone the shared position
     internal_position_ = position_source_.clone();
@@ -74,7 +67,7 @@ bool PositionSocket::process()
     sendPosition(internal_position_);
 
     // Sink was not at END state
-    return false;
+    return 0;
 }
 
 } /* namespace oat */

@@ -17,7 +17,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <csignal>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -25,6 +24,7 @@
 #include <boost/program_options.hpp>
 #include <boost/program_options.hpp>
 #include <cpptoml.h>
+#include <zmq.hpp>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
@@ -38,9 +38,6 @@
 #define REQ_POSITIONAL_ARGS 2
 
 namespace po = boost::program_options;
-
-volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t source_eof = 0;
 
 const char usage_type[] =
     "TYPE:\n"
@@ -85,39 +82,11 @@ void printUsage(const po::options_description &options, const std::string &type)
     }
 }
 
-// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int)
-{
-    quit = 1;
-}
-
-void run(std::shared_ptr<oat::PositionSocket> socket)
-{
-    try {
-
-        socket->connectToNode();
-
-        while (!quit && !source_eof)
-            source_eof = socket->process();
-
-    } catch (const boost::interprocess::interprocess_exception &ex) {
-
-        // Error code 1 indicates a SIGNINT during a call to wait(), which
-        // is normal behavior
-        if (ex.get_error_code() != 1)
-            throw;
-    }
-}
-
 int main(int argc, char *argv[])
 {
-    std::signal(SIGINT, sigHandler);
-
     // Results of command line input
     std::string type;
     std::string source;
-
-    //std::vector<std::string> endpoint;
 
     // Component specializations
     std::unordered_map<std::string, char> type_hash;
@@ -179,7 +148,6 @@ int main(int argc, char *argv[])
 
             // Refine component type
             switch (type_hash[type]) {
-
                 case 'a':
                 {
                     socket = std::make_shared<oat::PositionPublisher>(source);
@@ -268,7 +236,7 @@ int main(int argc, char *argv[])
                      "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or server end-of-stream signal
-        run(socket);
+        socket->run();
 
         // Tell user
         std::cout << oat::whoMessage(comp_name, "Exiting.")
@@ -281,12 +249,15 @@ int main(int argc, char *argv[])
         printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
-    } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(TOML) ", ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(OPENCV) ", ex.what()) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(comp_name + "(SHMEM) ", ex.what()) << std::endl;
+    } catch (const zmq::error_t &ex) {
+        if (ex.num() != EINTR)
+            std::cerr << oat::whoError(comp_name + "(ZMQ) " , ex.what()) << std::endl;
+    } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
         std::cerr << oat::whoError(comp_name, "Unknown exception.")

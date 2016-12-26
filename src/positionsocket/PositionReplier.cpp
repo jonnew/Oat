@@ -29,7 +29,7 @@
 #include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {
-// TODO: ZMQ_DEALER for multiple clients?
+
 PositionReplier::PositionReplier(const std::string &position_source_address)
 : PositionSocket(position_source_address)
 , replier_(context_, ZMQ_REP)
@@ -37,11 +37,8 @@ PositionReplier::PositionReplier(const std::string &position_source_address)
     // Nothing
 }
 
-void PositionReplier::appendOptions(po::options_description &opts)
+po::options_description PositionReplier::options() const
 {
-    // Accepts a config file
-    PositionSocket::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -51,20 +48,13 @@ void PositionReplier::appendOptions(po::options_description &opts)
          "'<transport>:///<user-named-pipe>. For instance "
          "'ipc:///tmp/test.pipe'.");
         ;
-    opts.add(local_opts);
 
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void PositionReplier::configure(const po::variables_map &vm)
+void PositionReplier::applyConfiguration(
+    const po::variables_map &vm, const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness. In this case, make sure
-    // that none have been provided
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Endpoint
     std::string endpoint;
     oat::config::getValue<std::string>(vm, config_table, "endpoint", endpoint, true);
@@ -73,7 +63,6 @@ void PositionReplier::configure(const po::variables_map &vm)
 
 void PositionReplier::sendPosition(const oat::Position2D& position)
 {
-
     // Serialize the current position
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -88,8 +77,6 @@ void PositionReplier::sendPosition(const oat::Position2D& position)
     zmq::message_t zmsg(buffer.GetSize());
     memcpy((void *)zmsg.data(), buffer.GetString(), buffer.GetSize());
     replier_.send(zmsg);
-
-    //std::cout << "Sending " << (char *)(zmsg.data()) << "\n";
 }
 
 } /* namespace oat */

@@ -36,11 +36,8 @@ UDPPositionClient::UDPPositionClient(const std::string &position_source_address)
     // Nothing
 }
 
-void UDPPositionClient::appendOptions(po::options_description &opts)
+po::options_description UDPPositionClient::options() const
 {
-    // Accepts a config file
-    PositionSocket::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -51,20 +48,13 @@ void UDPPositionClient::appendOptions(po::options_description &opts)
          "Port number of endpoint on remote device to send positions to. For "
          "instance, 5555.")
         ;
-    opts.add(local_opts);
 
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void UDPPositionClient::configure(const po::variables_map &vm)
+void UDPPositionClient::applyConfiguration(
+    const po::variables_map &vm, const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness. In this case, make sure
-    // that none have been provided
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Host
     std::string host;
     oat::config::getValue<std::string>(

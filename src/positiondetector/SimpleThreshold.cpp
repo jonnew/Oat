@@ -46,11 +46,8 @@ SimpleThreshold::SimpleThreshold(const std::string &frame_source_address,
     required_color_ = PIX_GREY;
 }
 
-void SimpleThreshold::appendOptions(po::options_description &opts)
+po::options_description SimpleThreshold::options() const
 {
-    // Accepts a config file
-    PositionDetector::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -68,19 +65,12 @@ void SimpleThreshold::appendOptions(po::options_description &opts)
          "If true, provide a GUI with sliders for tuning detection parameters.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void SimpleThreshold::configure(const po::variables_map &vm)
+void SimpleThreshold::applyConfiguration(
+    const po::variables_map &vm, const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Threshold
     std::vector<int> t;
     if (oat::config::getArray<int, 2>(vm, config_table, "thresh", t)) {
@@ -263,13 +253,13 @@ void SimpleThreshold::set_dilate_size(int value)
 void simpleThresholdMinAreaSliderChangedCallback(int value, void *object)
 {
     auto d = static_cast<SimpleThreshold *>(object);
-    d->set_min_object_area(static_cast<double>(value));
+    d->min_object_area_ = static_cast<double>(value);
 }
 
 void simpleThresholdMaxAreaSliderChangedCallback(int value, void *object)
 {
     auto d = static_cast<SimpleThreshold *>(object);
-    d->set_max_object_area(static_cast<double>(value));
+    d->max_object_area_ = static_cast<double>(value);
 }
 
 void simpleThresholdErodeSliderChangedCallback(int value, void *object)

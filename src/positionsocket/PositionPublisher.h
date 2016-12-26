@@ -34,15 +34,14 @@ class PositionPublisher : public PositionSocket {
 public:
     PositionPublisher(const std::string &position_source_address);
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
 private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
-    // ZMQ context
+    // Pub socket
     zmq::context_t context_ {1};
-
-    // PUB socket
     zmq::socket_t publisher_;
 
     void sendPosition(const oat::Position2D& position) override;

@@ -31,17 +31,8 @@
 
 namespace oat {
 
-PositionCout::PositionCout(const std::string &position_source_address)
-: PositionSocket(position_source_address)
+po::options_description PositionCout::options() const
 {
-    // Nothing
-}
-
-void PositionCout::appendOptions(po::options_description &opts) {
-
-    // Accepts a config file
-    PositionSocket::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -49,21 +40,13 @@ void PositionCout::appendOptions(po::options_description &opts) {
          "If true, print formated positions to the command line.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts; 
 }
 
-void PositionCout::configure(const po::variables_map &vm) {
-
-    // Check for config file and entry correctness. In this case, make sure
-    // that none have been provided
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
-    // Timestamp
+void PositionCout::applyConfiguration(const po::variables_map &vm,
+                                      const config::OptionTable &config_table)
+{
+    // Format output
     oat::config::getValue<bool>(vm, config_table, "pretty-print", pretty_);
 }
 

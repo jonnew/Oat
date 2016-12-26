@@ -37,30 +37,25 @@ PositionDetector::PositionDetector(const std::string &frame_source_address,
   // Nothing
 }
 
-void PositionDetector::appendOptions(po::options_description &opts)
-{
-    // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-}
-
-void PositionDetector::connectToNode()
+bool PositionDetector::connectToNode()
 {
     // Establish our a slot in the node
     frame_source_.touch(frame_source_address_);
 
-    // Wait for synchronous start with sink when it binds the node
-    frame_source_.connect(required_color_);
+    // Wait for synchronous start with sink when it binds its node
+    if (frame_source_.connect(required_color_) != SourceState::CONNECTED)
+        return false;
 
     // Bind to sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
+
+    // TODO: check that the pixel color is correct.
+
+    return true;
 }
 
-bool PositionDetector::process()
+int PositionDetector::process()
 {
     oat::Frame internal_frame;
     oat::Position2D internal_pos("");
@@ -70,7 +65,7 @@ bool PositionDetector::process()
 
     // Wait for sink to write to node
     if (frame_source_.wait() == oat::NodeState::END)
-        return true;
+        return 1;
 
     // Clone the shared frame
     frame_source_.copyTo(internal_frame);
@@ -100,7 +95,7 @@ bool PositionDetector::process()
     //  END CRITICAL SECTION  //
 
     // Sink was not at END state
-    return false;
+    return 0;
 }
 
 } /* namespace oat */

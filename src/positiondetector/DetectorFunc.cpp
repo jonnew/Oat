@@ -25,12 +25,15 @@
 #include "../../lib/datatypes/Position2D.h"
 
 #include "DetectorFunc.h"
-#include "HSVDetector.h"
 
 namespace oat {
 
-void siftContours(cv::Mat &frame, Position2D &position, 
-                  double &area, double min_area, double max_area) {
+void siftContours(cv::Mat &frame,
+                  Position2D &position,
+                  double &area,
+                  double min_area,
+                  double max_area)
+{
 
     std::vector<std::vector <cv::Point> > contours;
 

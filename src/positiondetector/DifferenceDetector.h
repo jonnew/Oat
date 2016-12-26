@@ -29,12 +29,18 @@ namespace oat {
 // Forward decl.
 class Position2D;
 
-/**
- * Motion-based object position detector.
- */
-class DifferenceDetector : public PositionDetector {
-public:
+// Tuning GUI callbacks
+void diffDetectorBlurSliderChangedCallback(int value, void *);
+void diffDetectorMinAreaSliderChangedCallback(int value, void *);
+void diffDetectorMaxAreaSliderChangedCallback(int value, void *);
 
+class DifferenceDetector : public PositionDetector {
+
+friend void diffDetectorBlurSliderChangedCallback(int value, void *);
+friend void diffDetectorMinAreaSliderChangedCallback(int value, void *);
+friend void diffDetectorMaxAreaSliderChangedCallback(int value, void *);
+
+public:
     /**
      * Motion-based object position detector.
      * @param frame_source_address Frame SOURCE node address
@@ -43,17 +49,13 @@ public:
     DifferenceDetector(const std::string &frame_source_address,
                        const std::string &position_sink_address);
 
-    void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
-
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
-    //Accessors (used for tuning GUI)
-    void set_min_object_area(double value) { min_object_area_ = value; }
-    void set_max_object_area(double value) { max_object_area_ = value; }
-    void set_blur_size(int value);
-
 private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
+
+    void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
 
     // Intermediate variables
     cv::Mat this_image_, last_image_;
@@ -63,10 +65,13 @@ private:
     // Object detection
     double object_area_ {0.0};
 
-    // Detector parameters
-    int difference_intensity_threshold_ {10};
+    // Set blur kernel
     cv::Size blur_size_;
     bool blur_on_ {false};
+    void set_blur_size(int value);
+
+    // Detector parameters
+    int difference_intensity_threshold_ {10};
     double min_object_area_ {0.0};
     double max_object_area_ {std::numeric_limits<double>::max()};
 
@@ -81,14 +86,7 @@ private:
     void createTuningWindows(void);
     void tune(cv::Mat &frame, const oat::Position2D &position);
     void applyThreshold(cv::Mat &frame);
-
 };
-
-// Tuning GUI callbacks
-void diffDetectorBlurSliderChangedCallback(int value, void *);
-void diffDetectorMinAreaSliderChangedCallback(int value, void *);
-void diffDetectorMaxAreaSliderChangedCallback(int value, void *);
 
 }       /* namespace oat */
 #endif	/* OAT_DIFFERENCEDETECTOR_H */
-

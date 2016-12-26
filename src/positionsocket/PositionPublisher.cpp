@@ -37,11 +37,8 @@ PositionPublisher::PositionPublisher(const std::string &position_source_address)
     // Nothing
 }
 
-void PositionPublisher::appendOptions(po::options_description &opts)
+po::options_description PositionPublisher::options() const
 {
-    // Accepts a config file
-    PositionSocket::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -51,23 +48,17 @@ void PositionPublisher::appendOptions(po::options_description &opts)
          "'<transport>:///<user-named-pipe>. For instance "
          "'ipc:///tmp/test.pipe'.");
         ;
-    opts.add(local_opts);
 
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void PositionPublisher::configure(const po::variables_map &vm)
+void PositionPublisher::applyConfiguration(
+    const po::variables_map &vm, const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness. In this case, make sure
-    // that none have been provided
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Endpoint
     std::string endpoint;
-    oat::config::getValue<std::string>(vm, config_table, "endpoint", endpoint, true);
+    oat::config::getValue<std::string>(
+        vm, config_table, "endpoint", endpoint, true);
     publisher_.bind(endpoint);
 }
 

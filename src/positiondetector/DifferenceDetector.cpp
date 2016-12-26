@@ -44,12 +44,8 @@ DifferenceDetector::DifferenceDetector(const std::string &frame_source_address,
     required_color_ = PIX_GREY;
 }
 
-void DifferenceDetector::appendOptions(po::options_description &opts)
+po::options_description DifferenceDetector::options() const
 {
-    // Accepts a config file
-    PositionDetector::appendOptions(opts);
-
-    // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
         ("diff-threshold,d", po::value<int>(),
@@ -64,19 +60,12 @@ void DifferenceDetector::appendOptions(po::options_description &opts)
          "parameters.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o : local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void DifferenceDetector::configure(const po::variables_map &vm)
+void DifferenceDetector::applyConfiguration(
+    const po::variables_map &vm, const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Difference threshold
     oat::config::getNumericValue<int>(
         vm, config_table, "diff-threshold", difference_intensity_threshold_, 0
@@ -166,11 +155,15 @@ void DifferenceDetector::applyThreshold(cv::Mat &frame) {
 
     if (last_image_set_) {
         cv::absdiff(frame, last_image_, threshold_frame_);
-        cv::threshold(threshold_frame_, threshold_frame_, difference_intensity_threshold_, 255, cv::THRESH_BINARY);
-        if (blur_on_) {
+        cv::threshold(threshold_frame_,
+                      threshold_frame_,
+                      difference_intensity_threshold_,
+                      255,
+                      cv::THRESH_BINARY);
+        if (blur_on_)
             cv::blur(threshold_frame_, threshold_frame_, blur_size_);
-        }
-        cv::threshold(threshold_frame_, threshold_frame_, difference_intensity_threshold_, 255, cv::THRESH_BINARY);
+
+
         last_image_ = frame.clone(); // Get a copy of the last image
     } else {
         threshold_frame_ = frame.clone();
@@ -179,8 +172,8 @@ void DifferenceDetector::applyThreshold(cv::Mat &frame) {
     }
 }
 
-void DifferenceDetector::createTuningWindows() {
-
+void DifferenceDetector::createTuningWindows()
+{
 #ifdef HAVE_OPENGL
     try {
         cv::namedWindow(tuning_image_title_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
@@ -216,8 +209,8 @@ void DifferenceDetector::createTuningWindows() {
     tuning_windows_created_ = true;
 }
 
-void DifferenceDetector::set_blur_size(int value) {
-
+void DifferenceDetector::set_blur_size(int value)
+{
     if (value > 0) {
         blur_on_ = true;
         blur_size_ = cv::Size(value, value);
@@ -227,19 +220,22 @@ void DifferenceDetector::set_blur_size(int value) {
 }
 
 // Non-member GUI callback functions
-void diffDetectorBlurSliderChangedCallback(int value, void * object) {
+void diffDetectorBlurSliderChangedCallback(int value, void *object)
+{
     auto diff_detector = static_cast<DifferenceDetector *>(object);
     diff_detector->set_blur_size(value);
 }
 
-void diffDetectorMinAreaSliderChangedCallback(int value, void * object) {
+void diffDetectorMinAreaSliderChangedCallback(int value, void *object)
+{
     auto diff_detector = static_cast<DifferenceDetector *>(object);
-    diff_detector->set_min_object_area(static_cast<double>(value));
+    diff_detector->min_object_area_ = static_cast<double>(value);
 }
 
-void diffDetectorMaxAreaSliderChangedCallback(int value, void * object) {
+void diffDetectorMaxAreaSliderChangedCallback(int value, void *object)
+{
     auto diff_detector = static_cast<DifferenceDetector *>(object);
-    diff_detector->set_max_object_area(static_cast<double>(value));
+    diff_detector->max_object_area_ = static_cast<double>(value);
 }
 
 } /* namespace oat */

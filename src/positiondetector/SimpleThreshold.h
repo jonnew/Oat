@@ -29,33 +29,36 @@ namespace oat {
 // Forward decl.
 class Position2D;
 
-/**
- * Motion-based object position detector.
- */
-class SimpleThreshold : public PositionDetector {
-public:
+// Tuning GUI callbacks
+void simpleThresholdMinAreaSliderChangedCallback(int value, void *);
+void simpleThresholdMaxAreaSliderChangedCallback(int value, void *);
+void simpleThresholdErodeSliderChangedCallback(int value, void *);
+void simpleThresholdDilateSliderChangedCallback(int value, void *);
 
+class SimpleThreshold : public PositionDetector {
+
+    friend void simpleThresholdMinAreaSliderChangedCallback(int value, void *);
+    friend void simpleThresholdMaxAreaSliderChangedCallback(int value, void *);
+    friend void simpleThresholdErodeSliderChangedCallback(int value, void *);
+    friend void simpleThresholdDilateSliderChangedCallback(int value, void *);
+
+public:
     /**
      * Intensity threshold based object position detector for mono frame
      * streams.
      * @param frame_source_address Frame SOURCE node address
      * @param position_sink_address Position SINK node address
      */
-    SimpleThreshold(const std::string &frame_source_address,
-                    const std::string &position_sink_address);
-
-    void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
-
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
-    //Accessors (used for tuning GUI)
-    void set_min_object_area(double value) { min_object_area_ = value; }
-    void set_max_object_area(double value) { max_object_area_ = value; }
-    void set_erode_size(int erode_px);
-    void set_dilate_size(int dilate_px);
+SimpleThreshold(const std::string &frame_source_address,
+                const std::string &position_sink_address);
 
 private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
+
+    void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
 
     // Intermediate variables
     cv::Mat threshold_frame_;
@@ -76,6 +79,10 @@ private:
     double min_object_area_ {0.0};
     double max_object_area_ {std::numeric_limits<double>::max()};
 
+    // Settint erode and dilate kernels 
+    void set_erode_size(int erode_px);
+    void set_dilate_size(int dilate_px);
+
     // Tuning stuff
     bool tuning_on_ {false};
     bool tuning_windows_created_ {false};
@@ -88,12 +95,6 @@ private:
     void tune(cv::Mat &frame, const oat::Position2D &position);
     void applyThreshold(cv::Mat &frame);
 };
-
-// Tuning GUI callbacks
-void simpleThresholdMinAreaSliderChangedCallback(int value, void *);
-void simpleThresholdMaxAreaSliderChangedCallback(int value, void *);
-void simpleThresholdErodeSliderChangedCallback(int value, void *);
-void simpleThresholdDilateSliderChangedCallback(int value, void *);
 
 }       /* namespace oat */
 #endif	/* OAT_SIMPLETHRESHOLD_H */

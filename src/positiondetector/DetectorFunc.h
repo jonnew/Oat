@@ -40,8 +40,11 @@ class Position2D;
  * @param max_area Maximum contour area to be considered candidate for position
  * @return Position corresponding the centroid of the largest contour in the frame.
  */
-void siftContours(cv::Mat &frame, Position2D &position, 
-                  double &object_area, double min_area, double max_area);
+void siftContours(cv::Mat &frame,
+                  Position2D &position,
+                  double &object_area,
+                  double min_area,
+                  double max_area);
 
 }       /* namespace oat */
 #endif	/* OAT_DETECTORFUNC */

@@ -26,10 +26,12 @@
 
 #include <boost/program_options.hpp>
 
+#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
 
 namespace po = boost::program_options;
 
@@ -38,13 +40,8 @@ namespace oat {
 // Forward decl.
 class SharedFrameHeader;
 
-/**
- * Abstract object position detector.
- * All concrete object position detector types implement this ABC.
- */
-class PositionDetector {
+class PositionDetector : public Component, public Configurable<false> {
 public:
-
     /**
      * Abstract object position detector.
      * All concrete object position detector types implement this ABC.
@@ -53,39 +50,13 @@ public:
      */
     PositionDetector(const std::string &frame_source_address,
                      const std::string &position_sink_address);
-
     virtual ~PositionDetector() { }
 
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    virtual void appendOptions(po::options_description &opts);
-
-    /**
-     * @brief Configure component parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    virtual void configure(const po::variables_map &vm) = 0;
-
-    /**
-     * PositionDetectors must be able to connect to a Source and Sink
-     * Nodes in shared memory
-     */
-    virtual void connectToNode(void);
-
-    /**
-     * Obtain frame from SOURCE. Detect object position within the frame. Publish
-     * detected position to SINK.
-     * @return SOURCE end-of-stream signal. If true, this component should exit.
-     */
-    virtual bool process(void);
-
-    // Accessors
-    std::string name(void) const { return name_; }
+    // Component Interface
+    oat::ComponentType type(void) const override { return oat::positiondetector; };
+    std::string name(void) const override { return name_; }
 
 protected:
-
     /**
      * Perform object position detection.
      * @param Frame to look for object within.
@@ -100,9 +71,12 @@ protected:
     oat::PixelColor required_color_ {PIX_BGR};
 
     // List of allowed configuration options
-    std::vector<std::string> config_keys_;
+    //std::vector<std::string> config_keys_;
 
 private:
+    // Component Interface
+    virtual bool connectToNode(void) override;
+    int process(void) override;
 
     // Current frame
     oat::Position2D * shared_position_;
@@ -114,9 +88,7 @@ private:
     // Position sink
     const std::string position_sink_address_;
     oat::Sink<oat::Position2D> position_sink_;
-
 };
 
 }      /* namespace oat */
 #endif /* OAT_POSITIONDETECTOR_H */
-

@@ -25,6 +25,8 @@
 
 #include <boost/program_options.hpp>
 
+#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
@@ -33,57 +35,31 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-/**
- * Abstract position server.
- * All concrete position server types implement this ABC.
- */
-class PositionSocket  {
+class PositionSocket : public Component, public Configurable<false> {
 
 public:
-
+    /**
+     * @brief An abstract Position emitter.
+     * @param position_source_address Position source to emit from.
+     */
     explicit PositionSocket(const std::string &position_source_address);
-
     virtual ~PositionSocket() { }
 
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    virtual void appendOptions(po::options_description &opts);
-
-    /**
-     * @brief Configure component parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    virtual void configure(const po::variables_map &vm) = 0;
-
-    /**
-     * PositionSockets must be able to connect to a source
-     * node in shared memory
-     */
-    virtual void connectToNode(void);
-
-    /**
-     * Obtain position from SOURCE. Serve position to endpoint.
-     * @return SOURCE end-of-stream signal. If true, this component should exit.
-     */
-    bool process(void);
-
-    // Accessors
-    std::string name(void) const { return name_; }
+    // Component Interface
+    oat::ComponentType type(void) const override { return oat::positionsocket; };
+    std::string name(void) const override { return name_; }
 
 protected:
-
-    // List of allowed configuration options    
-    std::vector<std::string> config_keys_;
-
     /**
-     * Serve the position via specified IO protocol.
+     * Send the position via specified IO protocol.
      * @param Position to serve.
      */
     virtual void sendPosition(const oat::Position2D &position) = 0;
 
 private:
+    // Component Interface
+    bool connectToNode(void) override;
+    int process(void) override;
 
     // Position Socket name
     const std::string name_;

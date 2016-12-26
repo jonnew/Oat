@@ -38,12 +38,20 @@ namespace oat {
 
 class Position2D;
 
-/**
- * A color-based object position detector
- */
-class HSVDetector : public PositionDetector {
-public:
+// Tuning GUI callbacks
+void hsvDetectorMinAreaSliderChangedCallback(int value, void *);
+void hsvDetectorMaxAreaSliderChangedCallback(int value, void *);
+void hsvDetectorErodeSliderChangedCallback(int value, void *);
+void hsvDetectorDilateSliderChangedCallback(int value, void *);
 
+class HSVDetector : public PositionDetector {
+
+friend void hsvDetectorMinAreaSliderChangedCallback(int value, void *);
+friend void hsvDetectorMaxAreaSliderChangedCallback(int value, void *);
+friend void hsvDetectorErodeSliderChangedCallback(int value, void *);
+friend void hsvDetectorDilateSliderChangedCallback(int value, void *);
+
+public:
     /**
      * A color-based object position detector with default parameters.
      * @param frame_source_address Frame SOURCE node address
@@ -52,6 +60,12 @@ public:
     HSVDetector(const std::string &frame_source_address,
                 const std::string &position_sink_address);
 
+private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
+
     /**
      * Perform color-based object position detection.
      * @param Frame to look for object within.
@@ -59,20 +73,11 @@ public:
      */
     void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
-    // Accessors (used for tuning GUI)
-    void set_erode_size(int erode_px);
-    void set_dilate_size(int dilate_px);
-    void set_min_object_area(double value) { min_object_area_ = value; }
-    void set_max_object_area(double value) { max_object_area_ = value; }
-
-private:
-
-    // Sizes of the erode and dilate blocks
+    // Erode and dilate kernels
     int erode_px_ {0}, dilate_px_ {10};
     bool erode_on_ {false}, dilate_on_ {false};
+    void set_erode_size(int erode_px);
+    void set_dilate_size(int dilate_px);
 
     // Internal matricies
     cv::Mat threshold_frame_, erode_element_, dilate_element_;
@@ -94,14 +99,7 @@ private:
     const std::string tuning_image_title_;
     void tune(cv::Mat &frame, const oat::Position2D &position);
     void createTuningWindows(void);
-
 };
-
-// Tuning GUI callbacks
-void hsvDetectorMinAreaSliderChangedCallback(int value, void *);
-void hsvDetectorMaxAreaSliderChangedCallback(int value, void *);
-void hsvDetectorErodeSliderChangedCallback(int value, void *);
-void hsvDetectorDilateSliderChangedCallback(int value, void *);
 
 }       /* namespace oat */
 #endif	/* OAT_HSVDETECTOR_H */
