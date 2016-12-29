@@ -29,6 +29,7 @@
 #include <rapidjson/prettywriter.h>
 
 #include "../../lib/shmemdf/Node.h"
+#include "../../lib/shmemdf/Source.h"
 #include "../../lib/utility/FileFormat.h"
 #include "../../lib/utility/TOMLSanitize.h"
 
@@ -36,13 +37,12 @@ namespace oat {
 namespace blf = boost::lockfree;
 namespace po = boost::program_options;
 
-/**
- * Abstract file writer for a single data source
- */
 class Writer {
 
 public:
-
+    /**
+     * Abstract file writer for a single data source
+     */
     Writer(const std::string &addr)
     : addr_(addr)
     {
@@ -57,7 +57,7 @@ public:
 
     // Stuff for manipulating held source
     virtual void touch(void) = 0;
-    virtual void connect(void) = 0;
+    virtual oat::SourceState connect(void) = 0;
     virtual oat::NodeState wait(void) = 0;
     virtual void post(void) = 0;
     virtual double sample_period_sec(void) = 0;
@@ -86,9 +86,8 @@ public:
     std::string addr(void) const { return addr_; }
 
 protected:
-
     static constexpr int BUFFER_SIZE {1000};
-    static const char overrun_msg[];
+    static const char OVERRUN_MSG[];
 
     /**
      * @breif Address of shmem for held source

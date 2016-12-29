@@ -184,6 +184,8 @@ void Controller::help(const std::string &target_id) const
     if (subscriptions_.count(target_id)) {
 
         auto cmds = subscriptions_.at(target_id).commands;
+        cmds.emplace("help", "Print this message.");
+        cmds.emplace("quit", "Exit the program..");
 
         size_t max_len = 7; // For "COMMAND"
         std::vector<std::string> keys;
@@ -192,19 +194,34 @@ void Controller::help(const std::string &target_id) const
             if (c.first.size() > max_len)
                 max_len = c.first.size();
         }
-        max_len += 2;
+        max_len += 5;
 
+        // Format help message
         std::stringstream out;
-
+        out << std::left << subscriptions_.at(target_id).name << "\n";
         out << std::left << std::setw(max_len) << "COMMAND "
-            << "FUNCTION // " << subscriptions_.at(target_id).name << "\n";
+            << "DESC.\n";
 
+        int desc_len = 80 - max_len;
+        assert(desc_len > 0);
         for (const auto &c : cmds) {
-            out << std::left << std::setw(max_len) << c.first << c.second
-                << "\n";
+            out <<  std::left << std::setw(max_len) << (" " + c.first);
+
+            size_t from = 0;
+            size_t to = 0;
+            while (to < c.second.size()) {
+                to = c.second.find(" ", to + desc_len);
+                if (from != 0) 
+                    out << std::left << std::setw(max_len - 1) << "";
+                out << c.second.substr(from, to)
+                    << "\n";
+
+                from = to;
+            }
         }
 
         std::cout << out.str();
+
     } else {
         std::cerr << oat::Warn("Target is not available: " + target_id) << "\n";
     }

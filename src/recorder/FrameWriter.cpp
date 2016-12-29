@@ -26,12 +26,6 @@
 
 namespace oat {
 
-FrameWriter::FrameWriter(const std::string &addr)
-: Writer(addr)
-{
-    // Nothing
-}
-
 void FrameWriter::configure(const oat::config::OptionTable &t,
                             const po::variables_map &vm)
 {
@@ -55,9 +49,9 @@ void FrameWriter::configure(const oat::config::OptionTable &t,
     }
 }
 
-void FrameWriter::connect()
+oat::SourceState FrameWriter::connect()
 {
-    source_.connect();
+    auto rc = source_.connect();
 
     // Get frame meta data to format video writer
     frame_params_ = source_.parameters();
@@ -66,6 +60,8 @@ void FrameWriter::connect()
         std::cerr << oat::Warn("Unknown sample rate for source " + addr());
         fps_ = 20;
     }
+
+    return rc;
 }
 
 void FrameWriter::initialize(const std::string &path)
@@ -94,7 +90,7 @@ void FrameWriter::write(void)
 void FrameWriter::push(void )
 {
     if (!buffer_.push(source_.clone()))
-        throw std::runtime_error(overrun_msg);
+        throw std::runtime_error(OVERRUN_MSG);
 }
 
 } /* namespace oat */

@@ -42,7 +42,6 @@ class Viewer : public Component, public Configurable<false> {
     using Clock = std::chrono::high_resolution_clock;
 
 public:
-
     /**
      * @brief Abstract viewer.
      * All concrete viewer types implement this ABC.
@@ -58,7 +57,6 @@ public:
     int process(void) override;
 
 protected:
-
     // Viewer name
     const std::string name_;
 
@@ -77,7 +75,6 @@ protected:
     virtual void display(const T &sample) = 0;
 
 private:
-
     // Sample SOURCE
     T sample_;
     oat::Source<T> source_;

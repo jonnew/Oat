@@ -38,7 +38,6 @@ template <bool CONTROLLABLE = false>
 class Configurable {
 
 public:
-
     /**
      * @brief Append program options.
      * @param opts Program option description to be specialized.
@@ -89,7 +88,6 @@ public:
     }
 
 protected:
-
     /**
      * @brief Return the component's program options.
      * @return Program options specilized for a particular concrete component
@@ -108,5 +106,6 @@ protected:
     // Allowable configuration keys
     std::vector<std::string> config_keys_;
 };
+
 }      /* namespace oat */
 #endif /* OAT_CONFIGURABLE_H */

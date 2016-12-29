@@ -26,25 +26,20 @@
 #include <opencv2/videoio.hpp>
 
 #include "../../lib/datatypes/Frame.h"
-#include "../../lib/shmemdf/Source.h"
 #include "../../lib/utility/FileFormat.h"
 
 namespace oat {
 namespace blf = boost::lockfree;
 
-/**
- * Frame stream video file writer.
- */
 class FrameWriter : public Writer {
 
 public:
-
-    FrameWriter(const std::string &addr);
+    using Writer::Writer;
 
     void configure(const oat::config::OptionTable &t,
                    const po::variables_map &vm) override;
     void touch() override { source_.touch(addr_); }
-    void connect() override;
+    oat::SourceState connect() override;
     double sample_period_sec() override
     {
         return source_.retrieve()->sample_period_sec();
@@ -62,14 +57,14 @@ public:
     }
 
 private:
-    using SPSCBuffer = boost::lockfree::spsc_queue<oat::Frame,
-                                                   blf::capacity<BUFFER_SIZE>>;
+    using SPSCBuffer
+        = boost::lockfree::spsc_queue<oat::Frame, blf::capacity<BUFFER_SIZE>>;
     SPSCBuffer buffer_;
 
     // Video writer and required parameters
     std::string path_ {""};
     int fourcc_ {0}; // Default to uncompressed
-    double fps_; 
+    double fps_;
     oat::FrameParams frame_params_;
     cv::VideoWriter video_writer_;
 

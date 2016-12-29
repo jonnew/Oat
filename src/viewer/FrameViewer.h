@@ -32,7 +32,6 @@ namespace oat {
 class FrameViewer : public Viewer<oat::Frame> {
 
 public:
-
     /** 
      * @brief View a frame stream on the monitor.
      * @param source_name Frame source node.
@@ -40,7 +39,6 @@ public:
     FrameViewer(const std::string &source_name);
 
 private:
-
     // Implement Configurable Interface
     po::options_description options(void) const override;
     void applyConfiguration(const po::variables_map &vm,

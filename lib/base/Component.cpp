@@ -57,6 +57,7 @@ void Component::runComponent()
 {
     try {
 
+        // TODO: throw "could not connect to node?"
         if (!connectToNode())
             return;
 

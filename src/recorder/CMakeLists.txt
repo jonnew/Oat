@@ -7,7 +7,7 @@ set (oat-record_SOURCE
      FrameWriter.cpp
      PositionWriter.cpp
      Writer.cpp
-     RecordControl.cpp
+     #RecordControl.cpp
      Recorder.cpp
      main.cpp)
 
@@ -15,6 +15,7 @@ set (oat-record_SOURCE
 add_executable (oat-record ${oat-record_SOURCE})
 target_link_libraries (oat-record
                        oat-utility
+                       oat-base
                        datatypes
                        zmq
                        ${OatCommon_LIBS})

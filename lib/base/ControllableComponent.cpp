@@ -48,18 +48,14 @@ void ControllableComponent::identity(char *id, const size_t n) const
 
 void ControllableComponent::run()
 {
-    // Get endpoint from program options
-    //zmq::context_t ctx(1);
+    // TODO: Get endpoint from program options
     auto control_thread = std::thread([this] { runController(); });
+    control_thread.detach();
 
     // Loop until quit
     runComponent();
 
-    // Join processing and control threads, in possible
-    if (control_thread.joinable())
-        control_thread.join();
-
-    // If an exception occured in control thread, rethrow it on the joined
+    // If an exception occured in control thread, rethrow it on the main
     // thread
     if (ctrl_ex)
         std::rethrow_exception(ctrl_ex);
@@ -106,8 +102,10 @@ void ControllableComponent::runController(const char *endpoint)
 
         // ETERM occurs during interrupt from ctrl-c, otherwise pass exception
         // to processing thread
-        if (ex.num() != ETERM)
+        if (ex.num() != ETERM) {
             ctrl_ex = std::current_exception();
+            return;
+        }
     }
 
     ctx.close();

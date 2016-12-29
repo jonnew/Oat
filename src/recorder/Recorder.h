@@ -30,82 +30,44 @@
 #include <string>
 #include <thread>
 
+#include "../../lib/base/ControllableComponent.h"
+#include "../../lib/base/Configurable.h"
+
 namespace oat {
 namespace po = boost::program_options;
 
-/**
- * General token recorder
- */
-class Recorder {
+class Recorder : public ControllableComponent, public Configurable<true> {
 
-    //// The controlRecorder routine needs access to Recorder's private members
-    friend
-    int controlRecorder(std::istream &in,
-                        oat::Recorder &recorder,
-                        bool print_cmd);
 public:
-
     ~Recorder();
 
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    virtual void appendOptions(po::options_description &opts);
+    // Implement ControllableComponent interface
+    oat::ComponentType type(void) const override { return oat::recorder; };
+    std::string name(void) const override { return name_; }
 
-    /**
-     * @brief Configure component parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    virtual void configure(const po::variables_map &vm);
+private:
+    // Implement ControllableComponent interface
+    bool connectToNode(void) override;
+    int process(void) override;
+    void applyCommand(const std::string &command) override;
+    oat::CommandDescription commands(void) override;
 
-    /**
-     * Recorder SOURCEs must be able to connect to a NODEs from
-     * which to receive positions and frames.
-     */
-    void connectToNodes(void);
+    // Implement Configurable interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     /**
      * @brief Create and initialize recording file(s). Must be called
-     * before writeStreams.
-     *
+     * before process().
      */
     void initializeRecording(void);
-
-    /** Collect frames and positions from SOURCES. Write frames and positions
-     * to file.
-     * @return SOURCE end-of-stream signal. If true, this component should
-     * exit.
-     */
-    bool writeStreams(void);
-
-    enum ControlMode : int
-    {
-        NONE = 0,
-        LOCAL = 1,
-        RPC = 2,
-    } control_mode {NONE};
-    
-    // Source EOF (needed for RecordControl)
-    bool source_eof {false};
-
-    // Accessors for control thread
-    std::string name(void) const { return name_; }
-    bool record_on(void) const { return record_on_; }
-    void set_record_on(const bool value) { record_on_ = value; }
-    std::string rpc_endpoint(void) const { return rpc_endpoint_; }
-
-protected:
-    // List of allowed configuration options
-    std::vector<std::string> config_keys_;
-
-private:
 
     // Name of this recorder
     std::string name_;
 
-    // Recorder in running state (i.e. all threads should remain responsive
-    // for new data coming down the pipeline)
+    // Recorder in running state (i.e. all threads should remain responsive for
+    // new data coming down the pipeline)
     std::atomic<bool> running_ {true};
 
     // Recording gate can be toggled on and off interactively from other
@@ -114,7 +76,7 @@ private:
 
     // Sample rate of this recorder
     // The true sample rate is enforced by the slowest SOURCE since all SOURCEs
-    // are sychronized. User will be warned if SOURCE sample rates differ.
+    // are synchronized. User will be warned if SOURCE sample rates differ.
     double sample_rate_hz_ {0.0};
 
     // Folder in which files will be saved
@@ -122,9 +84,6 @@ private:
 
     // Base file name
     std::string file_name_ {""};
-
-    // RPC endpoint for interactive control
-    std::string rpc_endpoint_ {""};
 
     // Determines if should file_name be prepended with a timestamp
     bool prepend_timestamp_ {false};
@@ -135,16 +94,13 @@ private:
     // Executed by writer_thread_
     void writeLoop(void);
 
-    std::vector<std::string> source_addrs_;
-
-    // Writers (own sources)
+    // Writers (each owns its SOURCE)
     std::vector<std::unique_ptr<Writer>> writers_;
 
     // File-writer threading
     std::thread writer_thread_;
     std::mutex writer_mutex_;
     std::condition_variable writer_condition_variable_;
-
 
     // Create file name from components
     std::string generateFileName(const std::string timestamp,

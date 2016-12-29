@@ -42,7 +42,6 @@ typedef std::map<std::string, std::string> CommandDescription;
 class ControllableComponent : public Component {
 
 public:
-
     using Component::Component;
     virtual ~ControllableComponent() { };
 
@@ -52,7 +51,6 @@ public:
     void run() override;
 
 protected:
-
     /**
      * @brief Get unique, controllable ID for this component
      * @param n Number of characters to copy to id
@@ -82,7 +80,6 @@ protected:
     virtual oat::CommandDescription commands() = 0;
 
 private:
-
     /**
      * @brief Start component controller on a separate thread.
      * @param endpoint Endpoint over which communicaiton with an oat-control

@@ -27,12 +27,6 @@
 
 namespace oat {
 
-PositionWriter::PositionWriter(const std::string &addr)
-: Writer(addr)
-{
-    // Nothing
-}
-
 PositionWriter::~PositionWriter()
 {
     if (use_binary_ && fd_ != nullptr) {
@@ -164,7 +158,7 @@ void PositionWriter::write() {
 void PositionWriter::push() {
 
     if (!buffer_.push(source_.clone()))
-        throw std::runtime_error(overrun_msg);
+        throw std::runtime_error(OVERRUN_MSG);
 }
 
 } /* namespace oat */

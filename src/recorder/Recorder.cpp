@@ -22,7 +22,6 @@
 #include "FrameWriter.h"
 #include "PositionWriter.h"
 
-#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -53,23 +52,16 @@ Recorder::~Recorder()
     }
 }
 
-void Recorder::appendOptions(po::options_description &opts)
+po::options_description Recorder::options() const
 {
-    // Common program options
-    opts.add_options()
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
         ("frame-sources,s", po::value< std::vector<std::string> >()->multitoken(),
         "The names of the FRAME SOURCES that supply images to save to video.")
         ("position-sources,p", po::value< std::vector<std::string> >()->multitoken(),
         "The names of the POSITION SOURCES that supply object positions "
         "to be recorded.")
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-
-    // Update CLI options
-    po::options_description local_opts;
-    local_opts.add_options()
         ("filename,n", po::value<std::string>(),
         "The base file name. If not specified, defaults to the SOURCE "
         "name.")
@@ -103,27 +95,14 @@ void Recorder::appendOptions(po::options_description &opts)
          "pos_ok = false. This means that position objects will be of "
          "variable size depending on the validity of whether a position was "
          "detected or not, potentially complicating file parsing.")
-        ("interactive", "Start recorder with interactive controls enabled.")
-        ("rpc-endpoint", po::value<std::string>(),
-         "Yield interactive control of the recorder to a remote ZMQ REQ "
-         "socket using an interal REP socket with ZMQ style endpoint "
-         "specifier: '<transport>://<host>:<port>'. For instance, "
-         "'tcp://*:5555' to specify TCP communication on ports 5555.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o : local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void Recorder::configure(const po::variables_map &vm)
+void Recorder::applyConfiguration(const po::variables_map &vm,
+                                  const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
     // Sources
     if (vm.count("frame-sources")) {
 
@@ -163,31 +142,15 @@ void Recorder::configure(const po::variables_map &vm)
     // Date
     oat::config::getValue(vm, config_table, "date", prepend_timestamp_);
 
-    // Interactive control
-    bool is_interactive = false;
-    if (oat::config::getValue(vm, config_table, "interactive", is_interactive))
-        control_mode = LOCAL;
-
-    // RPC control
-    if (oat::config::getValue(vm, config_table, "rpc-endpoint", rpc_endpoint_))
-        control_mode = RPC;
-
-    if (is_interactive && !rpc_endpoint_.empty()) {
-        throw std::runtime_error("Recorder cannot be interactive and remote "
-                                 "controlled at the same time. Choose either "
-                                 "interactive or rpc-endpoint.");
-    }
-
     // Writer specific options
     for (auto &w : writers_)
         w->configure(config_table, vm);
 
-
-    // Start the recording tread
+    // Start the recording thread
     writer_thread_ = std::thread( [this] { writeLoop(); } );
 }
 
-void Recorder::connectToNodes()
+bool Recorder::connectToNode()
 {
     // Touch frame and position source nodes
     for (auto &w : writers_)
@@ -195,7 +158,8 @@ void Recorder::connectToNodes()
 
     std::vector<double> all_ts;
     for (auto &w : writers_) {
-        w->connect();
+        if (w->connect() != SourceState::CONNECTED)
+            return false;
         all_ts.push_back(w->sample_period_sec());
     }
 
@@ -205,10 +169,14 @@ void Recorder::connectToNodes()
 
     // Setup file, etc
     initializeRecording();
+
+    return true;
 }
 
-bool Recorder::writeStreams()
+int Recorder::process()
 {
+    bool source_eof = false;
+
     // Read sources, push samples to write buffers
     for (auto &w : writers_) {
 
@@ -230,6 +198,34 @@ bool Recorder::writeStreams()
     writer_condition_variable_.notify_one();
 
     return source_eof;
+}
+
+oat::CommandDescription Recorder::commands()
+{
+    const oat::CommandDescription commands{
+        {"start", "Start recording. This will append the file if it "
+                  "already exists. It will create a new one if it doesn't." },
+        {"pause", "Pause recording. This will pause the recording "
+                  "without creating a new file." },
+        {"new", "Start a new file using folder location and file name "
+                "options as provided in command line arguements."},
+    };
+
+    return commands;
+}
+
+void Recorder::applyCommand(const std::string &command)
+{
+    const auto cmds = commands();
+
+    if (command == "start") {
+        record_on_ = true;
+    } else if (command == "pause") {
+        record_on_ = false;
+    } else if (command == "new") {
+        // TODO: makeNewFile()
+        std::cout << "did not implement new yet...\n";
+    }
 }
 
 void Recorder::writeLoop()

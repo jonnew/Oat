@@ -34,7 +34,6 @@ namespace oat {
 class ViewerBase {
 
 public:
-
     template <typename T, typename... Args>
     ViewerBase(oat::in_place<T>, Args&&... args) :
       viewer(std::make_shared<ViewerModel<T>>(std::forward<Args>(args)...)) { }
@@ -47,7 +46,6 @@ public:
     oat::ComponentType type() const { return viewer->type(); }
 
 private:
-
     struct ViewerConcept {
         virtual ~ViewerConcept() { }
         virtual void appendOptions(po::options_description &opts) = 0;

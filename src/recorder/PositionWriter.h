@@ -27,26 +27,21 @@
 #include <rapidjson/prettywriter.h>
 
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/shmemdf/Source.h"
 #include "../../lib/utility/FileFormat.h"
 
 namespace oat {
 namespace blf = boost::lockfree;
 
-/**
- * Position stream file writer.
- */
 class PositionWriter : public Writer{
 public:
-
-    PositionWriter(const std::string &addr);
+    using Writer::Writer;
 
     ~PositionWriter();
 
     void configure(const oat::config::OptionTable &t,
                    const po::variables_map &vm) override;
     void touch() override { source_.touch(addr_); }
-    void connect() override { source_.connect(); }
+    oat::SourceState connect() override { return source_.connect(); }
     double sample_period_sec() override
     {
         return source_.retrieve()->sample_period_sec();

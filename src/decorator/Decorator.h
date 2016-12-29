@@ -61,6 +61,7 @@ public:
     std::string name(void) const override { return name_; }
 
 private:
+    // Implement ControllableComponent interface
     virtual bool connectToNode(void) override;
     int process(void) override;
     void applyCommand(const std::string &command) override;
