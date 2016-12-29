@@ -32,37 +32,30 @@ PositionFilter::PositionFilter(const std::string &position_source_address,
   // Nothing
 }
 
-void PositionFilter::appendOptions(po::options_description &opts)
-{
-    // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
-        ;
-}
-
-void PositionFilter::connectToNode()
+bool PositionFilter::connectToNode()
 {
     // Establish our a slot in the node
     position_source_.touch(position_source_address_);
 
     // Wait for synchronous start with sink when it binds the node
-    position_source_.connect();
+    if (position_source_.connect() != SourceState::CONNECTED)
+        return false;
 
     // Bind to sink sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
     shared_position_ = position_sink_.retrieve();
+
+    return true;
 }
 
-bool PositionFilter::process()
+int PositionFilter::process()
 {
     // START CRITICAL SECTION //
     ////////////////////////////
 
     // Wait for sink to write to node
     if (position_source_.wait() == oat::NodeState::END)
-        return true;
+        return 1;
 
     // Clone the shared frame
     internal_position_ = position_source_.clone();
@@ -91,7 +84,7 @@ bool PositionFilter::process()
     //  END CRITICAL SECTION  //
 
     // Sink was not at END state
-    return false;
+    return 0;
 }
 
 } /* namespace oat */

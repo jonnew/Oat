@@ -31,28 +31,20 @@
 
 namespace oat {
 
-RegionFilter2D::RegionFilter2D(const std::string &position_source_address,
-                               const std::string &position_sink_address) :
-  PositionFilter(position_source_address, position_sink_address)
-{
-    // Nothing
-}
-
 RegionFilter2D::~RegionFilter2D()
 {
-    for (auto &value : region_contours_) {delete value;}
+    for (auto &value : region_contours_) {
+        delete value;
+    }
 }
 
-void RegionFilter2D::appendOptions(po::options_description &opts)
+po::options_description RegionFilter2D::options() const
 {
-    // Accepts a config file
-    PositionFilter::appendOptions(opts);
-
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
-        ("<regions>", po::value<std::string>(),
-         "!Config file only!\n"
+        ("regions", po::value<std::string>(),
+         "NOTE: Regions can only be specified in a config file.\n"
          "Regions contours are specified as n-point matrices, [[x0, y0],[x1, "
          "y1],...,[xn, yn]], which define the vertices of a polygon:\n\n"
          "  <region> = [[+float, +float],\n"
@@ -76,22 +68,17 @@ void RegionFilter2D::appendOptions(po::options_description &opts)
          "        [655.33, 319.33]]")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void RegionFilter2D::configure(const po::variables_map &vm) {
-
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
+void RegionFilter2D::applyConfiguration(const po::variables_map &vm,
+                                        const config::OptionTable &config_table)
+{
     // The config should be an table of arrays.
     // Each key specifies the region ID and its value specifies an array
     // defining a vector of 2D points.
+    if (vm.count("regions"))
+        throw std::runtime_error("Regions can only be specified using a config file.");
 
     // Iterate through each region definition
     auto it = config_table->begin();
@@ -140,7 +127,6 @@ void RegionFilter2D::configure(const po::variables_map &vm) {
 //#endif
 }
 
-
 void RegionFilter2D::filter(oat::Position2D &position) {
 
     // Check the current position to see if it lies inside any regions.
@@ -154,15 +140,12 @@ void RegionFilter2D::filter(oat::Position2D &position) {
             if (cv::pointPolygonTest(*r, pt, false) >= 0) {
 
                 position.region_valid = true;
-
-                std::vector<char> writable(region_ids_[i].begin(), region_ids_[i].end());
+                std::vector<char> writable(region_ids_[i].begin(),
+                                           region_ids_[i].end());
                 writable.push_back('\0');
-
                 strcpy(position.region, &writable[0]);
-
                 break;
             }
-
             i++;
         }
     }

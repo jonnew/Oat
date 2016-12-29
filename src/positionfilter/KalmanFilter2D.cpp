@@ -37,11 +37,8 @@ KalmanFilter2D::KalmanFilter2D(const std::string& position_source_address,
     sig_measure_noise_tune_ = static_cast<int>(sig_measure_noise_);
 }
 
-void KalmanFilter2D::appendOptions(po::options_description &opts) {
-
-    // Accepts a config file
-    PositionFilter::appendOptions(opts);
-
+po::options_description KalmanFilter2D::options() const
+{
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
@@ -62,23 +59,14 @@ void KalmanFilter2D::appendOptions(po::options_description &opts) {
          "parameters.")
         ;
 
-    opts.add(local_opts);
-
-    // Return valid keys
-    for (auto &o: local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void KalmanFilter2D::configure(const po::variables_map &vm) {
-
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-
+void KalmanFilter2D::applyConfiguration(const po::variables_map &vm,
+                                        const config::OptionTable &config_table)
+{
     // Time step
-    oat::config::getNumericValue<double>(
-        vm, config_table, "dt", dt_, 0
-    );
+    oat::config::getNumericValue<double>(vm, config_table, "dt", dt_, 0);
 
     // Blind filter timeout
     double t;
@@ -87,12 +75,11 @@ void KalmanFilter2D::configure(const po::variables_map &vm) {
 
     // Sigma accel
     oat::config::getNumericValue<double>(
-        vm, config_table, "sigma-accel", sig_accel_, 0
-    );
+        vm, config_table, "sigma-accel", sig_accel_, 0);
+
     // Sigma noise
     oat::config::getNumericValue<double>(
-        vm, config_table, "sigma-noise", sig_measure_noise_, 0
-    );
+        vm, config_table, "sigma-noise", sig_measure_noise_, 0);
 
     // Tuning GUI
     bool tune;

@@ -31,9 +31,6 @@ namespace oat {
 // Forward decl.
 class Position2D;
 
-/**
- * A region filter.
- */
 class RegionFilter2D : public PositionFilter {
 
 public:
@@ -43,27 +40,25 @@ public:
      * specifying a set of named contours, this filter checks if the position
      * is inside a given contour and appends the name of that contour to each
      * to the position.
-     * @param position_source_address Position SOURCE name
-     * @param position_sink_address Filtered position SINK name
      */
-    RegionFilter2D(const std::string &position_source_address,
-                   const std::string &position_sink_address);
+    using PositionFilter::PositionFilter;
 
     ~RegionFilter2D();
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
 private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     // Regions
     std::vector<std::string> region_ids_;
     std::vector<std::vector<cv::Point> *> region_contours_;
 
     /**
-     * Check the position to see if it lies within any of the
-     * contours defined in the configuration. In the case that the point lies within
-     * multiple regions, the first one checked is used and the others are ignored.
+     * Check the position to see if it lies within any of the contours defined
+     * in the configuration. In the case that the point lies within multiple
+     * regions, the first one checked is used and the others are ignored.
      * @param position Position to be filtered
      */
     void filter(oat::Position2D &position) override;

@@ -27,13 +27,9 @@
 
 namespace oat {
 
-/**
- * A 2D Kalman filter.
- */
 class KalmanFilter2D : public PositionFilter {
 
 public:
-
     /**
      * A 2D Kalman filter.
      * The assumed model is normally distributed constant force applied at each
@@ -48,10 +44,11 @@ public:
     KalmanFilter2D(const std::string &position_source_address,
                    const std::string& position_sink_address);
 
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
-
 private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     // Kalman state estimate and measurement vectors
     cv::Mat_<double> kf_predicted_state_ {4, 1, CV_64F};
@@ -86,12 +83,12 @@ private:
      */
     void filter(oat::Position2D& position) override;
 
-    // TODO: These subroutines have pretty boring type signatures...
+    // Subroutines
     void tune(void);
     void initializeFilter(void);
     void initializeStaticMatracies(void);
     void createTuningWindows(void);
-    void drawPosition(cv::Mat& canvas, const oat::Position2D& position);
+    //void drawPosition(cv::Mat& canvas, const oat::Position2D& position);
 };
 
 }      /* namespace oat */

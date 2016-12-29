@@ -27,29 +27,24 @@
 
 namespace oat {
 
-/**
- * A 2D homography.
- */
 class HomographyTransform2D : public PositionFilter {
-public:
 
+public:
     /**
      * A 2D homography.
-     * Transform position units. Typically used to perform projective transformation
-     * to map pixels coordinates to world coordinates.
-     * @param position_source_address Un-filtered position SOURCE name
-     * @param position_sink_address Filtered position SINK name
+     * Transform position units. Typically used to perform projective
+     * transformation to map pixels coordinates to world coordinates.
      */
-    HomographyTransform2D(const std::string& position_source_address,
-                          const std::string& position_sink_address);
-
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
+    using PositionFilter::PositionFilter;
 
 private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     // 2D homography matrix
-    bool homography_valid_ {false};
+    //bool homography_valid_ {false};
     cv::Matx33d homography_ {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
 
     /**
@@ -61,4 +56,3 @@ private:
 
 }      /* namespace oat */
 #endif /* OAT_HOMGRAPHICTRANSFORM2D_H */
-

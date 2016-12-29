@@ -24,12 +24,9 @@
 
 namespace oat {
 
-/**
- * A frame masker.
- */
 class FrameMasker : public FrameFilter {
-public:
 
+public:
     /**
      * @brief A frame masker to isolate one or more regions of interest in a
      * frame stream using a mask frame. Pixels of the input frames that
@@ -43,6 +40,7 @@ public:
                 const std::string &frame_sink_address);
 
 private:
+    // Configurable Interface
     po::options_description options() const override;
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;

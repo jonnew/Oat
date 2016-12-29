@@ -17,7 +17,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include <csignal>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -38,9 +37,6 @@
 #define REQ_POSITIONAL_ARGS 3
 
 namespace po = boost::program_options;
-
-volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t source_eof = 0;
 
 const char usage_type[] =
     "TYPE\n"
@@ -84,35 +80,8 @@ void printUsage(const po::options_description &options, const std::string &type)
 }
 
 
-// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int)
-{
-    quit = 1;
-}
-
-// Processing loop
-void run(std::shared_ptr<oat::PositionFilter> filter)
-{
-    try {
-
-        filter->connectToNode();
-
-        while (!quit && !source_eof)
-            source_eof = filter->process();
-
-    } catch (const boost::interprocess::interprocess_exception &ex) {
-
-        // Error code 1 indicates a SIGNINT during a call to wait(), which
-        // is normal behavior
-        if (ex.get_error_code() != 1)
-            throw;
-    }
-}
-
 int main(int argc, char *argv[])
 {
-    std::signal(SIGINT, sigHandler);
-
     // Results of command line input
     std::string type;
     std::string source;
@@ -209,7 +178,7 @@ int main(int argc, char *argv[])
             visible_options.add(detail_opts);
             options.add(detail_opts);
         }
-        
+
         // Check INFO arguments
         if (option_map.count("help")) {
             printUsage(visible_options, type);
@@ -270,7 +239,7 @@ int main(int argc, char *argv[])
                       "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of messages signal
-        run(filter);
+        filter->run();
 
         // Tell user
         std::cout << oat::whoMessage(comp_name, "Exiting.")
@@ -295,6 +264,6 @@ int main(int argc, char *argv[])
                   << std::endl;
     }
 
-    // exit failure
+    // Exit failure
     return -1;
 }
