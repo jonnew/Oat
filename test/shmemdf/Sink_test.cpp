@@ -28,6 +28,9 @@
 
 const std::string node_addr = "test";
 
+// Global via extern in Globals.h
+namespace oat { volatile sig_atomic_t quit = 0; }
+
 SCENARIO ("Sinks can bind a single Node.", "[Sink]") {
 
     GIVEN ("Two Sink<int>'s") {
@@ -110,7 +113,6 @@ SCENARIO ("Sinks cannot bind() to the same node more than once.", "[Source]") {
         INFO ("The sink binds a node");
         REQUIRE_NOTHROW( sink.bind(node_addr); );
         REQUIRE_THROWS( sink.bind(node_addr); );
-
 }
 
 SCENARIO ("Bound sinks can retrieve shared objects to mutate them.", "[Sink]") {
@@ -147,7 +149,6 @@ SCENARIO ("Bound sinks can retrieve shared objects to mutate them.", "[Sink]") {
         }
     }
 }
-
 
 SCENARIO ("Sink<SharedFrameHeader> must bind() before waiting, posting, or allocating.", "[Sink, SharedFrameHeader]") {
 

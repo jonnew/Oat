@@ -291,6 +291,6 @@ int main(int argc, char *argv[]) {
                   << std::endl;
     }
 
-    // exit failure
+    // Exit failure
     return -1;
 }

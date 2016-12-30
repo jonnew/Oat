@@ -28,6 +28,8 @@
 #include <boost/program_options.hpp>
 #include <opencv2/core/mat.hpp>
 
+#include "../../lib/base/Component.h"
+#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Sink.h"
 
@@ -35,10 +37,9 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class PositionGenerator  {
+class PositionGenerator : public Component, public Configurable<false> {
 
 public:
-
     /**
      * Abstract test position server.
      * All concrete test position server types implement this ABC and can be used
@@ -47,44 +48,13 @@ public:
      * @param position_sink_name Position SINK to publish test positions
      */
     PositionGenerator(const std::string &position_sink_address);
-
     virtual ~PositionGenerator() { };
 
-    /**
-     * @brief Append type-specific program options.
-     * @param opts Program option description to be specialized.
-     */
-    virtual void appendOptions(po::options_description &opts);
-
-    /**
-     * @brief Configure component parameters.
-     * @param vm Previously parsed program option value map.
-     */
-    virtual void configure(const po::variables_map &vm) = 0;
-
-    /**
-     * PositionDetectors must be able to connect to a Source and Sink
-     * Nodes in shared memory
-     */
-    virtual void connectToNode(void);
-
-    /**
-     * Generate test position. Publish test position to SINK.
-     * @return End-of-stream signal. If true, this component should exit.
-     */
-    bool process(void);
-
-    /**
-     * Get test position server name.
-     * @return name
-     */
-    std::string name(void) const { return name_; }
+    // Component Interface
+    oat::ComponentType type(void) const override { return oat::positiongenerator; };
+    std::string name(void) const override { return name_; }
 
 protected:
-
-    // List of allowed configuration options
-    std::vector<std::string> config_keys_;
-
     /**
      * Generate test position.
      * @param position Generated position.
@@ -111,7 +81,17 @@ protected:
      */
     virtual void generateSamplePeriod(const double samples_per_second);
 
+    /**
+     * @brief Provide a copy of the base program options for derived
+     * types that need it.
+     * @return Base program options description.
+     */
+    po::options_description baseOptions(void) const;
+
 private:
+    // Component Interface
+    virtual bool connectToNode(void) override;
+    int process(void) override;
 
     // Test position name
     std::string name_;

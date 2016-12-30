@@ -22,6 +22,9 @@
 
 #include "../../lib/shmemdf/Node.h"
 
+// Global via extern in Globals.h
+namespace oat { volatile sig_atomic_t quit = 0; }
+
 SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
 
     GIVEN ("A fresh Node") {

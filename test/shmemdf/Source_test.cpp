@@ -22,9 +22,12 @@
 
 #include <string>
 
-#include "../../lib/shmemdf/Source.h"
-#include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/SharedFrameHeader.h"
+#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
+
+// Global via extern in Globals.h
+namespace oat { volatile sig_atomic_t quit = 0; }
 
 const std::string node_addr = "test";
 

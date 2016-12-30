@@ -22,6 +22,9 @@
 
 #include "../../lib/shmemdf/Helpers.h"
 
+// Global via extern in Globals.h
+namespace oat { volatile sig_atomic_t quit = 0; }
+
 SCENARIO ("Sample period comparisons with epsilon tolerance.", "[Helpers]") {
 
     GIVEN ("An epsilon tolerance for sample periods.") {

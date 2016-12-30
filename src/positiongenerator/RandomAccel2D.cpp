@@ -27,41 +27,27 @@
 
 namespace oat {
 
-RandomAccel2D::RandomAccel2D(const std::string &position_sink_address)
-: PositionGenerator(position_sink_address)
+po::options_description RandomAccel2D::options() const
 {
-    // Nothing
-}
-
-void RandomAccel2D::appendOptions(po::options_description &opts)
-{
-    // Accepts a config file and common opts
-    PositionGenerator::appendOptions(opts);
-
     // Update CLI options
-    po::options_description local_opts;
+    // Start with base options
+    po::options_description local_opts(baseOptions());
+
+    // Add local options
     local_opts.add_options()
         ("sigma-accel,a", po::value<double>(),
          "Standard deviation of normally-distributed random accelerations")
         ;
-     
-    opts.add(local_opts);
 
-    // Return valid keys
-    for (auto &o : local_opts.options())
-        config_keys_.push_back(o->long_name());
+    return local_opts;
 }
 
-void RandomAccel2D::configure(const po::variables_map &vm)
+void RandomAccel2D::applyConfiguration(const po::variables_map &vm,
+                                        const config::OptionTable &config_table)
 {
-    // Check for config file and entry correctness
-    auto config_table = oat::config::getConfigTable(vm);
-    oat::config::checkKeys(config_keys_, config_table);
-    
     // Rate
     double fs = 1e8; // Very fast s.t. process cannot keep up
-    if (oat::config::getNumericValue<double>(
-                vm, config_table, "rate", fs, 0)) {
+    if (oat::config::getNumericValue<double>(vm, config_table, "rate", fs, 0)) {
         enforce_sample_clock_ = true;
     } else {
         tick_ = clock_.now();
@@ -109,7 +95,7 @@ bool RandomAccel2D::generatePosition(oat::Position2D &position)
         position.velocity_valid = true;
         position.velocity.x = state_(1);
         position.velocity.y = state_(3);
-        
+
         it_++;
 
         return false;
@@ -118,7 +104,7 @@ bool RandomAccel2D::generatePosition(oat::Position2D &position)
     return true;
 }
 
-void RandomAccel2D::simulateMotion() 
+void RandomAccel2D::simulateMotion()
 {
     // Generate random acceleration
     accel_vec_(0) = accel_distribution_(accel_generator_);
@@ -144,7 +130,7 @@ void RandomAccel2D::simulateMotion()
         state_(2) = room_.y;
 }
 
-void RandomAccel2D::createStaticMatracies() 
+void RandomAccel2D::createStaticMatracies()
 {
     double Ts = sample_period_in_sec_.count();
 

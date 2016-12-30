@@ -67,7 +67,7 @@ private:
     int sig_accel_tune_;
     int sig_measure_noise_tune_;
     bool tuning_on_ {false};
-    float draw_scale_ {10.0};
+    //float draw_scale_ {10.0};
 
     // Variables and parameters to control whether or not to apply the filter
     bool found_ {false};

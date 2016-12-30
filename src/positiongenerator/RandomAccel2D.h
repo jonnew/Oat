@@ -40,11 +40,13 @@ public:
      * Test positions are subject to random, uncorrelated 2D, Gaussian
      * accelerations.
      */
-    RandomAccel2D(const std::string &position_sink_address);
-    void appendOptions(po::options_description &opts) override;
-    void configure(const po::variables_map &vm) override;
+    using PositionGenerator::PositionGenerator;
 
 private:
+    // Configurable Interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 
     // Random number generator
     std::default_random_engine accel_generator_ {std::random_device{}()};
@@ -61,7 +63,6 @@ private:
     bool generatePosition(oat::Position2D &position) override;
     void createStaticMatracies(void);
     void simulateMotion(void);
-
 };
 
 }      /* namespace oat */

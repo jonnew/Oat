@@ -9,8 +9,9 @@ set (oat-posigen_SOURCE
 
 # Target
 add_executable (oat-posigen ${oat-posigen_SOURCE})
-target_link_libraries (oat-posigen 
+target_link_libraries (oat-posigen
                        oat-utility
+                       oat-base
                        ${OatCommon_LIBS})
 add_dependencies (oat-posigen cpptoml rapidjson)
 

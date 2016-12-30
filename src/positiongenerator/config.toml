@@ -7,7 +7,7 @@
 # ```
 
 [rand2D]
-rate-hz = 0.25                      # Test position sample period in seconds
+rate = 25                           # Test position sample period in seconds
 num-samples = 100                   # Number of position samples to produce.
                                     # Defaults to infinity.
 room = [0.0, 0.0, 1000.0, 1000.0]   # The 'room' in which generated positions reside
@@ -15,3 +15,4 @@ room = [0.0, 0.0, 1000.0, 1000.0]   # The 'room' in which generated positions re
                                     # If generated positions extend beyond the
                                     # room boundaries they will re-enter on the
                                     # other side.
+sigma-accel = 0.1                   # Standard deviation of random accelerations

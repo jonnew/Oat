@@ -36,13 +36,12 @@ PositionGenerator::PositionGenerator(const std::string &position_sink_address)
     tick_ = clock_.now();
 }
 
-void PositionGenerator::appendOptions(po::options_description &opts)
+po::options_description PositionGenerator::baseOptions(void) const
 {
+    po::options_description base_opts;
+
     // Common program options
-    opts.add_options()
-        ("config,c", po::value<std::vector<std::string> >()->multitoken(),
-        "Configuration file/key pair.\n"
-        "e.g. 'config.toml mykey'")
+    base_opts.add_options()
         ("rate,r", po::value<double>(),
         "Samples per second. Defaults to as fast as possible.")
         ("num-samples,n", po::value<uint64_t>(),
@@ -53,9 +52,11 @@ void PositionGenerator::appendOptions(po::options_description &opts)
          "which generated positions reside. The room has periodic boundaries so "
          "when a position leaves one side it will enter the opposing one.")
         ;
+
+    return base_opts;
 }
 
-void PositionGenerator::connectToNode()
+bool PositionGenerator::connectToNode()
 {
     // Bind to sink sink node and create a shared position
     position_sink_.bind(position_sink_address_, position_sink_address_);
@@ -63,9 +64,11 @@ void PositionGenerator::connectToNode()
 
     // Setup sample rate info on internal copy
     internal_position_.set_rate_hz(1.0 / sample_period_in_sec_.count());
+
+    return true;
 }
 
-bool PositionGenerator::process()
+int PositionGenerator::process()
 {
     // Generate internal position
     bool eof = generatePosition(internal_position_);
@@ -77,7 +80,7 @@ bool PositionGenerator::process()
     position_sink_.wait();
 
     if (first_pos_) {
-        first_pos_ = false; 
+        first_pos_ = false;
         start_ = clock_.now();
     }
 

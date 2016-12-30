@@ -222,7 +222,6 @@ oat::CommandDescription Decorator::commands()
 {
     const oat::CommandDescription commands{
         {"clear", "Clear path history."}
-        {"quit", "Exit the program."}
     };
 
     return commands;
@@ -232,9 +231,6 @@ void Decorator::applyCommand(const std::string &command)
 {
     const auto cmds = commands();
     if (cmds.at(command) == "clear") {
-        history_frame_ = cv::Scalar::all(0);
-    }
-    if (cmds.at(command) == "quit") {
         history_frame_ = cv::Scalar::all(0);
     }
 }

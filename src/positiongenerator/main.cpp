@@ -17,7 +17,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include <csignal>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -38,9 +37,6 @@
 #define REQ_POSITIONAL_ARGS 2
 
 namespace po = boost::program_options;
-
-volatile sig_atomic_t quit = 0;
-volatile sig_atomic_t source_eof = 0;
 
 const char usage_type[] =
     "TYPE\n"
@@ -78,37 +74,8 @@ void printUsage(const po::options_description &options, const std::string &type)
     }
 }
 
-// Signal handler to ensure shared resources are cleaned on exit due to ctrl-c
-void sigHandler(int)
-{
-    quit = 1;
-}
-
-// Processing loop
-void run(std::shared_ptr<oat::PositionGenerator> posigen)
-{
-
-    try {
-
-        posigen->connectToNode();
-
-        while (!quit && !source_eof)
-            source_eof = posigen->process();
-
-    } catch (const boost::interprocess::interprocess_exception &ex) {
-
-        // Error code 1 indicates a SIGNINT during a call to wait(), which
-        // is normal behavior
-        if (ex.get_error_code() != 1)
-            throw;
-    }
-}
-
-// IO thread
 int main(int argc, char *argv[])
 {
-    std::signal(SIGINT, sigHandler);
-
     // Results of command line input
     std::string type;
     std::string sink;
@@ -176,7 +143,7 @@ int main(int argc, char *argv[])
                     posigen = std::make_shared<oat::RandomAccel2D>(sink);
                     break;
                 }
-                default: 
+                default:
                 {
                     printUsage(visible_options, "");
                     std::cerr << oat::Error("Invalid TYPE specified.\n");
@@ -243,7 +210,7 @@ int main(int argc, char *argv[])
                      "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
-        run(posigen);
+        posigen->run();
 
         // Tell user
         std::cout << oat::whoMessage(comp_name, "Exiting.")
@@ -256,18 +223,18 @@ int main(int argc, char *argv[])
         printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
-    } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(TOML) ", ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + "(OPENCV) ", ex.what()) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(comp_name + "(SHMEM) ", ex.what()) << std::endl;
+    } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
         std::cerr << oat::whoError(comp_name, "Unknown exception.")
                   << std::endl;
     }
 
-    // exit failure
+    // Exit failure
     return -1;
 }

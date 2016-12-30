@@ -27,6 +27,9 @@
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
 
+// Global via extern in Globals.h
+namespace oat { volatile sig_atomic_t quit = 0; }
+
 // Test outline
 //
 //### A Sink and Source bound to a common Node must respect eachothers' locks
