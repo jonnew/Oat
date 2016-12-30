@@ -28,7 +28,7 @@ before_script:
 
   # Install boost
   - cd $TRAVIS_BUILD_DIR
-  - wget http://sourceforge.net/projects/boost/files/latest/download?source=files -O tarboost
+  - wget https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.bz2/download -O tarboost
   - tar -xf tarboost
   - cd ./boost*
   - ./bootstrap.sh
