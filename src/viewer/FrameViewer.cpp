@@ -36,15 +36,8 @@ namespace bfs = boost::filesystem;
 using namespace boost::interprocess;
 using msec = std::chrono::milliseconds;
 
-FrameViewer::FrameViewer(const std::string &source_address)
-: Viewer<oat::Frame>(source_address)
-{
-    // Nothing
-}
-
 po::options_description FrameViewer::options(void) const
 {
-    // Common program options
     po::options_description local_opts;
     local_opts.add_options()
         ("display-rate,r", po::value<double>(),
@@ -53,11 +46,16 @@ po::options_description FrameViewer::options(void) const
          "they are ignored. Setting this to a reasonably low value prevents "
          "the viewer from consuming processing resources in order to update "
          "the display faster than is visually perceptible. Defaults to 30.")
+        ("min-max,m", po::value<std::string>(),
+         "2-element array of floats, [min,max], specifying the requested "
+         "dyanmic range of the display. Pixel values below min will be mapped to "
+         "min. Pixel values above max will be mapped to max. Others will be "
+         "interprolated between min and max. Defaults to off.")
         ("snapshot-path,f", po::value<std::string>(),
-        "The path to which in which snapshots will be saved. "
-        "If a folder is designated, the base file name will be SOURCE. "
-        "The time stamp of the snapshot will be prepended to the file name. "
-        "Defaults to the current directory.")
+         "The path to which in which snapshots will be saved. "
+         "If a folder is designated, the base file name will be SOURCE. "
+         "The time stamp of the snapshot will be prepended to the file name. "
+         "Defaults to the current directory.")
         ;
 
     return local_opts;
@@ -71,6 +69,28 @@ void FrameViewer::applyConfiguration(const po::variables_map &vm,
     if (oat::config::getNumericValue<double>(
             vm, config_table, "display-rate", r, 0.001)) {
         min_update_period_ms = Milliseconds(static_cast<int>(1000.0 / r));
+    }
+
+    // Min/max
+    std::vector<double> m;
+    if (oat::config::getArray<double, 2>(vm, config_table, "min-max", m, 0)) {
+
+        auto min = m[0];
+        auto max = m[1];
+
+        if (min >= max || max > 255)
+            throw std::runtime_error("Values of min-max should be between 0 "
+                                     "and 255 and min must be less than max.");
+
+        auto d = 255.0 / (max - min);
+        for (size_t i = min; i < 256; i++) {
+            if (i < max)
+                lut_(i) = static_cast<unsigned char>((i-min) * d);
+            else
+                lut_(i) = 255;
+        }
+
+        min_max_defined_ = true;
     }
 
     // Snapshot save path
@@ -101,6 +121,9 @@ void FrameViewer::display(const oat::Frame &frame)
 
     if (frame.rows == 0 || frame.cols == 0)
         return;
+
+    if (min_max_defined_)
+        cv::LUT(frame, lut_, frame);
 
     cv::imshow(name_, frame);
     char command = cv::waitKey(1);

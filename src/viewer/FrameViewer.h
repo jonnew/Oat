@@ -30,13 +30,11 @@
 namespace oat {
 
 class FrameViewer : public Viewer<oat::Frame> {
-
 public:
-    /** 
+    /**
      * @brief View a frame stream on the monitor.
-     * @param source_name Frame source node.
      */
-    FrameViewer(const std::string &source_name);
+    using Viewer<oat::Frame>::Viewer;
 
 private:
     // Implement Configurable Interface
@@ -44,15 +42,19 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    bool gui_inititalized_ {false};
+    // Viewer Interface
+    void display(const oat::Frame &frame) override;
 
-    // Used to request a snapshot of the current image, saved to disk
+    // Viewer params
+    bool gui_inititalized_ {false};
+    cv::Matx<unsigned char, 256, 1> lut_;
+    bool min_max_defined_ {false};
+
+    // Used to request a snapshot of the current image which is saved to disk
     std::string snapshot_folder_;
     std::string snapshot_base_file_;
-
     void set_snapshot_path(const std::string &snapshot_path);
     void saveSnapshot(void);
-    void display(const oat::Frame &frame) override;
 };
 
 }      /* namespace oat */
