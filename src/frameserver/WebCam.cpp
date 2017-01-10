@@ -29,12 +29,6 @@
 
 namespace oat {
 
-WebCam::WebCam(const std::string &sink_name)
-: FrameServer(sink_name)
-{
-    // Nothing
-}
-
 po::options_description WebCam::options() const
 {
     // Update CLI options
@@ -49,10 +43,10 @@ po::options_description WebCam::options() const
          "Four element array of unsigned ints, [x0,y0,width,height],"
          "defining a rectangular region of interest. Origin"
          "is upper left corner. ROI must fit within acquired"
-         "mat size. Defaults to full sensor size.")
+         "frame size. Defaults to full sensor size.")
         ;
 
-    return local_opts; 
+    return local_opts;
 }
 
 void WebCam::applyConfiguration(const po::variables_map &vm,
@@ -62,16 +56,16 @@ void WebCam::applyConfiguration(const po::variables_map &vm,
     oat::config::getNumericValue<int>(vm, config_table, "index", index_, 0);
 
     // Create camera and set options
-    cv_camera_ = oat::make_unique<cv::VideoCapture>(index_);
-    if (!cv_camera_->isOpened())
+    camera_ = oat::make_unique<cv::VideoCapture>(index_);
+    if (!camera_->isOpened())
         throw std::runtime_error("Could not open webcam "
                                  + std::to_string(index_));
 
     // Frame rate
     double fps;
     if (oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0)) {
-        cv_camera_->set(cv::CAP_PROP_FPS, fps);
-        if (cv_camera_->get(cv::CAP_PROP_FPS) != fps)
+        camera_->set(cv::CAP_PROP_FPS, fps);
+        if (camera_->get(cv::CAP_PROP_FPS) != fps)
             std::cerr << oat::Warn("Not able to set webcam mat rate.\n");
     }
 
@@ -89,7 +83,7 @@ void WebCam::applyConfiguration(const po::variables_map &vm,
 bool WebCam::connectToNode()
 {
     cv::Mat example_frame;
-    *cv_camera_ >> example_frame;
+    *camera_ >> example_frame;
 
     if (use_roi_)
         example_frame = example_frame(region_of_interest_);
@@ -101,7 +95,7 @@ bool WebCam::connectToNode()
         example_frame.rows, example_frame.cols, example_frame.type(), oat::PIX_BGR);
 
     // Put the sample rate in the shared mat
-    shared_frame_.set_rate_hz(cv_camera_->get(cv::CAP_PROP_FPS));
+    shared_frame_.set_rate_hz(camera_->get(cv::CAP_PROP_FPS));
 
     return true;
 }
@@ -111,18 +105,18 @@ int WebCam::process()
     // Frame decoding (if compression was performed) can be
     // computationally expensive. So do this outside the critical section
     cv::Mat mat;
-    if (!cv_camera_->read(mat)) 
+    if (!camera_->read(mat))
         return 1;
 
     if (use_roi_ )
         mat = mat(region_of_interest_);
 
-    if (first_frame_) 
+    if (first_frame_)
         start_ = clock_.now();
 
     // START CRITICAL SECTION //
     ////////////////////////////
-    
+
     // Wait for sources to read
     frame_sink_.wait();
 
@@ -130,7 +124,7 @@ int WebCam::process()
     // NOTE: webcams have poorly controlled sample period, so it must be
     // calculated. This operation is very inexpensive
     if (first_frame_) {
-        first_frame_ = false; 
+        first_frame_ = false;
     } else {
         auto time_since_start
             = std::chrono::duration_cast<Sample::Microseconds>(clock_.now()

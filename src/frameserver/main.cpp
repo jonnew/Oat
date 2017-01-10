@@ -32,13 +32,14 @@
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "TestFrame.h"
 #include "FileReader.h"
+#include "TestFrame.h"
+#include "UCLAMiniscope.h"
 #include "WebCam.h"
 #ifdef USE_FLYCAP
- #include "FlyCapture2.h"
- #include "PointGreyCam.h"
- namespace pg = FlyCapture2;
+#include "FlyCapture2.h"
+#include "PointGreyCam.h"
+namespace pg = FlyCapture2;
 #endif
 
 #define REQ_POSITIONAL_ARGS 2
@@ -50,6 +51,7 @@ const char usage_type[] =
     "  wcam: Onboard or USB webcam.\n"
     "  usb: Point Grey USB camera.\n"
     "  gige: Point Grey GigE camera.\n"
+    "  ucla: UCLA miniscope.\n"
     "  file: Video from file (*.mpg, *.avi, etc.).\n"
     "  test: Write-free static image server for performance testing.";
 
@@ -63,7 +65,6 @@ const char purpose[] =
 
 void printUsage(const po::options_description &options, const std::string &type)
 {
-
     if (type.empty()) {
         std::cout <<
         "Usage: frameserve [INFO]\n"
@@ -98,6 +99,7 @@ int main(int argc, char *argv[])
     type_hash["file"] = 'c';
     type_hash["test"] = 'd';
     type_hash["usb"] = 'e';
+    type_hash["ucla"] = 'f';
 
     // The component itself
     std::string comp_name = "frameserve";
@@ -194,6 +196,11 @@ int main(int argc, char *argv[])
                     server
                         = std::make_shared<oat::PointGreyCam<pg::Camera>>(sink);
 #endif
+                    break;
+                }
+                case 'f':
+                {
+                    server = std::make_shared<oat::UCLAMiniscope>(sink);
                     break;
                 }
                 default:

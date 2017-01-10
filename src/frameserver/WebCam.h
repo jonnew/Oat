@@ -33,9 +33,8 @@ class WebCam : public FrameServer {
 public:
     /**
      * @brief Serve test frames from a webcam.
-     * @param sink_address frame sink address
      */
-    explicit WebCam(const std::string &sink_address_);
+    using FrameServer::FrameServer;
 
 private:
     // Component Interface
@@ -48,7 +47,7 @@ private:
                             const config::OptionTable &config_table) override;
 
     int index_ {0};
-    std::unique_ptr<cv::VideoCapture> cv_camera_;
+    std::unique_ptr<cv::VideoCapture> camera_;
 
     // frame generation clock
     bool first_frame_ {true};

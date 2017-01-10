@@ -8,12 +8,14 @@ if (${USE_FLYCAP})
          TestFrame.cpp
          PointGreyCam.cpp
          WebCam.cpp
+         UCLAMiniscope.cpp
          FileReader.cpp)
 else (${USE_FLYCAP})
     set (oat-frameserve_SOURCE
          FrameServer.cpp
          TestFrame.cpp
          WebCam.cpp
+         UCLAMiniscope.cpp
          FileReader.cpp)
 endif (${USE_FLYCAP})
 
