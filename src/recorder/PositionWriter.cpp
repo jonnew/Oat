@@ -31,7 +31,7 @@ PositionWriter::~PositionWriter()
 {
     if (use_binary_ && fd_ != nullptr) {
         auto n = std::to_string(completed_writes_);
-        emplaceNumpyShape(fd_, completed_writes_); 
+        emplaceNumpyShape(fd_, completed_writes_);
         fclose(fd_);
     } else if (fd_ != nullptr) {
         json_writer_.EndArray();
@@ -53,7 +53,7 @@ void PositionWriter::configure(const oat::config::OptionTable &t,
     oat::config::getValue(vm, t, "concise-file", concise_file_);
 }
 
-void PositionWriter::initialize(const std::string &path) 
+void PositionWriter::initialize(const std::string &path)
 {
     if (use_binary_)
         initializeBinary(path);

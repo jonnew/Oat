@@ -52,7 +52,7 @@ public:
     std::string name(void) const override { return name_; }
 
 protected:
-    /** 
+    /**
      * @brief Makes a list of position sources from a parsed program options
      * variable map.
      * @param vm Program options variable map containing the position source list.

@@ -37,8 +37,8 @@ void siftContours(cv::Mat &frame,
 
     std::vector<std::vector <cv::Point> > contours;
 
-    cv::findContours(frame, contours, 
-                     cv::RETR_EXTERNAL, 
+    cv::findContours(frame, contours,
+                     cv::RETR_EXTERNAL,
                      cv::CHAIN_APPROX_SIMPLE);
 
     double object_area = 0;

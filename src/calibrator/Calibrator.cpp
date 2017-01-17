@@ -45,7 +45,7 @@ bool Calibrator::connectToNode()
     if (frame_source_.connect() != SourceState::CONNECTED)
         return false;
 
-    return true; 
+    return true;
 }
 
 int Calibrator::process(void)

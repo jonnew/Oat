@@ -40,7 +40,7 @@ public:
     /**
      * ArucoBoard marker tracking.
      */
-    using PositionDetector::PositionDetector; 
+    using PositionDetector::PositionDetector;
 
 private:
     // Configurable Interface
@@ -60,7 +60,7 @@ private:
     cv::Ptr<cv::aruco::DetectorParameters> dp_;
 };
 
-/** 
+/**
  * @brief Get the ARUCO dictionary enum value from a string representation
  * @param key A string of the form <Size>X<Size>_<Number of Markers> specifying
  * the ARUCO dictionary to use.

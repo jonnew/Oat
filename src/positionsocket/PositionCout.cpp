@@ -36,11 +36,11 @@ po::options_description PositionCout::options() const
     // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
-        ("pretty-print,p", 
+        ("pretty-print,p",
          "If true, print formated positions to the command line.")
         ;
 
-    return local_opts; 
+    return local_opts;
 }
 
 void PositionCout::applyConfiguration(const po::variables_map &vm,

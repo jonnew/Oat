@@ -103,7 +103,7 @@ bool FileReader::connectToNode()
 int FileReader::process()
 {
     cv::Mat frame;
-    if (!file_reader_.read(frame)) 
+    if (!file_reader_.read(frame))
         return 1;
 
     if (use_roi_ )

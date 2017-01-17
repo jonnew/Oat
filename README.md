@@ -273,82 +273,82 @@ SINK:
 __TYPE = `wcam`__
 ```
 
-  -i [ --index ] arg      Camera index. Useful in multi-camera imaging 
+  -i [ --index ] arg      Camera index. Useful in multi-camera imaging
                           configurations. Defaults to 0.
   -r [ --fps ] arg        Frames to serve per second. Defaults to 20.
-  --roi arg               Four element array of unsigned ints, 
+  --roi arg               Four element array of unsigned ints,
                           [x0,y0,width,height],defining a rectangular region of
-                          interest. Originis upper left corner. ROI must fit 
-                          within acquiredmat size. Defaults to full sensor 
+                          interest. Originis upper left corner. ROI must fit
+                          within acquiredmat size. Defaults to full sensor
                           size.
 ```
 
 __TYPE = `gige` and `usb`__
 ```
 
-  -i [ --index ] arg             Camera index. Defaults to 0. Useful in 
+  -i [ --index ] arg             Camera index. Defaults to 0. Useful in
                                  multi-camera imaging configurations.
-  -r [ --fps ] arg               Acquisition frame rate in Hz. Ignored if 
-                                 trigger-mode > -1 and enforce_fps=false. 
+  -r [ --fps ] arg               Acquisition frame rate in Hz. Ignored if
+                                 trigger-mode > -1 and enforce_fps=false.
                                  Defaults to the maximum frame rate.
-  -e [ --enforce-fps ]           If true, ensures that frames are produced at 
-                                 the fps setting bool retransmitting frames if 
-                                 the requested period is exceeded. This is 
-                                 sometimes needed in the case of an external 
-                                 trigger because PG cameras sometimes just 
+  -e [ --enforce-fps ]           If true, ensures that frames are produced at
+                                 the fps setting bool retransmitting frames if
+                                 the requested period is exceeded. This is
+                                 sometimes needed in the case of an external
+                                 trigger because PG cameras sometimes just
                                  ignore them. I have opened a support ticket on
                                  this, but PG has no solution yet.
-  -s [ --shutter ] arg           Shutter time in milliseconds. Defaults to 
+  -s [ --shutter ] arg           Shutter time in milliseconds. Defaults to
                                  auto.
   -C [ --color ] arg             Pixel color format. Defaults to BRG.
                                  Values:
                                    GREY:  8-bit Greyscale image.
                                    BRG: 8-bit, 3-chanel, BGR Color image.
-                                 
-  -g [ --gain ] arg              Sensor gain value, specified in dB. Defaults 
+
+  -g [ --gain ] arg              Sensor gain value, specified in dB. Defaults
                                  to auto.
-  -S [ --strobe-pin ] arg        Hardware pin number on that a gate signal for 
-                                 the camera shutter is copied to. Defaults to 
+  -S [ --strobe-pin ] arg        Hardware pin number on that a gate signal for
+                                 the camera shutter is copied to. Defaults to
                                  1.
   -m [ --trigger-mode ] arg      Shutter trigger mode. Defaults to -1.
-                                 
+
                                  Values:
                                   -1:  No external trigger. Frames are captured
-                                       in free-running mode at the currently 
+                                       in free-running mode at the currently
                                        set frame rate.
-                                   0:  Standard external trigger. Trigger edge 
-                                       causes sensor exposure, then sensor 
+                                   0:  Standard external trigger. Trigger edge
+                                       causes sensor exposure, then sensor
                                        readout to internal memory.
-                                   1:  Bulb shutter mode. Same as 0, except 
-                                       that sensor exposure duration is 
+                                   1:  Bulb shutter mode. Same as 0, except
+                                       that sensor exposure duration is
                                        determined by trigger active duration.
-                                  13:  Low smear mode. Same as 0, speed of the 
+                                  13:  Low smear mode. Same as 0, speed of the
                                        vertical clock is increased near the end
                                        of the integration cycle.
-                                  14:  Overlapped exposure/readout external 
-                                       trigger. Sensor exposure occurs during 
+                                  14:  Overlapped exposure/readout external
+                                       trigger. Sensor exposure occurs during
                                        sensory readout to internal memory. This
                                        is the fastest option.
-  -p [ --trigger-rising ]        True to trigger on rising edge, false to 
+  -p [ --trigger-rising ]        True to trigger on rising edge, false to
                                  trigger on falling edge. Defaults to true.
-  -t [ --trigger-pin ] arg       GPIO pin number on that trigger is sent to if 
-                                 external shutter triggering is used. Defaults 
+  -t [ --trigger-pin ] arg       GPIO pin number on that trigger is sent to if
+                                 external shutter triggering is used. Defaults
                                  to 0.
-  -R [ --roi ] arg               Four element array of unsigned ints, 
-                                 [x0,y0,width,height],defining a rectangular 
-                                 region of interest. Originis upper left 
-                                 corner. ROI must fit within acquiredframe 
+  -R [ --roi ] arg               Four element array of unsigned ints,
+                                 [x0,y0,width,height],defining a rectangular
+                                 region of interest. Originis upper left
+                                 corner. ROI must fit within acquiredframe
                                  size. Defaults to full sensor size.
-  -b [ --bin ] arg               Two element array of unsigned ints, [bx,by], 
-                                 defining how pixels should be binned before 
-                                 transmission to the computer. Defaults to 
+  -b [ --bin ] arg               Two element array of unsigned ints, [bx,by],
+                                 defining how pixels should be binned before
+                                 transmission to the computer. Defaults to
                                  [1,1] (no binning).
-  -w [ --white-balance ] arg     Two element array of unsigned integers, 
+  -w [ --white-balance ] arg     Two element array of unsigned integers,
                                  [red,blue], used to specify the white balance.
-                                 Values are between 0 and 1000. Only works for 
+                                 Values are between 0 and 1000. Only works for
                                  color sensors. Defaults to off.
-  -W [ --auto-white-balance ]    If specified, the white balance will be 
-                                 adjusted by the camera. This option overrides 
+  -W [ --auto-white-balance ]    If specified, the white balance will be
+                                 adjusted by the camera. This option overrides
                                  manual white-balance specification.
 ```
 
@@ -357,10 +357,10 @@ __TYPE = `file`__
 
   -f [ --video-file ] arg   Path to video file to serve frames from.
   -r [ --fps ] arg          Frames to serve per second.
-  --roi arg                 Four element array of unsigned ints, 
-                            [x0,y0,width,height],defining a rectangular region 
-                            of interest. Originis upper left corner. ROI must 
-                            fit within acquiredframe size. Defaults to full 
+  --roi arg                 Four element array of unsigned ints,
+                            [x0,y0,width,height],defining a rectangular region
+                            of interest. Originis upper left corner. ROI must
+                            fit within acquiredframe size. Defaults to full
                             video size.
 ```
 
@@ -372,7 +372,7 @@ __TYPE = `test`__
                             Values:
                               GREY:  8-bit Greyscale image.
                               BGR: 8-bit, 3-chanel, BGR Color image.
-                            
+
   -r [ --fps ] arg          Frames to serve per second.
   -n [ --num-frames ] arg   Number of frames to serve before exiting.
 ```
@@ -431,12 +431,12 @@ SINK:
 __TYPE = `bsub`__
 ```
 
-  -a [ --adaptation-coeff ] arg   Scalar value, 0 to 1.0, specifying how 
+  -a [ --adaptation-coeff ] arg   Scalar value, 0 to 1.0, specifying how
                                   quickly the new frames are used to update the
-                                  backgound image. Default is 0, specifying no 
+                                  backgound image. Default is 0, specifying no
                                   adaptation and a static background image that
                                   is never updated.
-  -f [ --background ] arg         Path to background image used for 
+  -f [ --background ] arg         Path to background image used for
                                   subtraction. If not provided, the first frame
                                   is used as the background image.
 ```
@@ -444,20 +444,20 @@ __TYPE = `bsub`__
 __TYPE = `mask`__
 ```
 
-  -f [ --mask ] arg       Path to a binary image used to mask frames from 
-                          SOURCE. SOURCE frame pixels with indices 
-                          corresponding to non-zero value pixels in the mask 
+  -f [ --mask ] arg       Path to a binary image used to mask frames from
+                          SOURCE. SOURCE frame pixels with indices
+                          corresponding to non-zero value pixels in the mask
                           image will be unaffected. Others will be set to zero.
-                          This image must have the same dimensions as frames 
+                          This image must have the same dimensions as frames
                           from SOURCE.
 ```
 
 __TYPE = `mog`__
 ```
 
-  -a [ --adaptation-coeff ] arg   Value, 0 to 1.0, specifying how quickly the 
-                                  statistical model of the background image 
-                                  should be updated. Default is 0, specifying 
+  -a [ --adaptation-coeff ] arg   Value, 0 to 1.0, specifying how quickly the
+                                  statistical model of the background image
+                                  should be updated. Default is 0, specifying
                                   no adaptation.
 ```
 
@@ -465,17 +465,17 @@ __TYPE = `undistort`__
 ```
 
   -k [ --camera-matrix ] arg       Nine element float array, [K11,K12,...,K33],
-                                   specifying the 3x3 camera matrix for your 
+                                   specifying the 3x3 camera matrix for your
                                    imaging setup. Generated by oat-calibrate.
-  -d [ --distortion-coeffs ] arg   Five to eight element float array, 
-                                   [x1,x2,x3,...], specifying lens distortion 
+  -d [ --distortion-coeffs ] arg   Five to eight element float array,
+                                   [x1,x2,x3,...], specifying lens distortion
                                    coefficients. Generated by oat-calibrate.
 ```
 
 __TYPE = `thresh`__
 ```
 
-  -I [ --intensity ] arg   Array of ints between 0 and 256, [min,max], 
+  -I [ --intensity ] arg   Array of ints between 0 and 256, [min,max],
                            specifying the intensity passband.
 ```
 
@@ -527,33 +527,33 @@ SOURCE:
 __TYPE = `frame`__
 ```
   --control-endpoint arg       ZMQ style endpoint specifier designating runtime
-                               control port:'<transport>://<host>:<port>'. For 
-                               instance, 'tcp://*:5555' to specify TCP 
+                               control port:'<transport>://<host>:<port>'. For
+                               instance, 'tcp://*:5555' to specify TCP
                                communication on port 5555. Or, for interprocess
                                communication: '<transport>://<user-named-pipe>.
                                For instance 'ipc:///tmp/test.pipe'. Internally,
-                               this is used to construct a ZMQ REQ socket that 
-                               that receives commands from oat-control. 
+                               this is used to construct a ZMQ REQ socket that
+                               that receives commands from oat-control.
                                Defaults to ipc:///tmp/oatcomms.pipe.
 
-  -r [ --display-rate ] arg    Maximum rate, in Hz, at which the viewer is 
-                               updated irrespective of its source's rate. If 
-                               frames are supplied faster than this rate, they 
-                               are ignored. Setting this to a reasonably low 
-                               value prevents the viewer from consuming 
-                               processing resources in order to update the 
-                               display faster than is visually perceptible. 
+  -r [ --display-rate ] arg    Maximum rate, in Hz, at which the viewer is
+                               updated irrespective of its source's rate. If
+                               frames are supplied faster than this rate, they
+                               are ignored. Setting this to a reasonably low
+                               value prevents the viewer from consuming
+                               processing resources in order to update the
+                               display faster than is visually perceptible.
                                Defaults to 30.
   -m [ --min-max ] arg         2-element array of floats, [min,max], specifying
-                               the requested dyanmic range of the display. 
-                               Pixel values below min will be mapped to min. 
-                               Pixel values above max will be mapped to max. 
-                               Others will be interprolated between min and 
+                               the requested dyanmic range of the display.
+                               Pixel values below min will be mapped to min.
+                               Pixel values above max will be mapped to max.
+                               Others will be interprolated between min and
                                max. Defaults to off.
-  -f [ --snapshot-path ] arg   The path to which in which snapshots will be 
-                               saved. If a folder is designated, the base file 
-                               name will be SOURCE. The time stamp of the 
-                               snapshot will be prepended to the file name. 
+  -f [ --snapshot-path ] arg   The path to which in which snapshots will be
+                               saved. If a folder is designated, the base file
+                               name will be SOURCE. The time stamp of the
+                               snapshot will be prepended to the file name.
                                Defaults to the current directory.
 ```
 
@@ -606,15 +606,15 @@ SINK:
 __TYPE = `aruco`__
 ```
 
-  -D [ --dictionary ] arg          Aruco board dictionary to use for detection 
+  -D [ --dictionary ] arg          Aruco board dictionary to use for detection
                                    or printing when -p is defined. Dictionaries
-                                   are defined by the size of each marker and 
-                                   the number of markers in the dictionary. 
-                                   These parameters are encoded by a string of 
+                                   are defined by the size of each marker and
+                                   the number of markers in the dictionary.
+                                   These parameters are encoded by a string of
                                    the form:
-                                   
+
                                      <Size>X<Size>_<Number of Markers>
-                                   
+
                                    Values:
                                      4X4_50 (default)
                                      4X4_100
@@ -632,175 +632,175 @@ __TYPE = `aruco`__
                                      7X7_100
                                      7X7_250
                                      7X7_1000
-                                   
+
   -k [ --camera-matrix ] arg       Nine element float array, [K11,K12,...,K33],
-                                   specifying the 3x3 camera matrix for your 
+                                   specifying the 3x3 camera matrix for your
                                    imaging setup. Generated by oat-calibrate.
-  -d [ --distortion-coeffs ] arg   Five to eight element float array, 
-                                   [x1,x2,x3,...], specifying lens distortion 
+  -d [ --distortion-coeffs ] arg   Five to eight element float array,
+                                   [x1,x2,x3,...], specifying lens distortion
                                    coefficients. Generated by oat-calibrate.
   -S [ --board-size ] arg          Two element int array, [X,Y], specifying the
                                    dimensions of the Aruco board (the number of
                                    markers in the X and Y directions).
-  -l [ --length ] arg              Length, in meters, of each side of the 
+  -l [ --length ] arg              Length, in meters, of each side of the
                                    square markers within the Aruco board.
-  -s [ --separation ] arg          Separation, in meters, between each of the 
+  -s [ --separation ] arg          Separation, in meters, between each of the
                                    markers within the Aruco board.
-  -R [ --refine-detection ]        Perform a secondary marker location 
+  -R [ --refine-detection ]        Perform a secondary marker location
                                    refinement step using knowledge of the board
-                                   layout after initial marker detection is 
-                                   performed. Can lead to improved pose 
+                                   layout after initial marker detection is
+                                   performed. Can lead to improved pose
                                    estimation robustness.
-  -p [ --print ]                   Prior to performing position detection, 
-                                   print the specified Aruco marker to a PNG 
-                                   file, named 'board.png', in the current 
+  -p [ --print ]                   Prior to performing position detection,
+                                   print the specified Aruco marker to a PNG
+                                   file, named 'board.png', in the current
                                    directory.
   -P [ --print-scale ] arg         The number of pixels to map to marker length
-                                   to determine printing resolution. For 
+                                   to determine printing resolution. For
                                    instance, print-scale 50 indicates that each
-                                   side of the marker will be 50 pixels. 
+                                   side of the marker will be 50 pixels.
                                    Defaults to 100.
-  -t [ --thresh-params ] arg       Three element vector, [min,max,step], 
-                                   specifying threshold parameters for marker 
-                                   candidate detection. Min and max represent 
-                                   the interval where the thresholding window 
-                                   sizes (in pixels) are selected for adaptive 
-                                   thresholding. Step determines the 
-                                   granularity of increments between min and 
-                                   max. See cv::threshold() for details. 
+  -t [ --thresh-params ] arg       Three element vector, [min,max,step],
+                                   specifying threshold parameters for marker
+                                   candidate detection. Min and max represent
+                                   the interval where the thresholding window
+                                   sizes (in pixels) are selected for adaptive
+                                   thresholding. Step determines the
+                                   granularity of increments between min and
+                                   max. See cv::threshold() for details.
                                    Defaults to [3, 23, 10]
-  -t [ --contour-params ] arg      Two element vector, [min,max], specifying 
-                                   the minimum and maximum perimeter distance 
+  -t [ --contour-params ] arg      Two element vector, [min,max], specifying
+                                   the minimum and maximum perimeter distance
                                    relative to the major dimension of the input
-                                   frame in order for a detected contour to be 
-                                   considered a marker candidate. Defaults to 
-                                   [0.03, 4.0]. Note that a max=4.0 indicates 
+                                   frame in order for a detected contour to be
+                                   considered a marker candidate. Defaults to
+                                   [0.03, 4.0]. Note that a max=4.0 indicates
                                    that the marker can fill the entire frame.
-  -o [ --min-corner-dist ] arg     Float specifying the minimum distance 
-                                   between the corners of the same marker 
-                                   (expressed as rate relative the marker 
+  -o [ --min-corner-dist ] arg     Float specifying the minimum distance
+                                   between the corners of the same marker
+                                   (expressed as rate relative the marker
                                    perimeter. Defaults to 0.05.
-  -O [ --min-marker-dist ] arg     Float specifying the minimum distance 
-                                   between the corners of different markers 
-                                   (expressed as rate relative the minimum 
-                                   candidate marker perimeter. Defaults to 
+  -O [ --min-marker-dist ] arg     Float specifying the minimum distance
+                                   between the corners of different markers
+                                   (expressed as rate relative the minimum
+                                   candidate marker perimeter. Defaults to
                                    0.05.
-  -b [ --min-border-dist ] arg     Float specifying the minimum abosolute 
-                                   distance between a marker corner and the 
+  -b [ --min-border-dist ] arg     Float specifying the minimum abosolute
+                                   distance between a marker corner and the
                                    frame border (pixels). Defaults to 3.
-  -x [ --pixels-per-cell ] arg     Int specifying the number of pixels (length 
-                                   of a side) used to represent each black or 
+  -x [ --pixels-per-cell ] arg     Int specifying the number of pixels (length
+                                   of a side) used to represent each black or
                                    white cell of the detected markers. A higher
-                                   value may improve decoding accuracy at the 
+                                   value may improve decoding accuracy at the
                                    cost of perforamce. Defaults to 4.
-  -B [ --border-error-rate ] arg   Fraction of board bits that can be white 
-                                   (erroneous) instead of black. Defaults to 
+  -B [ --border-error-rate ] arg   Fraction of board bits that can be white
+                                   (erroneous) instead of black. Defaults to
                                    0.35
-  -t [ --tune ]                    If true, provide a GUI with sliders for 
+  -t [ --tune ]                    If true, provide a GUI with sliders for
                                    tuning detection parameters.
 ```
 
 __TYPE = `hsv`__
 ```
 
-  -H [ --h-thresh ] arg   Array of ints between 0 and 256, [min,max], 
+  -H [ --h-thresh ] arg   Array of ints between 0 and 256, [min,max],
                           specifying the hue passband.
-  -S [ --s-thresh ] arg   Array of ints between 0 and 256, [min,max], 
+  -S [ --s-thresh ] arg   Array of ints between 0 and 256, [min,max],
                           specifying the saturation passband.
-  -V [ --v-thresh ] arg   Array of ints between 0 and 256, [min,max], 
+  -V [ --v-thresh ] arg   Array of ints between 0 and 256, [min,max],
                           specifying the value passband.
-  -e [ --erode ] arg      Contour erode kernel size in pixels (normalized box 
+  -e [ --erode ] arg      Contour erode kernel size in pixels (normalized box
                           filter).
-  -d [ --dilate ] arg     Contour dilation kernel size in pixels (normalized 
+  -d [ --dilate ] arg     Contour dilation kernel size in pixels (normalized
                           box filter).
-  -a [ --area ] arg       Array of floats, [min,max], specifying the minimum 
+  -a [ --area ] arg       Array of floats, [min,max], specifying the minimum
                           and maximum object contour area in pixels^2.
-  -t [ --tune ]           If true, provide a GUI with sliders for tuning 
+  -t [ --tune ]           If true, provide a GUI with sliders for tuning
                           detection parameters.
 ```
 
 __TYPE = `diff`__
 ```
 
-  -d [ --diff-threshold ] arg   Intensity difference threshold to consider an 
+  -d [ --diff-threshold ] arg   Intensity difference threshold to consider an
                                 object contour.
-  -b [ --blur ] arg             Blurring kernel size in pixels (normalized box 
+  -b [ --blur ] arg             Blurring kernel size in pixels (normalized box
                                 filter).
-  -a [ --area ] arg             Array of floats, [min,max], specifying the 
-                                minimum and maximum object contour area in 
+  -a [ --area ] arg             Array of floats, [min,max], specifying the
+                                minimum and maximum object contour area in
                                 pixels^2.
-  -t [ --tune ]                 If true, provide a GUI with sliders for tuning 
+  -t [ --tune ]                 If true, provide a GUI with sliders for tuning
                                 detection parameters.
 ```
 
 __TYPE = `rpg`__
 ```
 
-  -M [ --marker-positions ] arg    Nx3 element array of 3D marker positions in 
+  -M [ --marker-positions ] arg    Nx3 element array of 3D marker positions in
                                    meters.
-  -T [ --threshold ] arg           Detection threshold value, 0-256. Defaults 
+  -T [ --threshold ] arg           Detection threshold value, 0-256. Defaults
                                    to 100.
-  -s [ --gauss-sigma ] arg         Sigma of Gaussian blur filter. Defaults to 
+  -s [ --gauss-sigma ] arg         Sigma of Gaussian blur filter. Defaults to
                                    0.6.
-  -a [ --area ] arg                Array of floats, [min,max], specifying the 
-                                   minimum and maximum object contour area in 
+  -a [ --area ] arg                Array of floats, [min,max], specifying the
+                                   minimum and maximum object contour area in
                                    pixels^2. Defaults to [10,200].
-  -w [ --width-height-dist ] arg   Minimum ratio of width-to-height of a 
+  -w [ --width-height-dist ] arg   Minimum ratio of width-to-height of a
                                    bounding box around a detected blob. Ideally
-                                   the ratio of the width to the height of the 
-                                   bounding rectangle should be 1. Defaults to 
+                                   the ratio of the width to the height of the
+                                   bounding rectangle should be 1. Defaults to
                                    0.5.
   -c [ --circ-dist ] arg           Maximum allowable distortion, 0 to 1.0, of a
-                                   bounding box around the detected blob, 
-                                   calculated as the area of the blob divided 
-                                   by pi times half the height or half the 
+                                   bounding box around the detected blob,
+                                   calculated as the area of the blob divided
+                                   by pi times half the height or half the
                                    width of the bounding rectangle. Defaults to
                                    0.5.
   -b [ --back-proj-tol ] arg       Maximum allowable back projection tolerance,
-                                   in pixels, to consider a projected point to 
-                                   correspond to the detected point in the 
+                                   in pixels, to consider a projected point to
+                                   correspond to the detected point in the
                                    captured image. Defaults to 5.
-  -n [ --nn-pixel-tol ] arg        Tolerance, in pixels, that determines the 
-                                   correspondences between the LEDs and the 
-                                   detections in the image when predicting the 
-                                   position of the LEDs in the image. Defaults 
+  -n [ --nn-pixel-tol ] arg        Tolerance, in pixels, that determines the
+                                   correspondences between the LEDs and the
+                                   detections in the image when predicting the
+                                   position of the LEDs in the image. Defaults
                                    to 7.
-  -C [ --pose-cert-thresh ] arg    Minimum ratio of how many of the 
-                                   back-projected points must be within the 
+  -C [ --pose-cert-thresh ] arg    Minimum ratio of how many of the
+                                   back-projected points must be within the
                                    'back-proj-tol' for a correspondence between
-                                   the LEDs and the detections to be correct. 
+                                   the LEDs and the detections to be correct.
                                    Defaults to 0.75.
-  -p [ --pose-corr-thresh ] arg    Minimum correspondence ratio, 0 to 1.0, to 
-                                   continue with smart pose estimation rather 
-                                   than brute-force correspondence search. 
+  -p [ --pose-corr-thresh ] arg    Minimum correspondence ratio, 0 to 1.0, to
+                                   continue with smart pose estimation rather
+                                   than brute-force correspondence search.
                                    Defaults to 0.7.
-  -r [ --roi-border ] arg          Thickness of the border (in pixels) around 
-                                   the predicted area of the LEDs in the image 
-                                   that defines the region of interest for 
-                                   image detection of the LEDs in the next 
+  -r [ --roi-border ] arg          Thickness of the border (in pixels) around
+                                   the predicted area of the LEDs in the image
+                                   that defines the region of interest for
+                                   image detection of the LEDs in the next
                                    frame. Defaults to 20.
   -k [ --camera-matrix ] arg       Nine element float array, [K11,K12,...,K33],
-                                   specifying the 3x3 camera matrix for your 
+                                   specifying the 3x3 camera matrix for your
                                    imaging setup. Generated by oat-calibrate.
-  -d [ --distortion-coeffs ] arg   Five to eight element float array, 
-                                   [x1,x2,x3,...], specifying lens distortion 
+  -d [ --distortion-coeffs ] arg   Five to eight element float array,
+                                   [x1,x2,x3,...], specifying lens distortion
                                    coefficients. Generated by oat-calibrate.
-  -t [ --tune ]                    if true, provide a gui with sliders for 
+  -t [ --tune ]                    if true, provide a gui with sliders for
                                    tuning detection parameters.
 ```
 
 __TYPE = `thresh`__
 ```
 
-  -T [ --thresh ] arg     Array of ints between 0 and 256, [min,max], 
+  -T [ --thresh ] arg     Array of ints between 0 and 256, [min,max],
                           specifying the intensity passband.
-  -e [ --erode ] arg      Contour erode kernel size in pixels (normalized box 
+  -e [ --erode ] arg      Contour erode kernel size in pixels (normalized box
                           filter).
-  -d [ --dilate ] arg     Contour dilation kernel size in pixels (normalized 
+  -d [ --dilate ] arg     Contour dilation kernel size in pixels (normalized
                           box filter).
-  -a [ --area ] arg       Array of floats, [min,max], specifying the minimum 
+  -a [ --area ] arg       Array of floats, [min,max], specifying the minimum
                           and maximum object contour area in pixels^2.
-  -t [ --tune ]           If true, provide a GUI with sliders for tuning 
+  -t [ --tune ]           If true, provide a GUI with sliders for tuning
                           detection parameters.
 ```
 #### Example
@@ -845,16 +845,16 @@ SINK:
 __TYPE = `rand2D`__
 ```
 
-  -r [ --rate ] arg          Samples per second. Defaults to as fast as 
+  -r [ --rate ] arg          Samples per second. Defaults to as fast as
                              possible.
-  -n [ --num-samples ] arg   Number of position samples to generate and serve. 
+  -n [ --num-samples ] arg   Number of position samples to generate and serve.
                              Deafaults to approximately infinite.
-  -R [ --room ] arg          Array of floats, [x0,y0,width,height], specifying 
-                             the boundaries in which generated positions 
+  -R [ --room ] arg          Array of floats, [x0,y0,width,height], specifying
+                             the boundaries in which generated positions
                              reside. The room has periodic boundaries so when a
-                             position leaves one side it will enter the 
+                             position leaves one side it will enter the
                              opposing one.
-  -a [ --sigma-accel ] arg   Standard deviation of normally-distributed random 
+  -a [ --sigma-accel ] arg   Standard deviation of normally-distributed random
                              accelerations
 ```
 
@@ -902,22 +902,22 @@ __TYPE = `kalman`__
 ```
 
   --dt arg                   Kalman filter time step in seconds.
-  -T [ --timeout ] arg       Seconds to perform position estimation detection 
+  -T [ --timeout ] arg       Seconds to perform position estimation detection
                              with lack of position measure. Defaults to 0.
   -a [ --sigma-accel ] arg   Standard deviation of normally distributed, random
                              accelerations used by the internal model of object
                              motion (position units/s2; e.g. pixels/s2).
-  -n [ --sigma-noise ] arg   Standard deviation of randomly distributed 
-                             position measurement noise (position units; e.g. 
+  -n [ --sigma-noise ] arg   Standard deviation of randomly distributed
+                             position measurement noise (position units; e.g.
                              pixels).
-  -t [ --tune ]              If true, provide a GUI with sliders for tuning 
+  -t [ --tune ]              If true, provide a GUI with sliders for tuning
                              filter parameters.
 ```
 
 __TYPE = `homography`__
 ```
 
-  -H [ --homography ] arg   A nine-element array of floats, [h11,h12,...,h33], 
+  -H [ --homography ] arg   A nine-element array of floats, [h11,h12,...,h33],
                             specifying a 3x3 homography matrix for 2D position.
                             Can be produced by oat-calibrate homography.
 ```
@@ -926,20 +926,20 @@ __TYPE = `region`__
 ```
 
   --regions arg           NOTE: Regions can only be specified in a config file.
-                          Regions contours are specified as n-point matrices, 
-                          [[x0, y0],[x1, y1],...,[xn, yn]], which define the 
+                          Regions contours are specified as n-point matrices,
+                          [[x0, y0],[x1, y1],...,[xn, yn]], which define the
                           vertices of a polygon:
-                          
+
                             <region> = [[+float, +float],
                                         [+float, +float],
-                                        ...              
+                                        ...
                                         [+float, +float]]
-                          
-                          The name of the contour is used as the region label 
-                          (10 characters max). For example, here is an 
-                          octagonal region called CN and a tetragonal region 
+
+                          The name of the contour is used as the region label
+                          (10 characters max). For example, here is an
+                          octagonal region called CN and a tetragonal region
                           called R0:
-                          
+
                             CN = [[336.00, 272.50],
                                   [290.00, 310.00],
                                   [289.00, 369.50],
@@ -948,7 +948,7 @@ __TYPE = `region`__
                                   [430.00, 375.33],
                                   [433.33, 319.33],
                                   [395.00, 272.00]]
-                          
+
                             R0 = [[654.00, 380.00],
                                   [717.33, 386.67],
                                   [714.00, 316.67],
@@ -997,11 +997,11 @@ SINK:
 __TYPE = `mean`__
 ```
 
-  -h [ --heading-anchor ] arg   Index of the SOURCE position to use as an 
+  -h [ --heading-anchor ] arg   Index of the SOURCE position to use as an
                                 anchor when calculating object heading. In this
-                                case the heading equals the mean directional 
-                                vector between this anchor position and all 
-                                other SOURCE positions. If unspecified, the 
+                                case the heading equals the mean directional
+                                vector between this anchor position and all
+                                other SOURCE positions. If unspecified, the
                                 heading is not calculated.
 ```
 
@@ -1042,35 +1042,35 @@ INFO:
 CONFIGURATION:
   -c [ --config ] arg             Configuration file/key pair.
                                   e.g. 'config.toml mykey'
-  --control-endpoint arg          ZMQ style endpoint specifier designating 
+  --control-endpoint arg          ZMQ style endpoint specifier designating
                                   runtime control port:'<transport>://<host>:<p
-                                  ort>'. For instance, 'tcp://*:5555' to 
-                                  specify TCP communication on port 5555. Or, 
-                                  for interprocess communication: 
-                                  '<transport>://<user-named-pipe>. For 
-                                  instance 'ipc:///tmp/test.pipe'. Internally, 
-                                  this is used to construct a ZMQ REQ socket 
+                                  ort>'. For instance, 'tcp://*:5555' to
+                                  specify TCP communication on port 5555. Or,
+                                  for interprocess communication:
+                                  '<transport>://<user-named-pipe>. For
+                                  instance 'ipc:///tmp/test.pipe'. Internally,
+                                  this is used to construct a ZMQ REQ socket
                                   that that receives commands from oat-control.
                                   Defaults to ipc:///tmp/oatcomms.pipe.
 
-  -p [ --position-sources ] arg   The name of position SOURCE(s) used to draw 
+  -p [ --position-sources ] arg   The name of position SOURCE(s) used to draw
                                   object position markers.
-                                  
-  -t [ --timestamp ]              Write the current date and time on each 
+
+  -t [ --timestamp ]              Write the current date and time on each
                                   frame.
-                                  
+
   -s [ --sample ]                 Write the frame sample number on each frame.
-                                  
+
   -S [ --sample-code ]            Write the binary encoded sample on the corner
                                   of each frame.
-                                  
-  -R [ --region ]                 Write region information on each frame if 
+
+  -R [ --region ]                 Write region information on each frame if
                                   there is a position stream that contains it.
-                                  
+
   -h [ --history ]                Display position history.
-                                  
+
   -i [ --invert-font ]            Invert font color.
-                                  
+
 ```
 
 #### Example
@@ -1102,10 +1102,10 @@ oat decorate raw -p pos1 pos2
         sample_rate_hz: X.X
     },
     positions: [
-        position, 
-        position, 
-        ..., 
-        position 
+        position,
+        position,
+        ...,
+        position
     ]
 }
 ```
@@ -1146,16 +1146,16 @@ When using binary file format, position entries occupy single elements of a
 numpy structured array with the following
 [`dtype`](https://docs.scipy.org/doc/numpy/reference/generated/numpy.dtype.html):
 ```
-[('tick', '<u8'), 
- ('usec', '<u8'), 
- ('unit', '<i4'), 
- ('pos_ok', 'i1'), 
- ('pos_xy', '<f8', (2,)), 
- ('vel_ok', 'i1'), 
- ('vel_xy', '<f8', (2,)), 
- ('head_ok', 'i1'), 
- ('head_xy', '<f8', (2,)), 
- ('reg_ok', 'i1'), 
+[('tick', '<u8'),
+ ('usec', '<u8'),
+ ('unit', '<i4'),
+ ('pos_ok', 'i1'),
+ ('pos_xy', '<f8', (2,)),
+ ('vel_ok', 'i1'),
+ ('vel_xy', '<f8', (2,)),
+ ('head_ok', 'i1'),
+ ('head_xy', '<f8', (2,)),
+ ('reg_ok', 'i1'),
  ('reg', 'S10')]
 ```
 
@@ -1188,56 +1188,56 @@ INFO:
 CONFIGURATION:
   -c [ --config ] arg             Configuration file/key pair.
                                   e.g. 'config.toml mykey'
-  --control-endpoint arg          ZMQ style endpoint specifier designating 
+  --control-endpoint arg          ZMQ style endpoint specifier designating
                                   runtime control port:'<transport>://<host>:<p
-                                  ort>'. For instance, 'tcp://*:5555' to 
-                                  specify TCP communication on port 5555. Or, 
-                                  for interprocess communication: 
-                                  '<transport>://<user-named-pipe>. For 
-                                  instance 'ipc:///tmp/test.pipe'. Internally, 
-                                  this is used to construct a ZMQ REQ socket 
+                                  ort>'. For instance, 'tcp://*:5555' to
+                                  specify TCP communication on port 5555. Or,
+                                  for interprocess communication:
+                                  '<transport>://<user-named-pipe>. For
+                                  instance 'ipc:///tmp/test.pipe'. Internally,
+                                  this is used to construct a ZMQ REQ socket
                                   that that receives commands from oat-control.
                                   Defaults to ipc:///tmp/oatcomms.pipe.
 
-  -s [ --frame-sources ] arg      The names of the FRAME SOURCES that supply 
+  -s [ --frame-sources ] arg      The names of the FRAME SOURCES that supply
                                   images to save to video.
   -p [ --position-sources ] arg   The names of the POSITION SOURCES that supply
                                   object positions to be recorded.
-  -n [ --filename ] arg           The base file name. If not specified, 
+  -n [ --filename ] arg           The base file name. If not specified,
                                   defaults to the SOURCE name.
-  -f [ --folder ] arg             The path to the folder to which the video 
-                                  stream and position data will be saved. If 
-                                  not specified, defaults to the current 
+  -f [ --folder ] arg             The path to the folder to which the video
+                                  stream and position data will be saved. If
+                                  not specified, defaults to the current
                                   directory.
-  -d [ --date ]                   If specified, YYYY-MM-DD-hh-mm-ss_ will be 
+  -d [ --date ]                   If specified, YYYY-MM-DD-hh-mm-ss_ will be
                                   prepended to the filename.
-  -o [ --allow-overwrite ]        If set and save path matches and existing 
+  -o [ --allow-overwrite ]        If set and save path matches and existing
                                   file, the file will be overwritten instead of
-                                  a incremental numerical index being appended 
+                                  a incremental numerical index being appended
                                   to the file name.
   -F [ --fourcc ] arg             Four character code (https://en.wikipedia.org
-                                  /wiki/FourCC) used to specify the codec used 
-                                  for AVI video compression. Must be specified 
-                                  as a 4-character string (see 
+                                  /wiki/FourCC) used to specify the codec used
+                                  for AVI video compression. Must be specified
+                                  as a 4-character string (see
                                   http://www.fourcc.org/codecs.php for possible
-                                  options). Not all valid FOURCC codes will 
-                                  work: it must be implemented by the low  
-                                  level writer. Common values are 'DIVX' or 
-                                  'H264'. Defaults to 'None' indicating 
+                                  options). Not all valid FOURCC codes will
+                                  work: it must be implemented by the low
+                                  level writer. Common values are 'DIVX' or
+                                  'H264'. Defaults to 'None' indicating
                                   uncompressed video.
-  -b [ --binary-file ]            Position data will be written as numpy data 
-                                  file (version 1.0) instead of JSON. Each 
-                                  position data point occupies a single entry 
-                                  in a structured numpy array. Individual 
+  -b [ --binary-file ]            Position data will be written as numpy data
+                                  file (version 1.0) instead of JSON. Each
+                                  position data point occupies a single entry
+                                  in a structured numpy array. Individual
                                   position characteristics are described in the
                                   arrays dtype.
-  -c [ --concise-file ]           If set and using JSON file format, 
-                                  indeterminate position data fields will not 
-                                  be written e.g. pos_xy will not be written 
-                                  even when pos_ok = false. This means that 
-                                  position objects will be of variable size 
-                                  depending on the validity of whether a 
-                                  position was detected or not, potentially 
+  -c [ --concise-file ]           If set and using JSON file format,
+                                  indeterminate position data fields will not
+                                  be written e.g. pos_xy will not be written
+                                  even when pos_ok = false. This means that
+                                  position objects will be of variable size
+                                  depending on the validity of whether a
+                                  position was detected or not, potentially
                                   complicating file parsing.
 ```
 
@@ -1290,7 +1290,7 @@ TYPE:
   pub: Asynchronous position publisher over ZMQ socket.
        Publishes positions without request to potentially many
        subscribers.
-  rep: Synchronous position replier over ZMQ socket. 
+  rep: Synchronous position replier over ZMQ socket.
        Sends positions in response to requests from a single
        endpoint.Several transport/protocol options. The most
        useful are tcp and interprocess (ipc).
@@ -1305,36 +1305,36 @@ SOURCE:
 __TYPE = `std`__
 ```
 
-  -p [ --pretty-print ]    If true, print formated positions to the command 
+  -p [ --pretty-print ]    If true, print formated positions to the command
                            line.
 ```
 
 __TYPE = `pub`__
 ```
 
-  -e [ --endpoint ] arg   ZMQ-style endpoint. For TCP: 
-                          '<transport>://<host>:<port>'. For instance, 
-                          'tcp://*:5555'. Or, for interprocess communication: 
-                          '<transport>:///<user-named-pipe>. For instance 
+  -e [ --endpoint ] arg   ZMQ-style endpoint. For TCP:
+                          '<transport>://<host>:<port>'. For instance,
+                          'tcp://*:5555'. Or, for interprocess communication:
+                          '<transport>:///<user-named-pipe>. For instance
                           'ipc:///tmp/test.pipe'.
 ```
 
 __TYPE = `rep`__
 ```
 
-  -e [ --endpoint ] arg   ZMQ-style endpoint. For TCP: 
-                          '<transport>://<host>:<port>'. For instance, 
-                          'tcp://*:5555'. Or, for interprocess communication: 
-                          '<transport>:///<user-named-pipe>. For instance 
+  -e [ --endpoint ] arg   ZMQ-style endpoint. For TCP:
+                          '<transport>://<host>:<port>'. For instance,
+                          'tcp://*:5555'. Or, for interprocess communication:
+                          '<transport>:///<user-named-pipe>. For instance
                           'ipc:///tmp/test.pipe'.
 ```
 
 __type = `udp`__
 ```
 
-  -h [ --host ] arg       Host IP address of remote device to send positions 
+  -h [ --host ] arg       Host IP address of remote device to send positions
                           to. For instance, '10.0.0.1'.
-  -p [ --port ] arg       Port number of endpoint on remote device to send 
+  -p [ --port ] arg       Port number of endpoint on remote device to send
                           positions to. For instance, 5555.
 ```
 
@@ -1461,51 +1461,51 @@ SOURCE:
 __TYPE = `camera`__
 ```
 
-  -k [ --calibration-key ] arg    The key name for the calibration entry that 
-                                  will be inserted into the calibration file. 
+  -k [ --calibration-key ] arg    The key name for the calibration entry that
+                                  will be inserted into the calibration file.
                                   e.g. 'camera-1-homography'
-                                  
-  -f [ --calibration-path ] arg   The calibration file location. If not is 
-                                  specified,defaults to './calibration.toml'. 
-                                  If a folder is specified, defaults to 
+
+  -f [ --calibration-path ] arg   The calibration file location. If not is
+                                  specified,defaults to './calibration.toml'.
+                                  If a folder is specified, defaults to
                                   '<folder>/calibration.toml
                                   . If a full path including file in specified,
-                                  then it will be that path without 
+                                  then it will be that path without
                                   modification.
-  -s [ --chessboard-size ] arg    Int array, [x,y], specifying the number of 
+  -s [ --chessboard-size ] arg    Int array, [x,y], specifying the number of
                                   inside corners in the horizontal and vertical
-                                  demensions of the chessboard used for 
+                                  demensions of the chessboard used for
                                   calibration.
-                                  
-  -w [ --square-width ] arg       The length/width of a single chessboard 
+
+  -w [ --square-width ] arg       The length/width of a single chessboard
                                   square in meters.
-                                  
+
 ```
 
 __TYPE = `homography`__
 ```
 
-  -k [ --calibration-key ] arg    The key name for the calibration entry that 
-                                  will be inserted into the calibration file. 
+  -k [ --calibration-key ] arg    The key name for the calibration entry that
+                                  will be inserted into the calibration file.
                                   e.g. 'camera-1-homography'
-                                  
-  -f [ --calibration-path ] arg   The calibration file location. If not is 
-                                  specified,defaults to './calibration.toml'. 
-                                  If a folder is specified, defaults to 
+
+  -f [ --calibration-path ] arg   The calibration file location. If not is
+                                  specified,defaults to './calibration.toml'.
+                                  If a folder is specified, defaults to
                                   '<folder>/calibration.toml
                                   . If a full path including file in specified,
-                                  then it will be that path without 
+                                  then it will be that path without
                                   modification.
   -m [ --method ] arg             Homography estimation method. Defaults to 0.
-                                  
+
                                   Values:
-                                    0: RANSAC-based robust estimation method 
+                                    0: RANSAC-based robust estimation method
                                        (automatic outlier rejection).
                                     1: Best-fit using all data points.
-                                    2: Compute the homography that fits four 
+                                    2: Compute the homography that fits four
                                        points. Useful when frames contain known
                                        fiducial marks.
-                                  
+
 ```
 
 \newpage
@@ -1546,7 +1546,7 @@ INFO:
   --help                Produce help message.
   -v [ --version ]      Print version information.
   -q [ --quiet ]        Quiet mode. Prevent output text.
-  -l [ --legacy ]       Legacy mode. Append  "_sh_mem" to input NAMES before 
+  -l [ --legacy ]       Legacy mode. Append  "_sh_mem" to input NAMES before
                         removing.
 ```
 

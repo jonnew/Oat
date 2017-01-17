@@ -63,16 +63,16 @@ protected:
 
     /**
      * @brief Mutate component according to the requested user input. Message
-     * header provides location of control struct. 
+     * header provides location of control struct.
      * @note Only commands supplied as keys via the overridden commands()
-     * function will be passed to this function. 
+     * function will be passed to this function.
      * @note This function must be thread-safe with processing thread.
      * @param message_header Control message
      * @return Return code. 0 = More. 1 = Quit received.
      */
     virtual void applyCommand(const std::string &command) = 0;
 
-    /** 
+    /**
      * @brief Return map comtaining a runtime commands and description of
      * action on the component as implmented with the applyCommand function.
      * @return commands/description map.

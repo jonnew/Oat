@@ -40,8 +40,8 @@ std::streamsize zmq_istream::read(char *s, std::streamsize n) {
     zmq::message_t message;
 
     if (socket_->recv(&message)) {
-        
-        std::streamsize actual_n = 
+
+        std::streamsize actual_n =
             std::min(n, static_cast<std::streamsize>(message.size()));
         memcpy(s, static_cast<char *>(message.data()), actual_n);
         return actual_n;

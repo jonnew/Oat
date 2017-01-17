@@ -52,7 +52,7 @@ void setPGAuto(T &cam, pg::PropertyType property)
 }
 
 template <typename T>
-void setPGOff(T &cam, pg::PropertyType property) 
+void setPGOff(T &cam, pg::PropertyType property)
 {
     pg::Error error;
     pg::Property cam_prop;
@@ -108,7 +108,7 @@ float setPGAbsValue(T &cam, pg::PropertyType property, double val)
         throw rte("Error retrieving property info for "
                   + pgPropertyStr(property));
 
-    if (!cam_prop_info.absValSupported) 
+    if (!cam_prop_info.absValSupported)
         throw rte("Absolute value is not supported for property "
                   + pgPropertyStr(property));
 

@@ -104,10 +104,10 @@ private:
 // Specialized versions of PutN() with memset() for better performance.
 template <>
 inline void PutN(
-        SocketWriteStream<boost::asio::ip::udp::socket, boost::asio::ip::udp::endpoint>& stream, 
+        SocketWriteStream<boost::asio::ip::udp::socket, boost::asio::ip::udp::endpoint>& stream,
         SocketWriteStream<boost::asio::ip::udp::socket, boost::asio::ip::udp::endpoint>::Ch c,
         size_t n
-        ) 
+        )
 {
     stream.PutN(c, n);
 }

@@ -211,7 +211,7 @@ void Controller::help(const std::string &target_id) const
             size_t to = 0;
             while (to < c.second.size()) {
                 to = c.second.find(" ", to + desc_len);
-                if (from != 0) 
+                if (from != 0)
                     out << std::left << std::setw(max_len - 1) << "";
                 out << c.second.substr(from, to)
                     << "\n";

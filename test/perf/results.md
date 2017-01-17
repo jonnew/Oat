@@ -5,7 +5,7 @@ frame processing components are tested because they are orders of magnitude
 slower than position processing components.
 
 ## Machine
-Custom Desktop<br /> 
+Custom Desktop<br />
 Intel Core i7-5820K CPU @ 3.30GHz<br />
 GeForce GTX 970 GPU with CUDA 7.5
 
@@ -123,4 +123,4 @@ runtime characteristics with no listening components:
   - user  0m0.064s
   - sys   0m0.028s
 
-  
+

@@ -308,7 +308,7 @@ inline SourceState Source<Frame>::connect(const oat::PixelColor color)
                                  + oat::color_str(color)
                                  + ". Maybe use oat-framefilt col?");
     }
-    
+
     return rc;
 }
 

@@ -39,7 +39,7 @@ namespace oat {
 struct Tuner {
 
     struct CBBase {
-        virtual ~CBBase() { } 
+        virtual ~CBBase() { }
     };
 
     template <typename T>
@@ -98,7 +98,7 @@ public:
     ~Tuner()
     {
         for (auto &p : cb_params_)
-            delete static_cast<CBBase *>(p); 
+            delete static_cast<CBBase *>(p);
     }
 
     template <typename T>
@@ -127,7 +127,7 @@ public:
         oat::convertColor(frame, col_frame, PIX_BGR);
 
         // Message to be printed on screen
-        std::stringstream msg; 
+        std::stringstream msg;
 
         if (pose.found) {
 

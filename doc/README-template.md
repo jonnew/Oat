@@ -570,10 +570,10 @@ oat decorate raw -p pos1 pos2
         sample_rate_hz: X.X
     },
     positions: [
-        position, 
-        position, 
-        ..., 
-        position 
+        position,
+        position,
+        ...,
+        position
     ]
 }
 ```
@@ -614,16 +614,16 @@ When using binary file format, position entries occupy single elements of a
 numpy structured array with the following
 [`dtype`](https://docs.scipy.org/doc/numpy/reference/generated/numpy.dtype.html):
 ```
-[('tick', '<u8'), 
- ('usec', '<u8'), 
- ('unit', '<i4'), 
- ('pos_ok', 'i1'), 
- ('pos_xy', '<f8', (2,)), 
- ('vel_ok', 'i1'), 
- ('vel_xy', '<f8', (2,)), 
- ('head_ok', 'i1'), 
- ('head_xy', '<f8', (2,)), 
- ('reg_ok', 'i1'), 
+[('tick', '<u8'),
+ ('usec', '<u8'),
+ ('unit', '<i4'),
+ ('pos_ok', 'i1'),
+ ('pos_xy', '<f8', (2,)),
+ ('vel_ok', 'i1'),
+ ('vel_xy', '<f8', (2,)),
+ ('head_ok', 'i1'),
+ ('head_xy', '<f8', (2,)),
+ ('reg_ok', 'i1'),
  ('reg', 'S10')]
 ```
 

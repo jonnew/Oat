@@ -77,7 +77,7 @@ protected:
     bool tuning_on_ {false};
     oat::Frame tuning_frame_;
     Tuner tuner_;
-    
+
     // Intrinsic parameters
     cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
     std::vector<double> dist_coeff_  {0, 0, 0, 0, 0, 0, 0, 0};

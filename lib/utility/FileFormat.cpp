@@ -62,13 +62,13 @@ std::string createTimeStamp(bool use_msec) {
     std::strftime(buffer, sizeof buffer, "%F-%H-%M-%S", time_info);
 
     if (use_msec) {
-        
+
         char msec_buffer[5];
-        auto sec = 
+        auto sec =
             std::chrono::time_point_cast<std::chrono::seconds>(now);
-        auto msec = 
+        auto msec =
             std::chrono::duration_cast<std::chrono::milliseconds>(now - sec);
-      
+
         snprintf(msec_buffer, sizeof msec_buffer, "-%ld", msec.count());
         strcat(buffer, msec_buffer);
     }

@@ -40,12 +40,12 @@ namespace oat {
 int createSavePath(std::string &save_path_result,
                    const std::string &save_directory,
                    const std::string &base_file_name,
-                   const std::string &prepend_str = "", 
+                   const std::string &prepend_str = "",
                    const bool use_prepend_str = false);
 
 /**
  * Generate a current system timestamp formated as Y-M-D-H-M-S(-MS).
- * @param use_msec Timestamp has millisecond resolution. 
+ * @param use_msec Timestamp has millisecond resolution.
  * @return Timestamp.
  */
 std::string createTimeStamp(bool use_msec=false);
@@ -57,7 +57,7 @@ std::string createTimeStamp(bool use_msec=false);
  * @param file_path Absolute path to the file to check.
  * @return 0 if no modification was made. Otherwise, an integer
  * representing the index that needed to be appended to the file
- * name in order to make it unique. 
+ * name in order to make it unique.
  */
 int ensureUniquePath(std::string &file_path);
 

@@ -4,7 +4,7 @@
 
 namespace oat {
 
-template <typename T> 
+template <typename T>
 struct in_place {};
 
 }

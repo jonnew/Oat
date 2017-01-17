@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
         options.add_options()
             ("help", "Produce help message.")
             ("version,v", "Print version information.")
-            ("list,l", "Print a list of controllable components, along with IDs " 
+            ("list,l", "Print a list of controllable components, along with IDs "
              "and valid commands, for the specified endpoint.")
             ;
 
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
             std::cout << "Interpreter not implemented." << std::endl;
             return 0;
 
-        } else if ((variable_map.count("endpoint") 
+        } else if ((variable_map.count("endpoint")
                   && !variable_map.count("id")
                   && !variable_map.count("command"))) {
 
@@ -120,14 +120,14 @@ int main(int argc, char *argv[]) {
             ctrl.scan();
             std::cout << ctrl.list();
 
-        } else if ((variable_map.count("endpoint") 
+        } else if ((variable_map.count("endpoint")
                   && variable_map.count("id")
                   && variable_map.count("command"))) {
 
             auto endpoint = variable_map["endpoint"].as<std::string>();
             auto id = variable_map["id"].as<std::string>();
             auto command = variable_map["command"].as<std::string>();
-            
+
             oat::Controller ctrl(endpoint.c_str());
             ctrl.scan();
 

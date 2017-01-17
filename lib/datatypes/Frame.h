@@ -145,7 +145,7 @@ private:
     oat::PixelColor color_ {oat::PIX_BGR};
 };
 
-/** 
+/**
  * @brief Frame color conversion.
  * @param from Source frame
  * @param to Result frame

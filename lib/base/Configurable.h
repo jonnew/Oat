@@ -42,7 +42,7 @@ public:
      * @brief Append program options.
      * @param opts Program option description to be specialized.
      */
-    void appendOptions(po::options_description &opts) 
+    void appendOptions(po::options_description &opts)
     {
         // Default program options
         opts.add_options()

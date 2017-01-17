@@ -42,10 +42,10 @@
 
 namespace oat {
 
-const std::vector<std::string> CameraCalibrator::mode_strings_ { 
-    "Normal", 
-    "Detect", 
-    "Undistort" 
+const std::vector<std::string> CameraCalibrator::mode_strings_ {
+    "Normal",
+    "Detect",
+    "Undistort"
 };
 
 CameraCalibrator::CameraCalibrator(const std::string &source_name) :

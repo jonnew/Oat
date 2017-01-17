@@ -46,7 +46,7 @@ po::options_description WebCam::options() const
          "mat size. Defaults to full sensor size.")
         ;
 
-    return local_opts; 
+    return local_opts;
 }
 
 void WebCam::applyConfiguration(const po::variables_map &vm,
@@ -105,10 +105,10 @@ int WebCam::process()
     // Frame decoding (if compression was performed) can be
     // computationally expensive. So do this outside the critical section
     cv::Mat mat;
-    if (!cv_camera_->read(mat)) 
+    if (!cv_camera_->read(mat))
         return 1;
 
-    if (first_frame_) 
+    if (first_frame_)
         start_ = clock_.now();
 
     if (use_roi_ )
@@ -116,7 +116,7 @@ int WebCam::process()
 
     // START CRITICAL SECTION //
     ////////////////////////////
-    
+
     // Wait for sources to read
     frame_sink_.wait();
 
@@ -124,7 +124,7 @@ int WebCam::process()
     // NOTE: webcams have poorly controlled sample period, so it must be
     // calculated. This operation is very inexpensive
     if (first_frame_) {
-        first_frame_ = false; 
+        first_frame_ = false;
     } else {
         auto time_since_start
             = std::chrono::duration_cast<Sample::Microseconds>(clock_.now()

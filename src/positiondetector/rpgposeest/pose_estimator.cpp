@@ -98,7 +98,7 @@ bool PoseEstimator::estimateBodyPose(cv::Mat image, double time_to_predict)
                       << std::endl;
 
             setImagePoints(detected_led_positions);
-            
+
             //std::cout << detected_led_positions << std::endl;
             if (initialise() == 1) {
                 std::cout << "Found solution" << std::endl;

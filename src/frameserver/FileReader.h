@@ -39,7 +39,7 @@ private:
     // Component Interface
     bool connectToNode(void) override;
     int process(void) override;
-    
+
     // Configurable Interface
     po::options_description options() const override;
     void applyConfiguration(const po::variables_map &vm,

@@ -37,7 +37,7 @@ using UnitVector2D = cv::Point2d;
 // Forward decl.
 class Position2D;
 
-/** 
+/**
  * @brief Serialize position.
  * @param p Position to serialize.
  * @param w Writer to serialize with.
@@ -46,7 +46,7 @@ class Position2D;
 template <typename Writer>
 void serializePosition(const Position2D &p, Writer &w, bool verbose = false);
 
-/** 
+/**
  * @brief Pack a position object into a byte array.
  * @param Position2D Position to pack into a byte array.
  * @return Byte arrayByte array.

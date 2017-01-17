@@ -36,7 +36,7 @@ PositionSocket::PositionSocket(const std::string &position_source_address)
 
 bool PositionSocket::connectToNode()
 {
-    // Establish our a slot in the node 
+    // Establish our a slot in the node
     position_source_.touch(position_source_address_);
 
     // Wait for synchronous start with sink when it binds its node

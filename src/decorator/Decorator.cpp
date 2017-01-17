@@ -218,7 +218,7 @@ int Decorator::process()
     return 0;
 }
 
-oat::CommandDescription Decorator::commands() 
+oat::CommandDescription Decorator::commands()
 {
     const oat::CommandDescription commands{
         {"clear", "Clear path history."}

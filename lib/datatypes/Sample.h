@@ -37,7 +37,7 @@ class Sample {
 public:
 
     using Seconds = std::chrono::duration<double, std::ratio<1>>;
-    using Microseconds = std::chrono::microseconds; 
+    using Microseconds = std::chrono::microseconds;
     using IEEE1394Tick = std::chrono::duration<float, std::ratio<1,8000>>;
 
     explicit Sample()
@@ -94,7 +94,7 @@ public:
         return ++count_;
     }
 
-    /** 
+    /**
      * @brief Set the sample rate.
      * @param value Sample rate in Hz.
      */
@@ -103,7 +103,7 @@ public:
         assert(value > 0.0);
         rate_hz_ = value;
         period_sec_ = Seconds(1.0 / value);
-        period_microseconds_ = 
+        period_microseconds_ =
             std::chrono::duration_cast<Microseconds>(period_sec_);
     }
 
