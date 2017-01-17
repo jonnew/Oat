@@ -30,7 +30,8 @@ enum PixelColor {
     PIX_BINARY = 0,
     PIX_GREY,
     PIX_BGR, // Default
-    PIX_HSV
+    PIX_HSV,
+    PIX_ANY
 };
 
 // Used conversion structures
@@ -87,11 +88,7 @@ inline int color_bytes(oat::PixelColor col)
 
 inline int color_conv_code(oat::PixelColor from, oat::PixelColor to)
 {
-    auto code =  color_conv_table[from][to];
-    if (code == -2)
-        throw std::runtime_error("Requested color conversion is not possible.");
-
-    return code;
+    return color_conv_table[from][to];
 }
 
 inline int imread_code(oat::PixelColor col)

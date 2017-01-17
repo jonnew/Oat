@@ -99,6 +99,25 @@ void FrameViewer::applyConfiguration(const po::variables_map &vm,
     set_snapshot_path(snapshot_path);
 }
 
+oat::CommandDescription FrameViewer::commands()
+{
+    const oat::CommandDescription commands{
+        {"snap", "Take a snapshot of the current frame and save to the "
+                 "configured snapshot path."}
+    };
+
+    return commands;
+}
+
+void FrameViewer::applyCommand(const std::string &command)
+{
+    std::cout << command << "\n";
+    const auto cmds = commands();
+    if (command == "snap") {
+        snapshot_requested_ = true;
+    }
+}
+
 void FrameViewer::display(const oat::Frame &frame)
 {
     // NOTE: This initialization is done here to ensure it is done by the same
@@ -126,9 +145,12 @@ void FrameViewer::display(const oat::Frame &frame)
         cv::LUT(frame, lut_, frame);
 
     cv::imshow(name_, frame);
-    char command = cv::waitKey(1);
+    char gui_input = cv::waitKey(1);
 
-    if (command == 's') {
+    if (snapshot_requested_ || gui_input == 's') {
+
+        // Reset snapshot request state
+        snapshot_requested_ = false;
 
         // Generate current snapshot save path
         std::string fid;
@@ -156,8 +178,8 @@ void FrameViewer::set_snapshot_path(const std::string &snapshot_path)
 
     // Check that the snapshot save folder is valid
     if (!bfs::exists(path.parent_path())) {
-        throw(std::runtime_error("Requested snapshot save directory "
-                                 "does not exist.\n"));
+        throw std::runtime_error("Requested snapshot save directory "
+                                 "does not exist.\n");
     }
 
     // Get folder from path

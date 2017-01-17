@@ -224,7 +224,7 @@ void Recorder::applyCommand(const std::string &command)
         record_on_ = false;
     } else if (command == "new") {
         // TODO: makeNewFile()
-        std::cout << "did not implement new yet...\n";
+        std::cout << "did not implement 'new' yet...\n";
     }
 }
 

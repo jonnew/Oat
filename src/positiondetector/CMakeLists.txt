@@ -8,13 +8,20 @@ set (oat-posidet_SOURCE
      DifferenceDetector.cpp
      HSVDetector.cpp
      SimpleThreshold.cpp
+     RPGPoseEst.cpp
+     ArucoBoard.cpp
      main.cpp)
+
+
+# RPG pose estimation library
+add_subdirectory (./rpgposeest)
 
 # Target
 add_executable (oat-posidet ${oat-posidet_SOURCE})
 target_link_libraries (oat-posidet
                        oat-utility
                        oat-base
+                       rpg-pose-est
                        ${OatCommon_LIBS})
 add_dependencies (oat-posidet cpptoml rapidjson)
 

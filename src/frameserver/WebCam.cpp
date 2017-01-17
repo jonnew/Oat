@@ -29,12 +29,6 @@
 
 namespace oat {
 
-WebCam::WebCam(const std::string &sink_name)
-: FrameServer(sink_name)
-{
-    // Nothing
-}
-
 po::options_description WebCam::options() const
 {
     // Update CLI options
@@ -114,11 +108,11 @@ int WebCam::process()
     if (!cv_camera_->read(mat)) 
         return 1;
 
-    if (use_roi_ )
-        mat = mat(region_of_interest_);
-
     if (first_frame_) 
         start_ = clock_.now();
+
+    if (use_roi_ )
+        mat = mat(region_of_interest_);
 
     // START CRITICAL SECTION //
     ////////////////////////////

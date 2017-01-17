@@ -114,17 +114,6 @@ void RegionFilter2D::applyConfiguration(const po::variables_map &vm,
         }
         it++;
     }
-
-//#ifndef NDEBUG
-//        //check the result
-//        for (size_t i = 0; i < region_contours_.size(); i++) {
-//            std::cout << oat::dbgMessage("Region ID: " + region_ids_[i] + "\n");
-//            for (size_t j = 0; j < region_contours_[i]->size(); j++) {
-//                std::cout << oat::dbgMessage("x: " + std::to_string(region_contours_[i]->at(j).x) + " "
-//                          + "y: " + std::to_string(region_contours_[i]->at(j).y) + "\n");
-//            }
-//        }
-//#endif
 }
 
 void RegionFilter2D::filter(oat::Position2D &position) {

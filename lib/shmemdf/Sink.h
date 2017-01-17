@@ -131,10 +131,10 @@ inline void SinkBase<T>::post()
 
     did_wait_need_post_ = false;
 
-#ifndef NDEBUG
-    // Flush to keep things in order
-    std::cout << address_ << " completed write number: " << node_->write_number() - 1 << std::endl;
-#endif
+//s#ifndef NDEBUG
+//s    // Flush to keep things in order
+//s    std::cout << address_ << " completed write number: " << node_->write_number() - 1 << std::endl;
+//s#endif
 }
 
 /* SPECIALIZATIONS */

@@ -43,20 +43,18 @@ using Array = std::shared_ptr<cpptoml::array>;
 using OptionMap = boost::program_options::variables_map;
 using boost::typeindex::type_id_with_cvr;
 
-inline std::string
-noTableError(const std::string& table_name,
-             const std::string& config_file) {
-
+inline std::string noTableError(const std::string &table_name,
+                                const std::string &config_file)
+{
     return  "No configuration table named '" + table_name +
             "' was provided in the configuration file '" + config_file + "'";
 }
 
-inline std::string
-valueError(const std::string& entry_name,
-           const std::string& table_name,
-           const std::string& config_file,
-           const std::string& message) {
-
+inline std::string valueError(const std::string &entry_name,
+                              const std::string &table_name,
+                              const std::string &config_file,
+                              const std::string &message)
+{
     return "'" + entry_name + "' in '" + table_name + "' in '" + config_file + "' " + message;
 }
 
@@ -69,9 +67,9 @@ valueError(const std::string& entry_name,
  * @param map Program option map extacted form CLI input @param key Key within
  * option map specifying file/key pair of config file.
  */
-inline const OptionTable
-getConfigTable(const OptionMap map, const char *key="config") {
-
+inline const OptionTable getConfigTable(const OptionMap map,
+                                        const char *key = "config")
+{
     std::vector<std::string> fk_pair;
 
     if (!map[key].empty()) {
@@ -98,10 +96,9 @@ getConfigTable(const OptionMap map, const char *key="config") {
     return config->get_table(fk_pair[1]);
 }
 
-inline void
-checkKeys(const std::vector<std::string> &options,
-          const OptionTable user_config) {
-
+inline void checkKeys(const std::vector<std::string> &options,
+                      const OptionTable user_config)
+{
     auto it = user_config->begin();
 
     // Look through user-provided config options and make sure each matches an
@@ -119,23 +116,20 @@ checkKeys(const std::vector<std::string> &options,
 
 /**
  * @brief Retrieve nested table with and unspecified number of elements from an
- * exsiting table.
- *
+ * existing table.
  * @param table Parent table
  * @param key Key of child table.
  * @param nested_table Child table.
- *
  * @return True if child table was successfully assigned.
  */
-inline bool
-getTable(const OptionTable table,
-         const std::string &key,
-         OptionTable &nested_table) {
-
+inline bool getTable(const OptionTable table,
+                     const std::string &key,
+                     OptionTable &nested_table)
+{
     // If the key is in the table,
     if (table->contains(key)) {
 
-        // Make sure the key points to a value (and not a table, array, or table-array)
+        // Make sure the key points to a table (and not a value, array, or table-array)
         if (table->get(key)->is_table()) {
 
             // Get value
@@ -168,9 +162,10 @@ getTable(const OptionTable table,
 template <typename T>
 bool getValue(const po::variables_map &vm,
               const OptionTable table,
-              const std::string& key,
+              const std::string &key,
               T &value,
-              bool required = false) {
+              bool required = false)
+{
 
     if (vm.count(key)) {
 
@@ -216,15 +211,14 @@ bool getValue(const po::variables_map &vm,
  * @return True if value was successfully defined.
  */
 template <typename T>
-bool
-getNumericValue(const po::variables_map &vm,
-                const OptionTable table,
-                const std::string &key,
-                T &value,
-                const T lower = std::numeric_limits<T>::min(),
-                const T upper = std::numeric_limits<T>::max(),
-                bool required = false) {
-
+bool getNumericValue(const po::variables_map &vm,
+                     const OptionTable table,
+                     const std::string &key,
+                     T &value,
+                     const T lower = std::numeric_limits<T>::min(),
+                     const T upper = std::numeric_limits<T>::max(),
+                     bool required = false)
+{
     static_assert (std::is_integral<T>::value ||
                    std::is_floating_point<T>::value, "Numeric type required.");
 
@@ -276,15 +270,14 @@ getNumericValue(const po::variables_map &vm,
     }
 }
 
-// TOML array from table, required size
+// TOML array from table or variables_map, any size
 template <typename T>
-bool
-getArray(const po::variables_map &vm,
-         const OptionTable table,
-         const std::string& key,
-         std::vector<T> &array_out,
-         bool required = false) {
-
+bool getArray(const po::variables_map &vm,
+              const OptionTable table,
+              const std::string &key,
+              std::vector<T> &array_out,
+              bool required = false)
+{
     OptionTable t;
 
     if (vm.count(key)) {
@@ -324,32 +317,30 @@ getArray(const po::variables_map &vm,
     }
 }
 
-// TOML array from table, required size
-template <typename T, size_t size>
-bool
-getArray(const po::variables_map &vm,
-         const OptionTable table,
-         const std::string& key,
-         std::vector<T> &array_out,
-         bool required = false) {
+// TOML array from table or variables_map, required size
+template <typename T, size_t N>
+bool getArray(const po::variables_map &vm,
+              const OptionTable table,
+              const std::string &key,
+              std::vector<T> &array_out,
+              bool required = false)
+{
+    auto rc = getArray<T>(vm, table, key, array_out, required);
 
-    auto rc =getArray<T>(vm, table, key, array_out, required);
-
-    if (rc && array_out.size() != size) {
+    if (rc && array_out.size() != N) {
         throw (std::runtime_error("'" + key + "' must be a TOML vector "
-                "containing " + std::to_string(size) + " elements."));
+                "containing " + std::to_string(N) + " elements."));
     }
 
     return rc;
 }
 
 // TOML array from table, any size
-inline bool 
-getArray(const OptionTable table, 
-         const std::string& key, 
-         Array& array_out, 
-         bool required = false) {
-
+inline bool getArray(const OptionTable table,
+                     const std::string &key,
+                     Array &array_out,
+                     bool required = false)
+{
     // If the key is in the table,
     if (table->contains(key)) {
 
@@ -369,9 +360,8 @@ getArray(const OptionTable table,
     }
 }
 
-inline void
-checkForDuplicateSources(std::vector<std::string> &source_array) {
-
+inline void checkForDuplicateSources(std::vector<std::string> &source_array)
+{
     std::vector<std::string>::iterator it;
     it = std::unique(source_array.begin(), source_array.end());
     if (it != source_array.end())

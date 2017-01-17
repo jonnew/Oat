@@ -41,8 +41,7 @@ po::options_description ColorConvert::options() const
     po::options_description local_opts;
     local_opts.add_options()
         ("color,C", po::value<std::string>(),
-         "Pixel color format."
-         "Values:\n"
+         "Pixel color format.\n" 
          "  GREY: \t 8-bit Greyscale image.\n"
          "  BRG: \t8-bit, 3-chanel, BGR Color image.\n"
          "  HSV: \t8-bit, 3-chanel, HSV Color image.\n")

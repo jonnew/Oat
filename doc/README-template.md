@@ -387,12 +387,19 @@ detected positions to a second segment of shared memory.
 #### Signature
     frame --> oat-posidet --> position
 
+
 #### Usage
 ```
 oat-posidet-help
 ```
 
 #### Configuration Options
+
+__TYPE = `aruco`__
+```
+oat-posidet-aruco-help
+```
+
 __TYPE = `hsv`__
 ```
 oat-posidet-hsv-help
@@ -403,11 +410,15 @@ __TYPE = `diff`__
 oat-posidet-diff-help
 ```
 
+__TYPE = `rpg`__
+```
+oat-posidet-rpg-help
+```
+
 __TYPE = `thresh`__
 ```
 oat-posidet-thresh-help
 ```
-
 #### Example
 ```bash
 # Use color-based object detection on the 'raw' frame stream
@@ -896,6 +907,7 @@ Oat is licensed under the
 [GPLv3.0](http://choosealicense.com/licenses/gpl-3.0/). Its dependences' are
 licenses are shown below:
 
+- Eigen3: [MPL](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
 - Flycapture SDK: NON-FREE specialized license (This is an optional package. If
   you compile without Flycapture support, you can get around this. Also, see
   the `GigE interface cleanup` entry in the TODO section for a potentially free
@@ -909,6 +921,16 @@ licenses are shown below:
 
 These licenses do not violate the terms of Oat's license. If you feel otherwise
 please submit an bug report.
+
+#### Eigen
+Eigen is a template library for linear algebra that is required by some Oat component types:
+
+- `oat-posidet rpg`
+
+To build these component sub-types, you must install Eigen. Eigen can be
+obtained either from its [source repo](https://bitbucket.org/eigen/eigen/)or
+via snapshot download
+[here](http://eigen.tuxfamily.org/index.php?title=Main_Page).
 
 #### Flycapture SDK
 The FlyCapture SDK is used to communicate with Point Grey digital cameras. It

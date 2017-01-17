@@ -75,7 +75,8 @@ public:
      *
      * @return Current sample count
      */
-    uint64_t incrementCount() {
+    uint64_t incrementCount()
+    {
         microseconds_ += period_microseconds_;
         return ++count_;
     }
@@ -83,23 +84,22 @@ public:
     /**
      * @brief Increment sample count with microseconds override. Only pure SINKs
      * should increment the count, set the sample rates, periods, etc.
-     *
      * @param usec Manual override of current sample time in microseconds, e.g.
      * from an external clock reading.
      * @return Current sample count
      */
-    uint64_t incrementCount(const Microseconds usec) {
+    uint64_t incrementCount(const Microseconds usec)
+    {
         microseconds_ = usec;
         return ++count_;
     }
 
     /** 
      * @brief Set the sample rate.
-     * 
      * @param value Sample rate in Hz.
      */
-    void set_rate_hz(const double value) {
-
+    void set_rate_hz(const double value)
+    {
         assert(value > 0.0);
         rate_hz_ = value;
         period_sec_ = Seconds(1.0 / value);
@@ -109,6 +109,7 @@ public:
 
     uint64_t count() const { return count_; }
     Microseconds microseconds() const { return microseconds_; }
+    Seconds seconds() const { return std::chrono::duration_cast<Seconds>(microseconds_); }
     Seconds period_sec() const { return period_sec_; }
     Microseconds period_microseconds() const { return period_microseconds_; }
     double rate_hz() const { return rate_hz_; }

@@ -22,14 +22,14 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/datatypes/Pose.h"
 
 #include "DetectorFunc.h"
 
 namespace oat {
 
 void siftContours(cv::Mat &frame,
-                  Position2D &position,
+                  Pose &pose,
                   double &area,
                   double min_area,
                   double max_area)
@@ -37,13 +37,11 @@ void siftContours(cv::Mat &frame,
 
     std::vector<std::vector <cv::Point> > contours;
 
-    // NOTE: This function will modify the frame
     cv::findContours(frame, contours, 
                      cv::RETR_EXTERNAL, 
                      cv::CHAIN_APPROX_SIMPLE);
 
     double object_area = 0;
-    position.position_valid = false;
 
     for (auto &c : contours) {
 
@@ -55,9 +53,12 @@ void siftContours(cv::Mat &frame,
             countour_area < max_area &&
             countour_area > object_area) {
 
-            position.position.x = moment.m10 / countour_area;
-            position.position.y = moment.m01 / countour_area;
-            position.position_valid = true;
+            auto x = moment.m10 / countour_area;
+            auto y = moment.m01 / countour_area;
+            pose.found = true;
+            auto p = std::array<double, 3>{{x, y, 0}};
+            pose.set_position(p);
+
             object_area = countour_area;
         }
     }

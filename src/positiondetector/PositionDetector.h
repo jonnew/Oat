@@ -21,6 +21,9 @@
 #define	OAT_POSITIONDETECTOR_H
 
 #define OAT_POSIDET_MAX_OBJ_AREA_PIX 100000
+#define TUNE tuner_.registerParameter
+
+#include "Tuner.h"
 
 #include <string>
 
@@ -29,7 +32,7 @@
 #include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Frame.h"
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/datatypes/Pose.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
 
@@ -43,13 +46,13 @@ class SharedFrameHeader;
 class PositionDetector : public Component, public Configurable<false> {
 public:
     /**
-     * Abstract object position detector.
+     * Abstract object pose detector.
      * All concrete object position detector types implement this ABC.
      * @param frame_source_address Frame SOURCE node address
-     * @param position_sink_address Position SINK node address
+     * @param pose_sink_address Pose SINK node address
      */
     PositionDetector(const std::string &frame_source_address,
-                     const std::string &position_sink_address);
+                     const std::string &pose_sink_address);
     virtual ~PositionDetector() { }
 
     // Component Interface
@@ -60,34 +63,40 @@ protected:
     /**
      * Perform object position detection.
      * @param Frame to look for object within.
-     * @param position Detected object position.
+     * @param pose Detected object pose.
      */
-    virtual void detectPosition(cv::Mat &frame, oat::Position2D &position) = 0;
+    virtual void detectPosition(oat::Frame &frame, oat::Pose &pose) = 0;
 
     // Detector name
     const std::string name_;
 
     // Explicit frame data type
-    oat::PixelColor required_color_ {PIX_BGR};
+    oat::PixelColor required_color_ {PIX_ANY};
 
-    // List of allowed configuration options
-    //std::vector<std::string> config_keys_;
+    // Tuning frame (shown in tuning window when tuning_on_ is true);
+    bool tuning_on_ {false};
+    oat::Frame tuning_frame_;
+    Tuner tuner_;
+    
+    // Intrinsic parameters
+    cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
+    std::vector<double> dist_coeff_  {0, 0, 0, 0, 0, 0, 0, 0};
 
 private:
     // Component Interface
     virtual bool connectToNode(void) override;
     int process(void) override;
 
-    // Current frame
-    oat::Position2D * shared_position_;
+    // Current pose
+    oat::Pose * shared_pose_;
 
     // Frame source
     const std::string frame_source_address_;
     oat::Source<oat::Frame> frame_source_;
 
-    // Position sink
-    const std::string position_sink_address_;
-    oat::Sink<oat::Position2D> position_sink_;
+    // Pose sink
+    const std::string pose_sink_address_;
+    oat::Sink<oat::Pose> pose_sink_;
 };
 
 }      /* namespace oat */

@@ -1,17 +1,20 @@
 cmake_minimum_required (VERSION 2.8)
 
+# Suppress warning about non-existant dependencies since I clone them down as
+# external dependencies during the make process
+if(POLICY CMP0046)
+    cmake_policy(SET CMP0046 OLD)
+endif()
+
 # Project data
 project (Oat C CXX)
 
-# Build options
+# Build Options
 option (USE_FLYCAP "Compile with support for Point-Grey cameras" OFF)
 option (BUILD_TESTS "Build and run tests." ON)
 option (BUILD_DOCS "Build doxygen documentation." OFF)
 
-# Internal version list
-set (VERSION_LIST "${GIT_BRANCH}.${GIT_COMMIT_HASH}")
-
-# Generate Oat version number: Major.Branch.Commit
+# Needed for version creation and to pull down dependencies
 find_package (Git REQUIRED)
 
 # Get the current working branch
@@ -29,6 +32,9 @@ execute_process (
   OUTPUT_VARIABLE GIT_COMMIT_HASH
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+
+# Generate Oat version number: Branch.Commit
+set (VERSION_LIST "${GIT_BRANCH}.${GIT_COMMIT_HASH}")
 
 # Set compiler options
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -87,25 +93,29 @@ link_directories (${Boost_LIBRARY_DIR})
 # OpenCV
 find_package (OpenCV REQUIRED)
 if (OpenCV_FOUND)
-    message (STATUS "Found OpenCV")
+    message (STATUS "Found OpenCV: " ${OpenCV_INCLUDE_DIRS})
 else ()
     message (FATAL_ERROR "OpenCV not found")
 endif ()
 
 if (OpenCV_CUDA_VERSION)
-    message (STATUS "   OpenCV has CUDA support.")
+    message (STATUS "  CUDA support enabled.")
     set (OAT_USE_CUDA ON)
 else ()
-    message (STATUS "   CUDA support not enabled.")
+    message (STATUS "  CUDA support not enabled.")
     set (OAT_USE_CUDA OFF)
 endif ()
 
-#find_library (ZMQ_LIB libzmq)
-#if ()
-#    message (STATUS "Found OpenCV")
-#else (OpenCV_FOUND)
-#    message (FATAL_ERROR "OpenCV not found")
-#endif ()
+# TODO: Make optional and do conditional compilation of affected
+# components
+# Eigen3, needed by ir pose estimation library
+find_package (Eigen3 REQUIRED)
+include_directories (${EIGEN3_INCLUDE_DIR})
+if (EIGEN3_INCLUDE_DIR)
+    message (STATUS "Found Eigen3: " ${EIGEN3_INCLUDE_DIR})
+else ()
+    message (STATUS "Eigen3 not found.")
+endif ()
 
 # Flycapture
 if (${USE_FLYCAP})
@@ -115,7 +125,7 @@ if (${USE_FLYCAP})
     find_library(FLYCAPTURE2 flycapture)
 
     if (FLYCAPTURE2)
-        message (STATUS "Found Flycapture.")
+        message (STATUS "Found Flycapture: /usr/include/flycapture")
     else (FLYCAPTURE2)
         message (FATAL_ERROR "Flycapture not found. Did you install in /usr/include/flycapture?")
     endif ()
@@ -132,7 +142,7 @@ include_directories (${CPPTOML_INCLUDE_DIR})
 add_subdirectory (${EXT_PROJECTS_DIR}/rapidjson)
 include_directories (${RAPIDJSON_INCLUDE_DIR})
 
-##include zmq
+## TODO: include zmq
 #add_subdirectory (${EXT_PROJECTS_DIR}/zmq)
 #include_directories (${RAPIDJSON_INCLUDE_DIR})
 

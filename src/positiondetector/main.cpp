@@ -31,9 +31,11 @@
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "PositionDetector.h"
+#include "ArucoBoard.h"
 #include "DifferenceDetector.h"
 #include "HSVDetector.h"
+#include "PositionDetector.h"
+#include "RPGPoseEst.h"
 #include "SimpleThreshold.h"
 
 #define REQ_POSITIONAL_ARGS 3
@@ -42,9 +44,11 @@ namespace po = boost::program_options;
 
 const char usage_type[] =
     "TYPE\n"
-    "  diff: Difference detector (color or grey-scale, motion)\n"
-    "  hsv: HSV color thresholds (color)\n"
-    "  thresh: Simple amplitude threshold (mono)";
+    "  aruco: Aruco board pose estimation (color: any)\n"
+    "  diff: Motion detector (color: mono)\n"
+    "  hsv: HSV color thresholds (color: hsv)\n"
+    "  rpg: RPG pose estimator (color: mono)"
+    "  thresh: Simple amplitude threshold (color: mono)\n";
 
 const char usage_io[] =
     "SOURCE:\n"
@@ -93,6 +97,8 @@ int main(int argc, char *argv[])
     type_hash["diff"] = 'a';
     type_hash["hsv"] = 'b';
     type_hash["thresh"] = 'c';
+    type_hash["aruco"] = 'd';
+    type_hash["rpg"] = 'e';
 
     // The component itself
     std::string comp_name = "posidet";
@@ -106,7 +112,7 @@ int main(int argc, char *argv[])
         // Required positional options
         po::options_description positional_opt_desc("POSITIONAL");
         positional_opt_desc.add_options()
-            ("type", po::value<std::string>(&type), 
+            ("type", po::value<std::string>(&type),
              "Detector type.")
             ("source", po::value<std::string>(&source),
              "User-supplied name of the memory segment to receive frames.")
@@ -165,6 +171,16 @@ int main(int argc, char *argv[])
                 case 'c':
                 {
                     detector = std::make_shared<oat::SimpleThreshold>(source, sink);
+                    break;
+                }
+                case 'd':
+                {
+                    detector = std::make_shared<oat::ArucoBoard>(source, sink);
+                    break;
+                }
+                case 'e':
+                {
+                    detector = std::make_shared<oat::RPGPoseEst>(source, sink);
                     break;
                 }
                 default:

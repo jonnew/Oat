@@ -36,7 +36,12 @@ public:
      */
     using Viewer<oat::Frame>::Viewer;
 
+
 private:
+    // Implement ControllableComponent Interface
+    void applyCommand(const std::string &command) override;
+    oat::CommandDescription commands(void) override;
+
     // Implement Configurable Interface
     po::options_description options(void) const override;
     void applyConfiguration(const po::variables_map &vm,
@@ -45,12 +50,13 @@ private:
     // Viewer Interface
     void display(const oat::Frame &frame) override;
 
-    // Viewer params
+    // Viewer initialized flag
     bool gui_inititalized_ {false};
     cv::Matx<unsigned char, 256, 1> lut_;
     bool min_max_defined_ {false};
 
     // Used to request a snapshot of the current image which is saved to disk
+    std::atomic<bool> snapshot_requested_ {false};
     std::string snapshot_folder_;
     std::string snapshot_base_file_;
     void set_snapshot_path(const std::string &snapshot_path);

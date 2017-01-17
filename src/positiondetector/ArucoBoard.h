@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   DifferenceDetector.h
+//* File:   ArucoBoard.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,25 +17,30 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef OAT_DIFFERENCEDETECTOR_H
-#define	OAT_DIFFERENCEDETECTOR_H
+#ifndef OAT_ARUCOBOARD_H
+#define	OAT_ARUCOBOARD_H
 
 #include "PositionDetector.h"
 
-#include <limits>
+#include <string>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/aruco.hpp>
 
 namespace oat {
 
-class DifferenceDetector : public PositionDetector {
+// Forward decl.
+class Position2D;
+
+class ArucoBoard : public PositionDetector {
+
+    using Corners = std::vector<std::vector<cv::Point2f>>;
+    using pGB = cv::Ptr<cv::aruco::GridBoard>;
 
 public:
     /**
-     * Motion-based object position detector.
-     * @param frame_source_address Frame SOURCE node address
-     * @param position_sink_address Position SINK node address
+     * ArucoBoard marker tracking.
      */
-    DifferenceDetector(const std::string &frame_source_address,
-                       const std::string &position_sink_address);
+    using PositionDetector::PositionDetector; 
 
 private:
     // Configurable Interface
@@ -43,29 +48,25 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
+    // PositionDetector Interface
     void detectPosition(oat::Frame &frame, oat::Pose &pose) override;
 
-    // Intermediate variables
-    cv::Mat this_image_, last_image_;
-    cv::Mat threshold_frame_;
-    bool last_image_set_ {false};
+    // Marker or marker board to look for
+    float marker_length_;
+    cv::Ptr<cv::aruco::Board> board_;
 
-    // Object detection
-    double object_area_ {0.0};
-
-    // Set blur kernel
-    cv::Size blur_size_;
-    int blur_px_ {0};
-    bool makeBlur(int value);
-
-    // Detector parameters
-    int difference_intensity_threshold_ {10};
-    double min_object_area_ {0.0};
-    double max_object_area_ {std::numeric_limits<double>::max()};
-
-    // Processing functions
-    void applyThreshold(cv::Mat &frame);
+    // Marker detection parameters
+    bool refine_detection_ {false};
+    cv::Ptr<cv::aruco::DetectorParameters> dp_;
 };
 
+/** 
+ * @brief Get the ARUCO dictionary enum value from a string representation
+ * @param key A string of the form <Size>X<Size>_<Number of Markers> specifying
+ * the ARUCO dictionary to use.
+ * @return id of the selected dictionary.
+ */
+int arucoDictionaryID(const std::string &key);
+
 }       /* namespace oat */
-#endif	/* OAT_DIFFERENCEDETECTOR_H */
+#endif	/* OAT_ARUCOBOARD_H */

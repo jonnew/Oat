@@ -145,5 +145,24 @@ private:
     oat::PixelColor color_ {oat::PIX_BGR};
 };
 
+/** 
+ * @brief Frame color conversion.
+ * @param from Source frame
+ * @param to Result frame
+ * @param color Desired color of result frame.
+ */
+inline void convertColor(const oat::Frame &from, oat::Frame &to, oat::PixelColor color)
+{
+    auto code = color_conv_code(from.color(), PIX_BGR);
+    if (code == -2) {
+        throw std::runtime_error("Requested color conversion is not possible.");
+    } else if (code == -1) {
+        return;
+    } else {
+        cv::cvtColor(from, to, code);
+        to.set_color(color);
+    }
+}
+
 }      /* namespace oat */
 #endif /* OAT_FRAME_H */

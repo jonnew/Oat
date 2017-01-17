@@ -229,10 +229,8 @@ oat::CommandDescription Decorator::commands()
 
 void Decorator::applyCommand(const std::string &command)
 {
-    const auto cmds = commands();
-    if (cmds.at(command) == "clear") {
+    if (command == "clear")
         history_frame_ = cv::Scalar::all(0);
-    }
 }
 
 void Decorator::drawOnFrame()
@@ -240,7 +238,6 @@ void Decorator::drawOnFrame()
     if (decorate_position_) {
 
         drawPosition();
-
         if (print_region_)
             printRegion();
     }

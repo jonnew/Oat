@@ -45,7 +45,6 @@ class Decorator : public ControllableComponent, public Configurable<true> {
     using pvec_size_t = oat::NamedSourceList<oat::Position2D>::size_type;
 
 public:
-
     /**
      * Frame decorator.
      * Adds positional, sample, and date information to frames.

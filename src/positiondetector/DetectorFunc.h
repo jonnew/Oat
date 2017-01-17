@@ -20,6 +20,8 @@
 #ifndef OAT_DETECTORFUNC
 #define	OAT_DETECTORFUNC
 
+#include <opencv2/highgui.hpp>
+
 // Forward decl.
 namespace cv { class Mat; }
 
@@ -29,19 +31,20 @@ namespace oat {
 static constexpr double PI {3.14159265358979323846};
 
 // Forward decl.
-class Position2D;
+class Pose;
 
 /**
  * Given a binary frame, find all contours and return a position corresponding
  * to the centroid of the largest one.
  * @param frame_in Frame to look for positions in.
- * @param position Position output
+ * @note This function will modify the frame.
+ * @param pose Pose output
  * @param min_area Minimum contour area to be considered candidate for position
  * @param max_area Maximum contour area to be considered candidate for position
  * @return Position corresponding the centroid of the largest contour in the frame.
  */
 void siftContours(cv::Mat &frame,
-                  Position2D &position,
+                  Pose &pose,
                   double &object_area,
                   double min_area,
                   double max_area);

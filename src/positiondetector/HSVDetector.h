@@ -36,20 +36,10 @@
 
 namespace oat {
 
+// Forward decl.
 class Position2D;
 
-// Tuning GUI callbacks
-void hsvDetectorMinAreaSliderChangedCallback(int value, void *);
-void hsvDetectorMaxAreaSliderChangedCallback(int value, void *);
-void hsvDetectorErodeSliderChangedCallback(int value, void *);
-void hsvDetectorDilateSliderChangedCallback(int value, void *);
-
 class HSVDetector : public PositionDetector {
-
-friend void hsvDetectorMinAreaSliderChangedCallback(int value, void *);
-friend void hsvDetectorMaxAreaSliderChangedCallback(int value, void *);
-friend void hsvDetectorErodeSliderChangedCallback(int value, void *);
-friend void hsvDetectorDilateSliderChangedCallback(int value, void *);
 
 public:
     /**
@@ -71,13 +61,12 @@ private:
      * @param Frame to look for object within.
      * @param position Detected object position.
      */
-    void detectPosition(cv::Mat &frame, oat::Position2D &position) override;
+    void detectPosition(oat::Frame &frame, oat::Pose &position) override;
 
     // Erode and dilate kernels
-    int erode_px_ {0}, dilate_px_ {10};
-    bool erode_on_ {false}, dilate_on_ {false};
-    void set_erode_size(int erode_px);
-    void set_dilate_size(int dilate_px);
+    int erode_px_{0}, dilate_px_{0};
+    bool makeEroder(int erode_px);
+    bool makeDilater(int dilate_px);
 
     // Internal matricies
     cv::Mat threshold_frame_, erode_element_, dilate_element_;
@@ -86,19 +75,11 @@ private:
     int h_min_ {0}, h_max_ {256};
     int s_min_ {0}, s_max_ {256};
     int v_min_ {0}, v_max_ {256};
-    int dummy0_ {0}, dummy1_ {100000};
 
     // Detect object area
     double object_area_ {0.0};
     double min_object_area_ {0.0};
     double max_object_area_ {std::numeric_limits<double>::max()};
-
-    // Parameter tuning GUI functions and properties
-    bool tuning_on_ {false};
-    bool tuning_windows_created_ {false};
-    const std::string tuning_image_title_;
-    void tune(cv::Mat &frame, const oat::Position2D &position);
-    void createTuningWindows(void);
 };
 
 }       /* namespace oat */

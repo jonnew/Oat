@@ -35,7 +35,7 @@ public:
      * @brief Serve test frames from a webcam.
      * @param sink_address frame sink address
      */
-    explicit WebCam(const std::string &sink_address_);
+    using FrameServer::FrameServer;
 
 private:
     // Component Interface

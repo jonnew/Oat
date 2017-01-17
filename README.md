@@ -526,18 +526,35 @@ SOURCE:
 #### Configuration Options
 __TYPE = `frame`__
 ```
-  -r [ --display-rate ] arg   Maximum rate at which the viewer is updated 
-                              irrespective of its source's rate. If frames are 
-                              supplied faster than this rate, they are ignored.
-                              Setting this to a reasonably low value prevents 
-                              the viewer from consuming processing resorces in 
-                              order to update the display faster than is 
-                              visually perceptable. Defaults to 30.
-  -f [ --snapshot-path ] arg  The path to which in which snapshots will be 
-                              saved. If a folder is designated, the base file 
-                              name will be SOURCE. The timestamp of the 
-                              snapshot will be prepended to the file name. 
-                              Defaults to the current directory.
+  --control-endpoint arg       ZMQ style endpoint specifier designating runtime
+                               control port:'<transport>://<host>:<port>'. For 
+                               instance, 'tcp://*:5555' to specify TCP 
+                               communication on port 5555. Or, for interprocess
+                               communication: '<transport>://<user-named-pipe>.
+                               For instance 'ipc:///tmp/test.pipe'. Internally,
+                               this is used to construct a ZMQ REQ socket that 
+                               that receives commands from oat-control. 
+                               Defaults to ipc:///tmp/oatcomms.pipe.
+
+  -r [ --display-rate ] arg    Maximum rate, in Hz, at which the viewer is 
+                               updated irrespective of its source's rate. If 
+                               frames are supplied faster than this rate, they 
+                               are ignored. Setting this to a reasonably low 
+                               value prevents the viewer from consuming 
+                               processing resources in order to update the 
+                               display faster than is visually perceptible. 
+                               Defaults to 30.
+  -m [ --min-max ] arg         2-element array of floats, [min,max], specifying
+                               the requested dyanmic range of the display. 
+                               Pixel values below min will be mapped to min. 
+                               Pixel values above max will be mapped to max. 
+                               Others will be interprolated between min and 
+                               max. Defaults to off.
+  -f [ --snapshot-path ] arg   The path to which in which snapshots will be 
+                               saved. If a folder is designated, the base file 
+                               name will be SOURCE. The time stamp of the 
+                               snapshot will be prepended to the file name. 
+                               Defaults to the current directory.
 ```
 
 #### Example
@@ -559,6 +576,7 @@ detected positions to a second segment of shared memory.
 #### Signature
     frame --> oat-posidet --> position
 
+
 #### Usage
 ```
 Usage: posidet [INFO]
@@ -570,9 +588,11 @@ INFO:
   -v [ --version ]       Print version information.
 
 TYPE
-  diff: Difference detector (color or grey-scale, motion)
+  aruco: Aruco board pose estimation (any)
+  diff: Motion detector (mono)
   hsv: HSV color thresholds (color)
   thresh: Simple amplitude threshold (mono)
+  rpg: RPG pose estimator (any)
 
 SOURCE:
   User-supplied name of the memory segment to receive frames from (e.g. raw).
@@ -582,6 +602,104 @@ SINK:
 ```
 
 #### Configuration Options
+
+__TYPE = `aruco`__
+```
+
+  -D [ --dictionary ] arg          Aruco board dictionary to use for detection 
+                                   or printing when -p is defined. Dictionaries
+                                   are defined by the size of each marker and 
+                                   the number of markers in the dictionary. 
+                                   These parameters are encoded by a string of 
+                                   the form:
+                                   
+                                     <Size>X<Size>_<Number of Markers>
+                                   
+                                   Values:
+                                     4X4_50 (default)
+                                     4X4_100
+                                     4X4_250
+                                     4X4_1000
+                                     5X5_50
+                                     5X5_100
+                                     5X5_250
+                                     5X5_1000
+                                     6X6_50
+                                     6X6_100
+                                     6X6_250
+                                     6X6_1000
+                                     7X7_50
+                                     7X7_100
+                                     7X7_250
+                                     7X7_1000
+                                   
+  -k [ --camera-matrix ] arg       Nine element float array, [K11,K12,...,K33],
+                                   specifying the 3x3 camera matrix for your 
+                                   imaging setup. Generated by oat-calibrate.
+  -d [ --distortion-coeffs ] arg   Five to eight element float array, 
+                                   [x1,x2,x3,...], specifying lens distortion 
+                                   coefficients. Generated by oat-calibrate.
+  -S [ --board-size ] arg          Two element int array, [X,Y], specifying the
+                                   dimensions of the Aruco board (the number of
+                                   markers in the X and Y directions).
+  -l [ --length ] arg              Length, in meters, of each side of the 
+                                   square markers within the Aruco board.
+  -s [ --separation ] arg          Separation, in meters, between each of the 
+                                   markers within the Aruco board.
+  -R [ --refine-detection ]        Perform a secondary marker location 
+                                   refinement step using knowledge of the board
+                                   layout after initial marker detection is 
+                                   performed. Can lead to improved pose 
+                                   estimation robustness.
+  -p [ --print ]                   Prior to performing position detection, 
+                                   print the specified Aruco marker to a PNG 
+                                   file, named 'board.png', in the current 
+                                   directory.
+  -P [ --print-scale ] arg         The number of pixels to map to marker length
+                                   to determine printing resolution. For 
+                                   instance, print-scale 50 indicates that each
+                                   side of the marker will be 50 pixels. 
+                                   Defaults to 100.
+  -t [ --thresh-params ] arg       Three element vector, [min,max,step], 
+                                   specifying threshold parameters for marker 
+                                   candidate detection. Min and max represent 
+                                   the interval where the thresholding window 
+                                   sizes (in pixels) are selected for adaptive 
+                                   thresholding. Step determines the 
+                                   granularity of increments between min and 
+                                   max. See cv::threshold() for details. 
+                                   Defaults to [3, 23, 10]
+  -t [ --contour-params ] arg      Two element vector, [min,max], specifying 
+                                   the minimum and maximum perimeter distance 
+                                   relative to the major dimension of the input
+                                   frame in order for a detected contour to be 
+                                   considered a marker candidate. Defaults to 
+                                   [0.03, 4.0]. Note that a max=4.0 indicates 
+                                   that the marker can fill the entire frame.
+  -o [ --min-corner-dist ] arg     Float specifying the minimum distance 
+                                   between the corners of the same marker 
+                                   (expressed as rate relative the marker 
+                                   perimeter. Defaults to 0.05.
+  -O [ --min-marker-dist ] arg     Float specifying the minimum distance 
+                                   between the corners of different markers 
+                                   (expressed as rate relative the minimum 
+                                   candidate marker perimeter. Defaults to 
+                                   0.05.
+  -b [ --min-border-dist ] arg     Float specifying the minimum abosolute 
+                                   distance between a marker corner and the 
+                                   frame border (pixels). Defaults to 3.
+  -x [ --pixels-per-cell ] arg     Int specifying the number of pixels (length 
+                                   of a side) used to represent each black or 
+                                   white cell of the detected markers. A higher
+                                   value may improve decoding accuracy at the 
+                                   cost of perforamce. Defaults to 4.
+  -B [ --border-error-rate ] arg   Fraction of board bits that can be white 
+                                   (erroneous) instead of black. Defaults to 
+                                   0.35
+  -t [ --tune ]                    If true, provide a GUI with sliders for 
+                                   tuning detection parameters.
+```
+
 __TYPE = `hsv`__
 ```
 
@@ -615,6 +733,62 @@ __TYPE = `diff`__
                                 detection parameters.
 ```
 
+__TYPE = `rpg`__
+```
+
+  -M [ --marker-positions ] arg    Nx3 element array of 3D marker positions in 
+                                   meters.
+  -T [ --threshold ] arg           Detection threshold value, 0-256. Defaults 
+                                   to 100.
+  -s [ --gauss-sigma ] arg         Sigma of Gaussian blur filter. Defaults to 
+                                   0.6.
+  -a [ --area ] arg                Array of floats, [min,max], specifying the 
+                                   minimum and maximum object contour area in 
+                                   pixels^2. Defaults to [10,200].
+  -w [ --width-height-dist ] arg   Minimum ratio of width-to-height of a 
+                                   bounding box around a detected blob. Ideally
+                                   the ratio of the width to the height of the 
+                                   bounding rectangle should be 1. Defaults to 
+                                   0.5.
+  -c [ --circ-dist ] arg           Maximum allowable distortion, 0 to 1.0, of a
+                                   bounding box around the detected blob, 
+                                   calculated as the area of the blob divided 
+                                   by pi times half the height or half the 
+                                   width of the bounding rectangle. Defaults to
+                                   0.5.
+  -b [ --back-proj-tol ] arg       Maximum allowable back projection tolerance,
+                                   in pixels, to consider a projected point to 
+                                   correspond to the detected point in the 
+                                   captured image. Defaults to 5.
+  -n [ --nn-pixel-tol ] arg        Tolerance, in pixels, that determines the 
+                                   correspondences between the LEDs and the 
+                                   detections in the image when predicting the 
+                                   position of the LEDs in the image. Defaults 
+                                   to 7.
+  -C [ --pose-cert-thresh ] arg    Minimum ratio of how many of the 
+                                   back-projected points must be within the 
+                                   'back-proj-tol' for a correspondence between
+                                   the LEDs and the detections to be correct. 
+                                   Defaults to 0.75.
+  -p [ --pose-corr-thresh ] arg    Minimum correspondence ratio, 0 to 1.0, to 
+                                   continue with smart pose estimation rather 
+                                   than brute-force correspondence search. 
+                                   Defaults to 0.7.
+  -r [ --roi-border ] arg          Thickness of the border (in pixels) around 
+                                   the predicted area of the LEDs in the image 
+                                   that defines the region of interest for 
+                                   image detection of the LEDs in the next 
+                                   frame. Defaults to 20.
+  -k [ --camera-matrix ] arg       Nine element float array, [K11,K12,...,K33],
+                                   specifying the 3x3 camera matrix for your 
+                                   imaging setup. Generated by oat-calibrate.
+  -d [ --distortion-coeffs ] arg   Five to eight element float array, 
+                                   [x1,x2,x3,...], specifying lens distortion 
+                                   coefficients. Generated by oat-calibrate.
+  -t [ --tune ]                    if true, provide a gui with sliders for 
+                                   tuning detection parameters.
+```
+
 __TYPE = `thresh`__
 ```
 
@@ -629,7 +803,6 @@ __TYPE = `thresh`__
   -t [ --tune ]           If true, provide a GUI with sliders for tuning 
                           detection parameters.
 ```
-
 #### Example
 ```bash
 # Use color-based object detection on the 'raw' frame stream
@@ -671,6 +844,7 @@ SINK:
 #### Configuration Options
 __TYPE = `rand2D`__
 ```
+
   -r [ --rate ] arg          Samples per second. Defaults to as fast as 
                              possible.
   -n [ --num-samples ] arg   Number of position samples to generate and serve. 
@@ -680,7 +854,6 @@ __TYPE = `rand2D`__
                              reside. The room has periodic boundaries so when a
                              position leaves one side it will enter the 
                              opposing one.
-
   -a [ --sigma-accel ] arg   Standard deviation of normally-distributed random 
                              accelerations
 ```
@@ -745,14 +918,14 @@ __TYPE = `homography`__
 ```
 
   -H [ --homography ] arg   A nine-element array of floats, [h11,h12,...,h33], 
-                            specifying a homography matrix for 2D position. 
-                            Generally produced by oat-calibrate homography.
+                            specifying a 3x3 homography matrix for 2D position.
+                            Can be produced by oat-calibrate homography.
 ```
 
 __TYPE = `region`__
 ```
 
-  --<regions> arg         !Config file only!
+  --regions arg           NOTE: Regions can only be specified in a config file.
                           Regions contours are specified as n-point matrices, 
                           [[x0, y0],[x1, y1],...,[xn, yn]], which define the 
                           vertices of a polygon:
@@ -869,6 +1042,16 @@ INFO:
 CONFIGURATION:
   -c [ --config ] arg             Configuration file/key pair.
                                   e.g. 'config.toml mykey'
+  --control-endpoint arg          ZMQ style endpoint specifier designating 
+                                  runtime control port:'<transport>://<host>:<p
+                                  ort>'. For instance, 'tcp://*:5555' to 
+                                  specify TCP communication on port 5555. Or, 
+                                  for interprocess communication: 
+                                  '<transport>://<user-named-pipe>. For 
+                                  instance 'ipc:///tmp/test.pipe'. Internally, 
+                                  this is used to construct a ZMQ REQ socket 
+                                  that that receives commands from oat-control.
+                                  Defaults to ipc:///tmp/oatcomms.pipe.
 
   -p [ --position-sources ] arg   The name of position SOURCE(s) used to draw 
                                   object position markers.
@@ -885,6 +1068,8 @@ CONFIGURATION:
                                   there is a position stream that contains it.
                                   
   -h [ --history ]                Display position history.
+                                  
+  -i [ --invert-font ]            Invert font color.
                                   
 ```
 
@@ -997,60 +1182,63 @@ Usage: record [INFO]
 Record any Oat token source(s).
 
 INFO:
-  --help                         Produce help message.
-  -v [ --version ]               Print version information.
+  --help                          Produce help message.
+  -v [ --version ]                Print version information.
 
 CONFIGURATION:
-  -s [ --frame-sources ] arg     The names of the FRAME SOURCES that supply 
-                                 images to save to video.
-  -p [ --position-sources ] arg  The names of the POSITION SOURCES that supply 
-                                 object positions to be recorded.
-  -c [ --config ] arg            Configuration file/key pair.
-                                 e.g. 'config.toml mykey'
+  -c [ --config ] arg             Configuration file/key pair.
+                                  e.g. 'config.toml mykey'
+  --control-endpoint arg          ZMQ style endpoint specifier designating 
+                                  runtime control port:'<transport>://<host>:<p
+                                  ort>'. For instance, 'tcp://*:5555' to 
+                                  specify TCP communication on port 5555. Or, 
+                                  for interprocess communication: 
+                                  '<transport>://<user-named-pipe>. For 
+                                  instance 'ipc:///tmp/test.pipe'. Internally, 
+                                  this is used to construct a ZMQ REQ socket 
+                                  that that receives commands from oat-control.
+                                  Defaults to ipc:///tmp/oatcomms.pipe.
 
-  -n [ --filename ] arg          The base file name. If not specified, defaults
-                                 to the SOURCE name.
-  -f [ --folder ] arg            The path to the folder to which the video 
-                                 stream and position data will be saved. If not
-                                 specified, defaults to the current directory.
-  -d [ --date ]                  If specified, YYYY-MM-DD-hh-mm-ss_ will be 
-                                 prepended to the filename.
-  -o [ --allow-overwrite ]       If set and save path matches and existing 
-                                 file, the file will be overwritten instead of 
-                                 a incremental numerical index being appended 
-                                 to the file name.
-  -F [ --fourcc ] arg            Four character code (https://en.wikipedia.org/
-                                 wiki/FourCC) used to specify the codec used 
-                                 for AVI video compression. Must be specified 
-                                 as a 4-character string (see 
-                                 http://www.fourcc.org/codecs.php for possible 
-                                 options). Not all valid FOURCC codes will 
-                                 work: it must be implemented by the low  level
-                                 writer. Common values are 'DIVX' or 'H264'. 
-                                 Defaults to 'None' indicating uncompressed 
-                                 video.
-  -b [ --binary-file ]           Position data will be written as numpy data 
-                                 file (version 1.0) instead of JSON. Each 
-                                 position data point occupies a single entry in
-                                 a structured numpy array. Individual position 
-                                 characteristics are described in the arrays 
-                                 dtype.
-  -c [ --concise-file ]          If set and using JSON file format, 
-                                 indeterminate position data fields will not be
-                                 written e.g. pos_xy will not be written even 
-                                 when pos_ok = false. This means that position 
-                                 objects will be of variable size depending on 
-                                 the validity of whether a position was 
-                                 detected or not, potentially complicating file
-                                 parsing.
-  --interactive                  Start recorder with interactive controls 
-                                 enabled.
-  --rpc-endpoint arg             Yield interactive control of the recorder to a
-                                 remote ZMQ REQ socket using an interal REP 
-                                 socket with ZMQ style endpoint specifier: 
-                                 '<transport>://<host>:<port>'. For instance, 
-                                 'tcp://*:5555' to specify TCP communication on
-                                 ports 5555.
+  -s [ --frame-sources ] arg      The names of the FRAME SOURCES that supply 
+                                  images to save to video.
+  -p [ --position-sources ] arg   The names of the POSITION SOURCES that supply
+                                  object positions to be recorded.
+  -n [ --filename ] arg           The base file name. If not specified, 
+                                  defaults to the SOURCE name.
+  -f [ --folder ] arg             The path to the folder to which the video 
+                                  stream and position data will be saved. If 
+                                  not specified, defaults to the current 
+                                  directory.
+  -d [ --date ]                   If specified, YYYY-MM-DD-hh-mm-ss_ will be 
+                                  prepended to the filename.
+  -o [ --allow-overwrite ]        If set and save path matches and existing 
+                                  file, the file will be overwritten instead of
+                                  a incremental numerical index being appended 
+                                  to the file name.
+  -F [ --fourcc ] arg             Four character code (https://en.wikipedia.org
+                                  /wiki/FourCC) used to specify the codec used 
+                                  for AVI video compression. Must be specified 
+                                  as a 4-character string (see 
+                                  http://www.fourcc.org/codecs.php for possible
+                                  options). Not all valid FOURCC codes will 
+                                  work: it must be implemented by the low  
+                                  level writer. Common values are 'DIVX' or 
+                                  'H264'. Defaults to 'None' indicating 
+                                  uncompressed video.
+  -b [ --binary-file ]            Position data will be written as numpy data 
+                                  file (version 1.0) instead of JSON. Each 
+                                  position data point occupies a single entry 
+                                  in a structured numpy array. Individual 
+                                  position characteristics are described in the
+                                  arrays dtype.
+  -c [ --concise-file ]           If set and using JSON file format, 
+                                  indeterminate position data fields will not 
+                                  be written e.g. pos_xy will not be written 
+                                  even when pos_ok = false. This means that 
+                                  position objects will be of variable size 
+                                  depending on the validity of whether a 
+                                  position was detected or not, potentially 
+                                  complicating file parsing.
 ```
 
 #### Example
@@ -1284,7 +1472,6 @@ __TYPE = `camera`__
                                   . If a full path including file in specified,
                                   then it will be that path without 
                                   modification.
-
   -s [ --chessboard-size ] arg    Int array, [x,y], specifying the number of 
                                   inside corners in the horizontal and vertical
                                   demensions of the chessboard used for 
@@ -1309,7 +1496,6 @@ __TYPE = `homography`__
                                   . If a full path including file in specified,
                                   then it will be that path without 
                                   modification.
-
   -m [ --method ] arg             Homography estimation method. Defaults to 0.
                                   
                                   Values:
@@ -1429,6 +1615,7 @@ Oat is licensed under the
 [GPLv3.0](http://choosealicense.com/licenses/gpl-3.0/). Its dependences' are
 licenses are shown below:
 
+- Eigen3: [MPL](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
 - Flycapture SDK: NON-FREE specialized license (This is an optional package. If
   you compile without Flycapture support, you can get around this. Also, see
   the `GigE interface cleanup` entry in the TODO section for a potentially free
@@ -1442,6 +1629,16 @@ licenses are shown below:
 
 These licenses do not violate the terms of Oat's license. If you feel otherwise
 please submit an bug report.
+
+#### Eigen
+Eigen is a template library for linear algebra that is required by some Oat component types:
+
+- `oat-posidet rpg`
+
+To build these component sub-types, you must install Eigen. Eigen can be
+obtained either from its [source repo](https://bitbucket.org/eigen/eigen/)or
+via snapshot download
+[here](http://eigen.tuxfamily.org/index.php?title=Main_Page).
 
 #### Flycapture SDK
 The FlyCapture SDK is used to communicate with Point Grey digital cameras. It

@@ -28,7 +28,7 @@
 #include <thread>
 #include <boost/program_options.hpp>
 
-#include "../../lib/base/Component.h"
+#include "../../lib/base/ControllableComponent.h"
 #include "../../lib/base/Configurable.h"
 #include "../../lib/shmemdf/Source.h"
 
@@ -37,7 +37,7 @@ namespace po = boost::program_options;
 namespace oat {
 
 template <typename T>
-class Viewer : public Component, public Configurable<false> {
+class Viewer : public ControllableComponent, public Configurable<true> {
 
     using Clock = std::chrono::high_resolution_clock;
 
@@ -50,13 +50,15 @@ public:
     explicit Viewer(const std::string &source_name);
     virtual ~Viewer();
 
-    // Implement Component interface
+    // Implement ControllableComponent interface
     oat::ComponentType type(void) const override { return oat::viewer; };
     std::string name(void) const override { return name_; }
+
+protected:
+    // Implement ControllableComponent interface
     bool connectToNode(void) override;
     int process(void) override;
 
-protected:
     // Viewer name
     const std::string name_;
 

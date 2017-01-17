@@ -32,14 +32,9 @@
 namespace oat {
 
 DifferenceDetector::DifferenceDetector(const std::string &frame_source_address,
-                                       const std::string &position_sink_address) :
-  PositionDetector(frame_source_address, position_sink_address)
-, tuning_image_title_(position_sink_address + "_tuning")
+                                       const std::string &position_sink_address)
+: PositionDetector(frame_source_address, position_sink_address)
 {
-    // Cannot use initializer because if this is set to 0, blur_on
-    // must be set to false
-    set_blur_size(2);
-
     // Set required frame type
     required_color_ = PIX_GREY;
 }
@@ -71,10 +66,8 @@ void DifferenceDetector::applyConfiguration(
         vm, config_table, "diff-threshold", difference_intensity_threshold_, 0
     );
 
-    // Blur size
-    int blur;
-    if (oat::config::getNumericValue<int>(vm, config_table, "blur", blur, 0))
-        set_blur_size(blur);
+    // Blur
+    oat::config::getNumericValue<int>(vm, config_table, "blur", blur_px_, 0, 50);
 
     // Min/max object area
     std::vector<double> area;
@@ -83,30 +76,41 @@ void DifferenceDetector::applyConfiguration(
         min_object_area_ = area[0];
         max_object_area_ = area[1];
 
-        // Limitation of cv::highGUI
-        dummy0_ = min_object_area_;
-        dummy1_ = max_object_area_;
-
         if (min_object_area_ >= max_object_area_)
            throw std::runtime_error("Max area should be larger than min area.");
     }
 
     // Tuning GUI
     oat::config::getValue<bool>(vm, config_table, "tune", tuning_on_);
+
+    if (tuning_on_) {
+        TUNE<double>(&min_object_area_,
+                     "Min. area (px^2)",
+                     0,
+                     OAT_POSIDET_MAX_OBJ_AREA_PIX,
+                     min_object_area_,
+                     1);
+        TUNE<double>(&max_object_area_,
+                     "Max. area (px^2)",
+                     0,
+                     OAT_POSIDET_MAX_OBJ_AREA_PIX,
+                     max_object_area_,
+                     1);
+        TUNE<int>(&blur_px_, "Blur size (px)", 0, 50, blur_px_, 1);
+    }
 }
 
-void DifferenceDetector::detectPosition(cv::Mat &frame,
-                                        oat::Position2D &position)
+void DifferenceDetector::detectPosition(oat::Frame &frame, oat::Pose &position)
 {
     if (tuning_on_)
-        tune_frame_ = frame.clone();
+        tuning_frame_ = frame.clone();
 
     applyThreshold(frame);
 
     // Threshold frame will be destroyed by the transform below, so we need to use
     // it to form the frame that will be shown in the tuning window here
     if (tuning_on_)
-         tune_frame_.setTo(0, threshold_frame_ == 0);
+        tuning_frame_ = tuning_frame_.setTo(0, threshold_frame_ == 0);
 
     siftContours(threshold_frame_,
                  position,
@@ -114,41 +118,6 @@ void DifferenceDetector::detectPosition(cv::Mat &frame,
                  min_object_area_,
                  max_object_area_);
 
-    if (tuning_on_)
-        tune(tune_frame_, position);
-}
-
-void DifferenceDetector::tune(cv::Mat &frame, const oat::Position2D &position) {
-
-    if (!tuning_windows_created_)
-        createTuningWindows();
-
-    std::string msg = cv::format("Object not found");
-
-    // Plot a circle representing found object
-    if (position.position_valid) {
-
-        // TODO: object_area_ is not set, so this will be 0!
-        auto radius = std::sqrt(object_area_ / PI);
-        cv::Point center;
-        center.x = position.position.x;
-        center.y = position.position.y;
-        cv::circle(frame, center, radius, cv::Scalar(255), 4);
-        msg = cv::format("(%d, %d) pixels",
-                (int) position.position.x,
-                (int) position.position.y);
-    }
-
-    int baseline = 0;
-    cv::Size textSize = cv::getTextSize(msg, 1, 1, 1, &baseline);
-    cv::Point text_origin(
-            frame.cols - textSize.width - 10,
-            frame.rows - 2 * baseline - 10);
-
-    cv::putText(frame, msg, text_origin, 1, 1, cv::Scalar(0, 255, 0));
-
-    cv::imshow(tuning_image_title_, frame);
-    cv::waitKey(1);
 }
 
 void DifferenceDetector::applyThreshold(cv::Mat &frame) {
@@ -160,7 +129,8 @@ void DifferenceDetector::applyThreshold(cv::Mat &frame) {
                       difference_intensity_threshold_,
                       255,
                       cv::THRESH_BINARY);
-        if (blur_on_)
+
+        if (makeBlur(blur_px_))
             cv::blur(threshold_frame_, threshold_frame_, blur_size_);
 
 
@@ -172,70 +142,13 @@ void DifferenceDetector::applyThreshold(cv::Mat &frame) {
     }
 }
 
-void DifferenceDetector::createTuningWindows()
+bool DifferenceDetector::makeBlur(int value)
 {
-#ifdef HAVE_OPENGL
-    try {
-        cv::namedWindow(tuning_image_title_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
-    } catch (cv::Exception& ex) {
-        whoWarn(name_, "OpenCV not compiled with OpenGL support. Falling back to OpenCV's display driver.\n");
-        cv::namedWindow(tuning_image_title_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
-    }
-#else
-    cv::namedWindow(tuning_image_title_, cv::WINDOW_NORMAL);
-#endif
+    if (value <= 0)
+        return false;
 
-    // Create sliders and insert them into window
-    cv::createTrackbar(
-        "THRESH", tuning_image_title_, &difference_intensity_threshold_, 256);
-    cv::createTrackbar("BLUR",
-                       tuning_image_title_,
-                       &blur_size_.height,
-                       50,
-                       &diffDetectorBlurSliderChangedCallback,
-                       this);
-    cv::createTrackbar("MIN AREA",
-                       tuning_image_title_,
-                       &dummy0_,
-                       OAT_POSIDET_MAX_OBJ_AREA_PIX,
-                       &diffDetectorMinAreaSliderChangedCallback,
-                       this);
-    cv::createTrackbar("MAX AREA",
-                       tuning_image_title_,
-                       &dummy1_,
-                       OAT_POSIDET_MAX_OBJ_AREA_PIX,
-                       &diffDetectorMaxAreaSliderChangedCallback,
-                       this);
-    tuning_windows_created_ = true;
-}
-
-void DifferenceDetector::set_blur_size(int value)
-{
-    if (value > 0) {
-        blur_on_ = true;
-        blur_size_ = cv::Size(value, value);
-    } else {
-        blur_on_ = false;
-    }
-}
-
-// Non-member GUI callback functions
-void diffDetectorBlurSliderChangedCallback(int value, void *object)
-{
-    auto diff_detector = static_cast<DifferenceDetector *>(object);
-    diff_detector->set_blur_size(value);
-}
-
-void diffDetectorMinAreaSliderChangedCallback(int value, void *object)
-{
-    auto diff_detector = static_cast<DifferenceDetector *>(object);
-    diff_detector->min_object_area_ = static_cast<double>(value);
-}
-
-void diffDetectorMaxAreaSliderChangedCallback(int value, void *object)
-{
-    auto diff_detector = static_cast<DifferenceDetector *>(object);
-    diff_detector->max_object_area_ = static_cast<double>(value);
+    blur_size_ = cv::Size(value, value);
+    return true;
 }
 
 } /* namespace oat */

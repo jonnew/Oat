@@ -28,6 +28,9 @@
 *.app
 *.bin
 
+# Ignore tags
+tags
+
 # All bin directories
 bin/ 
 build/

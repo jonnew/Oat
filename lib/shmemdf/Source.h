@@ -302,7 +302,7 @@ inline SourceState Source<Frame>::connect(const oat::PixelColor color)
     auto rc = connect();
 
     // Check frame pixel type if required
-    if (frame_.color() != color) {
+    if (color != PIX_ANY && frame_.color() != color) {
         throw std::runtime_error("Component requires frame source "
                                  "with pixels of type "
                                  + oat::color_str(color)

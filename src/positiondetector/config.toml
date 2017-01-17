@@ -6,6 +6,9 @@
 # oat posidet TYPE SOURCE SINK -c config.toml TYPE
 # ```
 
+[aruco]
+TODO
+
 [hsv]
 tune = true                 # Provide sliders for tuning hsv parameters
 erode = 1                   # Pixels, candidate object erosion kernel size
@@ -21,3 +24,5 @@ tune = true                 # Provide sliders for tuning diff parameters
 blur = 10 				    # Pixels, blurring kernel size (normalized box filter)
 diff_threshold = 20 		# Intensity difference threshold
 
+[thresh]
+TODO
