@@ -27,12 +27,9 @@
 
 namespace oat {
 
-// Forward decl.
-class Position2D;
-
 class PositionReplier : public PositionSocket {
 public:
-    PositionReplier(const std::string &position_source_address);
+    PositionReplier(const std::string &pose_source_address);
 
 private:
     // Configurable Interface
@@ -45,7 +42,7 @@ private:
     zmq::context_t context_ {1};
     zmq::socket_t replier_;
 
-    void sendPosition(const oat::Position2D& position) override;
+    void sendPosition(const oat::Pose& pose) override;
 };
 
 }      /* namespace oat */

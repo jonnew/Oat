@@ -27,7 +27,7 @@
 
 #include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/datatypes/Pose.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
 
@@ -40,9 +40,9 @@ class PositionSocket : public Component, public Configurable<false> {
 public:
     /**
      * @brief An abstract Position emitter.
-     * @param position_source_address Position source to emit from.
+     * @param pose_source_addresss Position source to emit from.
      */
-    explicit PositionSocket(const std::string &position_source_address);
+    explicit PositionSocket(const std::string &pose_source_addresss);
     virtual ~PositionSocket() { }
 
     // Component Interface
@@ -54,7 +54,7 @@ protected:
      * Send the position via specified IO protocol.
      * @param Position to serve.
      */
-    virtual void sendPosition(const oat::Position2D &position) = 0;
+    virtual void sendPosition(const oat::Pose &pose) = 0;
 
 private:
     // Component Interface
@@ -65,12 +65,12 @@ private:
     const std::string name_;
 
     // The position SOURCE
-    std::string position_source_address_;
+    std::string pose_source_address_;
     oat::NodeState node_state_ {oat::NodeState::UNDEFINED};
-    oat::Source<oat::Position2D> position_source_;
+    oat::Source<oat::Pose> pose_source_;
 
     // The current, internally allocated position
-    oat::Position2D internal_position_ {"internal"};
+    oat::Pose internal_pose_;
 };
 
 }      /* namespace oat */

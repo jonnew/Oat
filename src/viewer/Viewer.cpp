@@ -25,6 +25,8 @@
 #include <string>
 
 #include "../../lib/shmemdf/Source.h"
+#include "../../lib/datatypes/Frame.h"
+#include "../../lib/datatypes/Pose.h"
 
 namespace oat {
 
@@ -76,9 +78,9 @@ int Viewer<T>::process()
         = std::chrono::duration_cast<Milliseconds>(Clock::now() - tock_);
     bool refresh_needed = duration > min_update_period_ms && display_complete_;
 
-    // Clone the shared frame if needed
+    // Copy the shared sample if needed
     if (refresh_needed)
-        source_.copyTo(sample_);
+        sample_ = *source_.retrieve();
 
     // Tell sink it can continue
     source_.post();
@@ -119,5 +121,6 @@ void Viewer<T>::processAsync()
 
 // Explicit instantiations
 template class oat::Viewer<oat::Frame>;
+template class oat::Viewer<oat::Pose>;
 
 } /* namespace oat */

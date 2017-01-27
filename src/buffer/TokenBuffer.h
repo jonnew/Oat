@@ -24,7 +24,7 @@
 
 #include <boost/lockfree/spsc_queue.hpp>
 
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/datatypes/Pose.h" // Needed for files that include this one
 
 namespace oat {
 

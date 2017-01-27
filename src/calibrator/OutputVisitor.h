@@ -24,7 +24,7 @@
 
 namespace oat {
 
-// Foward declarations
+// Foward decl.
 class CameraCalibrator;
 class HomographyGenerator;
 
@@ -34,13 +34,11 @@ class HomographyGenerator;
 class OutputVisitor {
 
 public:
-
     // Visitor with supplied output stream (e.g. for printing usage info)
-    virtual void visit(CameraCalibrator* cc, std::ostream& out) = 0;
-    virtual void visit(HomographyGenerator* hg, std::ostream& out) = 0;
-
+    virtual void visit(CameraCalibrator *cc, std::ostream &out) = 0;
+    virtual void visit(HomographyGenerator *hg, std::ostream &out) = 0;
 };
 
-}       /* namespace oat */
-#endif	/* OAT_OUTPUTVISITOR_H */
+}      /* namespace oat */
+#endif /* OAT_OUTPUTVISITOR_H */
 

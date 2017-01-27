@@ -17,13 +17,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-// TODO: Remove
-// (for debug logging)
-#include <rapidjson/rapidjson.h>
-#include <rapidjson/prettywriter.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
-
 #include "ArucoBoard.h"
 
 #include <cmath>
@@ -248,8 +241,9 @@ void ArucoBoard::applyConfiguration(const po::variables_map &vm,
         cv::imwrite("board.png", board_img);
     }
 
+    // Distortion coefficients
     if (oat::config::getArray<double>(
-            vm, config_table, "distortion-coeffs", dist_coeff_)) {
+            vm, config_table, "distortion-coeffs", dist_coeff_, true)) {
 
         if (dist_coeff_.size() < 5 || dist_coeff_.size() > 8) {
             throw(std::runtime_error(
@@ -259,7 +253,7 @@ void ArucoBoard::applyConfiguration(const po::variables_map &vm,
 
     // Camera Matrix
     std::vector<double> K;
-    if (oat::config::getArray<double, 9>(vm, config_table, "camera-matrix", K)) {
+    if (oat::config::getArray<double, 9>(vm, config_table, "camera-matrix", K, true)) {
 
         camera_matrix_(0, 0) = K[0];
         camera_matrix_(0, 1) = K[1];
@@ -341,6 +335,7 @@ void ArucoBoard::applyConfiguration(const po::variables_map &vm,
 
 void ArucoBoard::detectPosition(oat::Frame &frame, oat::Pose &pose)
 {
+    // TODO: Feels pretty gross to do this every time
     pose.unit_of_length = Pose::DistanceUnit::Meters;
 
     if (tuning_on_)
@@ -386,20 +381,14 @@ void ArucoBoard::detectPosition(oat::Frame &frame, oat::Pose &pose)
                                                  camera_matrix_,
                                                  dist_coeff_,
                                                  rvec,
-                                                 tvec);
+                                                 tvec,
+                                                 false);
         if (valid) {
 
             // Set rotation and translation vectors and pose confidence
             pose.found = true;
             pose.set_orientation(rvec);
             pose.set_position(tvec);
-
-            // TODO: Remove. Serialize the current position
-            //std::cout << rvec << " " << tvec << std::endl;
-            rapidjson::StringBuffer buffer;
-            rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
-            pose.Serialize(writer);
-            std::cout << buffer.GetString() << std::flush;
         }
     }
 }

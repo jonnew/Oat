@@ -17,28 +17,21 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include <csignal>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
-#include <boost/interprocess/exceptions.hpp>
-#include <boost/variant.hpp>
-#include <opencv2/core.hpp>
 
 #include <cpptoml.h>
 #include <boost/program_options.hpp>
-#include <boost/interprocess/exceptions.hpp>
-#include <opencv2/core.hpp>
 
 #include "../../lib/utility/in_place.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "ViewerBase.h"
-#include "Viewer.h"
 #include "FrameViewer.h"
+#include "PoseViewer.h"
+#include "Viewer.h"
+#include "ViewerBase.h"
 
 #define REQ_POSITIONAL_ARGS 2
 
@@ -46,7 +39,8 @@ namespace po = boost::program_options;
 
 const char usage_type[] =
     "TYPE\n"
-    "  frame: Display frames in a GUI";
+    "  frame: Display frames in a GUI"
+    "  pose: Display a pose stream in a GUI";
 
 const char usage_io[] =
     "SOURCE:\n"
@@ -79,35 +73,15 @@ void printUsage(const po::options_description &options, const std::string &type)
     }
 }
 
-//void run(const std::shared_ptr<oat::ViewerBase> viewer)
-//{
-//    try {
-//
-//        viewer->connectToNode();
-//
-//        while (!quit && !source_eof)
-//            source_eof = viewer->process();
-//
-//    } catch (const boost::interprocess::interprocess_exception &ex) {
-//
-//        // Error code 1 indicates a SIGNINT during a call to wait(), which
-//        // is normal behavior
-//        if (ex.get_error_code() != 1)
-//            throw;
-//    }
-//}
-
 int main(int argc, char *argv[])
 {
-    //std::signal(SIGINT, sigHandler);
-
     std::string type;
     std::string source;
 
     // Component specializations
     std::unordered_map<std::string, char> type_hash;
     type_hash["frame"] = 'a';
-    type_hash["position"] = 'b';
+    type_hash["pose"] = 'b';
 
     // The component itself
     std::string comp_name = "viewer";
@@ -169,14 +143,13 @@ int main(int argc, char *argv[])
                         oat::in_place<oat::FrameViewer>(), source);
                     break;
                 }
-                // TODO
-                //case 'b':
-                //{
-                //    viewer = std::make_shared<oat::ViewerBase>(
-                //      oat::in_place<oat::Position>(), source
-                //    );
-                //    break;
-                //}
+                case 'b':
+                {
+                    viewer = std::make_shared<oat::ViewerBase>(
+                      oat::in_place<oat::PoseViewer>(), source
+                    );
+                    break;
+                }
                 default:
                 {
                     printUsage(visible_options, "");

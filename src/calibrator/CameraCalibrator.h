@@ -55,8 +55,8 @@ public:
     CameraCalibrator(const std::string &source_name);
 
     // Accept visitors
-    void accept(CalibratorVisitor* visitor) override;
-    void accept(OutputVisitor* visitor, std::ostream& out) override;
+    void accept(CalibratorVisitor *visitor) override;
+    void accept(OutputVisitor *visitor, std::ostream &out) override;
 
     // Interactive session mode type
     static const std::vector<std::string> mode_strings_;

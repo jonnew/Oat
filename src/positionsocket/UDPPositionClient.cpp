@@ -29,8 +29,8 @@
 
 namespace oat {
 
-UDPPositionClient::UDPPositionClient(const std::string &position_source_address)
-: PositionSocket(position_source_address)
+UDPPositionClient::UDPPositionClient(const std::string &pose_source_address)
+: PositionSocket(pose_source_address)
 , socket_(io_service_, UDPEndpoint(boost::asio::ip::udp::v4(), 0))
 {
     // Nothing
@@ -38,7 +38,6 @@ UDPPositionClient::UDPPositionClient(const std::string &position_source_address)
 
 po::options_description UDPPositionClient::options() const
 {
-    // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
         ("host,h", po::value<std::string>(),
@@ -77,12 +76,12 @@ void UDPPositionClient::applyConfiguration(
 }
 
 // Each position is sent in a single UDP packet
-void UDPPositionClient::sendPosition(const oat::Position2D &current_position)
+void UDPPositionClient::sendPosition(const oat::Pose &pose)
 {
     rapidjson::Writer < rapidjson::SocketWriteStream
                       < UDPSocket, UDPEndpoint > > udp_writer_ {*udp_stream_};
 
-    oat::serializePosition(current_position, udp_writer_);
+    oat::serializePose(pose, udp_writer_);
 
     // Flush the stream after each Serialization call so that each UDP packet
     // corresponds to a single position value

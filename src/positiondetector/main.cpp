@@ -35,9 +35,10 @@
 #include "DifferenceDetector.h"
 #include "HSVDetector.h"
 #include "PositionDetector.h"
-#include "RPGPoseEst.h"
 #include "SimpleThreshold.h"
-
+#ifdef EIGEN3_FOUND
+#include "RPGPoseEst.h"
+#endif
 #define REQ_POSITIONAL_ARGS 3
 
 namespace po = boost::program_options;
@@ -180,7 +181,14 @@ int main(int argc, char *argv[])
                 }
                 case 'e':
                 {
+#ifndef EIGEN3_FOUND
+                    std::cerr << oat::Error(
+                        "Oat was not compiled with Eigen "
+                        "support, so TYPE=rpg is not available.\n");
+                    return -1;
+#else
                     detector = std::make_shared<oat::RPGPoseEst>(source, sink);
+#endif
                     break;
                 }
                 default:

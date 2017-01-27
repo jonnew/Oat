@@ -30,9 +30,10 @@
 
 namespace oat {
 
-void PathChanger::visit(CameraCalibrator *cc) {
-
-    std::cout << "Type the path to save camera calibration information and press <enter>: ";
+void PathChanger::visit(CameraCalibrator *cc)
+{
+    std::cout << "Type the path to save camera calibration information and "
+                 "press <enter>: ";
     try {
         setNewPath(cc);
     } catch (const std::runtime_error& ex) {
@@ -40,7 +41,8 @@ void PathChanger::visit(CameraCalibrator *cc) {
         return;
     }
 
-    std::cout << "Type the key name of this calibration entry and press <enter>: ";
+    std::cout
+        << "Type the key name of this calibration entry and press <enter>: ";
     try {
         setNewKey(cc);
     } catch (const std::runtime_error& ex) {
@@ -48,13 +50,13 @@ void PathChanger::visit(CameraCalibrator *cc) {
         return;
     }
 
-
     std::cout << "Camera calibration save file set to " + cc->calibration_save_path() + "\n";
 }
 
-void PathChanger::visit(HomographyGenerator *hg) {
-
-    std::cout << "Type the path to save homography information and press <enter>: ";
+void PathChanger::visit(HomographyGenerator *hg)
+{
+    std::cout
+        << "Type the path to save homography information and press <enter>: ";
     try {
         setNewPath(hg);
     } catch (const std::runtime_error& ex) {
@@ -62,7 +64,8 @@ void PathChanger::visit(HomographyGenerator *hg) {
         return;
     }
 
-    std::cout << "Type the key name of this homography entry and press <enter>: ";
+    std::cout
+        << "Type the key name of this homography entry and press <enter>: ";
     try {
         setNewKey(hg);
     } catch (const std::runtime_error& ex) {
@@ -72,15 +75,14 @@ void PathChanger::visit(HomographyGenerator *hg) {
     std::cout << "Homography save file set to " + hg->calibration_save_path() + "\n";
 }
 
-void PathChanger::setNewPath(Calibrator* cal) {
-
+void PathChanger::setNewPath(Calibrator *cal)
+{
     std::string new_path;
 
     if (!std::getline(std::cin, new_path)) {
 
         // Flush cin in case the uer just inserted crap
         oat::ignoreLine(std::cin);
-
         throw(std::runtime_error("Invalid input."));
     }
 
@@ -88,7 +90,7 @@ void PathChanger::setNewPath(Calibrator* cal) {
     wordexp_t exp_result;
     if (wordexp(new_path.c_str(), &exp_result, WRDE_NOCMD) == 0) {
 
-        new_path = std::string { exp_result.we_wordv[0] };
+        new_path = std::string{exp_result.we_wordv[0]};
         wordfree(&exp_result);
         cal->generateSavePath(new_path, "calibration");
 
@@ -97,20 +99,18 @@ void PathChanger::setNewPath(Calibrator* cal) {
     }
 }
 
-void PathChanger::setNewKey(Calibrator* cal) {
-
+void PathChanger::setNewKey(Calibrator *cal)
+{
     std::string new_key;
 
     if (!std::getline(std::cin, new_key)) {
 
         // Flush cin in case the uer just inserted crap
         oat::ignoreLine(std::cin);
-
         throw(std::runtime_error("Invalid input."));
     }
 
     cal->set_calibration_key(new_key);
-
 }
 
 } /* namespace oat */

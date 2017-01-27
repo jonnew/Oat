@@ -34,7 +34,6 @@ class HomographyGenerator;
 class CalibratorVisitor {
 
 public:
-
     // Standard
     virtual void visit(CameraCalibrator* cc) = 0;
     virtual void visit(HomographyGenerator* hg) = 0;

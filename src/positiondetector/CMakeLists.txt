@@ -4,17 +4,19 @@
 # Create a SOURCE variable containing all required .cpp files:
 set (oat-posidet_SOURCE
      PositionDetector.cpp
+     Tuner.cpp
      DetectorFunc.cpp
      DifferenceDetector.cpp
      HSVDetector.cpp
      SimpleThreshold.cpp
-     RPGPoseEst.cpp
      ArucoBoard.cpp
      main.cpp)
 
-
-# RPG pose estimation library
-add_subdirectory (./rpgposeest)
+if (${EIGEN3_FOUND})
+    # RPG pose estimation library
+    add_subdirectory (./rpgposeest)
+    set (oat-posidet_SOURCE ${oat-posidet_SOURCE} RPGPoseEst.cpp)
+endif ()
 
 # Target
 add_executable (oat-posidet ${oat-posidet_SOURCE})

@@ -25,13 +25,13 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/stringbuffer.h>
 
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/datatypes/Pose.h"
 #include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {
 
-PositionReplier::PositionReplier(const std::string &position_source_address)
-: PositionSocket(position_source_address)
+PositionReplier::PositionReplier(const std::string &pose_source_address)
+: PositionSocket(pose_source_address)
 , replier_(context_, ZMQ_REP)
 {
     // Nothing
@@ -39,7 +39,6 @@ PositionReplier::PositionReplier(const std::string &position_source_address)
 
 po::options_description PositionReplier::options() const
 {
-    // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
         ("endpoint,e", po::value<std::string>(),
@@ -61,15 +60,15 @@ void PositionReplier::applyConfiguration(
     replier_.bind(endpoint);
 }
 
-void PositionReplier::sendPosition(const oat::Position2D& position)
+void PositionReplier::sendPosition(const oat::Pose& pose)
 {
-    // Serialize the current position
+    // Serialize the current pose
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    oat::serializePosition(position, writer);
+    oat::serializePose(pose, writer);
 
     //  Wait for next request from client
-    // TODO: Use incoming string to decide which part of the position to send
+    // TODO: Use incoming string to decide which part of the pose to send
     zmq::message_t request;
     replier_.recv(&request);
 

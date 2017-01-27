@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   FrameViewer.h
+//* File:   PoseViewer.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,24 +17,24 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef OAT_FRAMEVIEWER_H
-#define OAT_FRAMEVIEWER_H
+#ifndef OAT_POSEVIEWER_H
+#define OAT_POSEVIEWER_H
 
 #include "Viewer.h"
 
 #include <string>
 #include <vector>
 
-#include "../../lib/datatypes/Frame.h"
+#include "../../lib/datatypes/Pose.h"
 
 namespace oat {
 
-class FrameViewer : public Viewer<oat::Frame> {
+class PoseViewer : public Viewer<oat::Pose> {
 public:
     /**
-     * @brief View a frame stream on the monitor.
+     * @brief View a pose stream on the monitor.
      */
-    using Viewer<oat::Frame>::Viewer;
+    using Viewer<oat::Pose>::Viewer;
 
 private:
     // Implement ControllableComponent Interface
@@ -47,12 +47,13 @@ private:
                             const config::OptionTable &config_table) override;
 
     // Viewer Interface
-    void display(const oat::Frame &frame) override;
+    void display(const oat::Pose &pose) override;
 
     // Viewer initialized flag
     bool gui_inititalized_ {false};
-    cv::Matx<unsigned char, 256, 1> lut_;
-    bool min_max_defined_ {false};
+
+    // Create image from pose
+    cv::Mat generateFrame(const oat::Pose &pose) const;
 
     // Used to request a snapshot of the current image which is saved to disk
     std::atomic<bool> snapshot_requested_ {false};
@@ -63,4 +64,4 @@ private:
 };
 
 }      /* namespace oat */
-#endif /* OAT_FRAMEVIEWER_H */
+#endif /* OAT_POSEVIEWER_H */

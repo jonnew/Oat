@@ -56,13 +56,12 @@ const char usage_io[] =
 const char purpose[] =
     "Camera calibration and homography generation routines." ;
 
-void printUsage(const po::options_description &options,
-                const std::string &type) {
-
+void printUsage(const po::options_description &options, const std::string &type)
+{
     if (type.empty()) {
         std::cout <<
         "Usage: calibrate [INFO]\n"
-        "   or: calibrate TYPE SOURCE SINK [CONFIGURATION]\n";
+        "   or: calibrate TYPE SOURCE [CONFIGURATION]\n";
 
         std::cout << purpose << "\n";
         std::cout << options << "\n";
@@ -72,7 +71,7 @@ void printUsage(const po::options_description &options,
     } else {
         std::cout <<
         "Usage: calibrate " << type << " [INFO]\n"
-        "   or: calibrate " << type << " SOURCE SINK [CONFIGURATION]\n";
+        "   or: calibrate " << type << " SOURCE [CONFIGURATION]\n";
 
         std::cout << purpose << "\n\n";
         std::cout << usage_io << "\n";
@@ -80,8 +79,8 @@ void printUsage(const po::options_description &options,
     }
 }
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
     // Results of command line input
     std::string type;
     std::string source;

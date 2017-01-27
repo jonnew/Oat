@@ -3,6 +3,7 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create a SOURCE variable containing all required .cpp files:
 set (oat-view_SOURCE
+     PoseViewer.cpp
      FrameViewer.cpp
      Viewer.cpp
      main.cpp)

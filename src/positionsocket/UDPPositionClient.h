@@ -30,9 +30,6 @@
 
 namespace oat {
 
-// Forward decl.
-class Position2D;
-
 class UDPPositionClient : public PositionSocket {
 
     using UDPSocket = boost::asio::ip::udp::socket;
@@ -41,7 +38,7 @@ class UDPPositionClient : public PositionSocket {
     using SocketWriter = rapidjson::SocketWriteStream<UDPSocket, UDPEndpoint>;
 
 public:
-    UDPPositionClient(const std::string &position_source_name);
+    UDPPositionClient(const std::string &pose_source_address);
 
 private:
     // Configurable Interface
@@ -58,7 +55,7 @@ private:
     char buffer_[MAX_LENGTH]; // Buffer is flushed after each position read
     std::unique_ptr<SocketWriter> udp_stream_;
 
-    void sendPosition(const oat::Position2D& position) override;
+    void sendPosition(const oat::Pose& pose) override;
 };
 
 }      /* namespace oat */

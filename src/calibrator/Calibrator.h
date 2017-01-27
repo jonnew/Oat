@@ -38,7 +38,6 @@ namespace oat {
 // Forward decl.
 class CalibratorVisitor;
 class OutputVisitor;
-class SharedFrameHeader;
 
 class Calibrator : public Component, public Configurable<false> {
 
@@ -49,7 +48,7 @@ public:
      * @param source_address Frame SOURCE address
      */
     Calibrator(const std::string &source_address);
-    virtual ~Calibrator() {};
+    virtual ~Calibrator(){};
 
     // Component Interface
     std::string name() const override { return name_; }
@@ -67,13 +66,14 @@ public:
                                   const std::string &default_name);
 
     // Accept functions for visitors
-    virtual void accept(CalibratorVisitor* visitor) = 0;
-    virtual void accept(OutputVisitor* visitor, std::ostream& out) = 0;
+    virtual void accept(CalibratorVisitor *visitor) = 0;
+    virtual void accept(OutputVisitor *visitor, std::ostream &out) = 0;
 
     // Accessors
     std::string calibration_save_path() const { return calibration_save_path_; }
 
-    void set_calibration_key(const std::string& value) {
+    void set_calibration_key(const std::string &value)
+    {
         calibration_key_ = value;
     }
 

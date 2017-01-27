@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 #ifndef USE_FLYCAP
                     std::cerr << oat::Error(
                         "Oat was not compiled with Point-Grey "
-                        "flycapture support, so TYPE=gige is not available.\n");
+                        "flycapture support, so TYPE=usb is not available.\n");
                     return -1;
 #else
                     server

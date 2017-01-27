@@ -17,13 +17,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-// TODO: Remove
-// (for debug logging)
-#include <rapidjson/rapidjson.h>
-#include <rapidjson/prettywriter.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
-
 #include "RPGPoseEst.h"
 
 #include <cmath>
@@ -216,7 +209,7 @@ void RPGPoseEst::applyConfiguration(const po::variables_map &vm,
 
     // Distortion Coefficients
     if (oat::config::getArray<double>(
-            vm, config_table, "distortion-coeffs", dist_coeff_)) {
+            vm, config_table, "distortion-coeffs", dist_coeff_, true)) {
 
         if (dist_coeff_.size() < 5 || dist_coeff_.size() > 8) {
             throw(std::runtime_error(
@@ -227,7 +220,7 @@ void RPGPoseEst::applyConfiguration(const po::variables_map &vm,
     // Camera Matrix
     std::vector<double> K;
     if (oat::config::getArray<double, 9>(
-            vm, config_table, "camera-matrix", K)) {
+            vm, config_table, "camera-matrix", K, true)) {
 
         camera_matrix_(0, 0) = K[0];
         camera_matrix_(0, 1) = K[1];
@@ -357,22 +350,14 @@ void RPGPoseEst::detectPosition(oat::Frame &frame, oat::Pose &pose)
 
     if (found) {
 
-        // Matrix6d cov = trackable_object_.getPoseCovariance();
         Eigen::Matrix4d transform = tracker_.getPredictedPose();
         Eigen::Matrix3d R = transform.block<3, 3>(0, 0);
         Eigen::Vector3d T = transform.block<3, 1>(0, 3);
 
         // Set pose
         pose.found = true;
-        pose.set_position(T);
-        pose.set_orientation(R);
-
-        // TODO: Remove
-        // Serialize the current position
-        rapidjson::StringBuffer buffer;
-        rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
-        pose.Serialize(writer);
-        std::cout << buffer.GetString() << std::flush;
+        pose.set_position<Eigen::Vector3d>(T);
+        pose.set_orientation<Eigen::Matrix3d>(R);
     }
 }
 

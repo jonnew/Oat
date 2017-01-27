@@ -26,9 +26,6 @@
 
 namespace oat {
 
-// Forward decl.
-class Position2D;
-
 class PositionCout : public PositionSocket {
 
     // Use base constructor
@@ -42,7 +39,7 @@ class PositionCout : public PositionSocket {
     // Format std out stream
     bool pretty_ {false};
 
-    void sendPosition(const oat::Position2D &position) override;
+    void sendPosition(const oat::Pose &pose) override;
 };
 
 }      /* namespace oat */

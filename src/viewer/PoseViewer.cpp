@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   FrameViewer.cpp
+//* File:   PoseViewer.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,11 +17,13 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include "FrameViewer.h"
+#include "PoseViewer.h"
 
+#include <iomanip>
+#include <sstream>
 #include <string>
+
 #include <boost/filesystem.hpp>
-#include <opencv2/cvconfig.h>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -35,7 +37,7 @@ namespace oat {
 namespace bfs = boost::filesystem;
 using msec = std::chrono::milliseconds;
 
-po::options_description FrameViewer::options(void) const
+po::options_description PoseViewer::options(void) const
 {
     po::options_description local_opts;
     local_opts.add_options()
@@ -45,11 +47,6 @@ po::options_description FrameViewer::options(void) const
          "they are ignored. Setting this to a reasonably low value prevents "
          "the viewer from consuming processing resources in order to update "
          "the display faster than is visually perceptible. Defaults to 30.")
-        ("min-max,m", po::value<std::string>(),
-         "2-element array of floats, [min,max], specifying the requested "
-         "dyanmic range of the display. Pixel values below min will be mapped to "
-         "min. Pixel values above max will be mapped to max. Others will be "
-         "interprolated between min and max. Defaults to off.")
         ("snapshot-path,f", po::value<std::string>(),
          "The path to which in which snapshots will be saved. "
          "If a folder is designated, the base file name will be SOURCE. "
@@ -60,7 +57,7 @@ po::options_description FrameViewer::options(void) const
     return local_opts;
 }
 
-void FrameViewer::applyConfiguration(const po::variables_map &vm,
+void PoseViewer::applyConfiguration(const po::variables_map &vm,
                                      const config::OptionTable &config_table)
 {
     // Display rate
@@ -70,35 +67,13 @@ void FrameViewer::applyConfiguration(const po::variables_map &vm,
         min_update_period_ms = Milliseconds(static_cast<int>(1000.0 / r));
     }
 
-    // Min/max
-    std::vector<double> m;
-    if (oat::config::getArray<double, 2>(vm, config_table, "min-max", m, 0)) {
-
-        auto min = m[0];
-        auto max = m[1];
-
-        if (min >= max || max > 255)
-            throw std::runtime_error("Values of min-max should be between 0 "
-                                     "and 255 and min must be less than max.");
-
-        auto d = 255.0 / (max - min);
-        for (size_t i = min; i < 256; i++) {
-            if (i < max)
-                lut_(i) = static_cast<unsigned char>((i-min) * d);
-            else
-                lut_(i) = 255;
-        }
-
-        min_max_defined_ = true;
-    }
-
     // Snapshot save path
     std::string snapshot_path = "./";
     oat::config::getValue(vm, config_table, "snapshot-path", snapshot_path);
     set_snapshot_path(snapshot_path);
 }
 
-oat::CommandDescription FrameViewer::commands()
+oat::CommandDescription PoseViewer::commands()
 {
     const oat::CommandDescription commands{
         {"snap", "Take a snapshot of the current frame and save to the "
@@ -108,20 +83,22 @@ oat::CommandDescription FrameViewer::commands()
     return commands;
 }
 
-void FrameViewer::applyCommand(const std::string &command)
+void PoseViewer::applyCommand(const std::string &command)
 {
+    std::cout << command << "\n";
     const auto cmds = commands();
     if (command == "snap") {
         snapshot_requested_ = true;
     }
 }
 
-void FrameViewer::display(const oat::Frame &frame)
+void PoseViewer::display(const oat::Pose &pose)
 {
     // NOTE: This initialization is done here to ensure it is done by the same
     // thread that actually calls imshow(). If done in in the constructor, it
     // will not play nice with OpenGL.
     if (!gui_inititalized_) {
+
 #ifdef HAVE_OPENGL
         try {
             cv::namedWindow(name_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
@@ -136,12 +113,7 @@ void FrameViewer::display(const oat::Frame &frame)
         gui_inititalized_ = true;
     }
 
-    if (frame.rows == 0 || frame.cols == 0)
-        return;
-
-    if (min_max_defined_)
-        cv::LUT(frame, lut_, frame);
-
+    auto frame = generateFrame(pose);
     cv::imshow(name_, frame);
     char gui_input = cv::waitKey(1);
 
@@ -170,7 +142,127 @@ void FrameViewer::display(const oat::Frame &frame)
     }
 }
 
-void FrameViewer::set_snapshot_path(const std::string &snapshot_path)
+cv::Mat PoseViewer::generateFrame(const oat::Pose &pose) const
+{
+    using PlygnVert = std::array<cv::Point3f, 3>;
+
+    // Create mat to draw on
+    const double frame_px = 500;
+    cv::Mat frame = cv::Mat::zeros(
+        {static_cast<int>(frame_px), static_cast<int>(frame_px)}, CV_8UC3);
+
+    // Messages to be printed on screen
+    std::vector<std::string> msgs;
+
+    if (pose.found) {
+
+        // Translate rotation matrix to frame center
+        auto T = pose.orientation<cv::Matx44d>();
+        T(0, 3) = frame_px / 2;
+        T(1, 3) = frame_px / 2;
+
+        // 3D axis
+        const float l = 40;
+        std::vector<cv::Point3f> axis_3d;
+        axis_3d.push_back(cv::Point3f(l, 0, 0));
+        axis_3d.push_back(cv::Point3f(0, l, 0));
+        axis_3d.push_back(cv::Point3f(0, 0, l));
+        axis_3d.push_back(cv::Point3f(0, 0, 0));
+        cv::perspectiveTransform(axis_3d, axis_3d, T);
+
+        // Sort by z-value
+        std::vector<size_t> axis_idx{0, 1, 2};
+        std::vector<cv::Scalar> axis_col{{0, 0, 255}, {0, 255, 0}, {255, 0, 0}};
+        std::sort(axis_idx.begin(),
+                  axis_idx.end(),
+                  [&axis_3d](size_t a, size_t b) {
+                      return axis_3d[a].z > axis_3d[b].z;
+                  });
+
+        const float off = 200;
+        auto origin = cv::Point2f(axis_3d[3].x - off, axis_3d[3].y + off);
+        for (const auto &i : axis_idx) {
+            auto proj = cv::Point2f(axis_3d[i].x - off, axis_3d[i].y + off);
+            cv::line(frame, origin, proj, axis_col[i], 3);
+        }
+
+        // Airplane
+        const auto yellow = cv::Scalar(0, 255, 255);
+        const auto white = cv::Scalar(255, 255, 255);
+        const std::vector<cv::Point3f> ap{{100, 0, 0},
+                                          {-100, -50, 0},
+                                          {-100, -10, 0},
+                                          {-100, 0, 30},
+                                          {-100, 10, 0},
+                                          {-100, 50, 0}};
+        cv::perspectiveTransform(ap, ap, T);
+
+        static constexpr size_t num_points = 4;
+        std::array<PlygnVert, num_points> poly;
+        poly[0] = {{ap[0], ap[1], ap[2]}};
+        poly[1] = {{ap[0], ap[2], ap[3]}};
+        poly[2] = {{ap[0], ap[3], ap[4]}};
+        poly[3] = {{ap[0], ap[4], ap[5]}};
+
+        // Sort polygons by maximal z-value of non-common verticies
+        std::sort(poly.begin(), poly.end(), [](PlygnVert A, PlygnVert B) {
+            auto ma = std::numeric_limits<float>::min();
+            auto mb = std::numeric_limits<float>::min();
+
+            // BRITTLE HACK! Relies on ordering of poly. 
+            ma = A[1].z > A[2].z ? A[1].z : A[2].z;
+            mb = B[1].z > B[2].z ? B[1].z : B[2].z;
+
+            return mb > ma;
+        });
+
+        for (const auto &p : poly) {
+            cv::Point x[num_points];
+            for (size_t i = 0; i < p.size(); i++)
+                x[i] = {static_cast<int>(p[i].x), static_cast<int>(p[i].y)};
+            cv::fillConvexPoly(frame, x, 3, cv::Scalar(75, 75, 75));
+            for (size_t i = 0; i < p.size(); i++) {
+                auto j = (i+1) % p.size();
+                cv::line(frame, x[i], x[j], white, 1);
+                cv::circle(frame, x[i], 1, yellow, 2);
+            }
+        }
+
+        // Position
+        auto p = pose.position<std::array<double, 3>>();
+        std::stringstream m;
+        m << std::setprecision(2) << std::fixed;
+        if (pose.unit_of_length == Pose::DistanceUnit::Meters)
+            m << "P (m): [";
+        else if (pose.unit_of_length == Pose::DistanceUnit::Pixels)
+            m << "P (px): [";
+        m << p[0] << ", " << p[1] << ", " << p[2] << "]";
+        msgs.push_back(m.str());
+
+        // Tait-bryan angles
+        auto tb = pose.toTaitBryan(true);
+        m.str("");
+        m << " (deg): [" << tb[0] << ", " << tb[1] << ", " << tb[2] << "]";
+
+        msgs.push_back(m.str());
+
+    } else {
+        msgs.push_back("Not found");
+    }
+
+    for (std::vector<std::string>::size_type i = 0; i < msgs.size(); i++) {
+
+        int baseline = 0;
+        cv::Size textSize = cv::getTextSize(msgs[i], 1, 1, 1, &baseline);
+        cv::Point text_origin(frame.cols - textSize.width - 10,
+                              frame.rows - (i * (textSize.height + 10)) - 10 );
+        cv::putText(frame, msgs[i], text_origin, 1, 1, cv::Scalar(0, 255, 255));
+    }
+
+    return frame;
+}
+
+void PoseViewer::set_snapshot_path(const std::string &snapshot_path)
 {
     bfs::path path(snapshot_path.c_str());
 
@@ -195,3 +287,4 @@ void FrameViewer::set_snapshot_path(const std::string &snapshot_path)
 }
 
 } /* namespace oat */
+

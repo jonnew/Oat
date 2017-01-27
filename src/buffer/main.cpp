@@ -17,7 +17,6 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include <csignal>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -41,12 +40,12 @@
 
 namespace po = boost::program_options;
 
-using Pos2DBuffer = oat::TokenBuffer<oat::Position2D>;
+using PoseBuffer = oat::TokenBuffer<oat::Pose>;
 
 const char usage_type[] =
     "TYPE\n"
     "  frame: Frame buffer\n"
-    "  pos2D: 2D Position buffer";
+    "  pose: Pose buffer";
 
 const char usage_io[] =
     "SOURCE:\n"
@@ -62,7 +61,6 @@ const char purpose[] =
 
 void printUsage(const po::options_description &options, const std::string &type)
 {
-
     if (type.empty()) {
         std::cout <<
         "Usage: buffer [INFO]\n"
@@ -94,7 +92,7 @@ int main(int argc, char *argv[])
     // Component specializations
     std::unordered_map<std::string, char> type_hash;
     type_hash["frame"] = 'a';
-    type_hash["pos2D"] = 'b';
+    type_hash["pose"] = 'b';
 
     // The component itself
     std::string comp_name = "buffer";
@@ -160,7 +158,7 @@ int main(int argc, char *argv[])
                 }
                 case 'b':
                 {
-                    buffer = std::make_shared<Pos2DBuffer>(source, sink);
+                    buffer = std::make_shared<PoseBuffer>(source, sink);
                     break;
                 }
                 default:

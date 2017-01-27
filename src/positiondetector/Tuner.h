@@ -20,16 +20,10 @@
 #ifndef OAT_TUNER_H
 #define	OAT_TUNER_H
 
-#include <iostream>
-
 #include <functional>
-#include <iomanip>
-#include <memory>
-#include <sstream>
 #include <string>
+#include <vector>
 #include <type_traits>
-
-#include <opencv2/highgui.hpp>
 
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Pose.h"
@@ -76,30 +70,8 @@ struct Tuner {
         T min, max, scale;
     };
 
-public:
-    Tuner(const std::string &window_name)
-    : w_(window_name)
-    {
-#ifdef HAVE_OPENGL // TODO: replace with CV-specific opengl and get rid of
-                   // try-catch
-        try {
-            cv::namedWindow(w_, cv::WINDOW_OPENGL & cv::WINDOW_KEEPRATIO);
-        } catch (cv::Exception &ex) {
-            whoWarn(w_,
-                    "OpenCV not compiled with OpenGL support. Falling "
-                    "back to OpenCV's display driver.\n");
-            cv::namedWindow(w_, cv::WINDOW_NORMAL & cv::WINDOW_KEEPRATIO);
-        }
-#else
-        cv::namedWindow(w_, cv::WINDOW_NORMAL);
-#endif
-    }
-
-    ~Tuner()
-    {
-        for (auto &p : cb_params_)
-            delete static_cast<CBBase *>(p);
-    }
+    Tuner(const std::string &window_name);
+    ~Tuner();
 
     template <typename T>
     void registerParameter(
@@ -120,63 +92,7 @@ public:
     void tune(const oat::Frame &frame,
               const oat::Pose &pose,
               const cv::Matx33d &K,
-              const std::vector<double> &D)
-    {
-        // Make sure this is color image
-        oat::Frame col_frame = frame;
-        oat::convertColor(frame, col_frame, PIX_BGR);
-
-        // Message to be printed on screen
-        std::stringstream msg;
-
-        if (pose.found) {
-
-            double length;
-            if (pose.unit_of_length == Pose::DistanceUnit::Pixels)
-                length = 50;
-            if (pose.unit_of_length == Pose::DistanceUnit::Meters)
-                length = 0.1;
-
-            // Make 3D axis
-            std::vector<cv::Point3f> axis_3d;
-            axis_3d.push_back(cv::Point3f(0, 0, 0));
-            axis_3d.push_back(cv::Point3f(length, 0, 0));
-            axis_3d.push_back(cv::Point3f(0, length, 0));
-            axis_3d.push_back(cv::Point3f(0, 0, length));
-            std::vector<cv::Point2f> frame_axis;
-            cv::projectPoints(axis_3d,
-                              pose.orientation<cv::Vec3d>(),
-                              pose.position<cv::Vec3d>(),
-                              K,
-                              D,
-                              frame_axis);
-
-            // Draw axis
-            cv::line(col_frame, frame_axis[0], frame_axis[1], cv::Scalar(0, 0, 255), 3);
-            cv::line(col_frame, frame_axis[0], frame_axis[2], cv::Scalar(0, 255, 0), 3);
-
-            // TODO: Find out if Z is degenerate. If so, don't plot.
-            if (pose.orientation<std::array<double, 4>>()[2] != 0)
-                cv::line(col_frame, frame_axis[0], frame_axis[3], cv::Scalar(255, 0, 0), 3);
-
-            auto p = pose.position<std::array<double, 3>>();
-            auto o = pose.orientation<std::array<double, 4>>();
-            msg << "[" << p[0] << ", " << p[1] << ", " << p[2] << "], "
-                << "[" << o[0] << ", " << o[1] << ", " << o[2] << ", " << o[3] << "]";
-        } else {
-            msg << "Not found";
-        }
-
-        int baseline = 0;
-        cv::Size textSize = cv::getTextSize(msg.str(), 1, 1, 1, &baseline);
-        cv::Point text_origin(col_frame.cols - textSize.width - 10,
-                              col_frame.rows - 2 * baseline - 10);
-
-        cv::putText(col_frame, msg.str(), text_origin, 1, 1, cv::Scalar(0, 255, 255));
-
-        cv::imshow(w_, col_frame);
-        cv::waitKey(1);
-    }
+              const std::vector<double> &D);
 
 private:
     std::vector<void *> cb_params_;

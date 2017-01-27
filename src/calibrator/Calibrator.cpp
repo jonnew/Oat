@@ -76,7 +76,6 @@ int Calibrator::process(void)
 bool Calibrator::generateSavePath(const std::string &save_path,
                                   const std::string &default_name)
 {
-
     // Create folder and file name
     bfs::path path(save_path.c_str());
     std::string folder, file_name;

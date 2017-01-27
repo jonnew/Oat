@@ -39,7 +39,6 @@ PositionPublisher::PositionPublisher(const std::string &position_source_address)
 
 po::options_description PositionPublisher::options() const
 {
-    // Update CLI options
     po::options_description local_opts;
     local_opts.add_options()
         ("endpoint,e", po::value<std::string>(),
@@ -62,12 +61,12 @@ void PositionPublisher::applyConfiguration(
     publisher_.bind(endpoint);
 }
 
-void PositionPublisher::sendPosition(const oat::Position2D &position)
+void PositionPublisher::sendPosition(const oat::Pose &pose)
 {
     // Serialize the current position
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    oat::serializePosition(position, writer);
+    oat::serializePose(pose, writer);
 
     // Publish update
     zmq::message_t zmsg(buffer.GetSize());

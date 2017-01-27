@@ -64,11 +64,6 @@ else ()
     set (BUILD_TESTS OFF)
 endif ()
 
-# Configure a header file to pass CMake settings to source code containing
-# build options and version info
-configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
-include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
-
 # Show options summary
 message (STATUS "Oat version: ${VERSION_LIST}")
 message (STATUS "Compilation options:" )
@@ -89,6 +84,7 @@ endif()
 find_package (Boost 1.56.0 REQUIRED system thread program_options filesystem)
 include_directories (${Boost_INCLUDE_DIRS})
 link_directories (${Boost_LIBRARY_DIR})
+message (STATUS "Boost library directory: ${Boost_LIBRARY_DIR}")
 
 # OpenCV
 find_package (OpenCV REQUIRED)
@@ -98,20 +94,21 @@ else ()
     message (FATAL_ERROR "OpenCV not found")
 endif ()
 
+# If found, automatically sets HAVE_CUDA
 if (OpenCV_CUDA_VERSION)
     message (STATUS "  CUDA support enabled.")
-    set (OAT_USE_CUDA ON)
 else ()
     message (STATUS "  CUDA support not enabled.")
-    set (OAT_USE_CUDA OFF)
 endif ()
 
 # TODO: Make optional and do conditional compilation of affected
 # components
-# Eigen3, needed by ir pose estimation library
-find_package (Eigen3 REQUIRED)
+# Eigen3, needed by ir pose estimation library and some other
+# optional features
+# If found, automatically defines EIGEN3_FOUND
+find_package (Eigen3)
 include_directories (${EIGEN3_INCLUDE_DIR})
-if (EIGEN3_INCLUDE_DIR)
+if (EIGEN3_FOUND)
     message (STATUS "Found Eigen3: " ${EIGEN3_INCLUDE_DIR})
 else ()
     message (STATUS "Eigen3 not found.")
@@ -146,6 +143,11 @@ include_directories (${RAPIDJSON_INCLUDE_DIR})
 #add_subdirectory (${EXT_PROJECTS_DIR}/zmq)
 #include_directories (${RAPIDJSON_INCLUDE_DIR})
 
+# Configure a header file to pass CMake settings to source code containing
+# build options and version info
+configure_file (lib/utility/OatConfig.h.in "${PROJECT_BINARY_DIR}/OatConfig.h")
+include_directories("${PROJECT_BINARY_DIR}") # Config.h ends up in BINARY_DIR
+
 # Include local libs
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/lib/shmemdf)
 add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/lib/utility)
@@ -174,7 +176,7 @@ add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/buffer)
 # All executables should be installed in Oat/oat/libexec
 set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "Default install path" FORCE)
 
-# Testin
+# Testing
 if (${BUILD_TESTS})
     # Catch (and enables unit testing)
     add_subdirectory(${EXT_PROJECTS_DIR}/catch)

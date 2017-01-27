@@ -50,17 +50,17 @@ void PositionCout::applyConfiguration(const po::variables_map &vm,
     oat::config::getValue<bool>(vm, config_table, "pretty-print", pretty_);
 }
 
-void PositionCout::sendPosition(const oat::Position2D &position)
+void PositionCout::sendPosition(const oat::Pose &pose)
 {
-    // Serialize the current position
+    // Serialize the current pose
     rapidjson::StringBuffer buffer;
 
     if (pretty_) {
         rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
-        oat::serializePosition(position, writer);
+        oat::serializePose(pose, writer);
     } else {
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        oat::serializePosition(position, writer);
+        oat::serializePose(pose, writer);
     }
 
     std::cout << buffer.GetString() << std::flush;

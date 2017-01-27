@@ -45,8 +45,8 @@ Saver::Saver(const std::string& entry_key, const std::string& calibration_file) 
     // Nothing
 }
 
-void Saver::visit(CameraCalibrator* cc) {
-
+void Saver::visit(CameraCalibrator *cc)
+{
     // Check the the calibration is valid
     if (!cc->calibration_valid()) {
         std::cerr << oat::Error("Calibration parameters must be computed before they are saved.\n");
@@ -86,8 +86,8 @@ void Saver::visit(CameraCalibrator* cc) {
     saveCalibrationTable(*calibration, calibration_file_);
 }
 
-void Saver::visit(HomographyGenerator* hg) {
-
+void Saver::visit(HomographyGenerator *hg)
+{
     // Check the the homography is valid
     if (!hg->homography_valid()) {
         std::cerr << oat::Error("Homgraphy must be computed before it is saved.\n");
@@ -121,8 +121,9 @@ void Saver::visit(HomographyGenerator* hg) {
     saveCalibrationTable(*calibration, calibration_file_);
 }
 
-std::shared_ptr<cpptoml::table> Saver::generateCalibrationTable(const std::string& file, const std::string& key) {
-
+std::shared_ptr<cpptoml::table>
+Saver::generateCalibrationTable(const std::string &file, const std::string &key)
+{
     auto table = cpptoml::make_table();
 
     // If the file already exists, open it as a TOML table
@@ -148,21 +149,21 @@ std::shared_ptr<cpptoml::table> Saver::generateCalibrationTable(const std::strin
         }
     }
 
-    auto dt = cpptoml::make_value<cpptoml::datetime>(generateDateTime());
+    auto dt = cpptoml::make_value<cpptoml::offset_datetime>(generateDateTime());
     table->insert("last-modified", dt);
 
     return table;
 }
 
-cpptoml::datetime Saver::generateDateTime() {
-
+cpptoml::offset_datetime Saver::generateDateTime()
+{
     // Generate current date-time
     std::time_t raw_time;
     struct tm * time_info;
     std::time(&raw_time);
     time_info = std::localtime(&raw_time);
 
-    cpptoml::datetime dt;
+    cpptoml::offset_datetime dt;
     dt.year = time_info->tm_year + 1900;
     dt.month = time_info->tm_mon + 1;
     dt.day = time_info->tm_mday;

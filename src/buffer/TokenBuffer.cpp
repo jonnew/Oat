@@ -18,9 +18,9 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <iostream>
-
 #include "TokenBuffer.h"
+
+#include <iostream>
 
 namespace oat {
 
@@ -42,7 +42,7 @@ bool TokenBuffer<T>::connectToNode()
     if (source_.connect() != SourceState::CONNECTED)
         return false;
 
-    sink_.bind(sink_address_, sink_address_);
+    sink_.bind(sink_address_);
     shared_token_ = sink_.retrieve();
 
     // Start consumer thread
@@ -113,6 +113,6 @@ void TokenBuffer<T>::pop()
 }
 
 // Explicit instantiations
-template class oat::TokenBuffer<oat::Position2D>;
+template class oat::TokenBuffer<oat::Pose>;
 
 } /* namespace oat */

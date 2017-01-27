@@ -2,7 +2,7 @@
 //* File:   OatConfig.h.in
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //
-//* Copyright (c) Jon Newman (jpnewman snail mit dot edu) 
+//* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
 //* All right reserved.
 //* This file is part of the Simple Tracker project.
 //* This is free software: you can redistribute it and/or modify
@@ -22,3 +22,6 @@
 
 // Use Point Grey's Fly Capture API
 #cmakedefine USE_FLYCAP
+
+// Use Eigen linear algebra template library
+#cmakedefine EIGEN3_FOUND
