@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   PositionWriter.h
+//* File:   PoseWriter.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
-#ifndef OAT_POSITIONWRITER_H
-#define OAT_POSITIONWRITER_H
+#ifndef OAT_POSEWRITER_H
+#define OAT_POSEWRITER_H
 
 #include "Writer.h"
 
@@ -26,17 +26,17 @@
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/datatypes/Pose.h"
 #include "../../lib/utility/FileFormat.h"
 
 namespace oat {
 namespace blf = boost::lockfree;
 
-class PositionWriter : public Writer{
+class PoseWriter : public Writer{
 public:
     using Writer::Writer;
 
-    ~PositionWriter();
+    ~PoseWriter();
 
     void configure(const oat::config::OptionTable &t,
                    const po::variables_map &vm) override;
@@ -60,8 +60,8 @@ public:
     }
 
 private:
-    using SPSCBuffer = boost::lockfree::spsc_queue<oat::Position2D,
-                                                   blf::capacity<BUFFER_SIZE>>;
+    using SPSCBuffer
+        = boost::lockfree::spsc_queue<oat::Pose, blf::capacity<BUFFER_SIZE>>;
     /**
      * @brief Determines if indeterminate position data fields should be
      * written in spite of being indeterminate for sample parsing ease? e.g.
@@ -71,10 +71,6 @@ private:
 
     std::string path_ {""};
     SPSCBuffer buffer_;
-
-    //// Timestamp clock
-    //std::chrono::system_clock clock_;
-    //std::chrono::system_clock::time_point start_;
 
     // Position file
     FILE * fd_ {nullptr};
@@ -92,8 +88,8 @@ private:
     static constexpr int header_prefix_size_ {10};
     static constexpr int shape_end_byte_ {10};
 
-    oat::Source<Position2D> source_;
+    oat::Source<Pose> source_;
 };
 
 }      /* namespace oat */
-#endif /* OAT_POSITIONWRITER_H */
+#endif /* OAT_POSEWRITER_H */

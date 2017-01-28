@@ -20,7 +20,7 @@
 #include "Recorder.h"
 #include "Writer.h"
 #include "FrameWriter.h"
-#include "PositionWriter.h"
+#include "PoseWriter.h"
 
 #include <chrono>
 #include <cmath>
@@ -123,7 +123,7 @@ void Recorder::applyConfiguration(const po::variables_map &vm,
         oat::config::checkForDuplicateSources(addrs);
 
         for (auto &a : addrs)
-            writers_.emplace_back(oat::make_unique<PositionWriter>(a));
+            writers_.emplace_back(oat::make_unique<PoseWriter>(a));
     }
 
     if (writers_.size() == 0)

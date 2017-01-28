@@ -126,19 +126,59 @@
 namespace oat {
 
 static constexpr size_t x{0}, y{1}, z{2}, w{3};
+static constexpr size_t POSE_NPY_DTYPE_BYTES {88};
+static constexpr char POSE_NPY_DTYPE[]{"[('tick', '<u8'),"
+                                       "('usec', '<u8'),"
+                                       "('unit', '<i4'),"
+                                       "('found', '<i1'),"
+                                       "('position', 'f8', (3)),"
+                                       "('orientation', 'f8', (4)),"
+                                       "('in_region', '<i1'),"
+                                       "('region', 'a10')]"};
 
 // Forward decl.
 class Pose;
+
+/** 
+ * @brief 
+ * @param p
+ * @param writer
+ * @param verbose
+ */
 template <typename Writer, size_t Precision = 3>
 void serializePose(const Pose &p, Writer &writer, bool verbose = true);
+
+/** 
+ * @brief 
+ * @param os
+ * @param p
+ * @return 
+ */
+std::ostream &operator<<(std::ostream &os, const Pose &p);
+
+/** 
+ * @brief 
+ * @param 
+ * @return 
+ */
+cv::Matx33d randRotation(std::array<double, 3> x);
+
+/**
+ * @brief Pack a pose object into a byte array.
+ * @param Position2D Position to pack into a byte array.
+ * @return Byte arrayByte array.
+ */
+std::vector<char> packPose(const Pose &p);
 
 /**
  * @brief Object pose.
  */
 class Pose {
 
+
     template <typename Writer, size_t Precision>
     friend void serializePose(const Pose &p, Writer &w, bool verbose);
+    friend std::vector<char> packPose(const Pose &);
     friend std::ostream &operator<<(std::ostream &os, const Pose &p);
 
 public:
@@ -149,23 +189,32 @@ public:
                     //! homography
     };
 
+    static constexpr size_t REGION_LEN {10};
+
     Pose() = default;
+
     Pose(const Pose &p)
-    : unit_of_length(p.unit_of_length), region_valid(p.region_valid),
-      found(p.found), sample_(p.sample_), q_(p.q_), p_(p.p_)
+    : unit_of_length(p.unit_of_length)
+    , region_valid(p.region_valid)
+    , found(p.found)
+    , sample_(p.sample_)
+    , q_(p.q_)
+    , p_(p.p_)
     {
-        std::memcpy(region, p.region, sizeof(p.region));
+        std::strncpy(region, p.region, REGION_LEN);
 #ifdef EIGEN3_FOUND
         Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
         Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
 #endif
     }
+
     Pose(Pose &&p) = default;
+
     Pose &operator=(const Pose &rhs)
     {
         unit_of_length = rhs.unit_of_length;
         region_valid = rhs.region_valid;
-        std::memcpy(region, rhs.region, sizeof(rhs.region));
+        std::strncpy(region, rhs.region, REGION_LEN);
         found = rhs.found;
         sample_ = rhs.sample_;
         q_ = rhs.q_;
@@ -178,6 +227,7 @@ public:
 
         return *this;
     }
+
     Pose &operator=(Pose &&) = default;
 
     /**
@@ -186,13 +236,20 @@ public:
     DistanceUnit unit_of_length{DistanceUnit::Pixels};
 
     // Categorical position label (e.g. "North West")
-    bool region_valid{false};
-    char region[100]{0};
+    bool region_valid {false};
+    char region[REGION_LEN] {0}; //!< Categorical position label (e.g. "North West")
 
-    // Was position detection successful?
-    bool found{false};
-
+    // Sample information
     void set_sample(const Sample &val) { sample_ = val; }
+    void set_rate_hz(const double rate_hz) { sample_.set_rate_hz(rate_hz); }
+    double sample_period_sec() const { return sample_.period_sec().count(); }
+    uint64_t sample_count(void) const { return sample_.count(); }
+    uint64_t sample_usec(void) const { return sample_.microseconds().count(); }
+    void incrementSampleCount() { sample_.incrementCount(); }
+    //void incrementSampleCount(USec us) { sample_.incrementCount(us); }
+
+    // Was pose estimation successful?
+    bool found{false};
 
     // To understand type signatures of these function
     // templates:
@@ -201,35 +258,23 @@ public:
     // Orientation getter/setter
     template <typename T>
     void set_orientation(const T &r)
-    {
-        (void)r;
-        static_assert(sizeof(T) == 0, "Invalid call to set_orientation()");
-    }
+    { (void)r; static_assert(sizeof(T) == 0, "Invalid call to set_orientation()"); }
 
     template <typename T>
     T orientation() const
-    {
-        static_assert(sizeof(T) == 0, "Invalid call to position()");
-    }
+    { static_assert(sizeof(T) == 0, "Invalid call to position()"); }
 
     // Position getter/setter
     template <typename T>
     void set_position(const T &p)
-    {
-        (void)p;
-        static_assert(sizeof(T) == 0, "Invalid call to set_position()()");
-    }
+    { (void)p; static_assert(sizeof(T) == 0, "Invalid call to set_position()"); }
 
     template <typename T>
     T position() const
-    {
-        static_assert(sizeof(T) == 0, "Invalid call to position()");
-    }
+    { static_assert(sizeof(T) == 0, "Invalid call to position()"); }
 
-    // Get axis angle representation. Cannot use a template
-    // specialization
-    // straightforwardly because this hs the same return type as
-    // rvec.
+    // Get axis angle representation. Cannot use a template specialization
+    // straightforwardly because this has the same return type as rvec.
     std::array<double, 3> toTaitBryan(const bool deg = false) const;
 
 protected:
@@ -239,9 +284,9 @@ protected:
     oat::Sample sample_;
 
     /**
-     * @brief Orientation, in units of unit_of_length, represented
-     * as a Qauarterion. Initialized to identity.
-     * @note Memory layout maps that of Eigen::Quaterniond;
+     * @brief Orientation, represented as a Qauarterion, [x, y, z, w(real)].
+     * Initialized to identity.  
+     * @note Memory layout maps that of Eigen::Quaterniond
      */
     std::array<double, 4> q_{{0, 0, 0, 1}};
 
@@ -304,13 +349,11 @@ inline void Pose::set_orientation(const cv::Matx33d &R)
 template <>
 inline void Pose::set_orientation(const cv::Vec3d &r)
 {
-    // Probably some way to go directly to quaternion from rvec,
-    // but who cares I
-    // guess
+    // Probably some way to go directly to quaternion from rvec, but who cares
+    // I guess
     cv::Matx33d R;
     cv::Rodrigues(r, R);
     R2Q // macro
-    //r_ = r;
 }
 
 #ifdef EIGEN3_FOUND
@@ -371,23 +414,6 @@ inline cv::Vec3d Pose::orientation() const
     return r;
 }
 
-// template <>
-// inline std::array<double, 3> Pose::orientation() const
-//{
-//    // OpenCV's rvec is Euler axis multiplied by the angle
-//    value
-//    std::array<double, 3> r{{0, 0, 0}};
-//    const double angle = 2 * std::acos(q_[w]);
-//    const double alpha = angle / std::sqrt(1 - q_[w] * q_[w]);
-//    if (!std::isnan(alpha)) {
-//        r[0] = alpha * q_[x];
-//        r[1] = alpha * q_[y];
-//        r[2] = alpha * q_[z];
-//    }
-//
-//    return r;
-//}
-
 template <>
 inline cv::Matx33d Pose::orientation() const
 {
@@ -420,115 +446,6 @@ inline Eigen::Matrix3d Pose::orientation() const
 #endif
 
 //** HELPERS **//
-
-inline std::array<double, 3> Pose::toTaitBryan(const bool deg) const
-{
-    std::array<double, 3> a;
-
-    const auto xx = q_[x] * q_[x];
-    const auto yy = q_[y] * q_[y];
-    const auto zz = q_[z] * q_[z];
-
-    const auto xy = q_[x] * q_[y];
-    const auto xz = q_[x] * q_[z];
-    const auto xw = q_[x] * q_[w];
-
-    const auto yz = q_[y] * q_[z];
-    const auto yw = q_[y] * q_[w];
-
-    const auto zw = q_[z] * q_[w];
-
-    if ((xy + zw) == 0.5) {
-        a[0] = 2 * std::asin(2 * xy + 2 * zw);
-        a[1] = std::atan2(q_[x], q_[w]);
-        a[2] = 0;
-    } else if ((xy + zw) == -0.5) {
-        a[0] = -2 * std::atan2(q_[x], q_[w]);
-        a[1] = std::atan2(q_[x], q_[w]);
-        a[2] = 0;
-    } else {
-        a[0] = std::atan2(2 * yw - 2 * xz, 1 - 2 * yy - 2 * zz);
-        a[1] = std::asin(2 * xy + 2 * zw);
-        a[2] = std::atan2(2 * xw - 2 * yz, 1 - 2 * xx - 2 * zz);
-    }
-
-    if (deg) {
-        a[0] *= 57.2958;
-        a[1] *= 57.2958;
-        a[2] *= 57.2958;
-    }
-
-    return a;
-}
-
-/**
- * @brief This routine maps three values (x[0], x[1], x[2]) in the range [0,1]
- * into a 3x3 rotation matrix, M.  Uniformly distributed random variables x0,
- * x1, and x2 create uniformly distributed random rotation matrices.  To create
- * small uniformly distributed "perturbations", supply samples in the following
- * ranges:
- *     x[0] in [ 0, d ]
- *     x[1] in [ 0, 1 ]
- *     x[2] in [ 0, d ]
- * where 0 < d < 1 controls the size of the perturbation.  Any of the
- * random variables may be stratified (or "jittered") for a slightly more
- * even distribution.
- * @param x Perturbation vector.
- * @return Uniformly random rotiation matrix.
- * @author Jim Arvo, 1991. Modified by J. Newman 2017.
- */
-inline cv::Matx33d randRotation(std::array<double, 3> x)
-{
-    float theta = x[0] * M_PI * 2; // Rotation about the pole (Z).
-    float phi = x[1] * M_PI * 2;   // For direction of pole deflection.
-    float z = x[2] * 2.0;          // For magnitude of pole deflection.
-
-    // Compute a vector V used for distributing points over the
-    // sphere
-    // via the reflection I - V Transpose(V).  This formulation
-    // of V
-    // will guarantee that if x[1] and x[2] are uniformly
-    // distributed,
-    // the reflected points will be uniform on the sphere.  Note
-    // that V
-    // has length sqrt(2) to eliminate the 2 in the Householder
-    // matrix.
-
-    float r = std::sqrt(z);
-    float Vx = std::sin(phi) * r;
-    float Vy = std::cos(phi) * r;
-    float Vz = std::sqrt(2.0 - z);
-
-    // Compute the row vector S = Transpose(V) * R, where R is a
-    // simple
-    // rotation by theta about the z-axis.  No need to compute
-    // Sz since
-    // it's just Vz.
-
-    float st = std::sin(theta);
-    float ct = std::cos(theta);
-    float Sx = Vx * ct - Vy * st;
-    float Sy = Vx * st + Vy * ct;
-
-    // Construct the rotation matrix  ( V Transpose(V) - I ) R,
-    // which
-    // is equivalent to V S - R.
-
-    cv::Matx33d R;
-    R(0, 0) = Vx * Sx - ct;
-    R(0, 1) = Vx * Sy - st;
-    R(0, 2) = Vx * Vz;
-
-    R(1, 0) = Vy * Sx + st;
-    R(1, 1) = Vy * Sy - ct;
-    R(1, 2) = Vy * Vz;
-
-    R(2, 0) = Vz * Sx;
-    R(2, 1) = Vz * Sy;
-    R(2, 2) = 1.0 - z; // This equals Vz * Vz - 1.0
-
-    return R;
-}
 
 /**
  * @brief Serialize pose.
@@ -591,27 +508,5 @@ void serializePose(const Pose &p, Writer &writer, bool verbose)
     writer.EndObject();
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Pose &p)
-{
-    const char *unit;
-    switch (p.unit_of_length) {
-        case Pose::DistanceUnit::Pixels:
-            unit = "px";
-            break;
-        case Pose::DistanceUnit::Meters:
-            unit = "m";
-            break;
-    }
-
-    os << "Time (s): " << p.sample_.seconds().count() << "\n"
-       << "Region: " << p.region << "\n"
-       << "Position (" << unit << "): ["
-       << p.p_[0] << " " << p.p_[1] << " " << p.p_[2] << "]\n"
-       << "Orientation: ["
-       << p.q_[w] << " " << p.q_[x] << " " << p.q_[y] << " " << p.q_[z] << "]";
-
-    return os;
-}
-
-} /* namespace oat */
+}      /* namespace oat */
 #endif /* OAT_POSE_H */

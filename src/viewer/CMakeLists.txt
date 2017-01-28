@@ -13,6 +13,7 @@ add_executable (oat-view ${oat-view_SOURCE})
 target_link_libraries (oat-view
                        oat-base
                        oat-utility
+                       oat-types
                        ${OatCommon_LIBS})
 add_dependencies (oat-view cpptoml rapidjson)
 

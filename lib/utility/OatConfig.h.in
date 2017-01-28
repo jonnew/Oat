@@ -25,3 +25,6 @@
 
 // Use Eigen linear algebra template library
 #cmakedefine EIGEN3_FOUND
+
+// OpenCV contrib Aruco library found
+#cmakedefine ARUCO_FOUND

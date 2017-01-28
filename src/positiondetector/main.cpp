@@ -31,7 +31,9 @@
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
+#ifdef ARUCO_FOUND
 #include "ArucoBoard.h"
+#endif
 #include "DifferenceDetector.h"
 #include "HSVDetector.h"
 #include "PositionDetector.h"
@@ -39,6 +41,7 @@
 #ifdef EIGEN3_FOUND
 #include "RPGPoseEst.h"
 #endif
+
 #define REQ_POSITIONAL_ARGS 3
 
 namespace po = boost::program_options;
@@ -176,7 +179,14 @@ int main(int argc, char *argv[])
                 }
                 case 'd':
                 {
+#ifndef ARUCO_FOUND
+                    std::cerr << oat::Error(
+                        "OpenCV was not compiled with contrib modules "
+                        "support, so TYPE=aruco is not available.\n");
+                    return -1;
+#else
                     detector = std::make_shared<oat::ArucoBoard>(source, sink);
+#endif
                     break;
                 }
                 case 'e':

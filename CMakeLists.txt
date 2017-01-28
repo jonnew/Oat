@@ -183,13 +183,6 @@ if (${BUILD_TESTS})
     enable_testing(true)
 
     set(TESTING_INCLUDES ${CATCH_INCLUDE_DIR} )
-    function(add_oat_test name libs)
-        include_directories(${TESTING_INCLUDES})
-        add_executable(${name}_test ${name}_test.cpp)
-        target_link_libraries (${name}_test ${libs})
-        add_dependencies (${name}_test ${TESTING_INCLUDES})
-        add_test(${name}_test ${name}_test)
-    endfunction()
 
     # Tests
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)

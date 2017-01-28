@@ -5,9 +5,8 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 set (oat-record_SOURCE
      Format.cpp
      FrameWriter.cpp
-     PositionWriter.cpp
+     PoseWriter.cpp
      Writer.cpp
-     #RecordControl.cpp
      Recorder.cpp
      main.cpp)
 
@@ -16,7 +15,7 @@ add_executable (oat-record ${oat-record_SOURCE})
 target_link_libraries (oat-record
                        oat-utility
                        oat-base
-                       datatypes
+                       oat-types
                        zmq
                        ${OatCommon_LIBS})
 add_dependencies (oat-record cpptoml rapidjson)

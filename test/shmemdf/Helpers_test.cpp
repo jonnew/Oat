@@ -25,32 +25,35 @@
 // Global via extern in Globals.h
 namespace oat { volatile sig_atomic_t quit = 0; }
 
-SCENARIO ("Sample period comparisons with epsilon tolerance.", "[Helpers]") {
-
-    GIVEN ("An epsilon tolerance for sample periods.") {
-
+SCENARIO("Sample period comparisons with epsilon tolerance.", "[Helpers]")
+{
+    GIVEN("An epsilon tolerance for sample periods.")
+    {
         double min_rate;
         const double epsilon = 1e-6;
 
-        WHEN ("The difference between the max and min sample periods is greater than epsilon.") {
+        WHEN("The difference between the max and min sample periods is greater "
+             "than epsilon.")
+        {
+            std::vector<double> all_ts{10, 10 + epsilon, 10 - epsilon};
 
-            std::vector<double> all_ts {10, 10 + epsilon, 10 - epsilon};
-
-            THEN ("The sample periods are inconsistent.") {
-
+            THEN("The sample periods are inconsistent.")
+            {
                 bool ts_consistent = oat::checkSamplePeriods(all_ts, min_rate, epsilon);
                 REQUIRE (!ts_consistent);
                 REQUIRE (min_rate == Approx(1.0 / (10 - epsilon)));
             }
         }
 
-        WHEN ("The difference between the max and min sample periods is less than or equal to epsilon.") {
-
+        WHEN("The difference between the max and min sample periods is less "
+             "than or equal to epsilon.")
+        {
             double div = 2.01;
-            std::vector<double> all_ts {10, 10 + epsilon/div, 10 - epsilon/div};
+            std::vector<double> all_ts{
+                10, 10 + epsilon / div, 10 - epsilon / div};
 
-            THEN ("The sample periods are consistent.") {
-
+            THEN("The sample periods are consistent.")
+            {
                 bool ts_consistent = oat::checkSamplePeriods(all_ts, min_rate, epsilon);
                 REQUIRE (ts_consistent);
                 REQUIRE (min_rate == Approx(1.0 / (10 - epsilon/div)));
