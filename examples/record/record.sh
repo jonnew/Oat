@@ -18,7 +18,7 @@ case "$1" in
 
 	clean)
 
-		oat clean raw p
+		oat clean raw mon p
 		;;
 
 	*)

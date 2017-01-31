@@ -47,11 +47,10 @@ public:
 
     /**
      * @brief An increment-able sample keeper.
-     *
      * @param period_sec The period of the sample clock in seconds.
      */
-    explicit Sample(const double period_sec) :
-      period_sec_(period_sec)
+    explicit Sample(const double period_sec)
+    : period_sec_(period_sec)
     {
         assert(period_sec_.count() > 0.0);
         rate_hz_ = 1.0 / period_sec;
@@ -59,11 +58,10 @@ public:
 
     /**
      * @brief An increment-able sample keeper.
-     *
      * @param period_sec The period of the sample clock in seconds.
      */
-    explicit Sample(const Seconds period_sec) :
-      period_sec_(period_sec)
+    explicit Sample(const Seconds period_sec)
+    : period_sec_(period_sec)
     {
         assert(period_sec_.count() > 0.0);
         rate_hz_ = 1.0 / period_sec.count();
@@ -72,7 +70,6 @@ public:
     /**
      * @brief Increment sample count. Only pure SINKs should increment the
      * count, set the sample rates, periods, etc.
-     *
      * @return Current sample count
      */
     uint64_t incrementCount()

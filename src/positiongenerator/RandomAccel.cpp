@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   RandomAccel2D.cpp
+//* File:   RandomAccel.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -18,16 +18,17 @@
 //*****************************************************************************
 
 #include <string>
+#include <array>
 #include <opencv2/opencv.hpp>
 
 #include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/datatypes/Position2D.h"
 
-#include "RandomAccel2D.h"
+#include "RandomAccel.h"
 
 namespace oat {
 
-po::options_description RandomAccel2D::options() const
+po::options_description RandomAccel::options() const
 {
     // Update CLI options
     // Start with base options
@@ -42,7 +43,7 @@ po::options_description RandomAccel2D::options() const
     return local_opts;
 }
 
-void RandomAccel2D::applyConfiguration(const po::variables_map &vm,
+void RandomAccel::applyConfiguration(const po::variables_map &vm,
                                         const config::OptionTable &config_table)
 {
     // Rate
@@ -58,13 +59,27 @@ void RandomAccel2D::applyConfiguration(const po::variables_map &vm,
     oat::config::getNumericValue<uint64_t>(
         vm, config_table, "num-samples", num_samples_, 0);
 
+    // DistanceUnit
+    int d = 0;
+    if (oat::config::getNumericValue<int>(
+            vm, config_table, "unit-of-length", d, 0)) {
+        dist_unit_ = oat::Pose::DistanceUnit(d);
+    }
+
     // Room
     std::vector<double> r;
-    if (oat::config::getArray<double, 4>(vm, config_table, "room", r)) {
+    if (oat::config::getArray<double, 6>(vm, config_table, "room", r)) {
+
+        if (r[1] < 0 || r[2] < 0 || r[5] < 0) {
+            throw std::runtime_error("Room width, length, and height must be "
+                                     "greater than or equal to 0.");
+        }
         room_.x = r[0];
-        room_.y = r[1];
-        room_.width = r[2];
-        room_.height = r[3];
+        room_.width = r[1];
+        room_.y = r[2];
+        room_.length = r[3];
+        room_.z = r[4];
+        room_.height = r[5];
     }
 
     // Acceleration
@@ -78,7 +93,7 @@ void RandomAccel2D::applyConfiguration(const po::variables_map &vm,
     createStaticMatracies();
 }
 
-bool RandomAccel2D::generatePosition(oat::Position2D &position)
+bool RandomAccel::generatePosition(oat::Pose &pose)
 {
 
     if (it_ < num_samples_) {
@@ -86,15 +101,10 @@ bool RandomAccel2D::generatePosition(oat::Position2D &position)
         // Simulate one step of random, but smooth, motion
         simulateMotion();
 
-        // Simulated position info
-        position.position_valid = true;
-        position.position.x = state_(0);
-        position.position.y = state_(2);
-
-        // We have access to the velocity info for comparison
-        position.velocity_valid = true;
-        position.velocity.x = state_(1);
-        position.velocity.y = state_(3);
+        // Simulated pose info
+        pose.found = true;
+        std::array<double, 3> p{{state_(0), state_(2), state_(4)}};
+        pose.set_position(p);
 
         it_++;
 
@@ -104,14 +114,16 @@ bool RandomAccel2D::generatePosition(oat::Position2D &position)
     return true;
 }
 
-void RandomAccel2D::simulateMotion()
+void RandomAccel::simulateMotion()
 {
     // Generate random acceleration
-    accel_vec_(0) = accel_distribution_(accel_generator_);
-    accel_vec_(1) = accel_distribution_(accel_generator_);
+    cv::Matx31d accel_vec;
+    accel_vec(0) = accel_distribution_(accel_generator_);
+    accel_vec(1) = accel_distribution_(accel_generator_);
+    accel_vec(2) = accel_distribution_(accel_generator_);
 
     // Apply acceleration and transition matrix to the simulated position
-    state_ = state_transition_mat_ * state_ + input_mat_ * accel_vec_;
+    state_ = state_transition_mat_ * state_ + input_mat_ * accel_vec;
 
     // Apply circular boundary (not technically correct since positive test
     // condition should result in state_(0) = 2*room_.x + room_.width - state_(0),
@@ -124,13 +136,19 @@ void RandomAccel2D::simulateMotion()
         state_(0) = room_.x;
 
     if (state_(2) < room_.y)
-        state_(2) = room_.y + room_.height;
+        state_(2) = room_.y + room_.length;
 
-    if (state_(2) > room_.y + room_.height)
+    if (state_(2) > room_.y + room_.length)
         state_(2) = room_.y;
+
+    if (state_(4) < room_.z)
+        state_(4) = room_.z + room_.height;
+
+    if (state_(4) > room_.z + room_.height)
+        state_(4) = room_.z;
 }
 
-void RandomAccel2D::createStaticMatracies()
+void RandomAccel::createStaticMatracies()
 {
     double Ts = sample_period_in_sec_.count();
 
@@ -139,34 +157,68 @@ void RandomAccel2D::createStaticMatracies()
     state_transition_mat_(0, 1) = Ts;
     state_transition_mat_(0, 2) = 0.0;
     state_transition_mat_(0, 3) = 0.0;
+    state_transition_mat_(0, 4) = 0.0;
+    state_transition_mat_(0, 5) = 0.0;
 
     state_transition_mat_(1, 0) = 0.0;
     state_transition_mat_(1, 1) = 1.0;
     state_transition_mat_(1, 2) = 0.0;
     state_transition_mat_(1, 3) = 0.0;
+    state_transition_mat_(1, 4) = 0.0;
+    state_transition_mat_(1, 5) = 0.0;
 
     state_transition_mat_(2, 0) = 0.0;
     state_transition_mat_(2, 1) = 0.0;
     state_transition_mat_(2, 2) = 1.0;
     state_transition_mat_(2, 3) = Ts;
+    state_transition_mat_(2, 4) = 0.0;
+    state_transition_mat_(2, 5) = 0.0;
 
     state_transition_mat_(3, 0) = 0.0;
     state_transition_mat_(3, 1) = 0.0;
     state_transition_mat_(3, 2) = 0.0;
     state_transition_mat_(3, 3) = 1.0;
+    state_transition_mat_(3, 4) = 0.0;
+    state_transition_mat_(3, 5) = 0.0;
+
+    state_transition_mat_(4, 0) = 0.0;
+    state_transition_mat_(4, 1) = 0.0;
+    state_transition_mat_(4, 2) = 0.0;
+    state_transition_mat_(4, 3) = 0.0;
+    state_transition_mat_(4, 4) = 1.0;
+    state_transition_mat_(4, 5) = Ts;
+
+    state_transition_mat_(5, 0) = 0.0;
+    state_transition_mat_(5, 1) = 0.0;
+    state_transition_mat_(5, 2) = 0.0;
+    state_transition_mat_(5, 3) = 0.0;
+    state_transition_mat_(5, 4) = 0.0;
+    state_transition_mat_(5, 5) = 1.0;
 
     // Input Matrix
     input_mat_(0, 0) = (Ts*Ts)/2.0;
     input_mat_(0, 1) = 0.0;
+    input_mat_(0, 2) = 0.0;
 
     input_mat_(1, 0) = Ts;
     input_mat_(1, 1) = 0.0;
+    input_mat_(1, 2) = 0.0;
 
     input_mat_(2, 0) = 0.0;
     input_mat_(2, 1) = (Ts*Ts)/2.0;
+    input_mat_(2, 2) = 0.0;
 
     input_mat_(3, 0) = 0.0;
     input_mat_(3, 1) = Ts;
+    input_mat_(3, 2) = 0.0;
+
+    input_mat_(4, 0) = 0.0;
+    input_mat_(4, 1) = 0.0;
+    input_mat_(4, 2) = (Ts*Ts)/2.0;
+
+    input_mat_(5, 0) = 0.0;
+    input_mat_(5, 1) = 0.0;
+    input_mat_(5, 2) = Ts;
 }
 
 } /* namespace oat */

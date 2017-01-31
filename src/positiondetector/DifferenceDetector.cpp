@@ -84,6 +84,12 @@ void DifferenceDetector::applyConfiguration(
     oat::config::getValue<bool>(vm, config_table, "tune", tuning_on_);
 
     if (tuning_on_) {
+        TUNE<int>(&difference_intensity_threshold_,
+                  "Intensity thresh. (px)",
+                  0,
+                  256,
+                  difference_intensity_threshold_,
+                  1);
         TUNE<double>(&min_object_area_,
                      "Min. area (px^2)",
                      0,
@@ -100,7 +106,7 @@ void DifferenceDetector::applyConfiguration(
     }
 }
 
-void DifferenceDetector::detectPosition(oat::Frame &frame, oat::Pose &position)
+void DifferenceDetector::detectPosition(oat::Frame &frame, oat::Pose &pose)
 {
     if (tuning_on_)
         tuning_frame_ = frame.clone();
@@ -109,15 +115,16 @@ void DifferenceDetector::detectPosition(oat::Frame &frame, oat::Pose &position)
 
     // Threshold frame will be destroyed by the transform below, so we need to use
     // it to form the frame that will be shown in the tuning window here
-    if (tuning_on_)
+    if (tuning_on_) {
         tuning_frame_ = tuning_frame_.setTo(0, threshold_frame_ == 0);
+        tuning_frame_.set_color(PIX_GREY); // HACK. setTo returns a cv::Mat with no color info
+    }
 
     siftContours(threshold_frame_,
-                 position,
+                 pose,
                  object_area_,
                  min_object_area_,
                  max_object_area_);
-
 }
 
 void DifferenceDetector::applyThreshold(cv::Mat &frame) {

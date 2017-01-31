@@ -43,16 +43,6 @@ std::ostream &operator<<(std::ostream &os, const Pose &p)
     return os;
 }
 
-//constexpr char POSE_NPY_DTYPE[]{"[('tick', '<u8'),"
-//                                "('usec', '<u8'),"
-//                                "('unit', '<i4'),"
-//                                "('found', '<i1'),"
-//                                "('position', 'f8', (3)),"
-//                                "('orientation', 'f8', (4)),"
-//                                "('in_region', '<i1'),"
-//                                "('region', 'a10')]"};
-//
-// TODO: This feels horrible...
 std::vector<char> packPose(const Pose &p)
 {
     std::vector<char> pack;
@@ -89,7 +79,7 @@ std::vector<char> packPose(const Pose &p)
     }
 
     // Region
-    char rok = p.region_valid ? 1 : 0;
+    char rok = p.in_region ? 1 : 0;
     pack.insert(pack.end(), &rok, &rok + 1);
     pack.insert(pack.end(), p.region, p.region + oat::Pose::REGION_LEN);
 
@@ -136,22 +126,6 @@ std::array<double, 3> Pose::toTaitBryan(const bool deg) const
     return a;
 }
 
-/**
- * @brief This routine maps three values (x[0], x[1], x[2]) in the range [0,1]
- * into a 3x3 rotation matrix, M.  Uniformly distributed random variables x0,
- * x1, and x2 create uniformly distributed random rotation matrices.  To create
- * small uniformly distributed "perturbations", supply samples in the following
- * ranges:
- *     x[0] in [ 0, d ]
- *     x[1] in [ 0, 1 ]
- *     x[2] in [ 0, d ]
- * where 0 < d < 1 controls the size of the perturbation.  Any of the
- * random variables may be stratified (or "jittered") for a slightly more
- * even distribution.
- * @param x Perturbation vector.
- * @return Uniformly random rotiation matrix.
- * @author Jim Arvo, 1991. Modified by J. Newman 2017.
- */
 cv::Matx33d randRotation(std::array<double, 3> x)
 {
     float theta = x[0] * M_PI * 2; // Rotation about the pole (Z).

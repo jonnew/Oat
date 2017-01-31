@@ -324,20 +324,6 @@ void RPGPoseEst::detectPosition(oat::Frame &frame, oat::Pose &pose)
     // Pose will be in meters
     pose.unit_of_length = Pose::DistanceUnit::Meters;
 
-    // TODO: Remove!
-    std::cout << "PARAMS" << std::endl;
-    std::cout << tracker_.detection_threshold_value_ << std::endl;
-    std::cout << tracker_.gaussian_sigma_ << std::endl;
-    std::cout << tracker_.min_blob_area_ << std::endl;
-    std::cout << tracker_.max_blob_area_ << std::endl;
-    std::cout << tracker_.max_width_height_distortion_ << std::endl;
-    std::cout << tracker_.max_circular_distortion_ << std::endl;
-    std::cout << tracker_.roi_border_thickness_ << std::endl;
-    std::cout << tracker_.nearest_neighbour_pixel_tolerance_ << std::endl;
-    std::cout << tracker_.back_projection_pixel_tolerance_ << std::endl;
-    std::cout << tracker_.certainty_threshold_ << std::endl;
-    std::cout << tracker_.valid_correspondence_threshold_ << std::endl;
-
     // Detect pose
     auto t = frame.sample().seconds().count();
     std::cout << t << " seconds" << std::endl;

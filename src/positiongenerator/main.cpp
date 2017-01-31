@@ -31,8 +31,8 @@
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "PositionGenerator.h"
-#include "RandomAccel2D.h"
+#include "PoseGenerator.h"
+#include "RandomAccel.h"
 
 #define REQ_POSITIONAL_ARGS 2
 
@@ -40,7 +40,8 @@ namespace po = boost::program_options;
 
 const char usage_type[] =
     "TYPE\n"
-    "  rand2D: Randomly accelerating 2D Position";
+    "  rand: Gaussian randomly accelerating 3D position, uniformly\n"
+    "        randomly accelerating 3D orientation.";
 
 const char usage_io[] =
     "SINK:\n"
@@ -82,11 +83,11 @@ int main(int argc, char *argv[])
 
     // Component specializations
     std::unordered_map<std::string, char> type_hash;
-    type_hash["rand2D"] = 'a';
+    type_hash["rand"] = 'a';
 
     // The component itself
     std::string comp_name = "posigen";
-    std::shared_ptr<oat::PositionGenerator> posigen;
+    std::shared_ptr<oat::PoseGenerator> posigen;
 
     // Program options
     po::options_description visible_options;
@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
             switch (type_hash[type]) {
                 case 'a':
                 {
-                    posigen = std::make_shared<oat::RandomAccel2D>(sink);
+                    posigen = std::make_shared<oat::RandomAccel>(sink);
                     break;
                 }
                 default:

@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   RandomAccel2D.h
+//* File:   RandomAccel.h
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
-#ifndef OAT_RANDOMACCEL2D_H
-#define	OAT_RANDOMACCEL2D_H
+#ifndef OAT_RANDOMACCEL_H
+#define	OAT_RANDOMACCEL_H
 
 #include <chrono>
 #include <random>
@@ -27,20 +27,20 @@
 
 #include "../../lib/datatypes/Position2D.h"
 
-#include "PositionGenerator.h"
+#include "PoseGenerator.h"
 
 namespace oat {
 
-class RandomAccel2D : public PositionGenerator {
+class RandomAccel : public PoseGenerator {
 
 public:
-
     /**
-     * A 2D Gaussian random acceleration generator.
-     * Test positions are subject to random, uncorrelated 2D, Gaussian
-     * accelerations.
+     * A 3D Gaussian random acceleration generator.
+     * Test positions are subject to random, uncorrelated 3D, Gaussian
+     * accelerations. Test orientations are subject to uniform random
+     * rotations.
      */
-    using PositionGenerator::PositionGenerator;
+    using PoseGenerator::PoseGenerator;
 
 private:
     // Configurable Interface
@@ -49,21 +49,25 @@ private:
                             const config::OptionTable &config_table) override;
 
     // Random number generator
-    std::default_random_engine accel_generator_ {std::random_device{}()};
-    std::normal_distribution<double> accel_distribution_ {0.0, 100.0};
+    std::default_random_engine accel_generator_{std::random_device{}()};
+    std::normal_distribution<double> accel_distribution_{0.0, default_side_ / 20.0};
 
     // Simulated position
-    cv::Matx41d state_ {0.0, 0.0, 0.0, 0.0}; // Should be center of bounding region
-    cv::Matx21d accel_vec_;
+    cv::Matx61d state_{default_side_ / 2.0,
+                       0.0,
+                       default_side_ / 2.0,
+                       0.0,
+                       default_side_ / 2.0,
+                       0.0};
 
     // STM and input matrix
-    cv::Matx44d state_transition_mat_;
-    cv::Matx<double, 4, 2> input_mat_;
+    cv::Matx66d state_transition_mat_;
+    cv::Matx<double, 6, 3> input_mat_;
 
-    bool generatePosition(oat::Position2D &position) override;
+    bool generatePosition(oat::Pose &position) override;
     void createStaticMatracies(void);
     void simulateMotion(void);
 };
 
 }      /* namespace oat */
-#endif /* OAT_RANDOMACCEL2D_H */
+#endif /* OAT_RANDOMACCEL_H */

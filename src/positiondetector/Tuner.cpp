@@ -17,6 +17,7 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
+#include <iostream>
 #include <iomanip>
 #include <sstream>
 
@@ -56,6 +57,7 @@ void Tuner::tune(const oat::Frame &frame,
                  const std::vector<double> &D)
 {
     // Make sure this is color image
+    // TODO: This does not work
     oat::Frame col_frame = frame;
     oat::convertColor(frame, col_frame, PIX_BGR);
 

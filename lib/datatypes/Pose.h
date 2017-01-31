@@ -36,12 +36,12 @@
 #include "Sample.h"
 
 /**
- * @def Q2R
- * @note Animating rotation with quaternion curves, Ken Shoemake, SIGGRAPH '85
+ * @def q2R
+ * @cite Animating rotation with quaternion curves, Ken Shoemake, SIGGRAPH '85
  * Proceedings of the 12th annual conference on Computer graphics and
  * interactive techniques Pages 245-25
  */
-#define Q2R                                                                    \
+#define q2R                                                                    \
     const auto xx = q_[x] * q_[x];                                             \
     const auto yy = q_[y] * q_[y];                                             \
     const auto zz = q_[z] * q_[z];                                             \
@@ -62,12 +62,12 @@
     R(2, 2) = 1 - 2 * xx - 2 * yy;
 
 /**
- * @def R2Q
- * @note Animating rotation with quaternion curves, Ken Shoemake, SIGGRAPH '85
+ * @def R2q
+ * @cite Animating rotation with quaternion curves, Ken Shoemake, SIGGRAPH '85
  * Proceedings of the 12th annual conference on Computer graphics and
  * interactive techniques Pages 245-25
  */
-#define R2Q                                                                    \
+#define R2q                                                                    \
     auto t = 0.25 * (1 + R(0, 0) + R(1, 1) + R(2, 2));                         \
     if (t > std::numeric_limits<double>::epsilon()) {                          \
         q_[w] = std::sqrt(t);                                                  \
@@ -96,35 +96,9 @@
         }                                                                      \
     }
 
-// Eigen implementaiton (seems to have sign convension issues compared to mine)
-//#define R2Q                                                                    \
-//    auto t = R(0, 0) + R(1, 1) + R(2, 2);                                      \
-//    if (t > 0) {                                                               \
-//        t = std::sqrt(t + 1.0);                                                \
-//        q_[w] = 0.5 * t;                                                       \
-//        t = 0.5 / t;                                                           \
-//        q_[x] = R(2, 1) - R(1, 2) * t;   \\ t * (R21 - R12) ??                 \
-//        q_[y] = R(0, 2) - R(2, 0) * t;                                         \
-//        q_[z] = R(1, 0) - R(0, 1) * t;                                         \
-//    } else {                                                                   \
-//        size_t i = 0;                                                          \
-//        if (R(1, 1) > R(0, 0))                                                 \
-//            i = 1;                                                             \
-//        if (R(2, 2) > R(i, i))                                                 \
-//            i = 2;                                                             \
-//        size_t j = (i + 1) % 3;                                                \
-//        size_t k = (j + 1) % 3;                                                \
-//                                                                               \
-//        t = std::sqrt(R(i, i) - R(j, j) - R(k, k) + 1.0);                      \
-//        q_[i] = 0.5 * t;                                                       \
-//        t = 0.5 / t;                                                           \
-//        q_[w] = (R(k, j) - R(j, k)) * t;                                       \
-//        q_[j] = (R(j, i) + R(i, j)) * t;                                       \
-//        q_[k] = (R(k, i) + R(i, k)) * t;                                       \
-//    }
-
 namespace oat {
 
+// Constants
 static constexpr size_t x{0}, y{1}, z{2}, w{3};
 static constexpr size_t POSE_NPY_DTYPE_BYTES {88};
 static constexpr char POSE_NPY_DTYPE[]{"[('tick', '<u8'),"
@@ -139,27 +113,42 @@ static constexpr char POSE_NPY_DTYPE[]{"[('tick', '<u8'),"
 // Forward decl.
 class Pose;
 
-/** 
- * @brief 
- * @param p
- * @param writer
- * @param verbose
+/**
+ * @brief Serialize pose using specified Writer type. Used for JSON streaming.
+ * @param p Pose to Serialize.
+ * @param writer Writer to use for serialize.
+ * @param verbose Serialize pose data fields even when they are not defined.
+ * e.g. when the object is not found (found = false) or not in a region
+ * (in_region = false). Useful for alignment and ease of parsing.
+ * @note Precision template parameter defaults to 3 indicating 0.001 pixels
+ * or 1 mm precision
  */
 template <typename Writer, size_t Precision = 3>
 void serializePose(const Pose &p, Writer &writer, bool verbose = true);
 
-/** 
- * @brief 
- * @param os
- * @param p
- * @return 
+/**
+ * @brief Serialze pose to standard stream.
+ * @param os Stream.
+ * @param p Pose to serailize.
+ * @return Serialzed pose.
  */
 std::ostream &operator<<(std::ostream &os, const Pose &p);
 
-/** 
- * @brief 
- * @param 
- * @return 
+/**
+ * @brief This routine maps three values (x[0], x[1], x[2]) in the range [0,1]
+ * into a 3x3 rotation matrix, R.  Uniformly distributed random variables x0,
+ * x1, and x2 create uniformly distributed random rotation matrices.  To create
+ * small uniformly distributed "perturbations", supply samples in the following
+ * ranges:
+ *     x[0] in [ 0, d ]
+ *     x[1] in [ 0, 1 ]
+ *     x[2] in [ 0, d ]
+ * where 0 < d < 1 controls the size of the perturbation.  Any of the
+ * random variables may be stratified (or "jittered") for a slightly more
+ * even distribution.
+ * @param x Perturbation vector.
+ * @return Uniformly random rotation matrix.
+ * @author Jim Arvo, 1991. Modified by J. Newman 2017.
  */
 cv::Matx33d randRotation(std::array<double, 3> x);
 
@@ -171,10 +160,9 @@ cv::Matx33d randRotation(std::array<double, 3> x);
 std::vector<char> packPose(const Pose &p);
 
 /**
- * @brief Object pose.
+ * @brief Detected object pose.
  */
 class Pose {
-
 
     template <typename Writer, size_t Precision>
     friend void serializePose(const Pose &p, Writer &w, bool verbose);
@@ -185,8 +173,7 @@ public:
     enum class DistanceUnit {
         Pixels = 0, //!< Position measured in pixels. Origin is
                     //! upper left.
-        Meters,     //!< Position measured in units specified via
-                    //! homography
+        Meters,     //!< Position measured in meters.
     };
 
     static constexpr size_t REGION_LEN {10};
@@ -195,7 +182,7 @@ public:
 
     Pose(const Pose &p)
     : unit_of_length(p.unit_of_length)
-    , region_valid(p.region_valid)
+    , in_region(p.in_region)
     , found(p.found)
     , sample_(p.sample_)
     , q_(p.q_)
@@ -213,13 +200,12 @@ public:
     Pose &operator=(const Pose &rhs)
     {
         unit_of_length = rhs.unit_of_length;
-        region_valid = rhs.region_valid;
+        in_region = rhs.in_region;
         std::strncpy(region, rhs.region, REGION_LEN);
         found = rhs.found;
         sample_ = rhs.sample_;
         q_ = rhs.q_;
         p_ = rhs.p_;
-
 #ifdef EIGEN3_FOUND
         Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
         Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
@@ -230,13 +216,40 @@ public:
 
     Pose &operator=(Pose &&) = default;
 
+    /** 
+     * @brief Produce a pose from thin air. This is used by pure SINKs (e.g.
+     * posigen) that have no sample information to pass forward but instead are
+     * responsible for creating it.
+     * @param p Pose sample to set this one too. Associated timing info is
+     * ignored.  
+     * @param usec Usec since production has started. Used to increment
+     * associated timing info. If set to zero or not supplied, defaults to just
+     * updating sample count without a time.
+     */
+    void produce(const Pose &p, Sample::Microseconds usec = Sample::Microseconds{0}) {
+        unit_of_length = p.unit_of_length;
+        in_region = p.in_region;
+        std::strncpy(region, p.region, REGION_LEN);
+        found = p.found;
+        q_ = p.q_;
+        p_ = p.p_;
+#ifdef EIGEN3_FOUND
+        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
+        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
+#endif
+        if (usec == Sample::Microseconds{0})
+            sample_.incrementCount();
+        else
+            sample_.incrementCount(usec);
+    }
+
     /**
      * @brief Unit of length used to specify rotation and translation vectors.
      */
     DistanceUnit unit_of_length{DistanceUnit::Pixels};
 
     // Categorical position label (e.g. "North West")
-    bool region_valid {false};
+    bool in_region {false};
     char region[REGION_LEN] {0}; //!< Categorical position label (e.g. "North West")
 
     // Sample information
@@ -246,13 +259,12 @@ public:
     uint64_t sample_count(void) const { return sample_.count(); }
     uint64_t sample_usec(void) const { return sample_.microseconds().count(); }
     void incrementSampleCount() { sample_.incrementCount(); }
-    //void incrementSampleCount(USec us) { sample_.incrementCount(us); }
+    void incrementSampleCount(Sample::Microseconds us) { sample_.incrementCount(us); }
 
     // Was pose estimation successful?
     bool found{false};
 
-    // To understand type signatures of these function
-    // templates:
+    // To understand the const ref type signatures of these function templates:
     // http://stackoverflow.com/questions/11703553/template-specialization-not-used
 
     // Orientation getter/setter
@@ -285,7 +297,7 @@ protected:
 
     /**
      * @brief Orientation, represented as a Qauarterion, [x, y, z, w(real)].
-     * Initialized to identity.  
+     * Initialized to identity.
      * @note Memory layout maps that of Eigen::Quaterniond
      */
     std::array<double, 4> q_{{0, 0, 0, 1}};
@@ -296,11 +308,6 @@ protected:
      * some external reference frame if a homographic transform is used.
      */
     std::array<double, 3> p_{{0, 0, 0}};
-
-// TODO: Should these travel with pose? Might make downstream visualization much
-// easier
-// std::array<double, 9> camera_matrix_{{1, 0, 0, 0, 1, 0, 0, 0, 1}};
-// std::array<double, 8> distortion_coefficients_{{0, 0, 0, 0, 0, 0, 0, 0}};
 
 #ifdef EIGEN3_FOUND
     Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
@@ -343,7 +350,7 @@ inline void Pose::set_orientation(const std::array<double, 4> &r)
 template <>
 inline void Pose::set_orientation(const cv::Matx33d &R)
 {
-    R2Q // Macro
+    R2q // Macro
 }
 
 template <>
@@ -353,7 +360,7 @@ inline void Pose::set_orientation(const cv::Vec3d &r)
     // I guess
     cv::Matx33d R;
     cv::Rodrigues(r, R);
-    R2Q // macro
+    R2q // macro
 }
 
 #ifdef EIGEN3_FOUND
@@ -410,7 +417,6 @@ inline cv::Vec3d Pose::orientation() const
         r[1] = alpha * q_[y];
         r[2] = alpha * q_[z];
     }
-
     return r;
 }
 
@@ -418,7 +424,7 @@ template <>
 inline cv::Matx33d Pose::orientation() const
 {
     cv::Matx33d R;
-    Q2R // Macro
+    q2R // Macro
     return R;
 }
 
@@ -426,7 +432,7 @@ template <>
 inline cv::Matx44d Pose::orientation() const
 {
     auto R = cv::Matx44d::zeros();
-    Q2R // Macro
+    q2R // Macro
     R(3, 3)= 1;
     return R;
 }
@@ -447,14 +453,6 @@ inline Eigen::Matrix3d Pose::orientation() const
 
 //** HELPERS **//
 
-/**
- * @brief Serialize pose.
- * @param p Position to serialize.
- * @param w JSON writer to serialize with.
- * @param verbose Enable verbose serialization. Defaults to true.
- * @note Precision template parameter defaults to 3 indicating 0.001 pixels
- * or 1 mm precision
- */
 template <typename Writer, size_t Precision>
 void serializePose(const Pose &p, Writer &writer, bool verbose)
 {
@@ -497,11 +495,11 @@ void serializePose(const Pose &p, Writer &writer, bool verbose)
     }
 
     // Region
-    writer.String("reg_ok");
-    writer.Bool(p.region_valid);
+    writer.String("in_region");
+    writer.Bool(p.in_region);
 
-    if (p.region_valid || verbose) {
-        writer.String("reg");
+    if (p.in_region || verbose) {
+        writer.String("region");
         writer.String(p.region);
     }
 

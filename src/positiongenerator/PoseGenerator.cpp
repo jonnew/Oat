@@ -25,69 +25,79 @@
 #include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
 
-#include "PositionGenerator.h"
+#include "PoseGenerator.h"
 
 namespace oat {
 
-PositionGenerator::PositionGenerator(const std::string &position_sink_address)
-: name_("posigen[*->" + position_sink_address + "]")
-, position_sink_address_(position_sink_address)
+PoseGenerator::PoseGenerator(const std::string &pose_sink_address)
+: name_("posigen[*->" + pose_sink_address + "]")
+, pose_sink_address_(pose_sink_address)
 {
     tick_ = clock_.now();
 }
 
-po::options_description PositionGenerator::baseOptions(void) const
+po::options_description PoseGenerator::baseOptions(void) const
 {
     po::options_description base_opts;
 
     // Common program options
     base_opts.add_options()
         ("rate,r", po::value<double>(),
-        "Samples per second. Defaults to as fast as possible.")
+         "Samples per second. Defaults to as fast as possible.")
         ("num-samples,n", po::value<uint64_t>(),
-        "Number of position samples to generate and serve. Deafaults to "
-        "approximately infinite.")
+         "Number of position samples to generate and serve. Deafaults to "
+         "approximately infinite.")
+        ("unit-of-length,u", po::value<int>(),
+         "Unit of legth in which generated pose position is specified: "
+         "Values:\n"
+         "  0:  \tPixels (default).\n"
+         "  1:  \tMeters")
         ("room,R", po::value<std::string>(),
-         "Array of floats, [x0,y0,width,height], specifying the boundaries in "
-         "which generated positions reside. The room has periodic boundaries so "
-         "when a position leaves one side it will enter the opposing one.")
+         "Array of floats, [x0,w,y0,l,z0,h], specifying the boundaries in "
+         "which generated poses reside. The room has periodic boundaries so "
+         "when a pose's position leaves one side it will enter the opposing "
+         "one.")
         ;
 
     return base_opts;
 }
 
-bool PositionGenerator::connectToNode()
+bool PoseGenerator::connectToNode()
 {
     // Bind to sink sink node and create a shared position
-    position_sink_.bind(position_sink_address_, position_sink_address_);
-    shared_position_ = position_sink_.retrieve();
+    pose_sink_.bind(pose_sink_address_);
+    shared_pose_ = pose_sink_.retrieve();
 
     // Setup sample rate info on internal copy
-    internal_position_.set_rate_hz(1.0 / sample_period_in_sec_.count());
+    shared_pose_->set_rate_hz(1.0 / sample_period_in_sec_.count());
 
     return true;
 }
 
-int PositionGenerator::process()
+int PoseGenerator::process()
 {
-    // Generate internal position
-    bool eof = generatePosition(internal_position_);
+    // Generate a pose
+    oat::Pose pose;
+    bool eof = generatePosition(pose);
 
     // START CRITICAL SECTION //
     ////////////////////////////
 
     // Wait for sources to read
-    position_sink_.wait();
+    pose_sink_.wait();
 
     if (first_pos_) {
         first_pos_ = false;
         start_ = clock_.now();
     }
 
-    *shared_position_ = internal_position_;
+    // Pure SINKs update pose and increment sample count
+    auto time_since_start = std::chrono::duration_cast<Sample::Microseconds>(
+        clock_.now() - start_);
+    shared_pose_->produce(pose, time_since_start);
 
     // Tell sources there is new data
-    position_sink_.post();
+    pose_sink_.post();
 
     ////////////////////////////
     //  END CRITICAL SECTION  //
@@ -98,15 +108,10 @@ int PositionGenerator::process()
         tick_ = clock_.now();
     }
 
-    // Pure SINKs increment sample count
-    auto time_since_start = std::chrono::duration_cast<Sample::Microseconds>(
-        clock_.now() - start_);
-    internal_position_.incrementSampleCount(time_since_start);
-
     return eof;
 }
 
-void PositionGenerator::generateSamplePeriod(const double samples_per_second)
+void PoseGenerator::generateSamplePeriod(const double samples_per_second)
 {
     oat::Sample::Seconds period(1.0 / samples_per_second);
     sample_period_in_sec_ = period; // Auto conversion

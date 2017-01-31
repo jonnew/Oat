@@ -396,6 +396,9 @@ oat-posidet-help
 #### Configuration Options
 
 __TYPE = `aruco`__
+
+_Note:_ Requires that OpenCV is compiled with [contrib
+module](https://github.com/opencv/opencv_contrib) support.
 ```
 oat-posidet-aruco-help
 ```
@@ -411,6 +414,10 @@ oat-posidet-diff-help
 ```
 
 __TYPE = `rpg`__
+
+_Note:_ Requires Oat compilation against
+[Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) linear algebra
+template library.
 ```
 oat-posidet-rpg-help
 ```
@@ -1001,11 +1008,12 @@ export LD_LIBRARY_PATH=<path to boost root directory>/stage/lib:$LD_LIBRARY_PATH
 - `oat-decorate`
 - `oat-positest`
 
-__Note__: OpenCV must be installed with ffmpeg support in order for offline
-analysis of pre-recorded videos to occur at arbitrary frame rates. If it is
-not, gstreamer will be used to serve from video files at the rate the files
-were recorded. No cmake flags are required to configure the build to use
-ffmpeg. OpenCV will be built with ffmpeg support if something like
+##### ffmpeg Support
+OpenCV must be installed with ffmpeg support in order for offline analysis of
+pre-recorded videos to occur at arbitrary frame rates. If it is not, gstreamer
+will be used to serve from video files at the rate the files were recorded. No
+cmake flags are required to configure the build to use ffmpeg. OpenCV will be
+built with ffmpeg support if something like
 
 ```
 -- FFMPEG:          YES
@@ -1022,11 +1030,19 @@ with ffmpeg support, can be obtained as follows:
 TODO
 ```
 
-__Note__: To increase Oat's video visualization performance using `oat view`,
-you can build OpenCV with OpenGL and/or OpenCL support. Both will open up
-significant processing bandwidth to other Oat components and make for faster
-processing pipelines. To compile OpenCV with OpenGL and OpenCL support, first
-install dependencies:
+##### opencv_contrib Support
+To use `oat-posidet arcuo`, you must compile Oat against OpenCV that
+has `contrib` support. To compile OpenCV with `contrib` support, clone down the
+[opecv_contrib](https://github.com/opencv/opencv_contrib) repo. Then, when
+configuring the OpenCV build, set the path the contrib modules path as follows:
+using `-DOPENCV_EXTRA_MODULES_PATH=<opencv_contrib>/modules`
+
+##### OpenGL Support
+To increase Oat's video visualization performance using `oat view`, you can
+build OpenCV with OpenGL and/or OpenCL support. Both will open up significant
+processing bandwidth to other Oat components and make for faster processing
+pipelines. To compile OpenCV with OpenGL and OpenCL support, first install
+dependencies:
 
 ```
 sudo apt-get install libgtkglext1 libgtkglext1-dev
@@ -1038,7 +1054,8 @@ support: YES` and `Use OpenCL: YES` appear in the cmake output text. If OpenCV
 is compiled with OpenCL and OpenGL support, the performance benefits will be
 automatic, no compiler options need to be set for Oat.
 
-__Note__: If you have [NVIDIA GPU that supports
+##### CUDA Support
+If you have [NVIDIA GPU that supports
 CUDA](https://developer.nvidia.com/cuda-gpus), you can build OpenCV with CUDA
 support to enable GPU accelerated video processing.  To do this, will first
 need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit).
@@ -1070,8 +1087,9 @@ need to install the [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit).
 If OpenCV is compiled with CUDA suport, the CUDA-enabled portions of the Oat
 codebase will be enabled automatically. No compile flags are required.
 
-__Note__: GUI functionality is enhanced in OpenCV is compiled with Qt support.
-You can build OpenCV with Qt by first installing the [Qt
+##### QT Support
+GUI functionality is enhanced in OpenCV is compiled with Qt support.  You can
+build OpenCV with Qt by first installing the [Qt
 SDK](http://download.qt.io/official_releases/online_installers/qt-unified-linux-x64-online.run)
 and these dependencies:
 
@@ -1084,6 +1102,7 @@ The you can compile OpenCV using QT support by adding `-DWITH_QT=ON` flag to
 the cmake command below. QT functionality will then be used by Oat
 automatically.
 
+##### OpenCV Build
 Finally, to compile and install OpenCV:
 
 ```bash
@@ -1395,19 +1414,6 @@ RJ45 ------------
       camera matrix to make this a lot faster.
     - EDIT: Also should provide an `oat-posifilt` version which only applies
       undistortion to position rather than the entire frame.
-- [ ] Should components always involve a user IO thread?
-    - For instance, some generalization of `oat-record ... --interactive`
-    - For instance, it would be nice if PURE SINKs (e.g. `oat frameserve`)
-      could have their sample clock reset via user input, without having to
-      restart the program.
-    - For instance, it would be nice to be able to re-acquire the background
-      image in `oat-framefilt bsub` without have to restart the program.
-    - Where should this come from? Command line input?
-    - EDIT: Shea and I have been brainstorming ways to use unix sockets to
-      allow general runtime control of oat components. This will doing things
-      like easy, in general.
-- [ ] Add position history toggle in `oat-decorate`
-    - Answer will come with solution to TODO above this one.
 - [ ] Type deduction in shmem Tokens
     - Sources should have a static method for checking the token type of a
       given address.

@@ -3,8 +3,8 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Create a SOURCES variable containing all required .cpp files:
 set (oat-posigen_SOURCE
-     PositionGenerator.cpp
-     RandomAccel2D.cpp
+     PoseGenerator.cpp
+     RandomAccel.cpp
      main.cpp)
 
 # Target

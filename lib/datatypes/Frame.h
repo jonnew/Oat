@@ -153,7 +153,7 @@ private:
  */
 inline void convertColor(const oat::Frame &from, oat::Frame &to, oat::PixelColor color)
 {
-    auto code = color_conv_code(from.color(), PIX_BGR);
+    auto code = color_conv_code(from.color(), color);
     if (code == -2) {
         throw std::runtime_error("Requested color conversion is not possible.");
     } else if (code == -1) {
