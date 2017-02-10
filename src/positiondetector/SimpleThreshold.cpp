@@ -114,8 +114,10 @@ void SimpleThreshold::applyConfiguration(
     }
 }
 
-void SimpleThreshold::detectPosition(oat::Frame &frame, oat::Pose &pose)
+oat::Pose SimpleThreshold::detectPose(oat::Frame &frame)
 {
+    oat::Pose pose(Pose::DistanceUnit::Pixels, Pose::DOF::Two, Pose::DOF::Zero);
+
     // Must do this here because inRange slices the frame.
     if (tuning_on_)
         tuning_frame_ = frame.clone();
@@ -142,6 +144,8 @@ void SimpleThreshold::detectPosition(oat::Frame &frame, oat::Pose &pose)
                  object_area_,
                  min_object_area_,
                  max_object_area_);
+
+    return pose;
 }
 
 bool SimpleThreshold::makeEroder(int value)

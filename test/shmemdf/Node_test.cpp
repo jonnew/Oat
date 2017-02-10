@@ -59,9 +59,7 @@ SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
         {
             THEN("The Node shall throw")
             {
-                REQUIRE_THROWS(
-                    boost::interprocess::interprocess_semaphore &s = node.read_barrier(-1);
-                );
+                REQUIRE_THROWS(node.read_barrier(-1));
             }
         }
 
@@ -72,9 +70,7 @@ SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
 
             THEN("reading a greater indexed read-barrier shall throw")
             {
-                REQUIRE_THROWS(
-                boost::interprocess::interprocess_semaphore &s = node.read_barrier(idx+1);
-                );
+                REQUIRE_THROWS(node.read_barrier(idx+1));
             }
         }
     }

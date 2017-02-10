@@ -19,6 +19,7 @@
 
 #include "DifferenceDetector.h"
 #include "DetectorFunc.h"
+#include "Tuner.h"
 
 #include <string>
 #include <opencv2/cvconfig.h>
@@ -81,9 +82,13 @@ void DifferenceDetector::applyConfiguration(
     }
 
     // Tuning GUI
-    oat::config::getValue<bool>(vm, config_table, "tune", tuning_on_);
+    bool tuning_on = false;
+    oat::config::getValue<bool>(vm, config_table, "tune", tuning_on);
 
-    if (tuning_on_) {
+    if (tuning_on) {
+
+        tuner_ = oat::make_unique<Tuner>(name_);
+
         TUNE<int>(&difference_intensity_threshold_,
                   "Intensity thresh. (px)",
                   0,
@@ -106,28 +111,9 @@ void DifferenceDetector::applyConfiguration(
     }
 }
 
-void DifferenceDetector::detectPosition(oat::Frame &frame, oat::Pose &pose)
+oat::Pose DifferenceDetector::detectPose(oat::Frame &frame)
 {
-    if (tuning_on_)
-        tuning_frame_ = frame.clone();
-
-    applyThreshold(frame);
-
-    // Threshold frame will be destroyed by the transform below, so we need to use
-    // it to form the frame that will be shown in the tuning window here
-    if (tuning_on_) {
-        tuning_frame_ = tuning_frame_.setTo(0, threshold_frame_ == 0);
-        tuning_frame_.set_color(PIX_GREY); // HACK. setTo returns a cv::Mat with no color info
-    }
-
-    siftContours(threshold_frame_,
-                 pose,
-                 object_area_,
-                 min_object_area_,
-                 max_object_area_);
-}
-
-void DifferenceDetector::applyThreshold(cv::Mat &frame) {
+    oat::Pose pose(Pose::DistanceUnit::Pixels, Pose::DOF::Two, Pose::DOF::Zero);
 
     if (last_image_set_) {
         cv::absdiff(frame, last_image_, threshold_frame_);
@@ -140,13 +126,34 @@ void DifferenceDetector::applyThreshold(cv::Mat &frame) {
         if (makeBlur(blur_px_))
             cv::blur(threshold_frame_, threshold_frame_, blur_size_);
 
-
         last_image_ = frame.clone(); // Get a copy of the last image
     } else {
         threshold_frame_ = frame.clone();
         last_image_ = frame.clone();
         last_image_set_ = true;
     }
+
+    // Threshold frame will be destroyed by the transform below, so we need to use
+    // it to form the frame that will be shown in the tuning window here
+    if (tuner_) {
+        frame.copyTo(tuning_frame, threshold_frame_ > 0);
+        //auto tuning_frame_ = frame.clone();
+        //tuning_frame = tuning_frame.setTo(0, threshold_frame_ == 0);
+        //tuning_frame.set_color(PIX_GREY); // HACK. setTo returns a cv::Mat with no color info
+        tune(tuning_frame, 
+    }
+
+    siftContours(threshold_frame_,
+                 pose,
+                 object_area_,
+                 min_object_area_,
+                 max_object_area_);
+
+    if (tuner_) {
+        tune(tuning_frame, pose);
+    }
+
+    return pose;
 }
 
 bool DifferenceDetector::makeBlur(int value)

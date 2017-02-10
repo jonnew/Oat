@@ -144,6 +144,9 @@ void PoseViewer::display(const oat::Pose &pose)
 
 cv::Mat PoseViewer::generateFrame(const oat::Pose &pose) const
 {
+    if (pose.orientation_dof == Pose::DOF::Zero)
+        throw std::runtime_error("No orientation information to view.");
+
     using PlygnVert = std::array<cv::Point3f, 3>;
 
     // Create mat to draw on

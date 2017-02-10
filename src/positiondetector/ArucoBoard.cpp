@@ -28,6 +28,7 @@
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/TOMLSanitize.h"
+#include "../../lib/utility/make_unique.h"
 
 namespace oat {
 
@@ -267,9 +268,13 @@ void ArucoBoard::applyConfiguration(const po::variables_map &vm,
     }
 
     // Tuning GUI
-    oat::config::getValue<bool>(vm, config_table, "tune", tuning_on_);
+    bool tuning_on = false;
+    oat::config::getValue<bool>(vm, config_table, "tune", tuning_on);
 
-    if (tuning_on_) {
+    if (tuning_on) {
+
+        tuner_ = oat::make_unique<Tuner>(name_);
+
         TUNE<int>(&dp_->adaptiveThreshWinSizeMin ,
                   "Thresh min. window size (px)",
                   3.0,
@@ -333,13 +338,10 @@ void ArucoBoard::applyConfiguration(const po::variables_map &vm,
     }
 }
 
-void ArucoBoard::detectPosition(oat::Frame &frame, oat::Pose &pose)
+oat::Pose ArucoBoard::detectPose(const oat::Frame &frame)
 {
-    // TODO: Feels pretty gross to do this every time
-    pose.unit_of_length = Pose::DistanceUnit::Meters;
-
-    if (tuning_on_)
-        tuning_frame_ = frame;
+    oat::Pose pose(
+        Pose::DistanceUnit::Meters, Pose::DOF::Three, Pose::DOF::Three);
 
     std::vector<int> marker_ids;
     Corners marker_corners;
@@ -359,16 +361,6 @@ void ArucoBoard::detectPosition(oat::Frame &frame, oat::Pose &pose)
                                          rejected_corners,
                                          camera_matrix_,
                                          dist_coeff_);
-    }
-
-    if (tuning_on_ && marker_corners.size() > 0) {
-        cv::aruco::drawDetectedMarkers(
-            tuning_frame_, marker_corners, marker_ids);
-    }
-
-    if (tuning_on_ && rejected_corners.size() > 0) {
-        cv::aruco::drawDetectedMarkers(
-            tuning_frame_, rejected_corners, cv::noArray(), cv::Scalar(0, 0, 255));
     }
 
     // Next try to estimate pose
@@ -391,6 +383,22 @@ void ArucoBoard::detectPosition(oat::Frame &frame, oat::Pose &pose)
             pose.set_position(tvec);
         }
     }
+
+    if (tuner_) {
+
+        if (marker_corners.size() > 0) {
+            cv::aruco::drawDetectedMarkers(frame, marker_corners, marker_ids);
+        }
+
+        if (rejected_corners.size() > 0) {
+            cv::aruco::drawDetectedMarkers(
+                frame, rejected_corners, cv::noArray(), cv::Scalar(0, 0, 255));
+        }
+
+        tuner_->tune(frame, pose, camera_matrix_, dist_coeff_);
+    }
+
+    return pose;
 }
 
 int arucoDictionaryID(const std::string &key)

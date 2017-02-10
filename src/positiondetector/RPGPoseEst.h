@@ -58,7 +58,11 @@ private:
                             const config::OptionTable &config_table) override;
 
     // PositionDetector Interface
-    void detectPosition(oat::Frame &frame, oat::Pose &pose) override;
+    oat::Pose detectPose(oat::Frame &frame) override;
+
+    // Intrinsic parameters
+    cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
+    std::vector<double> dist_coeff_  {0, 0, 0, 0, 0, 0, 0, 0};
 
     // The RPG monocoluar pose estimator
     PE tracker_;

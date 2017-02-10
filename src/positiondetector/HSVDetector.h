@@ -61,7 +61,7 @@ private:
      * @param Frame to look for object within.
      * @param position Detected object position.
      */
-    void detectPosition(oat::Frame &frame, oat::Pose &position) override;
+    oat::Pose detectPose(oat::Frame &frame) override;
 
     // Erode and dilate kernels
     int erode_px_{0}, dilate_px_{0};

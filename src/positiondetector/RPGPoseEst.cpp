@@ -319,8 +319,11 @@ void RPGPoseEst::applyConfiguration(const po::variables_map &vm,
     }
 }
 
-void RPGPoseEst::detectPosition(oat::Frame &frame, oat::Pose &pose)
+oat::Pose RPGPoseEst::detectPose(oat::Frame &frame)
 {
+    oat::Pose pose(
+        Pose::DistanceUnit::Meters, Pose::DOF::Three, Pose::DOF::Three);
+
     // Pose will be in meters
     pose.unit_of_length = Pose::DistanceUnit::Meters;
 
@@ -345,6 +348,8 @@ void RPGPoseEst::detectPosition(oat::Frame &frame, oat::Pose &pose)
         pose.set_position<Eigen::Vector3d>(T);
         pose.set_orientation<Eigen::Matrix3d>(R);
     }
+
+    return pose;
 }
 
 } /* namespace oat */

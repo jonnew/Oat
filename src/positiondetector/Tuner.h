@@ -28,6 +28,8 @@
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Pose.h"
 
+#define TUNE tuner_->registerParameter
+
 namespace oat {
 
 struct Tuner {

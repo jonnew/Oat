@@ -94,7 +94,7 @@ private:
 
 /**
  * @brief Generic source package containing address, totken type and source.
- * Not used and probably not very useful -- token type should be retrieabel
+ * Not used and probably not very useful -- token type should be retrievable
  * from source without knowing anything about it except its address.
  */
 struct TaggedSource {

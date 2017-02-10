@@ -59,7 +59,6 @@ int main(int argc, char *argv[]) {
 
     // The component itself
     std::string comp_name = "decorator";
-    std::shared_ptr<oat::Decorator> decorator;
 
     // Program options
     po::options_description visible_options;
@@ -105,11 +104,11 @@ int main(int argc, char *argv[]) {
         po::notify(option_map);
 
         // Make the component (no type specialization here)
-        decorator = std::make_shared<oat::Decorator>(source, sink);
+        oat::Decorator decorator(source, sink);
 
         // Specialize program options for the selected TYPE
         po::options_description detail_opts {"CONFIGURATION"};
-        decorator->appendOptions(detail_opts);
+        decorator.appendOptions(detail_opts);
         visible_options.add(detail_opts);
         options.add(detail_opts);
 
@@ -145,7 +144,7 @@ int main(int argc, char *argv[]) {
         }
 
         // Get specialized component name
-        comp_name = decorator->name();
+        comp_name = decorator.name();
 
         // Reparse specialized component options
         auto special_opt =
@@ -157,18 +156,18 @@ int main(int argc, char *argv[]) {
                  .run(), option_map);
         po::notify(option_map);
 
-        decorator->configure(option_map);
+        decorator.configure(option_map);
 
         // Tell user
-        std::cout << oat::whoMessage(decorator->name(),
+        std::cout << oat::whoMessage(decorator.name(),
             "Listening to source " + oat::sourceText(source) + ".\n")
-            << oat::whoMessage(decorator->name(),
+            << oat::whoMessage(decorator.name(),
             "Steaming to sink " + oat::sinkText(sink) + ".\n")
-            << oat::whoMessage(decorator->name(),
+            << oat::whoMessage(decorator.name(),
             "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
-        decorator->run();
+        decorator.run();
 
         // Tell user
         std::cout << oat::whoMessage(comp_name, "Exiting.\n");
@@ -198,4 +197,3 @@ int main(int argc, char *argv[]) {
     // Exit failure
     return -1;
 }
-

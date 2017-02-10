@@ -66,7 +66,7 @@ void WebCam::applyConfiguration(const po::variables_map &vm,
     if (oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0)) {
         cv_camera_->set(cv::CAP_PROP_FPS, fps);
         if (cv_camera_->get(cv::CAP_PROP_FPS) != fps)
-            std::cerr << oat::Warn("Not able to set webcam mat rate.\n");
+            std::cerr << oat::Warn("Not able to set webcam frame rate.\n");
     }
 
     // ROI

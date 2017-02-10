@@ -31,19 +31,17 @@ namespace oat {
 void siftContours(cv::Mat &frame,
                   Pose &pose,
                   double &area,
-                  double min_area,
-                  double max_area)
+                  const double min_area,
+                  const double max_area)
 {
-
     std::vector<std::vector <cv::Point> > contours;
 
-    cv::findContours(frame, contours,
-                     cv::RETR_EXTERNAL,
-                     cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(
+        frame, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     double object_area = 0;
 
-    for (auto &c : contours) {
+    for (const auto &c : contours) {
 
         cv::Moments moment = cv::moments(static_cast<cv::Mat>(c));
         double countour_area = moment.m00;

@@ -81,7 +81,7 @@ std::vector<char> packPose(const Pose &p)
     // Region
     char rok = p.in_region ? 1 : 0;
     pack.insert(pack.end(), &rok, &rok + 1);
-    pack.insert(pack.end(), p.region, p.region + oat::Pose::REGION_LEN);
+    pack.insert(pack.end(), p.region, p.region + oat::Pose::region_max_char);
 
     return pack;
 }

@@ -43,11 +43,10 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    void detectPosition(oat::Frame &frame, oat::Pose &pose) override;
+    oat::Pose detectPose(oat::Frame &frame) override;
 
     // Intermediate variables
-    cv::Mat this_image_, last_image_;
-    cv::Mat threshold_frame_;
+    oat::Frame last_frame_;
     bool last_image_set_ {false};
 
     // Object detection
@@ -62,9 +61,6 @@ private:
     int difference_intensity_threshold_ {10};
     double min_object_area_ {0.0};
     double max_object_area_ {std::numeric_limits<double>::max()};
-
-    // Processing functions
-    void applyThreshold(cv::Mat &frame);
 };
 
 }       /* namespace oat */

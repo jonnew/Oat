@@ -34,13 +34,13 @@
 #ifdef ARUCO_FOUND
 #include "ArucoBoard.h"
 #endif
-#include "DifferenceDetector.h"
-#include "HSVDetector.h"
-#include "PositionDetector.h"
-#include "SimpleThreshold.h"
-#ifdef EIGEN3_FOUND
-#include "RPGPoseEst.h"
-#endif
+//#include "DifferenceDetector.h"
+//#include "HSVDetector.h"
+//#include "PositionDetector.h"
+//#include "SimpleThreshold.h"
+//#ifdef EIGEN3_FOUND
+//#include "RPGPoseEst.h"
+//#endif
 
 #define REQ_POSITIONAL_ARGS 3
 
@@ -162,21 +162,21 @@ int main(int argc, char *argv[])
 
             // Refine component type
             switch (type_hash[type]) {
-                case 'a':
-                {
-                    detector = std::make_shared<oat::DifferenceDetector>(source, sink);
-                    break;
-                }
-                case 'b':
-                {
-                    detector = std::make_shared<oat::HSVDetector>(source, sink);
-                    break;
-                }
-                case 'c':
-                {
-                    detector = std::make_shared<oat::SimpleThreshold>(source, sink);
-                    break;
-                }
+                //case 'a':
+                //{
+                //    detector = std::make_shared<oat::DifferenceDetector>(source, sink);
+                //    break;
+                //}
+                //case 'b':
+                //{
+                //    detector = std::make_shared<oat::HSVDetector>(source, sink);
+                //    break;
+                //}
+                //case 'c':
+                //{
+                //    detector = std::make_shared<oat::SimpleThreshold>(source, sink);
+                //    break;
+                //}
                 case 'd':
                 {
 #ifndef ARUCO_FOUND
@@ -189,18 +189,18 @@ int main(int argc, char *argv[])
 #endif
                     break;
                 }
-                case 'e':
-                {
-#ifndef EIGEN3_FOUND
-                    std::cerr << oat::Error(
-                        "Oat was not compiled with Eigen "
-                        "support, so TYPE=rpg is not available.\n");
-                    return -1;
-#else
-                    detector = std::make_shared<oat::RPGPoseEst>(source, sink);
-#endif
-                    break;
-                }
+//                case 'e':
+//                {
+//#ifndef EIGEN3_FOUND
+//                    std::cerr << oat::Error(
+//                        "Oat was not compiled with Eigen "
+//                        "support, so TYPE=rpg is not available.\n");
+//                    return -1;
+//#else
+//                    detector = std::make_shared<oat::RPGPoseEst>(source, sink);
+//#endif
+//                    break;
+//                }
                 default:
                 {
                     printUsage(visible_options, "");

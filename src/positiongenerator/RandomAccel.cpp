@@ -37,14 +37,15 @@ po::options_description RandomAccel::options() const
     // Add local options
     local_opts.add_options()
         ("sigma-accel,a", po::value<double>(),
-         "Standard deviation of normally-distributed random accelerations")
+         "Standard deviation of normally-distributed random positional "
+         "accelerations")
         ;
 
     return local_opts;
 }
 
 void RandomAccel::applyConfiguration(const po::variables_map &vm,
-                                        const config::OptionTable &config_table)
+                                     const config::OptionTable &config_table)
 {
     // Rate
     double fs = 1e8; // Very fast s.t. process cannot keep up
@@ -95,7 +96,6 @@ void RandomAccel::applyConfiguration(const po::variables_map &vm,
 
 bool RandomAccel::generatePosition(oat::Pose &pose)
 {
-
     if (it_ < num_samples_) {
 
         // Simulate one step of random, but smooth, motion
@@ -103,6 +103,8 @@ bool RandomAccel::generatePosition(oat::Pose &pose)
 
         // Simulated pose info
         pose.found = true;
+        pose.position_dof = Pose::DOF::Three; 
+        pose.orientation_dof = Pose::DOF::Zero; // TODO: Orientation
         std::array<double, 3> p{{state_(0), state_(2), state_(4)}};
         pose.set_position(p);
 

@@ -176,23 +176,40 @@ public:
         Meters,     //!< Position measured in meters.
     };
 
-    static constexpr size_t REGION_LEN {10};
+    enum class DOF {
+        Zero = 0, //!< Zero degrees of freedom (fixed)
+        One,      //!< One degrees of freedom (X)
+        Two,      //!< Two degrees of freedom (XY)
+        Three,    //!< Three degrees of freedom (XYZ)
+    };
 
-    Pose() = default;
+    static constexpr size_t region_max_char {10};
+
+    Pose(){};
+
+    Pose(const DistanceUnit u, const DOF p_dof, const DOF o_dof)
+    : unit_of_length(u)
+    , position_dof(p_dof)
+    , orientation_dof(o_dof) 
+    {
+        // Nothing        
+    }
 
     Pose(const Pose &p)
     : unit_of_length(p.unit_of_length)
+    , position_dof(p.position_dof)
+    , orientation_dof(p.orientation_dof)
     , in_region(p.in_region)
     , found(p.found)
     , sample_(p.sample_)
     , q_(p.q_)
     , p_(p.p_)
     {
-        std::strncpy(region, p.region, REGION_LEN);
-#ifdef EIGEN3_FOUND
-        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
-        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
-#endif
+        std::strncpy(region, p.region, region_max_char);
+//#ifdef EIGEN3_FOUND
+//        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
+//        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
+//#endif
     }
 
     Pose(Pose &&p) = default;
@@ -200,16 +217,18 @@ public:
     Pose &operator=(const Pose &rhs)
     {
         unit_of_length = rhs.unit_of_length;
+        position_dof= rhs.position_dof;
+        orientation_dof= rhs.orientation_dof;
         in_region = rhs.in_region;
-        std::strncpy(region, rhs.region, REGION_LEN);
+        std::strncpy(region, rhs.region, region_max_char);
         found = rhs.found;
         sample_ = rhs.sample_;
         q_ = rhs.q_;
         p_ = rhs.p_;
-#ifdef EIGEN3_FOUND
-        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
-        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
-#endif
+//#ifdef EIGEN3_FOUND
+//        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
+//        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
+//#endif
 
         return *this;
     }
@@ -228,15 +247,17 @@ public:
      */
     void produce(const Pose &p, Sample::Microseconds usec = Sample::Microseconds{0}) {
         unit_of_length = p.unit_of_length;
+        position_dof = p.position_dof;
+        orientation_dof = p.orientation_dof;
         in_region = p.in_region;
-        std::strncpy(region, p.region, REGION_LEN);
+        std::strncpy(region, p.region, region_max_char);
         found = p.found;
         q_ = p.q_;
         p_ = p.p_;
-#ifdef EIGEN3_FOUND
-        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
-        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
-#endif
+//#ifdef EIGEN3_FOUND
+//        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
+//        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
+//#endif
         if (usec == Sample::Microseconds{0})
             sample_.incrementCount();
         else
@@ -248,9 +269,18 @@ public:
      */
     DistanceUnit unit_of_length{DistanceUnit::Pixels};
 
-    // Categorical position label (e.g. "North West")
-    bool in_region {false};
-    char region[REGION_LEN] {0}; //!< Categorical position label (e.g. "North West")
+    /**
+     * @brief Degrees of freedom encoded by the position component of the pose.
+     */
+    DOF position_dof{DOF::Three};
+
+    /**
+     * @brief Degrees of freedom encoded by the orientation component of the pose.
+     */
+    DOF orientation_dof{DOF::Three};
+
+    bool in_region {false};      //!< Does pose fall in valid region
+    char region[region_max_char] {0}; //!< Categorical position label (e.g. "North")
 
     // Sample information
     void set_sample(const Sample &val) { sample_ = val; }

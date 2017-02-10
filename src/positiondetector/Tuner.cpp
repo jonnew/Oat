@@ -27,7 +27,7 @@
 
 namespace oat {
 
-Tuner::Tuner(const std::string &window_name) 
+Tuner::Tuner(const std::string &window_name)
 : w_(window_name)
 {
 #ifdef HAVE_OPENGL // TODO: replace with CV-specific opengl and get rid of
@@ -53,18 +53,17 @@ Tuner::~Tuner()
 
 void Tuner::tune(const oat::Frame &frame,
                  const oat::Pose &pose,
-                 const cv::Matx33d &K,
-                 const std::vector<double> &D)
+                 const cv::Matx33d &K = cv::Matx33d::eye(),
+                 const std::vector<double> &D = {0, 0, 0, 0, 0, 0, 0, 0})
 {
     // Make sure this is color image
-    // TODO: This does not work
-    oat::Frame col_frame = frame;
-    oat::convertColor(frame, col_frame, PIX_BGR);
+    oat::Frame img = frame;
+    oat::convertColor(frame, img, PIX_BGR);
 
     // Messages to be printed on screen
     std::vector<std::string> msgs;
 
-    if (pose.found) {
+    if (pose.found ) {
 
         double length = 0.0;
         if (pose.unit_of_length == Pose::DistanceUnit::Pixels)
@@ -72,33 +71,29 @@ void Tuner::tune(const oat::Frame &frame,
         else if (pose.unit_of_length == Pose::DistanceUnit::Meters)
             length = 0.1; // TODO: This is brittle
 
-        // Make 3D axis
+        // Make axis
         std::vector<cv::Point3f> axis_3d;
         axis_3d.push_back(cv::Point3f(0, 0, 0));
         axis_3d.push_back(cv::Point3f(length, 0, 0));
         axis_3d.push_back(cv::Point3f(0, length, 0));
         axis_3d.push_back(cv::Point3f(0, 0, length));
-        std::vector<cv::Point2f> frame_axis;
+        std::vector<cv::Point2f> axis_2d;
         cv::projectPoints(axis_3d,
                           pose.orientation<cv::Vec3d>(),
                           pose.position<cv::Vec3d>(),
                           K,
                           D,
-                          frame_axis);
+                          axis_2d);
 
-        // Draw axis
-        cv::line(
-            col_frame, frame_axis[0], frame_axis[1], cv::Scalar(0, 0, 255), 3);
-        cv::line(
-            col_frame, frame_axis[0], frame_axis[2], cv::Scalar(0, 255, 0), 3);
-
-        // TODO: Find out if Z is degenerate. If so, don't plot.
-        if (pose.orientation<std::array<double, 4>>()[2] != 0)
-            cv::line(col_frame,
-                     frame_axis[0],
-                     frame_axis[3],
-                     cv::Scalar(255, 0, 0),
-                     3);
+        // Draw axis or point
+        if (pose.orientation_dof >= Pose::DOF::Two) {
+            cv::line(img, axis_2d[0], axis_2d[1], cv::Scalar(0, 0, 255), 3);
+            cv::line(img, axis_2d[0], axis_2d[2], cv::Scalar(0, 255, 0), 3);
+            if (pose.orientation_dof == Pose::DOF::Three)
+                cv::line(img, axis_2d[0], axis_2d[3], cv::Scalar(255, 0, 0), 3);
+        } else {
+            cv::circle(img, axis_2d[0], length / 2, cv::Scalar(0, 255, 255), 3);
+        }
 
         // Position
         auto p = pose.position<std::array<double, 3>>();
@@ -115,7 +110,6 @@ void Tuner::tune(const oat::Frame &frame,
         auto tb = pose.toTaitBryan(true);
         m.str("");
         m << " (deg): [" << tb[0] << ", " << tb[1] << ", " << tb[2] << "]";
-
         msgs.push_back(m.str());
 
     } else {
@@ -131,7 +125,7 @@ void Tuner::tune(const oat::Frame &frame,
         cv::putText(frame, msgs[i], text_origin, 1, 1, cv::Scalar(0, 255, 255));
     }
 
-    cv::imshow(w_, col_frame);
+    cv::imshow(w_, img);
     cv::waitKey(1);
 }
 

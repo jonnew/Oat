@@ -21,9 +21,6 @@
 #define	OAT_POSITIONDETECTOR_H
 
 #define OAT_POSIDET_MAX_OBJ_AREA_PIX 100000
-#define TUNE tuner_.registerParameter
-
-#include "Tuner.h"
 
 #include <string>
 
@@ -39,9 +36,6 @@
 namespace po = boost::program_options;
 
 namespace oat {
-
-// Forward decl.
-class SharedFrameHeader;
 
 class PositionDetector : public Component, public Configurable<false> {
 public:
@@ -65,7 +59,7 @@ protected:
      * @param Frame to look for object within.
      * @param pose Detected object pose.
      */
-    virtual void detectPosition(oat::Frame &frame, oat::Pose &pose) = 0;
+    virtual oat::Pose detectPose(const oat::Frame &frame) = 0;
 
     // Detector name
     const std::string name_;
@@ -74,13 +68,13 @@ protected:
     oat::PixelColor required_color_ {PIX_ANY};
 
     // Tuning frame (shown in tuning window when tuning_on_ is true);
-    bool tuning_on_ {false};
-    oat::Frame tuning_frame_;
-    Tuner tuner_;
+    //bool tuning_on_ {false};
+    //oat::Frame tuning_frame_;
+    //Tuner tuner_;
 
     // Intrinsic parameters
-    cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
-    std::vector<double> dist_coeff_  {0, 0, 0, 0, 0, 0, 0, 0};
+    //cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
+    //std::vector<double> dist_coeff_  {0, 0, 0, 0, 0, 0, 0, 0};
 
 private:
     // Component Interface

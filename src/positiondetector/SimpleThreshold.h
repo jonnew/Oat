@@ -44,7 +44,7 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    void detectPosition(oat::Frame &frame, oat::Pose &pose) override;
+    oat::Pose detectPose(oat::Frame &frame) override;
 
     // Intermediate variables
     cv::Mat threshold_frame_;

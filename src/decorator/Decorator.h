@@ -29,10 +29,11 @@
 #include "../../lib/base/Configurable.h"
 #include "../../lib/base/ControllableComponent.h"
 #include "../../lib/datatypes/Frame.h"
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/datatypes/Pose.h"
 #include "../../lib/shmemdf/Helpers.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
+#include "../../lib/utility/Pallet.h"
 
 namespace po = boost::program_options;
 
@@ -42,13 +43,12 @@ static const constexpr double PI {3.141592653589793238463};
 
 class Decorator : public ControllableComponent, public Configurable<true> {
 
-    using pvec_size_t = oat::NamedSourceList<oat::Position2D>::size_type;
+    using pvec_size_t = oat::NamedSourceList<oat::Pose>::size_type;
 
 public:
     /**
      * Frame decorator.
      * Adds positional, sample, and date information to frames.
-     * @param position_source_addresses SOURCE addresses
      * @param frame_source_address Frame SOURCE address
      * @param frame_sink_address Decorated frame SINK address
      */
@@ -72,81 +72,58 @@ private:
                             const config::OptionTable &config_table) override;
 
 private:
-
     // Decorator name
     std::string name_;
 
-    // Internal frame copy
-    oat::Frame internal_frame_;
-
-    // Mat client object for receiving frames
+    // Frame source
     std::string frame_source_address_;
     oat::Source<oat::Frame> frame_source_;
 
-    // Mat server for sending decorated frames
+    // Frame sink for sending decorated frames
     oat::Frame shared_frame_;
     std::string frame_sink_address_;
     oat::Sink<oat::Frame> frame_sink_;
 
-    // Positions to be added to the image stream
-    std::vector<oat::Position2D> positions_;
-    oat::NamedSourceList<oat::Position2D> position_sources_;
+    // Poses to be added to the image stream
+    oat::NamedSourceList<oat::Pose> pose_sources_;
+
+    // Intrinsic parameters
+    cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
+    std::vector<double> dist_coeff_{0, 0, 0, 0, 0, 0, 0, 0};
 
     // Options
-    bool decorate_position_ {true};
-    bool print_region_ {false};
-    bool print_timestamp_ {false};
-    bool print_sample_number_ {false};
-    bool encode_sample_number_ {false};
-
-    // TODO: These may need to become a bit more sophisticated or user defined
-    // Position drawing
-    const double symbol_scale_ {0.01};
-    const double velocity_scale_factor_ {0.15};
-    double position_circle_radius_ {2.0};
-    double heading_line_length_ {8.0};
+    bool decorate_position_{true};
+    bool print_region_{false};
+    bool print_timestamp_{false};
+    bool print_sample_number_{false};
+    bool encode_sample_number_{false};
     bool show_position_history_ {false};
-    std::vector<bool> positions_found_;
-    std::vector<oat::Point2D> previous_positions_;
+    double marker_size_{1.0};
+    const double symbol_alpha_{0.4};
+
+    // Sample number encoding (automatically updated based upon frame size)
+    int encode_bit_size_{5};
+
+    // Font options
+    double font_scale_{1.0};
+    const int font_thickness_{1};
+    const int line_thickness_{2};
+    cv::Scalar font_color_{oat::RGB<oat::Roygbiv>::color(oat::Roygbiv::yellow)};
+    const int font_type_{cv::FONT_HERSHEY_SIMPLEX};
+
+    // State etc
+    std::vector<bool> poses_found_;
     cv::Mat history_frame_;
-    const double symbol_alpha_ {0.4};
-    const cv::Scalar pos_colors_[12] {CV_RGB(255,  51,  51),
-                                      CV_RGB( 51, 255,  51),
-                                      CV_RGB( 51,  51, 255),
-                                      CV_RGB(255, 153,  51),
-                                      CV_RGB( 51, 255, 153),
-                                      CV_RGB(255,  51, 153),
-                                      CV_RGB(255, 255,  51),
-                                      CV_RGB( 51, 255, 255),
-                                      CV_RGB(255,  51, 255),
-                                      CV_RGB(153, 255,  51),
-                                      CV_RGB( 51, 153, 255),
-                                      CV_RGB(153,  51, 255)};
 
-    // Font
-    const double font_scale_ {1.0};
-    const int font_thickness_ {1};
-    const int line_thickness_ {2};
-    cv::Scalar font_color_ {255, 255, 255};
-    const int font_type_ {cv::FONT_HERSHEY_SIMPLEX};
+    // Main frame decorate function
+    void decorate(oat::Frame &frame, const std::vector<oat::Pose> &poses);
 
-    // Sample number encoding
-    int encode_bit_size_ {5};
-
-    /**
-     * Project Positions into oat::PIXEL coordinates.
-     * @param pos Position with unit_of_length != oat::PIXEL to be converted to
-     * unit_of_length == oat::PIXEL.
-     */
-    void invertHomography(oat::Position2D &pos);
-
-    // Frame mutating subroutines
-    void drawPosition(void);
-    void printRegion(void);
-    void drawOnFrame(void);
-    void printTimeStamp(void);
-    void printSampleNumber(void);
-    void encodeSampleNumber(void);
+    // Frame mutating subfunctions, corresponding to different options
+    void drawPose(oat::Frame &frame, const std::vector<oat::Pose> &poses);
+    void printRegion(oat::Frame &frame, const std::vector<oat::Pose> &poses);
+    void printTimeStamp(oat::Frame &frame);
+    void printSampleNumber(oat::Frame &frame);
+    void encodeSampleNumber(oat::Frame &frame);
 };
 
 }      /* namespace oat */

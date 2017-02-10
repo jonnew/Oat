@@ -12,4 +12,8 @@ sample-code = true # Write the binary encoded sample on the corner
                    # of each frame.
 region = true      # Write region information on each frame if 
                    # there is a position stream that contains it.
+font-scale = 1.5   # Scale the font written on the frame
+invert-font = true # Invert font colors
 history = true     # Display position history.
+marker-size = 10   # Change the marker size to 10 units of whatever
+                   # the pose's position is specified in

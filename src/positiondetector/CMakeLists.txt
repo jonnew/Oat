@@ -5,10 +5,10 @@
 set (oat-posidet_SOURCE
      PositionDetector.cpp
      Tuner.cpp
-     DetectorFunc.cpp
-     DifferenceDetector.cpp
-     HSVDetector.cpp
-     SimpleThreshold.cpp
+     #DetectorFunc.cpp
+     #DifferenceDetector.cpp
+     #HSVDetector.cpp
+     #SimpleThreshold.cpp
      main.cpp)
 
 set (oat-posidet_LIBS
@@ -27,9 +27,9 @@ endif ()
 
 # RPG pose estimation requires Eigen3
 if (${EIGEN3_FOUND})
-    add_subdirectory (./rpgposeest)
-    set (oat-posidet_SOURCE ${oat-posidet_SOURCE} RPGPoseEst.cpp)
-    set (oat-posidet_LIBS ${oat-posidet_LIBS} rpg-pose-est)
+    #add_subdirectory (./rpgposeest)
+    #set (oat-posidet_SOURCE ${oat-posidet_SOURCE} RPGPoseEst.cpp)
+    #set (oat-posidet_LIBS ${oat-posidet_LIBS} rpg-pose-est)
 endif ()
 
 # Target

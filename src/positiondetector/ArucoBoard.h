@@ -21,6 +21,7 @@
 #define	OAT_ARUCOBOARD_H
 
 #include "PositionDetector.h"
+#include "Tuner.h"
 
 #include <string>
 #include <opencv2/core/mat.hpp>
@@ -49,7 +50,11 @@ private:
                             const config::OptionTable &config_table) override;
 
     // PositionDetector Interface
-    void detectPosition(oat::Frame &frame, oat::Pose &pose) override;
+    oat::Pose detectPose(const oat::Frame &frame) override;
+
+    // Intrinsic parameters
+    cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
+    std::vector<double> dist_coeff_  {0, 0, 0, 0, 0, 0, 0, 0};
 
     // Marker or marker board to look for
     float marker_length_;
@@ -58,6 +63,9 @@ private:
     // Marker detection parameters
     bool refine_detection_ {false};
     cv::Ptr<cv::aruco::DetectorParameters> dp_;
+
+    // Tuner
+    std::unique_ptr<Tuner> tuner_ {nullptr};
 };
 
 /**

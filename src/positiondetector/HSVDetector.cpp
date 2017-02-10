@@ -147,8 +147,10 @@ void HSVDetector::applyConfiguration(const po::variables_map &vm,
     }
 }
 
-void HSVDetector::detectPosition(oat::Frame &frame, oat::Pose &pose)
+oat::Pose HSVDetector::detectPose(oat::Frame &frame)
 {
+    oat::Pose pose(Pose::DistanceUnit::Pixels, Pose::DOF::Two, Pose::DOF::Zero);
+
     // Threshold HSV channels (expensive operation)
     cv::inRange(frame,
                 cv::Scalar(h_min_, s_min_, v_min_),
@@ -173,6 +175,8 @@ void HSVDetector::detectPosition(oat::Frame &frame, oat::Pose &pose)
                  object_area_,
                  min_object_area_,
                  max_object_area_);
+
+    return pose;
 }
 
 bool HSVDetector::makeEroder(int value)
