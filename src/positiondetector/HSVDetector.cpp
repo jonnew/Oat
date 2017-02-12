@@ -28,6 +28,7 @@
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/TOMLSanitize.h"
+#include "../../lib/utility/make_unique.h"
 
 namespace oat {
 
@@ -120,10 +121,13 @@ void HSVDetector::applyConfiguration(const po::variables_map &vm,
            throw std::runtime_error("Max area should be larger than min area.");
     }
 
-    // Tuning GUI
-    oat::config::getValue<bool>(vm, config_table, "tune", tuning_on_);
+    bool tuning_on = false;
+    oat::config::getValue<bool>(vm, config_table, "tune", tuning_on);
 
-    if (tuning_on_) {
+    if (tuning_on) {
+
+        tuner_ = oat::make_unique<Tuner>(name_);
+
         TUNE<int>(&h_min_, "Min. hue", 0, 256, h_min_, 1);
         TUNE<int>(&h_max_, "Max. hue", 0, 256, h_max_, 1);
         TUNE<int>(&s_min_, "Min. saturation", 0, 256, s_min_, 1);
@@ -152,29 +156,33 @@ oat::Pose HSVDetector::detectPose(oat::Frame &frame)
     oat::Pose pose(Pose::DistanceUnit::Pixels, Pose::DOF::Two, Pose::DOF::Zero);
 
     // Threshold HSV channels (expensive operation)
+    cv::Mat thresh_frame;
     cv::inRange(frame,
                 cv::Scalar(h_min_, s_min_, v_min_),
                 cv::Scalar(h_max_, s_max_, v_max_),
-                threshold_frame_);
+                thresh_frame);
 
     // Filter the resulting threshold image
     if (makeEroder(erode_px_))
-        cv::erode(threshold_frame_, threshold_frame_, erode_element_);
+        cv::erode(thresh_frame, thresh_frame, erode_element_);
 
     if (makeDilater(dilate_px_))
-        cv::dilate(threshold_frame_, threshold_frame_, dilate_element_);
+        cv::dilate(thresh_frame, thresh_frame, dilate_element_);
 
-    // Threshold frame will be destroyed by the transform below, so we need to use
-    // it to form the frame that will be shown in the tuning window here
-    if (tuning_on_)
-        tuning_frame_ = frame.setTo(0, threshold_frame_ == 0).clone();
+    // Threshold frame will be destroyed by the transform below, so we need to
+    // use it to form the frame that will be shown in the tuning window here
+    if (tuner_) {
+        frame.setTo(0, thresh_frame == 0);
+        // HACK. setTo returns a cv::Mat with no color
+        frame.set_color(required_color_);
+    }
 
     // Find the largest contour in the threshold image
-    siftContours(threshold_frame_,
-                 pose,
-                 object_area_,
-                 min_object_area_,
-                 max_object_area_);
+    siftContours(
+        thresh_frame, pose, object_area_, min_object_area_, max_object_area_);
+
+    if (tuner_)
+        tuner_->tune(frame, pose);
 
     return pose;
 }

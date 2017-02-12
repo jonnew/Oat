@@ -59,7 +59,7 @@ public:
         // Nothing
     }
 
-    Frame(cv::Mat m)
+    explicit Frame(cv::Mat m)
     : cv::Mat(m)
     , sample_ptr_(&sample_)
     {
@@ -113,6 +113,13 @@ public:
     void copyTo(Frame &f) const
     {
         cv::Mat::copyTo(f);
+        *(f.sample_ptr_) = *sample_ptr_;
+        f.color_ = color_;
+    }
+
+    void copyTo(Frame &f, const cv::Mat &mask) const
+    {
+        cv::Mat::copyTo(f, mask);
         *(f.sample_ptr_) = *sample_ptr_;
         f.color_ = color_;
     }

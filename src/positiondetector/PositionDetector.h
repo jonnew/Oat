@@ -59,7 +59,7 @@ protected:
      * @param Frame to look for object within.
      * @param pose Detected object pose.
      */
-    virtual oat::Pose detectPose(const oat::Frame &frame) = 0;
+    virtual oat::Pose detectPose(oat::Frame &frame) = 0;
 
     // Detector name
     const std::string name_;

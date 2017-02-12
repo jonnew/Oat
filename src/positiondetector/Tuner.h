@@ -93,8 +93,8 @@ struct Tuner {
 
     void tune(const oat::Frame &frame,
               const oat::Pose &pose,
-              const cv::Matx33d &K,
-              const std::vector<double> &D);
+              const cv::Matx33d &K = cv::Matx33d::eye(),
+              const std::vector<double> &D = {0, 0, 0, 0, 0, 0, 0, 0});
 
 private:
     std::vector<void *> cb_params_;

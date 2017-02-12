@@ -20,14 +20,16 @@
 #include "RPGPoseEst.h"
 
 #include <cmath>
+#include <string>
+
 #include <cpptoml.h>
 #include <opencv2/aruco.hpp>
 #include <opencv2/cvconfig.h>
 #include <opencv2/opencv.hpp>
-#include <string>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/TOMLSanitize.h"
+#include "../../lib/utility/make_unique.h"
 
 namespace oat {
 
@@ -236,9 +238,10 @@ void RPGPoseEst::applyConfiguration(const po::variables_map &vm,
     tracker_.camera_matrix_K_ = cv::Mat(camera_matrix_);
 
     // Tuning GUI
-    oat::config::getValue<bool>(vm, config_table, "tune", tuning_on_);
+    bool tuning_on = false;
+    oat::config::getValue<bool>(vm, config_table, "tune", tuning_on);
 
-    if (tuning_on_) {
+    if (tuning_on) {
 
         TUNE<int>(&tracker_.detection_threshold_value_,
                   "Detection thresh. (px)",
@@ -332,11 +335,6 @@ oat::Pose RPGPoseEst::detectPose(oat::Frame &frame)
     std::cout << t << " seconds" << std::endl;
     auto found = tracker_.estimateBodyPose(frame, t);
 
-    if (tuning_on_) {
-        cv::cvtColor(frame, tuning_frame_, cv::COLOR_GRAY2BGR);
-        tracker_.augmentImage(tuning_frame_);
-    }
-
     if (found) {
 
         Eigen::Matrix4d transform = tracker_.getPredictedPose();
@@ -347,6 +345,12 @@ oat::Pose RPGPoseEst::detectPose(oat::Frame &frame)
         pose.found = true;
         pose.set_position<Eigen::Vector3d>(T);
         pose.set_orientation<Eigen::Matrix3d>(R);
+    }
+
+    if (tuner_) {
+        //cv::cvtColor(frame, tuning_frame_, cv::COLOR_GRAY2BGR);
+        tracker_.augmentImage(frame);
+        tuner_->tune(frame, pose);
     }
 
     return pose;

@@ -38,7 +38,7 @@ class RPGPoseEst : public PositionDetector {
 
 public:
     /**
-     * @brief A Monocular Pose Estimation System based on LEDs
+     * @brief A Monocular Pose Estimation System based on IR LEDs
      * @note @inproceedings{Faessler2014ICRA,
      * author = {Faessler, Matthias and Mueggler, Elias and Schwabe, Karl and
      * Scaramuzza, Davide},
@@ -57,7 +57,7 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    // PositionDetector Interface
+    //PositionDetector Interface
     oat::Pose detectPose(oat::Frame &frame) override;
 
     // Intrinsic parameters
@@ -66,6 +66,9 @@ private:
 
     // The RPG monocoluar pose estimator
     PE tracker_;
+
+    // Tuner
+    std::unique_ptr<Tuner> tuner_ {nullptr};
 };
 
 }       /* namespace oat */

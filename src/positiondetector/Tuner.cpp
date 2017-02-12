@@ -53,8 +53,8 @@ Tuner::~Tuner()
 
 void Tuner::tune(const oat::Frame &frame,
                  const oat::Pose &pose,
-                 const cv::Matx33d &K = cv::Matx33d::eye(),
-                 const std::vector<double> &D = {0, 0, 0, 0, 0, 0, 0, 0})
+                 const cv::Matx33d &K,
+                 const std::vector<double> &D)
 {
     // Make sure this is color image
     oat::Frame img = frame;

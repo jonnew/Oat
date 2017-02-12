@@ -100,11 +100,14 @@ inline SourceBase<T>::~SourceBase()
     if ( (node_ != nullptr && node_-> source_ref_count() == 0) &&
         node_->sink_state() != NodeState::SINK_BOUND) {
 
+        bip::shared_memory_object::remove(node_address_.c_str());
+        bip::shared_memory_object::remove(obj_address_.c_str());
+
+#ifndef NDEBUG
         bool shmem_freed = false;
         shmem_freed |= bip::shared_memory_object::remove(node_address_.c_str());
         shmem_freed |= bip::shared_memory_object::remove(obj_address_.c_str());
 
-#ifndef NDEBUG
         if (shmem_freed)
             std::cout << "Shared memory at \'" + address_ + "\' was deallocated.\n";
 #endif

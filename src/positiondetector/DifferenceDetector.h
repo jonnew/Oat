@@ -21,6 +21,7 @@
 #define	OAT_DIFFERENCEDETECTOR_H
 
 #include "PositionDetector.h"
+#include "Tuner.h"
 
 #include <limits>
 
@@ -43,11 +44,12 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
+    //PositionDetector Interface
     oat::Pose detectPose(oat::Frame &frame) override;
 
     // Intermediate variables
     oat::Frame last_frame_;
-    bool last_image_set_ {false};
+    bool last_frame_set_ {false};
 
     // Object detection
     double object_area_ {0.0};
@@ -61,6 +63,9 @@ private:
     int difference_intensity_threshold_ {10};
     double min_object_area_ {0.0};
     double max_object_area_ {std::numeric_limits<double>::max()};
+
+    // Tuner
+    std::unique_ptr<Tuner> tuner_ {nullptr};
 };
 
 }       /* namespace oat */

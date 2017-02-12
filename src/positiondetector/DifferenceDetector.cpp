@@ -29,6 +29,7 @@
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/TOMLSanitize.h"
+#include "../../lib/utility/make_unique.h"
 
 namespace oat {
 
@@ -90,7 +91,7 @@ void DifferenceDetector::applyConfiguration(
         tuner_ = oat::make_unique<Tuner>(name_);
 
         TUNE<int>(&difference_intensity_threshold_,
-                  "Intensity thresh. (px)",
+                  "Diff. thresh. (px)",
                   0,
                   256,
                   difference_intensity_threshold_,
@@ -115,43 +116,39 @@ oat::Pose DifferenceDetector::detectPose(oat::Frame &frame)
 {
     oat::Pose pose(Pose::DistanceUnit::Pixels, Pose::DOF::Two, Pose::DOF::Zero);
 
-    if (last_image_set_) {
-        cv::absdiff(frame, last_image_, threshold_frame_);
-        cv::threshold(threshold_frame_,
-                      threshold_frame_,
+    cv::Mat thresh_frame;
+    if (last_frame_set_) {
+        cv::absdiff(frame, last_frame_, thresh_frame);
+        cv::threshold(thresh_frame,
+                      thresh_frame,
                       difference_intensity_threshold_,
                       255,
                       cv::THRESH_BINARY);
 
         if (makeBlur(blur_px_))
-            cv::blur(threshold_frame_, threshold_frame_, blur_size_);
+            cv::blur(thresh_frame, thresh_frame, blur_size_);
 
-        last_image_ = frame.clone(); // Get a copy of the last image
+        last_frame_ = frame.clone(); // Get a copy of the last image
     } else {
-        threshold_frame_ = frame.clone();
-        last_image_ = frame.clone();
-        last_image_set_ = true;
+        thresh_frame = frame.clone();
+        last_frame_ = frame.clone();
+        last_frame_set_ = true;
     }
 
-    // Threshold frame will be destroyed by the transform below, so we need to use
-    // it to form the frame that will be shown in the tuning window here
+    // Threshold frame will be destroyed by the transform below, so we need to
+    // use it to form the frame that will be shown in the tuning window here
     if (tuner_) {
-        frame.copyTo(tuning_frame, threshold_frame_ > 0);
-        //auto tuning_frame_ = frame.clone();
-        //tuning_frame = tuning_frame.setTo(0, threshold_frame_ == 0);
-        //tuning_frame.set_color(PIX_GREY); // HACK. setTo returns a cv::Mat with no color info
-        tune(tuning_frame, 
+        frame.setTo(0, thresh_frame == 0);
+        // HACK. setTo returns a cv::Mat with no color
+        frame.set_color(required_color_);
     }
 
-    siftContours(threshold_frame_,
-                 pose,
-                 object_area_,
-                 min_object_area_,
-                 max_object_area_);
+    // NB: Mutates thresh_frame
+    siftContours(
+        thresh_frame, pose, object_area_, min_object_area_, max_object_area_);
 
-    if (tuner_) {
-        tune(tuning_frame, pose);
-    }
+    if (tuner_)
+        tuner_->tune(frame, pose);
 
     return pose;
 }

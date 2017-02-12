@@ -21,6 +21,7 @@
 #define	OAT_SIMPLETHRESHOLD_H
 
 #include "PositionDetector.h"
+#include "Tuner.h"
 
 #include <limits>
 
@@ -44,6 +45,7 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
+    //PositionDetector Interface
     oat::Pose detectPose(oat::Frame &frame) override;
 
     // Intermediate variables
@@ -65,6 +67,9 @@ private:
     int erode_px_{0}, dilate_px_{0};
     bool makeEroder(int erode_px);
     bool makeDilater(int dilate_px);
+
+    // Tuner
+    std::unique_ptr<Tuner> tuner_ {nullptr};
 };
 
 }       /* namespace oat */

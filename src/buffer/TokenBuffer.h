@@ -58,7 +58,7 @@ private:
     SPSCBuffer buffer_;
 
     // Sink
-    T * shared_token_;
+    T *shared_token_{nullptr};
     oat::Sink<T> sink_;
 };
 

@@ -18,11 +18,12 @@
 //******************************************************************************
 
 #include <string>
+
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/shmemdf/Source.h"
 #include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Source.h"
 
 #include "PositionDetector.h"
 

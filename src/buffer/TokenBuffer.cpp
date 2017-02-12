@@ -22,6 +22,8 @@
 
 #include <iostream>
 
+#include "../../lib/datatypes/Pose.h"
+
 namespace oat {
 
 template <typename T>

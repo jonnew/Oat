@@ -50,11 +50,11 @@ private:
                             const config::OptionTable &config_table) override;
 
     // PositionDetector Interface
-    oat::Pose detectPose(const oat::Frame &frame) override;
+    oat::Pose detectPose(oat::Frame &frame) override;
 
     // Intrinsic parameters
-    cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
-    std::vector<double> dist_coeff_  {0, 0, 0, 0, 0, 0, 0, 0};
+    cv::Matx33d camera_matrix_{cv::Matx33d::eye()};
+    std::vector<double> dist_coeff_{0, 0, 0, 0, 0, 0, 0, 0};
 
     // Marker or marker board to look for
     float marker_length_;
