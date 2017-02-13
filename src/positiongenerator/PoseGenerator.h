@@ -47,7 +47,7 @@ public:
      * subsequent processing steps.
      * @param position_sink_name Position SINK to publish test positions
      */
-    PoseGenerator(const std::string &position_sink_address);
+    explicit PoseGenerator(const std::string &position_sink_address);
     virtual ~PoseGenerator() { };
 
     // Component Interface
@@ -113,10 +113,10 @@ private:
     std::string name_;
 
     // Shared pose
-    oat::Pose * shared_pose_;
+    oat::Pose *shared_pose_{nullptr};
 
     // First position
-    bool first_pos_ {true};
+    bool first_pos_{true};
 
     // The test position SINK
     std::string pose_sink_address_;

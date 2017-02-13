@@ -112,7 +112,6 @@ private:
     const int font_type_{cv::FONT_HERSHEY_SIMPLEX};
 
     // State etc
-    std::vector<bool> poses_found_;
     cv::Mat history_frame_;
 
     // Main frame decorate function

@@ -190,9 +190,9 @@ public:
     Pose(const DistanceUnit u, const DOF p_dof, const DOF o_dof)
     : unit_of_length(u)
     , position_dof(p_dof)
-    , orientation_dof(o_dof) 
+    , orientation_dof(o_dof)
     {
-        // Nothing        
+        // Nothing
     }
 
     Pose(const Pose &p)
@@ -235,12 +235,12 @@ public:
 
     Pose &operator=(Pose &&) = default;
 
-    /** 
+    /**
      * @brief Produce a pose from thin air. This is used by pure SINKs (e.g.
      * posigen) that have no sample information to pass forward but instead are
      * responsible for creating it.
      * @param p Pose sample to set this one too. Associated timing info is
-     * ignored.  
+     * ignored.
      * @param usec Usec since production has started. Used to increment
      * associated timing info. If set to zero or not supplied, defaults to just
      * updating sample count without a time.
@@ -315,9 +315,24 @@ public:
     T position() const
     { static_assert(sizeof(T) == 0, "Invalid call to position()"); }
 
-    // Get axis angle representation. Cannot use a template specialization
-    // straightforwardly because this has the same return type as rvec.
+    /**
+     * @brief Convert orientation to Tait Bryan (Euler) angles.
+     * @param deg If true, result is specified in degrees instead of radians.
+     * @return Tait Bryan Angles (Yaw, Pitch, Roll)
+     * @note Cannot use a template specialization straightforwardly because has
+     * the same return type as rvec.
+     */
     std::array<double, 3> toTaitBryan(const bool deg = false) const;
+
+    /**
+     * @brief Set the current orientation using Tait Bryan (Euler) angles.
+     * @param angles Tait Bryan angles to use to set the orientation (Yaw, Pitch,
+     * Roll).
+     * @note Cannot use a template specialization straightforwardly because has
+     * the same input type as rvec.
+     */
+    void fromTaitBryan(const std::array<double, 3> &angles,
+                       const bool deg = false);
 
 protected:
     /**

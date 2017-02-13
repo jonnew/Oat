@@ -20,12 +20,10 @@
 #ifndef OAT_RANDOMACCEL_H
 #define	OAT_RANDOMACCEL_H
 
-#include <chrono>
 #include <random>
 #include <string>
-#include <opencv2/core/mat.hpp>
 
-#include "../../lib/datatypes/Position2D.h"
+#include <opencv2/core/mat.hpp>
 
 #include "PoseGenerator.h"
 
@@ -48,21 +46,31 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    // Random number generator
-    std::default_random_engine accel_generator_{std::random_device{}()};
-    std::normal_distribution<double> accel_distribution_{0.0, default_side_ / 20.0};
+    // Random number generator and distributions
+    std::default_random_engine accel_gen_{std::random_device{}()};
+    std::normal_distribution<double> pos_accel_dist_{
+        0.0, default_side_ / 20.0}; // pose.unit_of_length/sec^2
+    std::normal_distribution<double> orient_accel_dist_{0.0, 5.0}; // deg/sec^2
 
-    // Simulated position
-    cv::Matx61d state_{default_side_ / 2.0,
-                       0.0,
-                       default_side_ / 2.0,
-                       0.0,
-                       default_side_ / 2.0,
-                       0.0};
+    // Simulated pose (3DOF position, 3DOF orientation)
+    cv::Matx<double, 12, 1> state_{ 
+        default_side_ / 2.0, // x 
+        0.0,                 // x'
+        default_side_ / 2.0, // y 
+        0.0,                 // y'
+        default_side_ / 2.0, // z
+        0.0,                 // z'
+        0.0,                 // psi
+        0.0,                 // psi'
+        0.0,                 // theta
+        0.0,                 // theta'
+        0.0,                 // phi
+        0.0,                 // phi'
+    };
 
     // STM and input matrix
-    cv::Matx66d state_transition_mat_;
-    cv::Matx<double, 6, 3> input_mat_;
+    cv::Matx<double, 12, 12> state_transition_mat_;
+    cv::Matx<double, 12, 6> input_mat_;
 
     bool generatePosition(oat::Pose &position) override;
     void createStaticMatracies(void);

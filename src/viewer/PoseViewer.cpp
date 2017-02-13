@@ -179,7 +179,7 @@ cv::Mat PoseViewer::generateFrame(const oat::Pose &pose) const
         std::sort(axis_idx.begin(),
                   axis_idx.end(),
                   [&axis_3d](size_t a, size_t b) {
-                      return axis_3d[a].z > axis_3d[b].z;
+                      return axis_3d[a].z < axis_3d[b].z;
                   });
 
         const float off = 200;
@@ -207,16 +207,14 @@ cv::Mat PoseViewer::generateFrame(const oat::Pose &pose) const
         poly[2] = {{ap[0], ap[3], ap[4]}};
         poly[3] = {{ap[0], ap[4], ap[5]}};
 
-        // Sort polygons by maximal z-value of non-common verticies
+        // Sort polygons by minimal z-value of non-common verticies
+        // BRITTLE HACK! Relies on ordering of poly.
         std::sort(poly.begin(), poly.end(), [](PlygnVert A, PlygnVert B) {
-            auto ma = std::numeric_limits<float>::min();
-            auto mb = std::numeric_limits<float>::min();
 
-            // BRITTLE HACK! Relies on ordering of poly. 
-            ma = A[1].z > A[2].z ? A[1].z : A[2].z;
-            mb = B[1].z > B[2].z ? B[1].z : B[2].z;
+            const auto ma = A[1].z < A[2].z ? A[1].z : A[2].z;
+            const auto mb = B[1].z < B[2].z ? B[1].z : B[2].z;
 
-            return mb > ma;
+            return ma < mb;
         });
 
         for (const auto &p : poly) {
@@ -236,16 +234,16 @@ cv::Mat PoseViewer::generateFrame(const oat::Pose &pose) const
         std::stringstream m;
         m << std::setprecision(2) << std::fixed;
         if (pose.unit_of_length == Pose::DistanceUnit::Meters)
-            m << "P (m): [";
+            m << "Pos. (m): [";
         else if (pose.unit_of_length == Pose::DistanceUnit::Pixels)
-            m << "P (px): [";
+            m << "Pos. (px): [";
         m << p[0] << ", " << p[1] << ", " << p[2] << "]";
         msgs.push_back(m.str());
 
         // Tait-bryan angles
         auto tb = pose.toTaitBryan(true);
         m.str("");
-        m << " (deg): [" << tb[0] << ", " << tb[1] << ", " << tb[2] << "]";
+        m << " Or. (deg): [" << tb[0] << ", " << tb[1] << ", " << tb[2] << "]";
 
         msgs.push_back(m.str());
 
@@ -290,4 +288,3 @@ void PoseViewer::set_snapshot_path(const std::string &snapshot_path)
 }
 
 } /* namespace oat */
-

@@ -38,7 +38,7 @@ namespace oat {
 enum class TokenType : int {
     Any = -1,
     Frame,
-    Position
+    Pose
 };
 
 /**
@@ -49,7 +49,7 @@ class GenericSource {
 public:
 
     template <typename T>
-    GenericSource(oat::in_place<T>)
+    explicit GenericSource(oat::in_place<T>)
     : source(std::make_shared<SourceModel<T>>()) { }
 
     void touch(const std::string &addr) const { source->touch(addr); }
@@ -93,9 +93,10 @@ private:
 };
 
 /**
- * @brief Generic source package containing address, totken type and source.
- * Not used and probably not very useful -- token type should be retrievable
- * from source without knowing anything about it except its address.
+ * @brief Struct containing address, token type and generic source.
+ * @note Not used and probably not very useful -- token type should be
+ * retrievable from source without knowing anything about it except its
+ * address.
  */
 struct TaggedSource {
 

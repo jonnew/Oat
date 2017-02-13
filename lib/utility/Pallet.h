@@ -57,6 +57,8 @@ enum class MixedPallet {
 template<typename P = Roygbiv>
 struct RGB {
 
+    RGB() = default;
+
     cv::Scalar next()
     {
         const auto c = color(static_cast<P>(idx_));

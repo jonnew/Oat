@@ -86,9 +86,25 @@ std::vector<char> packPose(const Pose &p)
     return pack;
 }
 
+void Pose::fromTaitBryan(const std::array<double, 3> &angles, const bool deg)
+{
+    const double k = deg ? 0.0087266 : 0.5;
+	const double t0 = std::cos(angles[0] * k);
+	const double t1 = std::sin(angles[0] * k);
+	const double t2 = std::cos(angles[2] * k);
+	const double t3 = std::sin(angles[2] * k);
+	const double t4 = std::cos(angles[1] * k);
+	const double t5 = std::sin(angles[1] * k);
+
+	q_[x] = t0 * t3 * t4 - t1 * t2 * t5;
+	q_[y] = t0 * t2 * t5 + t1 * t3 * t4;
+	q_[z] = t1 * t2 * t4 - t0 * t3 * t5;
+	q_[w] = t0 * t2 * t4 + t1 * t3 * t5;
+}
+
 std::array<double, 3> Pose::toTaitBryan(const bool deg) const
 {
-    std::array<double, 3> a;
+    std::array<double, 3> a; // yaw, angles[1], angles[2]
 
     const auto xx = q_[x] * q_[x];
     const auto yy = q_[y] * q_[y];
@@ -112,9 +128,9 @@ std::array<double, 3> Pose::toTaitBryan(const bool deg) const
         a[1] = std::atan2(q_[x], q_[w]);
         a[2] = 0;
     } else {
-        a[0] = std::atan2(2 * yw - 2 * xz, 1 - 2 * yy - 2 * zz);
-        a[1] = std::asin(2 * xy + 2 * zw);
-        a[2] = std::atan2(2 * xw - 2 * yz, 1 - 2 * xx - 2 * zz);
+        a[0] = std::atan2(2 * (yw - xz), 1 - 2 * (yy - zz));
+        a[1] = std::asin(2 * (xy + zw));
+        a[2] = std::atan2(2 * (xw - yz), 1 - 2 * (xx - zz));
     }
 
     if (deg) {

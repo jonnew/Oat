@@ -242,16 +242,6 @@ void ArucoBoard::applyConfiguration(const po::variables_map &vm,
         cv::imwrite("board.png", board_img);
     }
 
-    // Distortion coefficients
-    if (oat::config::getArray<double>(
-            vm, config_table, "distortion-coeffs", dist_coeff_, true)) {
-
-        if (dist_coeff_.size() < 5 || dist_coeff_.size() > 8) {
-            throw(std::runtime_error(
-                "Distortion coefficients consist of 5 to 8 values."));
-        }
-    }
-
     // Camera Matrix
     std::vector<double> K;
     if (oat::config::getArray<double, 9>(vm, config_table, "camera-matrix", K, true)) {
@@ -265,6 +255,16 @@ void ArucoBoard::applyConfiguration(const po::variables_map &vm,
         camera_matrix_(2, 0) = K[6];
         camera_matrix_(2, 1) = K[7];
         camera_matrix_(2, 2) = K[8];
+    }
+
+    // Distortion coefficients
+    if (oat::config::getArray<double>(
+            vm, config_table, "distortion-coeffs", dist_coeff_, true)) {
+
+        if (dist_coeff_.size() < 5 || dist_coeff_.size() > 8) {
+            throw(std::runtime_error(
+                "Distortion coefficients consist of 5 to 8 values."));
+        }
     }
 
     // Tuning GUI
