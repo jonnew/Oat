@@ -14,7 +14,7 @@ case "$1" in
         #
         #oat framefilt bsub RAW SUB &
 
-        # decorate 
+        # decorate
         sleep 0.1
         oat decorate RAW FINAL -p ORNG BLUE -sSRt &
 

@@ -10,12 +10,12 @@ set (oat-posisock_SOURCE
      UDPPositionClient.cpp
      # TODO: There are minor but debilitating issues with this component that I
      # dont have time to fix now
-     #UDPPositionServer.cpp 
+     #UDPPositionServer.cpp
      main.cpp)
 
 # Target
 add_executable (oat-posisock ${oat-posisock_SOURCE})
-target_link_libraries (oat-posisock 
+target_link_libraries (oat-posisock
                        oat-utility
                        oat-base
                        zmq

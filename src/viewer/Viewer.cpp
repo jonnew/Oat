@@ -20,6 +20,7 @@
 #include "Viewer.h"
 
 #include <chrono>
+#include <exception>
 #include <future>
 #include <iostream>
 #include <string>
@@ -27,6 +28,7 @@
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Pose.h"
+#include "../../lib/utility/IOFormat.h"
 
 namespace oat {
 
@@ -103,19 +105,23 @@ int Viewer<T>::process()
 template <typename T>
 void Viewer<T>::processAsync()
 {
-    while (running_) {
+    try {
+        while (running_) {
 
-        std::unique_lock<std::mutex> lk(display_mutex_);
-        display_cv_.wait(lk);
+            std::unique_lock<std::mutex> lk(display_mutex_);
+            display_cv_.wait(lk);
 
-        // Prevent desctructor from calling display() after derived class has
-        // been desctructed
-        if (!running_)
-            break;
+            // Prevent desctructor from calling display() after derived class
+            // has been desctructed
+            if (!running_)
+                break;
 
-        display_complete_ = false;
-        display(sample_); // Implemented in concrete class
-        display_complete_ = true;
+            display_complete_ = false;
+            display(sample_); // Implemented in concrete class
+            display_complete_ = true;
+        }
+    } catch (const std::runtime_error &ex) {
+        std::cerr << oat::whoError(name(), ex.what()) << std::endl;
     }
 }
 

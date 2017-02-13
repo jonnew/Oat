@@ -19,79 +19,79 @@
 #* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 #******************************************************************************
 
-pc() 
+pc()
 {
     pc_res=`echo "$1" | awk '/ mykey/{y=1;next}y'`
 }
 
 # oat-frameserve type configurations
-pc "$(oat frameserve gige --help)" 
+pc "$(oat frameserve gige --help)"
 ofs_g="$pc_res"
-pc "$(oat frameserve wcam --help)" 
+pc "$(oat frameserve wcam --help)"
 ofs_w="$pc_res"
-pc "$(oat frameserve file --help)" 
+pc "$(oat frameserve file --help)"
 ofs_f="$pc_res"
-pc "$(oat frameserve test --help)" 
+pc "$(oat frameserve test --help)"
 ofs_t="$pc_res"
 
 # oat-framefilt type configurations
-pc "$(oat framefilt bsub --help)" 
+pc "$(oat framefilt bsub --help)"
 off_b="$pc_res"
-pc "$(oat framefilt mask --help)" 
+pc "$(oat framefilt mask --help)"
 off_ma="$pc_res"
-pc "$(oat framefilt mog --help)" 
+pc "$(oat framefilt mog --help)"
 off_mo="$pc_res"
-pc "$(oat framefilt undistort --help)" 
+pc "$(oat framefilt undistort --help)"
 off_u="$pc_res"
-pc "$(oat framefilt thresh --help)" 
+pc "$(oat framefilt thresh --help)"
 off_t="$pc_res"
 
 # oat-view type configurations
-pc "$(oat view frame --help)" 
+pc "$(oat view frame --help)"
 ovi_f="$pc_res"
 
 # oat-posidet type configurations
-pc "$(oat posidet diff --help)" 
+pc "$(oat posidet diff --help)"
 opd_d="$pc_res"
-pc "$(oat posidet hsv --help)" 
+pc "$(oat posidet hsv --help)"
 opd_h="$pc_res"
-pc "$(oat posidet thresh --help)" 
+pc "$(oat posidet thresh --help)"
 opd_t="$pc_res"
-pc "$(oat posidet rpg --help)" 
+pc "$(oat posidet rpg --help)"
 opd_r="$pc_res"
-pc "$(oat posidet aruco --help)" 
+pc "$(oat posidet aruco --help)"
 opd_a="$pc_res"
 
 # oat-posigen type configurations
-pc "$(oat posigen rand2D --help)" 
+pc "$(oat posigen rand2D --help)"
 opg_r2="$pc_res"
 
 # oat-posifilt type configurations
-pc "$(oat posifilt kalman --help)" 
+pc "$(oat posifilt kalman --help)"
 opf_k="$pc_res"
-pc "$(oat posifilt homography --help)" 
+pc "$(oat posifilt homography --help)"
 opf_h="$pc_res"
-pc "$(oat posifilt region --help)" 
+pc "$(oat posifilt region --help)"
 opf_r="$pc_res"
 
 # oat-posicom configurations
-pc "$(oat posicom mean --help)" 
+pc "$(oat posicom mean --help)"
 opc_m="$pc_res"
 
 # oat-posisck configurations
-pc "$(oat posisock std --help)" 
+pc "$(oat posisock std --help)"
 ops_s="$pc_res"
-pc "$(oat posisock pub --help)" 
+pc "$(oat posisock pub --help)"
 ops_p="$pc_res"
-pc "$(oat posisock rep --help)" 
+pc "$(oat posisock rep --help)"
 ops_r="$pc_res"
-pc "$(oat posisock udp --help)" 
+pc "$(oat posisock udp --help)"
 ops_u="$pc_res"
 
 # oat-calibrate configurations
-pc "$(oat calibrate camera --help)" 
+pc "$(oat calibrate camera --help)"
 oca_c="$pc_res"
-pc "$(oat calibrate homography --help)" 
+pc "$(oat calibrate homography --help)"
 oca_h="$pc_res"
 
 # Semi-automated README.md and README.pdf construction

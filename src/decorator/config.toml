@@ -10,7 +10,7 @@ timestamp = true   # Write the current date and time on each frame.
 sample = true      # Write the frame sample number on each frame.
 sample-code = true # Write the binary encoded sample on the corner
                    # of each frame.
-region = true      # Write region information on each frame if 
+region = true      # Write region information on each frame if
                    # there is a position stream that contains it.
 font-scale = 1.5   # Scale the font written on the frame
 invert-font = true # Invert font colors

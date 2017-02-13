@@ -7,17 +7,16 @@
 import sys
 import zmq
 
-#  Socket to talk to server
+# Socket to talk to server
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
 
 print("Requesting position updates from tcp://localhost:5555")
 socket.connect("tcp://localhost:5555")
 
-# Request positions forever
+# Request poses forever
 total_temp = 0
 while True:
     socket.send(b"gimme") # Can be anything, currently.
     position = socket.recv_string()
     print(position)
-

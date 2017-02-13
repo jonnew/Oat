@@ -53,10 +53,10 @@ private:
     std::normal_distribution<double> orient_accel_dist_{0.0, 5.0}; // deg/sec^2
 
     // Simulated pose (3DOF position, 3DOF orientation)
-    cv::Matx<double, 12, 1> state_{ 
-        default_side_ / 2.0, // x 
+    cv::Matx<double, 12, 1> state_{
+        default_side_ / 2.0, // x
         0.0,                 // x'
-        default_side_ / 2.0, // y 
+        default_side_ / 2.0, // y
         0.0,                 // y'
         default_side_ / 2.0, // z
         0.0,                 // z'

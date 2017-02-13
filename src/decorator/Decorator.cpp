@@ -333,8 +333,8 @@ void Decorator::drawPose(oat::Frame &frame, const std::vector<oat::Pose> &poses)
                              axis_2d[3],
                              oat::RGB<Roygbiv>::color(Roygbiv::blue),
                              line_thickness_);
-            }     
-            
+            }
+
             // Draw point
             cv::circle(frame, center, 0.25 * marker_size_, col, line_thickness_);
 

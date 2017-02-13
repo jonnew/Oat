@@ -3,18 +3,12 @@
 case "$1" in
 
 	run)
-        oat record -s raw -p p -n test -o                         &
-		oat view pose p                                           &
-		oat posidet diff mon p --tune                             &
-		oat framefilt col raw mon -C GREY                         &
+        oat record --p p -do -n "test" -f ./        & # Copy of pose in JSON format
+        oat record -s raw -p p -dbo -n "test" -f ./ & # Uncompressed video and binary pose
+		oat posidet diff mon p --tune               &
+		oat framefilt col raw mon -C GREY           &
 		oat frameserve wcam raw
 		;;
-
-    calib)
-
-		oat calibrate camera raw -s [9,6] -w 0.025                &
-		oat frameserve wcam raw
-        ;;
 
 	clean)
 

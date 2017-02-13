@@ -42,9 +42,9 @@ before_script:
   - tar -xf tarzmq
   - cd ./zeromq*
   - ./configure --without-libsodium
-  - make 
+  - make
   - sudo make install
-  - sudo ldconfig 
+  - sudo ldconfig
 
   # Get zeromq cpp bindings
   - cd $TRAVIS_BUILD_DIR
@@ -56,7 +56,7 @@ before_script:
   # out of release build. I don't use asserts because they dont allow shmem
   # cleanup.
   - cd $TRAVIS_BUILD_DIR
-  - mkdir debug 
+  - mkdir debug
   - cd debug
   - boost_dir=`ls /opt/ | grep boost`
   - cmake -DCMAKE_BUILD_TYPE=Debug -DBOOST_ROOT=/opt/$boost_dir ..
