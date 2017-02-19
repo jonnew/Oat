@@ -34,7 +34,7 @@ namespace oat {
 
 namespace po = boost::program_options;
 
-template <bool CONTROLLABLE = false>
+template <bool Controllable = false>
 class Configurable {
 
 public:
@@ -51,7 +51,7 @@ public:
             "e.g. 'config.toml mykey'")
             ;
 
-        if (CONTROLLABLE) {
+        if (Controllable) { // Should be optimized away for release compile 
             opts.add_options()
                 ("control-endpoint",  po::value<std::string>(),
                  "ZMQ style endpoint specifier designating runtime control port:"

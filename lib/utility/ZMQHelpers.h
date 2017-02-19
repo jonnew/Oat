@@ -24,35 +24,35 @@
 
 namespace oat {
 
-inline std::string recvString(zmq::socket_t *socket)
+inline std::string recvString(zmq::socket_t &socket)
 {
     zmq::message_t message;
-    socket->recv(&message);
+    socket.recv(&message);
 
     return std::string(static_cast<char *>(message.data()), message.size());
 }
 
-inline bool sendString(zmq::socket_t *socket, const std::string &string)
+inline bool sendString(zmq::socket_t &socket, const std::string &string)
 {
     zmq::message_t message(string.size());
     memcpy(message.data(), string.data(), string.size());
 
-    bool rc = socket->send(message);
+    bool rc = socket.send(message);
     return rc;
 }
 
-inline bool sendStringMore(zmq::socket_t *socket, const std::string &string)
+inline bool sendStringMore(zmq::socket_t &socket, const std::string &string)
 {
     zmq::message_t message(string.size());
     memcpy(message.data(), string.data(), string.size());
 
-    bool rc = socket->send(message, ZMQ_SNDMORE);
+    bool rc = socket.send(message, ZMQ_SNDMORE);
     return rc;
 }
 
-inline bool sendReqEnvelope(zmq::socket_t *socket,
-                           const std::string &id,
-                           const std::string &data)
+inline bool sendReqEnvelope(zmq::socket_t &socket,
+                            const std::string &id,
+                            const std::string &data)
 {
     bool good = true;
     good &= sendStringMore(socket, id);
@@ -62,9 +62,9 @@ inline bool sendReqEnvelope(zmq::socket_t *socket,
     return good;
 }
 
-inline bool recvReqEnvelope(zmq::socket_t *socket,
-                           std::string &id,
-                           std::string &data)
+inline bool recvReqEnvelope(zmq::socket_t &socket,
+                            std::string &id,
+                            std::string &data)
 {
    id = recvString(socket);
    recvString(socket);

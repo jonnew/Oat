@@ -124,7 +124,7 @@ void Decorator::applyConfiguration(const po::variables_map &vm,
 
     // Camera Matrix
     std::vector<double> K;
-    if (oat::config::getArray<double, 9>(vm, config_table, "camera-matrix", K, true)) {
+    if (oat::config::getArray<double, 9>(vm, config_table, "camera-matrix", K)) {
 
         camera_matrix_(0, 0) = K[0];
         camera_matrix_(0, 1) = K[1];
@@ -139,7 +139,7 @@ void Decorator::applyConfiguration(const po::variables_map &vm,
 
     // Distortion coefficients
     if (oat::config::getArray<double>(
-            vm, config_table, "distortion-coeffs", dist_coeff_, true)) {
+            vm, config_table, "distortion-coeffs", dist_coeff_)) {
 
         if (dist_coeff_.size() < 5 || dist_coeff_.size() > 8) {
             throw(std::runtime_error(

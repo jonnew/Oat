@@ -17,8 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#ifndef OAT_CONFIGURABLE_H
-#define OAT_CONFIGURABLE_H
+#ifndef OAT_CONTROLLER_H
+#define OAT_CONTROLLER_H
 
 #include <string>
 #include <unordered_map>
@@ -46,11 +46,10 @@ class Controller {
     };
 
 public:
-
     using Identity = std::string;
     using Subs = std::map<Identity, Subscriber>;
 
-    Controller(const char *endpoint);
+    explicit Controller(const char *endpoint);
 
     /**
      * @brief Find out which clients are available on the socket. Update
@@ -58,8 +57,8 @@ public:
      */
     void scan();
 
-    void send(const std::string &cmd, const std::string &target_id);
-    void send(const std::string &cmd, const Subs::size_type idx);
+    void send(const std::string &target_id, const std::string &cmd);
+    void send(const Subs::size_type idx, const std::string &cmd);
     void send(const std::string &cmd);
 
     std::string list(void) const;
@@ -67,13 +66,15 @@ public:
     int addSubscriber(const std::string &identity,
                       const std::string &name);
 
+protected:
+
+    // Hashed subscriptions
+    Subs subscriptions_;
+
 private:
 
     void help(const std::string &target_id) const;
     //void printHelp(const oat::CommandDescription &cmds) const;
-
-    // Hashed subscriptions
-    Subs subscriptions_;
 
     // Router socket
     zmq::context_t ctx_;

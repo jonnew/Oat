@@ -41,6 +41,9 @@ po::options_description RandomAccel::options() const
         ("position-sigma-accel,a", po::value<double>(),
          "Standard deviation of normally-distributed random positional "
          "accelerations. Specified unit-of-length/sec^2.")
+        ("produce-orientation,o", 
+         "Produce orientation elements of pose in addition to positions. "
+         "Defaults to false.")
         ("orientation-sigma-accel,b", po::value<double>(),
          "Standard deviation of normally-distributed random orientation "
          "accelerations. Specified in degrees/sec^2.")
@@ -53,7 +56,7 @@ void RandomAccel::applyConfiguration(const po::variables_map &vm,
                                      const config::OptionTable &config_table)
 {
     // Rate
-    double fs = 1e8; // Very fast s.t. process cannot keep up
+    double fs = 30;// 1e8; // Very fast s.t. process cannot keep up
     if (oat::config::getNumericValue<double>(vm, config_table, "rate", fs, 0))
         enforce_sample_clock_ = true;
     else
@@ -89,7 +92,7 @@ void RandomAccel::applyConfiguration(const po::variables_map &vm,
         room_.height = r[5];
     }
 
-    // Acceleration
+    // Positional acceleration
     double a;
     if (oat::config::getNumericValue<double>(
             vm, config_table, "position-sigma-accel-accel", a)) {
@@ -97,6 +100,11 @@ void RandomAccel::applyConfiguration(const po::variables_map &vm,
             std::normal_distribution<double>::param_type(0, a));
     }
 
+    // Sample number
+    oat::config::getValue<bool>(
+        vm, config_table, "produce-orientation", produce_orientation_);
+
+    // Orientation acceleration
     if (oat::config::getNumericValue<double>(
             vm, config_table, "orientation-sigma-accel-accel", a)) {
         pos_accel_dist_.param(
@@ -116,12 +124,18 @@ bool RandomAccel::generatePosition(oat::Pose &pose)
 
         // Simulated pose info
         pose.found = true;
-        pose.position_dof = Pose::DOF::Three;
+
         pose.orientation_dof = Pose::DOF::Three;
         std::array<double, 3> p{{state_(0), state_(2), state_(4)}};
         pose.set_position(p);
+
+        if (produce_orientation_) {
+            pose.position_dof = Pose::DOF::Three;
         std::array<double, 3> o{{state_(6), state_(8), state_(10)}};
         pose.fromTaitBryan(o, true);
+        } else {
+            pose.position_dof = Pose::DOF::Zero;
+        }
 
         it_++;
 

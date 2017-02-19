@@ -27,8 +27,6 @@
 #include <sstream>
 #include <thread>
 
-#include <boost/interprocess/exceptions.hpp>
-
 #include "../../lib/utility/ZMQHelpers.h"
 
 namespace oat {
@@ -48,7 +46,6 @@ void ControllableComponent::identity(char *id, const size_t n) const
 
 void ControllableComponent::run()
 {
-    // TODO: Get endpoint from program options
     auto control_thread = std::thread([this] { runController(); });
     control_thread.detach();
 
@@ -67,36 +64,56 @@ void ControllableComponent::runController(const char *endpoint)
 
     try {
 
-        auto ctrl_socket = getCtrlSocket(ctx, endpoint);
+        zmq::socket_t ctrl_socket(ctx, ZMQ_DEALER);
+        char id[32];
+        identity(id, 32);
+        ctrl_socket.setsockopt(ZMQ_IDENTITY, id, std::strlen(id));
+        ctrl_socket.connect(endpoint);
 
-        oat::sendStringMore(ctrl_socket, ""); // Delimeter
-        oat::sendString(ctrl_socket, whoAmI());
+        // Configure ctrl_socket to not wait at close time
+        ctrl_socket.setsockopt(ZMQ_LINGER, 0);
+
+        // TODO: Stack local
+        //auto ctrl_socket = getCtrlSocket(ctx, endpoint);
+
+        //oat::sendStringMore(ctrl_socket, ""); // Delimeter
+        //oat::sendString(ctrl_socket, whoAmI());
 
         // Execute control loop
         while (!quit) {
 
             // Poll the socket and find all existing connections
-            zmq::pollitem_t p[] = {{*ctrl_socket, 0, ZMQ_POLLIN, 0}};
-            zmq::poll(&p[0], 1, REQUEST_TIMEOUT_MS);
+            zmq::pollitem_t p[] = {{ctrl_socket, 0, ZMQ_POLLIN, 0}};
+            zmq::poll(&p[0], 1, COMPONENT_HEARTBEAT_MS);
+
+            // Send Heartbeat
+            oat::sendStringMore(ctrl_socket, ""); // Delimeter
+            oat::sendString(ctrl_socket, whoAmI());
 
             if (p[0].revents & ZMQ_POLLIN && !quit) {
 
                 // Found a command, run it.
                 oat::recvString(ctrl_socket); // Delimeter
                 auto command = oat::recvString(ctrl_socket);
-                quit = control(command);
+                if (command == "ping") {
+                    oat::sendStringMore(ctrl_socket, ""); // Delimeter
+                    oat::sendString(ctrl_socket, whoAmI());
+                } else {
+                    quit = control(command);
+                }
+            } 
 
-            } else {
-                // If we did not get a reply on this socket
-                // REQUEST_TIMEOUT_MS, tear it down and make a new one
-                delete ctrl_socket;
-                ctrl_socket = getCtrlSocket(ctx, endpoint);
-                oat::sendStringMore(ctrl_socket, ""); // Delimeter
-                oat::sendString(ctrl_socket, whoAmI());
-            }
+            //} else {
+            //    // If we did not get a reply on this socket
+            //    // COMPONENT_HEARTBEAT_MS, tear it down and make a new one
+            //    delete ctrl_socket;
+            //    ctrl_socket = getCtrlSocket(ctx, endpoint);
+            //    oat::sendStringMore(ctrl_socket, ""); // Delimeter
+            //    oat::sendString(ctrl_socket, whoAmI());
+            //}
         }
 
-        delete ctrl_socket;
+        //delete ctrl_socket;
 
     } catch (zmq::error_t &ex) {
 
@@ -113,6 +130,13 @@ void ControllableComponent::runController(const char *endpoint)
 
 int ControllableComponent::control(const std::string &command)
 {
+#ifndef NDEBUG
+    std::cout << "Got command: " << command << std::endl;
+#endif
+
+    //if (command == "ping") {
+    //    return 0;
+    //} else 
     if (command == "quit" || command == "Quit") {
         return 1;
     } else {
@@ -137,7 +161,7 @@ std::string ControllableComponent::whoAmI()
     if (!cmds.empty()) {
 
         whoami << "\"commands\":{";
-        for (const auto &c : cmds)
+        for (auto &&c : cmds)
             whoami << "\"" << c.first << "\":\"" << c.second << "\",";
         whoami.seekp(-1, whoami.cur); // Delete trailing comma
         whoami << "}";
@@ -150,18 +174,21 @@ std::string ControllableComponent::whoAmI()
     return whoami.str();
 }
 
-zmq::socket_t *ControllableComponent::getCtrlSocket(zmq::context_t &context,
-                                                    const char *endpoint)
-{
-    zmq::socket_t *socket = new zmq::socket_t(context, ZMQ_DEALER);
-    char id[32];
-    identity(id, 32);
-    socket->setsockopt(ZMQ_IDENTITY, id, std::strlen(id));
-    socket->connect(endpoint);
-
-    // Configure socket to not wait at close time
-    socket->setsockopt(ZMQ_LINGER, 0);
-    return socket;
-}
+//zmq::socket_t *ControllableComponent::getCtrlSocket(zmq::context_t &context,
+//                                                    const char *endpoint)
+//{
+//    // Make a new dealer socket
+//    zmq::socket_t *socket = new zmq::socket_t(context, ZMQ_DEALER);
+//    char id[32];
+//    identity(id, 32);
+//    socket->setsockopt(ZMQ_IDENTITY, id, std::strlen(id));
+//    socket->connect(endpoint);
+//    //uint64_t out = 10;
+//    //socket->setsockopt(ZMQ_SNDHWM, &out, sizeof(out));
+//
+//    // Configure socket to not wait at close time
+//    socket->setsockopt(ZMQ_LINGER, 0);
+//    return socket;
+//}
 
 } /* namespace oat */

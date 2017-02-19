@@ -17,14 +17,14 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "Controller.h"
+
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <thread>
 #include <unistd.h>
-
-#include "Controller.h"
 
 #include "../../lib/base/ControllableComponent.h"
 #include "../../lib/utility/IOFormat.h"
@@ -43,22 +43,22 @@ Controller::Controller(const char *endpoint)
 void Controller::send(const std::string &command)
 {
     for (const auto &s : subscriptions_)
-        sendReqEnvelope(&router_, s.first, command);
+        sendReqEnvelope(router_, s.first, command);
 }
 
-void Controller::send(const std::string &command, const std::string &target_id)
+void Controller::send(const std::string &target_id, const std::string &command)
 {
     if (subscriptions_.count(target_id)) {
         if (command == "help" || command == "Help")
             help(target_id);
         else
-            sendReqEnvelope(&router_, target_id, command);
+            sendReqEnvelope(router_, target_id, command);
     } else {
         std::cerr << oat::Warn("Target is not available: " + target_id) << "\n";
     }
 }
 
-void Controller::send(const std::string &command, const Subs::size_type idx)
+void Controller::send(const Subs::size_type idx, const std::string &command)
 {
     if (subscriptions_.size() <= idx) {
         std::cerr
@@ -67,7 +67,7 @@ void Controller::send(const std::string &command, const Subs::size_type idx)
     } else {
         auto s = subscriptions_.begin();
         std::advance(s, idx);
-        send(command, s->first);
+        send(s->first, command);
     }
 }
 
@@ -77,30 +77,28 @@ void Controller::scan()
     subscriptions_.clear();
 
     // Poll the socket and find all existing connections
-    int retries_left = 100;
-    while (true) {
+    bool more;
+    do {
 
         zmq::pollitem_t p[] = {{router_, 0, ZMQ_POLLIN, 0}};
         zmq::poll(&p[0], 1, 10);
 
-        if (p[0].revents & ZMQ_POLLIN) {
+        more = (p[0].revents & ZMQ_POLLIN);
+        if (more) {
 
-            std::string id, name;
-            if (!recvReqEnvelope(&router_, id, name)) {
+            std::string id, info;
+            if (!recvReqEnvelope(router_, id, info)) {
                 std::cerr << oat::Warn("Bad receive") << "\n";
                 continue;
             }
 
-            if (addSubscriber(id, name)) {
-                std::cerr << oat::Warn("Invalid component: " + id + " " + name)
+            if (addSubscriber(id, info)) {
+                std::cerr << oat::Warn("Invalid component: " + id + " " + info)
                           << "\n";
                 continue;
             }
-
-        } else if (retries_left-- == 0) {
-            break;
-        }
-    }
+        } 
+    } while (more);
 }
 
 std::string Controller::list() const
@@ -113,6 +111,10 @@ std::string Controller::list() const
     int idx = 0;
 
     std::stringstream ss;
+
+    if (subscriptions_.size() == 0) 
+        return ss.str();
+
     ss << std::left << std::setw(idx_width) << std::setfill(sep) << "Index";
     ss << std::left << std::setw(id_width) << std::setfill(sep) << "ID";
     ss << std::left << std::setw(name_width) << std::setfill(sep) << "Name";
@@ -163,8 +165,7 @@ int Controller::addSubscriber(const std::string &id_string,
     assert(desc.IsObject());
 
     oat::CommandDescription desc_map;
-    for (auto &d : desc.GetObject()) {
-
+    for (auto &&d : desc.GetObject()) {
         assert(d.value.IsString());
         desc_map.emplace(d.name.GetString(), d.value.GetString());
     }
@@ -172,9 +173,9 @@ int Controller::addSubscriber(const std::string &id_string,
     // Add if this component is not already in hash
     if (!subscriptions_.count(id_string)) {
         subscriptions_.emplace(std::piecewise_construct,
-                     std::make_tuple(id_string),
-                     std::make_tuple(ctype, name, desc_map));
-    }
+                               std::make_tuple(id_string),
+                               std::make_tuple(ctype, name, desc_map));
+    } 
 
     return 0;
 }
@@ -185,10 +186,9 @@ void Controller::help(const std::string &target_id) const
 
         auto cmds = subscriptions_.at(target_id).commands;
         cmds.emplace("help", "Print this message.");
-        cmds.emplace("quit", "Exit the program..");
+        cmds.emplace("quit", "Exit the program.");
 
         size_t max_len = 7; // For "COMMAND"
-        std::vector<std::string> keys;
 
         for (const auto &c : cmds) {
             if (c.first.size() > max_len)
@@ -199,12 +199,11 @@ void Controller::help(const std::string &target_id) const
         // Format help message
         std::stringstream out;
         out << std::left << subscriptions_.at(target_id).name << "\n";
-        out << std::left << std::setw(max_len) << "COMMAND "
-            << "DESC.\n";
+        out << std::left << std::setw(max_len) << "COMMAND " << "DESC.\n";
 
         int desc_len = 80 - max_len;
         assert(desc_len > 0);
-        for (const auto &c : cmds) {
+        for (auto &&c : cmds) {
             out <<  std::left << std::setw(max_len) << (" " + c.first);
 
             size_t from = 0;
@@ -213,8 +212,7 @@ void Controller::help(const std::string &target_id) const
                 to = c.second.find(" ", to + desc_len);
                 if (from != 0)
                     out << std::left << std::setw(max_len - 1) << "";
-                out << c.second.substr(from, to)
-                    << "\n";
+                out << c.second.substr(from, to) << "\n";
 
                 from = to;
             }

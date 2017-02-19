@@ -34,9 +34,8 @@ class RandomAccel : public PoseGenerator {
 public:
     /**
      * A 3D Gaussian random acceleration generator.
-     * Test positions are subject to random, uncorrelated 3D, Gaussian
-     * accelerations. Test orientations are subject to uniform random
-     * rotations.
+     * Test poses are subject to random, uncorrelated 3D, Gaussian
+     * accelerations. 
      */
     using PoseGenerator::PoseGenerator;
 
@@ -71,6 +70,8 @@ private:
     // STM and input matrix
     cv::Matx<double, 12, 12> state_transition_mat_;
     cv::Matx<double, 12, 6> input_mat_;
+
+    bool produce_orientation_{false};
 
     bool generatePosition(oat::Pose &position) override;
     void createStaticMatracies(void);

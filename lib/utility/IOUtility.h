@@ -20,8 +20,13 @@
 #ifndef OAT_IOUTILITY_H
 #define OAT_IOUTILITY_H
 
+#include <algorithm>
+#include <cctype>
+#include <functional>
 #include <iostream>
 #include <limits>
+#include <string>
+#include <vector>
 
 namespace oat {
 
@@ -43,6 +48,30 @@ inline void ignoreAll(std::istream& in) {
 
     in.clear();
     in.ignore(std::numeric_limits<std::streamsize>::max());
+}
+
+/** 
+ * @brief Split string using spaces. 
+ * @param s String to split
+ * @return Vector of substrings 
+ * @note From here: http://stackoverflow.com/questions/236129/split-a-string-in-c
+ */
+inline std::vector<std::string> split(const std::string& s)
+{
+    std::vector<std::string> v;
+
+    const auto done = s.end();
+    auto end = s.begin();
+    decltype(end) pos;
+
+    while((pos = std::find_if(end, done,
+        std::not1(std::ptr_fun<int, int>(std::isspace)))) != done)
+    {
+        end = std::find_if(pos, done, std::ptr_fun<int, int>(std::isspace));
+        v.emplace_back(pos, end);
+    }
+
+    return v;
 }
 
 }      /* namespace oat */

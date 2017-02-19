@@ -32,8 +32,7 @@
 #include "Component.h"
 #include "Globals.h"
 
-#define REQUEST_RETRIES 1e6
-#define REQUEST_TIMEOUT_MS 500
+#define COMPONENT_HEARTBEAT_MS 300
 
 namespace oat {
 
@@ -91,7 +90,7 @@ private:
 
     int control(const std::string &command);
 
-    zmq::socket_t *getCtrlSocket(zmq::context_t &context, const char *endpoint);
+    //zmq::socket_t *getCtrlSocket(zmq::context_t &context, const char *endpoint);
 };
 }      /* namespace oat */
 #endif /* OAT_CONTROLLABLECOMPONENT_H */

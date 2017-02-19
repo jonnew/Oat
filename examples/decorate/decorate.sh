@@ -8,38 +8,38 @@ case "$1" in
 		oat view frame dec                                        &
         oat decorate raw dec -p p -htsS -l 10 -f 0.75\
                              -c calibration.toml calibration      &
-        oat posigen rand p -r 20 -R [0,640,0,480,0,0]             &
+        oat posigen rand p -R [0,1,0,1,0,1] -u 1 -o               &
 		oat frameserve wcam raw
 		;;
 
-	#3dof)
-	#	oat view frame dec                                        &
-    #    oat decorate raw dec -p p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 \
-    #                         -p p10 p11 p12 p13 p14 p15 p16 p17 \
-    #                         -p p18 p19 \
-    #                         -htsS -l 10 -f 1                     &
-    #    oat posigen rand p19 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p18 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p17 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p16 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p15 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p14 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p13 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p12 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p11 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p10 -r 15 -R [0,640,0,480,0,0]           &
-    #    oat posigen rand p9 -r 15 -R [0,640,0,480,0,0]            &
-    #    oat posigen rand p8 -r 15 -R [0,640,0,480,0,0]            &
-    #    oat posigen rand p7 -r 15 -R [0,640,0,480,0,0]            &
-    #    oat posigen rand p6 -r 15 -R [0,640,0,480,0,0]            &
-    #    oat posigen rand p5 -r 15 -R [0,640,0,480,0,0]            &
-    #    oat posigen rand p4 -r 15 -R [0,640,0,480,0,0]            &
-    #    oat posigen rand p3 -r 15 -R [0,640,0,480,0,0]            &
-    #    oat posigen rand p2 -r 15 -R [0,640,0,480,0,0]            &
-    #    oat posigen rand p1 -r 15 -R [0,640,0,480,0,0]            &
-    #    oat posigen rand p0 -r 15 -R [0,640,0,480,0,0]            &
-	#	oat frameserve wcam raw -r 15
-	#	;;
+	3dof)
+		oat view frame raw                                        &
+        oat decorate raw dec -p p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 \
+                             -p p10 p11 p12 p13 p14 p15 p16 p17 \
+                             -p p18 p19 \
+                             -htsS -l 10 -f 1                     &
+        oat posigen rand p19 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p18 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p17 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p16 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p15 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p14 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p13 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p12 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p11 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p10 -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p9  -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p8  -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p7  -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p6  -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p5  -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p4  -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p3  -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p2  -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p1  -r 15 -R [0,640,0,480,0,0]           &
+        oat posigen rand p0  -r 15 -R [0,640,0,480,0,0]           &
+		oat frameserve wcam raw -r 15
+		;;
 
     calib)
 
