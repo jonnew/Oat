@@ -34,21 +34,17 @@ namespace oat {
 template <typename T>
 class TokenBuffer : public Buffer {
 
-    using SPSCBuffer =
-        boost::lockfree::spsc_queue<T, buffer_size_t>;
+    using SPSCBuffer = boost::lockfree::spsc_queue<T, buffer_size_t>;
 
 public:
-
     TokenBuffer(const std::string &source_address,
                 const std::string &sink_address);
 
 protected:
-
     bool connectToNode(void) override;
     int process(void) override;
 
 private:
-
     void pop(void) override;
 
     // Source

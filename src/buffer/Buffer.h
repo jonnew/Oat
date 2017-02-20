@@ -35,18 +35,15 @@
 
 namespace oat {
 
-class Buffer : public Component {
+class Buffer : public Component, public Configurable<false> {
 
 public:
-
     /**
      * @brief Abstract Buffer. All concrete buffers implement this ABC.
      * @param source_address SOURCE node address
      * @param sink_address SINK node address
      */
-    Buffer(const std::string & source_address,
-           const std::string & sink_address);
-
+    Buffer(const std::string &source_address, const std::string &sink_address);
     virtual ~Buffer();
 
     // Component Interface
@@ -59,12 +56,16 @@ protected:
     using msec = std::chrono::milliseconds;
 
     /**
-     * @brief In response to downstream request, publish object from FIFO to SINK.
+     * @brief In response to downstream request, publish object from FIFO to
+     * SINK.
      */
     virtual void pop(void) = 0;
 
-    // Buffer name.
+    // Buffer name
     const std::string name_;
+
+    // Sample rate ratio
+    size_t down_sample_factor_{1};
 
     // Source
     const std::string source_address_;
@@ -75,6 +76,12 @@ protected:
     std::mutex cv_m_;
     std::condition_variable cv_;
     const std::string sink_address_;
+
+private:
+    // Configurable interface
+    po::options_description options() const override;
+    void applyConfiguration(const po::variables_map &vm,
+                            const config::OptionTable &config_table) override;
 };
 
 #ifndef NDEBUG

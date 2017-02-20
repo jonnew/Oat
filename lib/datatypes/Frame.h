@@ -133,6 +133,7 @@ public:
     uint64_t sample_count(void) const { return sample_ptr_->count(); }
     void incrementSampleCount() { sample_ptr_->incrementCount(); }
     void incrementSampleCount(USec us) { sample_ptr_->incrementCount(us); }
+    void resample(const double resample_ratio) { sample_.resample(resample_ratio); }
 
     // Provide copy of sample_
     oat::Sample sample() const { return *sample_ptr_; };

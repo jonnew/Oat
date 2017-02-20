@@ -1380,6 +1380,9 @@ RJ45 ------------
     - Unit tests for `libshmemdf`
         - ~~Nominal data types, `T`~~
         - Specializations for `Frames`
+    - Unit tests for `libdatatypes`
+        - ~~Pose~~
+        - Frame
     - Stress tests for data processing chains
         - I need to come up with a series of scripts that configure and run
           components in odd and intensive, but legal, ways to ensure sample
@@ -1417,3 +1420,20 @@ RJ45 ------------
 - [ ] Type deduction in shmem Tokens
     - Sources should have a static method for checking the token type of a
       given address.
+- [ ] Sample datatype is used oddly.
+    - Token specializations (e.g. Pose and Frame) hold internal references to
+      sample object but they end up exposing the whole underlying interface
+      through delegation. This indicates Sample should likely be a base class
+      to all Tokens. It can even be renamed Token. Will cause Frames to be
+      mutiple inherited, so I need to think about that.
+- [ ] Frames should not be derived from cv::Mats
+   - This would solve the multiple inheritance issue above
+   - Frames should be easily, and zero-copily, _convertible_ to cv::Mats. They
+     should not be the same thing!
+   - In fact, the object stored in shmem is of course closer to what a Frame
+     should be: a data buffer and requisite header information for conversion
+     to other forms (e.g. cv::Mat or Eigen::Matrix) 
+   - This promotes the concept of a common, abstract Token class and
+     potentially would mean that oat-programs would be limited to a finite set
+     describing Token IO patterns rather than growing everytime a new Token
+     specialization is created.

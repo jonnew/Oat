@@ -22,6 +22,8 @@
 
 #include "OatConfig.h" // EIGEN3_FOUND
 
+#include "Sample.h"
+
 #include <vector>
 #include <cstring>
 
@@ -32,8 +34,6 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #endif
-
-#include "Sample.h"
 
 /**
  * @def q2R
@@ -206,10 +206,6 @@ public:
     , p_(p.p_)
     {
         std::strncpy(region, p.region, region_max_char);
-//#ifdef EIGEN3_FOUND
-//        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
-//        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
-//#endif
     }
 
     Pose(Pose &&p) = default;
@@ -225,11 +221,6 @@ public:
         sample_ = rhs.sample_;
         q_ = rhs.q_;
         p_ = rhs.p_;
-//#ifdef EIGEN3_FOUND
-//        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
-//        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
-//#endif
-
         return *this;
     }
 
@@ -254,10 +245,6 @@ public:
         found = p.found;
         q_ = p.q_;
         p_ = p.p_;
-//#ifdef EIGEN3_FOUND
-//        Eigen::Map<Eigen::Quaterniond> eig_orient_{q_.data()};
-//        Eigen::Map<Eigen::RowVector3d> eig_pos_{p_.data()};
-//#endif
         if (usec == Sample::Microseconds{0})
             sample_.incrementCount();
         else
@@ -290,6 +277,7 @@ public:
     uint64_t sample_usec(void) const { return sample_.microseconds().count(); }
     void incrementSampleCount() { sample_.incrementCount(); }
     void incrementSampleCount(Sample::Microseconds us) { sample_.incrementCount(us); }
+    void resample(const double resample_ratio) { sample_.resample(resample_ratio); }
 
     // Was pose estimation successful?
     bool found{false};

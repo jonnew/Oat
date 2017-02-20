@@ -63,8 +63,14 @@ int TokenBuffer<T>::process()
     if (source_.wait() == oat::NodeState::END)
         return 1;
 
-    if (!buffer_.push(source_.clone()))
-        std::cerr << "Buffer overrun.\n";
+    if (source_.retrieve()->sample_count() % down_sample_factor_ == 0) {
+        
+        if (!buffer_.push(source_.clone()))
+            std::cerr << "Buffer overrun.\n";
+        else // Change token sample rate
+            buffer_.front().resample(
+                1.0 / static_cast<double>(down_sample_factor_));
+    }
 
     // Tell sink it can continue
     source_.post();

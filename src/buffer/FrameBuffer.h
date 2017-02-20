@@ -30,11 +30,9 @@ namespace oat {
 
 class FrameBuffer : public Buffer {
 
-    using SPSCBuffer =
-        boost::lockfree::spsc_queue<oat::Frame, buffer_size_t>;
+    using SPSCBuffer = boost::lockfree::spsc_queue<oat::Frame, buffer_size_t>;
 
 public:
-
     /**
      * @brief Frame buffer.
      * @param source_address SOURCE node address
@@ -44,13 +42,11 @@ public:
                 const std::string &sink_address);
 
 protected:
-
     // Implement Component interface
     bool connectToNode(void) override;
     int process(void) override;
 
 private:
-
     void pop(void) override;
 
     // Source

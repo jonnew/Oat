@@ -41,4 +41,26 @@ Buffer::~Buffer()
         sink_thread_.join();
 }
 
+po::options_description Buffer::options() const
+{
+    // Update CLI options
+    po::options_description local_opts;
+    local_opts.add_options()
+        ("down-sample-factor,d", po::value<size_t>(),
+         "Positive integer value, specifying the token decimation factor of the "
+         "buffer. The outgoing stream's sample rate will be the incoming stream's rate "
+         "divided by this number. Defaults to 1.")
+        ;
+
+    return local_opts;
+}
+
+void Buffer::applyConfiguration(const po::variables_map &vm,
+                                const config::OptionTable &config_table)
+{
+    // Resample ratio
+    oat::config::getNumericValue<size_t>(
+        vm, config_table, "down-sample-factor", down_sample_factor_, 1);
+}
+
 } /* namespace oat */

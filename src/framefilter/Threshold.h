@@ -39,6 +39,7 @@ public:
               const std::string &frame_sink_address);
 
 private:
+    // Configurable interface
     po::options_description options() const override;
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;

@@ -132,7 +132,7 @@ void PoseWriter::initializeJSON(const std::string &path)
     json_writer_.EndObject();
 
     // Start data object
-    json_writer_.String("positions");
+    json_writer_.String("poses");
     json_writer_.StartArray();
 }
 

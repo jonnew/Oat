@@ -111,6 +111,11 @@ public:
     Microseconds period_microseconds() const { return period_microseconds_; }
     double rate_hz() const { return rate_hz_; }
 
+    void resample(const double resample_ratio) {
+        set_rate_hz(rate_hz_ * resample_ratio);
+        count_ *= resample_ratio;
+    }
+
 private:
 
     uint64_t count_ {0};

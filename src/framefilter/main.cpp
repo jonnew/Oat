@@ -64,9 +64,8 @@ const char purpose[] =
     "Filter frames from SOURCE and publish filtered frames "
     "to SINK.";
 
-void printUsage(const po::options_description &options,
-                const std::string &type) {
-
+void printUsage(const po::options_description &options, const std::string &type)
+{
     if (type.empty()) {
         std::cout <<
         "Usage: framefilt [INFO]\n"

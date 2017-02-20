@@ -168,6 +168,12 @@ int main(int argc, char *argv[])
                     return -1;
                 }
             }
+
+            // Specialize program options for the selected TYPE
+            po::options_description detail_opts {"CONFIGURATION"};
+            buffer->appendOptions(detail_opts);
+            visible_options.add(detail_opts);
+            options.add(detail_opts);
         }
 
         // Check INFO arguments
@@ -218,6 +224,8 @@ int main(int argc, char *argv[])
                  .options(options)
                  .run(), option_map);
         po::notify(option_map);
+
+        buffer->configure(option_map);
 
         // Tell user
         std::cout << oat::whoMessage(comp_name,
