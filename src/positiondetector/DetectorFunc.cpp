@@ -17,14 +17,15 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
+#include "DetectorFunc.h"
+
 #include <string>
 #include <vector>
+
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc.hpp>
 
 #include "../../lib/datatypes/Pose.h"
-
-#include "DetectorFunc.h"
 
 namespace oat {
 

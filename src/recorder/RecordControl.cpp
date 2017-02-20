@@ -17,10 +17,10 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "RecordControl.h"
+
 #include <csignal>
 #include <unordered_map>
-
-#include "RecordControl.h"
 
 extern volatile sig_atomic_t quit;
 

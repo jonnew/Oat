@@ -17,13 +17,14 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "FileReader.h"
+
 #include <thread>
 
 #include <cpptoml.h>
-#include "../../lib/utility/TOMLSanitize.h"
-#include "../../lib/utility/IOFormat.h"
 
-#include "FileReader.h"
+#include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {
 

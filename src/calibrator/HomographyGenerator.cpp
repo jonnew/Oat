@@ -17,29 +17,29 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include <algorithm>
-#include <chrono>
-#include <iomanip>
-#include <string>
-#include <iostream>
-#include <fstream>
-
-#include <boost/io/ios_state.hpp>
-#include <opencv2/cvconfig.h>
-#include <opencv2/core/mat.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/calib3d.hpp>
-
-#include <cpptoml.h>
-#include "../../lib/utility/TOMLSanitize.h"
-#include "../../lib/utility/IOUtility.h"
-#include "../../lib/utility/IOFormat.h"
-
+#include "HomographyGenerator.h"
+#include "PathChanger.h"
 #include "Saver.h"
 #include "UsagePrinter.h"
-#include "PathChanger.h"
-#include "HomographyGenerator.h"
+
+#include <algorithm>
+#include <chrono>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
+
+#include <boost/io/ios_state.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/cvconfig.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <cpptoml.h>
+
+#include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/IOUtility.h"
+#include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {
 

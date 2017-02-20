@@ -20,10 +20,10 @@
 #include "PositionReplier.h"
 
 #include <string>
-#include <zmq.hpp>
 
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/stringbuffer.h>
+#include <zmq.hpp>
 
 #include "../../lib/datatypes/Pose.h"
 #include "../../lib/utility/TOMLSanitize.h"

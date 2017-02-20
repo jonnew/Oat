@@ -22,9 +22,10 @@
 #include "Tuner.h"
 
 #include <string>
+
+#include <cpptoml.h>
 #include <opencv2/cvconfig.h>
 #include <opencv2/opencv.hpp>
-#include <cpptoml.h>
 
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/IOFormat.h"

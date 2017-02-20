@@ -17,16 +17,16 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "Calibrator.h"
+#include "CameraCalibrator.h"
+#include "HomographyGenerator.h"
+#include "PathChanger.h"
+
 #include <stdexcept>
 #include <wordexp.h>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/IOUtility.h"
-
-#include "Calibrator.h"
-#include "CameraCalibrator.h"
-#include "HomographyGenerator.h"
-#include "PathChanger.h"
 
 namespace oat {
 

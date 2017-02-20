@@ -19,9 +19,10 @@
 
 #include "Threshold.h"
 
+#include <string>
+
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
-#include <string>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"

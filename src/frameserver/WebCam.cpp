@@ -21,10 +21,11 @@
 
 #include <chrono>
 #include <string>
+
 #include <opencv2/core/mat.hpp>
 
-#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/IOFormat.h"
+#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/make_unique.h"
 
 namespace oat {
@@ -66,7 +67,7 @@ void WebCam::applyConfiguration(const po::variables_map &vm,
     if (oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0)) {
         cv_camera_->set(cv::CAP_PROP_FPS, fps);
         if (cv_camera_->get(cv::CAP_PROP_FPS) != fps)
-            std::cerr << oat::Warn("Not able to set webcam frame rate.\n");
+            std::cerr << oat::Warn("Webcam does not support configurable frame rate.\n");
     }
 
     // ROI

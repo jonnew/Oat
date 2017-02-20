@@ -19,8 +19,9 @@
 
 #include "BackgroundSubtractor.h"
 
-#include <string>
 #include <iostream>
+#include <string>
+
 #include <cpptoml.h>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>

@@ -17,6 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "PositionDetector.h"
+
 #include <string>
 
 #include <opencv2/core/mat.hpp>
@@ -24,8 +26,6 @@
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
-
-#include "PositionDetector.h"
 
 namespace oat {
 

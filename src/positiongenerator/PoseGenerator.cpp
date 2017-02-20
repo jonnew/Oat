@@ -17,6 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "PoseGenerator.h"
+
 #include <chrono>
 #include <string>
 #include <thread>
@@ -25,8 +27,6 @@
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/TOMLSanitize.h"
-
-#include "PoseGenerator.h"
 
 namespace oat {
 

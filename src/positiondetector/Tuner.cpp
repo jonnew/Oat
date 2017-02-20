@@ -17,13 +17,13 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
-#include <iostream>
+#include "Tuner.h"
+
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 
 #include <opencv2/highgui.hpp>
-
-#include "Tuner.h"
 
 namespace oat {
 
@@ -63,7 +63,7 @@ void Tuner::tune(const oat::Frame &frame,
     // Messages to be printed on screen
     std::vector<std::string> msgs;
 
-    if (pose.found ) {
+    if (pose.found) {
 
         double length = 0.0;
         if (pose.unit_of_length == Pose::DistanceUnit::Pixels)

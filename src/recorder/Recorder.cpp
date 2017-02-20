@@ -18,9 +18,9 @@
 //******************************************************************************
 
 #include "Recorder.h"
-#include "Writer.h"
 #include "FrameWriter.h"
 #include "PoseWriter.h"
+#include "Writer.h"
 
 #include <chrono>
 #include <cmath>
@@ -30,10 +30,10 @@
 #include <string>
 #include <vector>
 
+#include "../../lib/shmemdf/Helpers.h"
 #include "../../lib/utility/FileFormat.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/make_unique.h"
-#include "../../lib/shmemdf/Helpers.h"
 
 namespace oat {
 

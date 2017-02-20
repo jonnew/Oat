@@ -20,9 +20,10 @@
 #include "FrameViewer.h"
 
 #include <string>
+
 #include <boost/filesystem.hpp>
-#include <opencv2/cvconfig.h>
 #include <opencv2/core/mat.hpp>
+#include <opencv2/cvconfig.h>
 #include <opencv2/highgui/highgui.hpp>
 
 #include "../../lib/utility/FileFormat.h"

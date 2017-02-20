@@ -17,16 +17,16 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
+#include "UDPPositionServer.h"
+#include "SocketWriteStream.h"
+
+#include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
-#include <boost/asio/deadline_timer.hpp>
 
 #include <rapidjson/rapidjson.h>
 
 #include "../../lib/datatypes/Position2D.h"
-
-#include "SocketWriteStream.h"
-#include "UDPPositionServer.h"
 
 namespace oat {
 

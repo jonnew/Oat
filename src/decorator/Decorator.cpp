@@ -17,6 +17,8 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //****************************************************************************
 
+#include "Decorator.h"
+
 #include <cmath>
 #include <ctime>
 #include <exception>
@@ -30,8 +32,6 @@
 #include "../../lib/utility/Pallet.h"
 #include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/utility/make_unique.h"
-
-#include "Decorator.h"
 
 namespace oat {
 

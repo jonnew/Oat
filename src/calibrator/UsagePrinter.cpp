@@ -17,11 +17,11 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#include <iostream>
-
 #include "CameraCalibrator.h"
 #include "HomographyGenerator.h"
 #include "UsagePrinter.h"
+
+#include <iostream>
 
 namespace oat {
 

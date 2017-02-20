@@ -17,16 +17,16 @@
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
+#include "RandomAccel.h"
+
 #include <algorithm>
 #include <array>
 #include <string>
 
 #include <opencv2/opencv.hpp>
 
-#include "../../lib/utility/TOMLSanitize.h"
 #include "../../lib/datatypes/Pose.h"
-
-#include "RandomAccel.h"
+#include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {
 
@@ -124,6 +124,7 @@ bool RandomAccel::generatePosition(oat::Pose &pose)
 
         // Simulated pose info
         pose.found = true;
+        pose.unit_of_length = dist_unit_;
 
         pose.orientation_dof = Pose::DOF::Three;
         std::array<double, 3> p{{state_(0), state_(2), state_(4)}};
@@ -131,10 +132,10 @@ bool RandomAccel::generatePosition(oat::Pose &pose)
 
         if (produce_orientation_) {
             pose.position_dof = Pose::DOF::Three;
-        std::array<double, 3> o{{state_(6), state_(8), state_(10)}};
-        pose.fromTaitBryan(o, true);
+            std::array<double, 3> o{{state_(6), state_(8), state_(10)}};
+            pose.fromTaitBryan(o, true);
         } else {
-            pose.position_dof = Pose::DOF::Zero;
+            pose.orientation_dof = Pose::DOF::Zero;
         }
 
         it_++;

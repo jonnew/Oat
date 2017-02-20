@@ -20,10 +20,11 @@
 #include "HSVDetector.h"
 #include "DetectorFunc.h"
 
-#include <string>
 #include <limits>
-#include <opencv2/opencv.hpp>
+#include <string>
+
 #include <cpptoml.h>
+#include <opencv2/opencv.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/IOFormat.h"

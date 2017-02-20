@@ -20,11 +20,12 @@
 #include "ArucoBoard.h"
 
 #include <cmath>
+#include <string>
+
 #include <cpptoml.h>
 #include <opencv2/aruco.hpp>
 #include <opencv2/cvconfig.h>
 #include <opencv2/opencv.hpp>
-#include <string>
 
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/TOMLSanitize.h"
