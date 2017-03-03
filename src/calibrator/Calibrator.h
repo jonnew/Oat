@@ -39,7 +39,7 @@ namespace oat {
 class CalibratorVisitor;
 class OutputVisitor;
 
-class Calibrator : public Component, public Configurable<false> {
+class Calibrator : public Component, public Configurable {
 
 public:
     /**

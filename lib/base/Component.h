@@ -31,7 +31,11 @@
 
 #include "Globals.h"
 
+#define COMPONENT_HEARTBEAT_MS 300
+
 namespace oat {
+
+typedef std::map<std::string, std::string> CommandDescription;
 
 enum ComponentType : uint16_t {
     mock = 0,
@@ -79,6 +83,34 @@ public:
 protected:
 
     /**
+     * @brief Get unique, controllable ID for this component
+     * @param n Number of characters to copy to id
+     * @param ASCII string ID consisting of the character 'C' followed by a
+     * serilized ComponentType component enumerator, then a '.' delimeter, and
+     * then seralized string representing the handle of the component control
+     * thread.
+     */
+    void identity(char *id, const size_t n) const;
+
+    /**
+     * @brief Mutate component according to the requested user input. Message
+     * header provides location of control struct.
+     * @note Only commands supplied as keys via the overridden commands()
+     * function will be passed to this function.
+     * @warn This function must be thread-safe with processing thread.
+     * @param command Control message
+     * @return Return code. 0 = More. 1 = Quit received.
+     */
+    virtual void applyCommand(const std::string &command);
+
+    /**
+     * @brief Return map comtaining a runtime commands and description of
+     * action on the component as implmented with the applyCommand function.
+     * @return commands/description map.
+     */
+    virtual oat::CommandDescription commands();
+
+    /**
      * @brief Executes component processing loop on main thread. Sets
      * process_loop_started boolean.
      */
@@ -95,6 +127,18 @@ protected:
      * @return Return code. 0 = More. 1 = End of stream.
      */
     virtual int process(void) = 0;
+
+private:
+    /**
+     * @brief Start component controller on a separate thread.
+     * @param endpoint Endpoint over which communicaiton with an oat-control
+     * instance will occur.
+     */
+    void runController(const char *endpoint = "ipc:///tmp/oatcomms.pipe");
+
+    std::string whoAmI();
+
+    int control(const std::string &command);
 };
 }      /* namespace oat */
 #endif /* OAT_COMPONENT_H */

@@ -35,7 +35,7 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class PositionSocket : public Component, public Configurable<false> {
+class PositionSocket : public Component, public Configurable {
 
 public:
     /**

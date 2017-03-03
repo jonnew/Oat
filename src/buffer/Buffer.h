@@ -35,7 +35,7 @@
 
 namespace oat {
 
-class Buffer : public Component, public Configurable<false> {
+class Buffer : public Component, public Configurable {
 
 public:
     /**

@@ -26,7 +26,6 @@
 #include <thread>
 #include <unistd.h>
 
-#include "../../lib/base/ControllableComponent.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ZMQHelpers.h"
 
@@ -159,15 +158,17 @@ int Controller::addSubscriber(const std::string &id_string,
     assert(sub_info["name"].IsString());
     auto name = std::string(sub_info["name"].GetString());
 
-    // Get description and format
-    assert(sub_info.HasMember("commands"));
-    const rapidjson::Value &desc = sub_info["commands"];
-    assert(desc.IsObject());
-
+    // Get description and format if any are provided
     oat::CommandDescription desc_map;
-    for (auto &&d : desc.GetObject()) {
-        assert(d.value.IsString());
-        desc_map.emplace(d.name.GetString(), d.value.GetString());
+
+    if (sub_info.HasMember("commands")) {
+        const rapidjson::Value &desc = sub_info["commands"];
+        assert(desc.IsObject());
+
+        for (auto &&d : desc.GetObject()) {
+            assert(d.value.IsString());
+            desc_map.emplace(d.name.GetString(), d.value.GetString());
+        }
     }
 
     // Add if this component is not already in hash

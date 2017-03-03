@@ -42,7 +42,7 @@ namespace oat {
  * Abstract position combiner.
  * All concrete position combiner types implement this ABC.
  */
-class PositionCombiner : public Component, public Configurable<false> {
+class PositionCombiner : public Component, public Configurable {
 
     using pvec_size_t = oat::NamedSourceList<oat::Position2D>::size_type;
 

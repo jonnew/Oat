@@ -37,7 +37,7 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class PositionDetector : public Component, public Configurable<false> {
+class PositionDetector : public Component, public Configurable {
 public:
     /**
      * Abstract object pose detector.

@@ -30,13 +30,13 @@
 #include <string>
 #include <thread>
 
-#include "../../lib/base/ControllableComponent.h"
+#include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
 
 namespace oat {
 namespace po = boost::program_options;
 
-class Recorder : public ControllableComponent, public Configurable<true> {
+class Recorder : public Component, public Configurable {
 
 public:
     ~Recorder();

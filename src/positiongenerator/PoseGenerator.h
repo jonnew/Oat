@@ -37,7 +37,7 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class PoseGenerator : public Component, public Configurable<false> {
+class PoseGenerator : public Component, public Configurable {
 
 public:
     /**

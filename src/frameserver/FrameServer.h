@@ -34,7 +34,7 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class FrameServer : public Component, public Configurable<false> {
+class FrameServer : public Component, public Configurable {
 public:
     /**
      * @brief Abstract frame server

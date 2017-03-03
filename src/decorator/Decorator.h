@@ -27,7 +27,7 @@
 #include <zmq.hpp>
 
 #include "../../lib/base/Configurable.h"
-#include "../../lib/base/ControllableComponent.h"
+#include "../../lib/base/Component.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/datatypes/Pose.h"
 #include "../../lib/shmemdf/Helpers.h"
@@ -41,7 +41,7 @@ namespace oat {
 
 static const constexpr double PI {3.141592653589793238463};
 
-class Decorator : public ControllableComponent, public Configurable<true> {
+class Decorator : public Component, public Configurable {
 
     using pvec_size_t = oat::NamedSourceList<oat::Pose>::size_type;
 

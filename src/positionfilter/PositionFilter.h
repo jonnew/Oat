@@ -34,7 +34,7 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class PositionFilter : public Component, public Configurable<false> {
+class PositionFilter : public Component, public Configurable {
 
 public:
     /**

@@ -49,10 +49,10 @@ void InteractiveController::execute()
 
 usage:
     std::cout << "Provide commands as:\n"
-              << "ID COMMAND [ARGS]\n"
-              << "and then press Enter.\n"
-              << "Enter 'list' to see controllable components.\n"
-              << "Enter 'quit' to quit." << std::endl;
+              << "  ID/INDEX COMMAND [ARGS]\n"
+              << "and then press Enter. Or,\n"
+              << "- Enter 'list' to see controllable components.\n"
+              << "- Enter 'quit' to quit." << std::endl;
 
     while (true) {
 
@@ -86,7 +86,7 @@ usage:
 
         // for (auto &&s : cmds) {
         const auto id = cmds[0];
-        std::cout << id << std::endl;
+        //std::cout << id << std::endl;
         cmds.erase(cmds.begin()); // TODO: send the whole vector for
                                   // commands that require parameters
 
@@ -98,7 +98,7 @@ usage:
                 send(std::stoi(id), cmds[0]);
         } // release lock
 
-        std::cout << cmds[0] << std::endl;
+        //std::cout << cmds[0] << std::endl;
     }
 
     break_scan_ = true;

@@ -26,8 +26,16 @@
 #include "rapidjson/document.h"
 #include "zmq.hpp"
 
-#include "../../lib/base/ControllableComponent.h"
+#include "../../lib/base/Component.h"
 
+// TODO:
+// 1. Index of each component in hash changes when another component exits.
+// There should be a serial number as well that does not change. This will make
+// it easy to send commands without having to rely on the long id.  
+// 2. There should be an "all" target that sends a command (e.g. quit) to all
+// listed components 
+// 3. Components should be able to receive arguments for commands, e.g by
+// sending a "more" reply.
 namespace oat {
 
 class Controller {

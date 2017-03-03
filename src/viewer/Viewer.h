@@ -26,9 +26,10 @@
 #include <mutex>
 #include <string>
 #include <thread>
+
 #include <boost/program_options.hpp>
 
-#include "../../lib/base/ControllableComponent.h"
+#include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
 #include "../../lib/shmemdf/Source.h"
 
@@ -37,7 +38,7 @@ namespace po = boost::program_options;
 namespace oat {
 
 template <typename T>
-class Viewer : public ControllableComponent, public Configurable<true> {
+class Viewer : public Component, public Configurable {
 
     using Clock = std::chrono::high_resolution_clock;
 

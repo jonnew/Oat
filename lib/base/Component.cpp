@@ -32,6 +32,9 @@
 
 namespace oat {
 
+// For passing exceptions from control thread
+static std::exception_ptr ctrl_ex = nullptr;
+
 // Global via extern in Globals.h
 volatile sig_atomic_t quit = 0;
 
@@ -47,24 +50,41 @@ Component::Component()
     std::signal(SIGINT, sigHandler);
 }
 
+void Component::identity(char *id, const size_t n) const
+{
+    std::stringstream ping_msg;
+    ping_msg << std::hex << std::uppercase;
+    ping_msg << "OAT"; // Must not start with binary 0, ZMQ rule
+    ping_msg << "/";
+    ping_msg << std::this_thread::get_id();
+    std::strncpy(id, ping_msg.str().data(), n);
+}
+
 void Component::run()
 {
+    auto control_thread = std::thread([this] { runController(); });
+    control_thread.detach();
+
     // Loop until quit
     runComponent();
+
+    // If an exception occured in control thread, rethrow it on the main
+    // thread
+    if (ctrl_ex)
+        std::rethrow_exception(ctrl_ex);
 }
 
 void Component::runComponent()
 {
     try {
 
-        // TODO: throw "could not connect to node?"
+        // TODO: throw "could not connect to node"?
         if (!connectToNode())
             return;
 
         bool end_of_stream = false;
-        while (!end_of_stream && !quit) {
+        while (!end_of_stream && !quit)
             end_of_stream = process();
-        }
 
     } catch (const boost::interprocess::interprocess_exception &ex) {
 
@@ -75,4 +95,112 @@ void Component::runComponent()
     }
 }
 
+CommandDescription Component::commands()
+{
+    return oat::CommandDescription{};
+}
+
+void Component::applyCommand(const std::string &)
+{
+    // Nothing
+}
+
+void Component::runController(const char *endpoint)
+{
+    zmq::context_t ctx(1);
+
+    try {
+
+        zmq::socket_t ctrl_socket(ctx, ZMQ_DEALER);
+        char id[32];
+        identity(id, 32);
+        ctrl_socket.setsockopt(ZMQ_IDENTITY, id, std::strlen(id));
+        ctrl_socket.connect(endpoint);
+
+        // Configure ctrl_socket to not wait at close time
+        ctrl_socket.setsockopt(ZMQ_LINGER, 0);
+
+        // Execute control loop
+        while (!quit) {
+
+            // Poll the socket and find all existing connections
+            zmq::pollitem_t p[] = {{ctrl_socket, 0, ZMQ_POLLIN, 0}};
+            zmq::poll(&p[0], 1, COMPONENT_HEARTBEAT_MS);
+
+            // Send Heartbeat
+            oat::sendStringMore(ctrl_socket, ""); // Delimeter
+            oat::sendString(ctrl_socket, whoAmI());
+
+            if (p[0].revents & ZMQ_POLLIN && !quit) {
+
+                // Found a command, run it.
+                oat::recvString(ctrl_socket); // Delimeter
+                auto command = oat::recvString(ctrl_socket);
+                if (command == "ping") {
+                    oat::sendStringMore(ctrl_socket, ""); // Delimeter
+                    oat::sendString(ctrl_socket, whoAmI());
+                } else {
+                    quit = control(command);
+                }
+            } 
+
+        }
+
+    } catch (zmq::error_t &ex) {
+
+        // ETERM occurs during interrupt from ctrl-c, otherwise pass exception
+        // to processing thread
+        if (ex.num() != ETERM) {
+            ctrl_ex = std::current_exception();
+            return;
+        }
+    }
+
+    ctx.close();
+}
+
+int Component::control(const std::string &command)
+{
+#ifndef NDEBUG
+    std::cout << "Got command: " << command << std::endl;
+#endif
+
+    if (command == "ping") {
+        return 0;
+    } else if (command == "quit" || command == "Quit") {
+        return 1;
+    } else {
+
+        // Check that command is in hash
+        if (commands().count(command))
+            applyCommand(command);
+    }
+
+    return 0;
+}
+
+std::string Component::whoAmI()
+{
+    // JSON string with name, type, and command/description map
+    std::stringstream whoami;
+    whoami << "{";
+    whoami << "\"name\":\"" << name() << "\",";
+    whoami << "\"type\":" << std::to_string(static_cast<uint16_t>(type())) << ",";
+
+    auto cmds = commands();
+    if (!cmds.empty()) {
+
+        whoami << "\"commands\":{";
+        for (auto &&c : cmds)
+            whoami << "\"" << c.first << "\":\"" << c.second << "\",";
+        whoami.seekp(-1, whoami.cur); // Delete trailing comma
+        whoami << "}";
+    } else {
+        whoami.seekp(-1, whoami.cur); // Delete trailing comma
+    }
+
+    whoami << "}";
+
+    return whoami.str();
+}
 } /* namespace oat */

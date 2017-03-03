@@ -23,7 +23,7 @@
 #include <string>
 
 #include "../../lib/base/Configurable.h"
-#include "../../lib/base/ControllableComponent.h"
+#include "../../lib/base/Component.h"
 #include "../../lib/datatypes/Frame.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
@@ -33,7 +33,7 @@ namespace oat {
 class ColorConvert; // Forward decl.
 namespace po = boost::program_options;
 
-class FrameFilter : public Component, public Configurable<false> {
+class FrameFilter : public Component, public Configurable {
 
 friend ColorConvert;
 

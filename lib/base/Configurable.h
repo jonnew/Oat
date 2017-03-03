@@ -34,7 +34,6 @@ namespace oat {
 
 namespace po = boost::program_options;
 
-template <bool Controllable = false>
 class Configurable {
 
 public:
@@ -49,20 +48,15 @@ public:
             ("config,c", po::value<std::vector<std::string>>()->multitoken(),
             "Configuration file/key pair.\n"
             "e.g. 'config.toml mykey'")
+            ("control-endpoint",  po::value<std::string>(),
+             "ZMQ style endpoint specifier designating runtime control port:"
+             "'<transport>://<host>:<port>'. For instance, 'tcp://*:5555' to "
+             "specify TCP communication on port 5555. Or, for interprocess "
+             "communication: '<transport>://<user-named-pipe>. For instance "
+             "'ipc:///tmp/test.pipe'. Internally, this is used to construct a "
+             "ZMQ REQ socket that that receives commands from oat-control. "
+             "Defaults to ipc:///tmp/oatcomms.pipe.")
             ;
-
-        if (Controllable) { // Should be optimized away for release compile 
-            opts.add_options()
-                ("control-endpoint",  po::value<std::string>(),
-                 "ZMQ style endpoint specifier designating runtime control port:"
-                 "'<transport>://<host>:<port>'. For instance, 'tcp://*:5555' to "
-                 "specify TCP communication on port 5555. Or, for interprocess "
-                 "communication: '<transport>://<user-named-pipe>. For instance "
-                 "'ipc:///tmp/test.pipe'. Internally, this is used to construct a "
-                 "ZMQ REQ socket that that receives commands from oat-control. "
-                 "Defaults to ipc:///tmp/oatcomms.pipe.")
-                ;
-        }
 
         // Get type-specific options
         auto local_options = options();
