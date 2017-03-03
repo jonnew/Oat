@@ -154,7 +154,10 @@ void HSVDetector::applyConfiguration(const po::variables_map &vm,
 
 oat::Pose HSVDetector::detectPose(oat::Frame &frame)
 {
-    oat::Pose pose(Pose::DistanceUnit::Pixels, Pose::DOF::Two, Pose::DOF::Zero);
+    oat::Pose pose(frame.sample().seconds(),
+                   Pose::DistanceUnit::Pixels,
+                   Pose::DOF::Two,
+                   Pose::DOF::Zero);
 
     // Threshold HSV channels (expensive operation)
     cv::Mat thresh_frame;

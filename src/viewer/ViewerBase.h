@@ -70,7 +70,7 @@ private:
         T viewer;
     };
 
-    // Destructor is type erased
+    // Destructor of shared_ptr is type erased
     std::shared_ptr<ViewerConcept> viewer;
 };
 

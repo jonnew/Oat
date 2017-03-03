@@ -166,7 +166,8 @@ bool Decorator::connectToNode()
 
     for (auto &ps : pose_sources_) {
         ps.source->connect();
-        all_ts.push_back(ps.source->retrieve()->sample_period_sec());
+        all_ts.push_back(
+            ps.source->retrieve()->period<Token::Seconds>().count());
     }
 
     // Get frame meta data to format sink

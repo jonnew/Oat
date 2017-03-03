@@ -18,13 +18,7 @@
 //******************************************************************************
 
 #include "UDPPositionClient.h"
-#include "SocketWriteStream.h"
 
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/ip/udp.hpp>
-#include <rapidjson/rapidjson.h>
-
-#include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {

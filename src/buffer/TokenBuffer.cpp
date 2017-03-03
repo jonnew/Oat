@@ -63,7 +63,7 @@ int TokenBuffer<T>::process()
     if (source_.wait() == oat::NodeState::END)
         return 1;
 
-    if (source_.retrieve()->sample_count() % down_sample_factor_ == 0) {
+    if (source_.retrieve()->count() % down_sample_factor_ == 0) {
         
         if (!buffer_.push(source_.clone()))
             std::cerr << "Buffer overrun.\n";

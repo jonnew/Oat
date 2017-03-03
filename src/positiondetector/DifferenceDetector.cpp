@@ -115,7 +115,10 @@ void DifferenceDetector::applyConfiguration(
 
 oat::Pose DifferenceDetector::detectPose(oat::Frame &frame)
 {
-    oat::Pose pose(Pose::DistanceUnit::Pixels, Pose::DOF::Two, Pose::DOF::Zero);
+    oat::Pose pose(frame.sample().seconds(),
+                   Pose::DistanceUnit::Pixels,
+                   Pose::DOF::Two,
+                   Pose::DOF::Zero);
 
     cv::Mat thresh_frame;
     if (last_frame_set_) {

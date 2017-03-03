@@ -33,7 +33,7 @@ std::ostream &operator<<(std::ostream &os, const Pose &p)
             break;
     }
 
-    os << "Time (s): " << p.sample_.seconds().count() << "\n"
+    os << "Time (s): " << p.time<Token::Seconds>().count() << "\n"
        << "Region: " << p.region << "\n"
        << "Position (" << unit << "): ["
        << p.p_[0] << " " << p.p_[1] << " " << p.p_[2] << "]\n"
@@ -48,11 +48,11 @@ std::vector<char> packPose(const Pose &p)
     std::vector<char> pack;
     pack.reserve(oat::POSE_NPY_DTYPE_BYTES);
 
-    auto sc = p.sample_.count();
+    auto sc = p.count();
     auto val = reinterpret_cast<char *>(&sc);
     pack.insert(pack.end(), val, val + sizeof(sc));
 
-    auto su = p.sample_.microseconds().count();
+    auto su = p.time<Token::Microseconds>().count();
     val = reinterpret_cast<char *>(&su);
     pack.insert(pack.end(), val, val + sizeof(su));
 

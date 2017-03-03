@@ -146,8 +146,7 @@ int main(int argc, char *argv[])
                 case 'b':
                 {
                     viewer = std::make_shared<oat::ViewerBase>(
-                      oat::in_place<oat::PoseViewer>(), source
-                    );
+                        oat::in_place<oat::PoseViewer>(), source);
                     break;
                 }
                 default:

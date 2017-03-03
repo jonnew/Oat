@@ -324,8 +324,10 @@ void RPGPoseEst::applyConfiguration(const po::variables_map &vm,
 
 oat::Pose RPGPoseEst::detectPose(oat::Frame &frame)
 {
-    oat::Pose pose(
-        Pose::DistanceUnit::Meters, Pose::DOF::Three, Pose::DOF::Three);
+    oat::Pose pose(frame.sample().seconds(),
+                   Pose::DistanceUnit::Meters,
+                   Pose::DOF::Three,
+                   Pose::DOF::Three);
 
     // Pose will be in meters
     pose.unit_of_length = Pose::DistanceUnit::Meters;

@@ -341,8 +341,10 @@ void ArucoBoard::applyConfiguration(const po::variables_map &vm,
 
 oat::Pose ArucoBoard::detectPose(oat::Frame &frame)
 {
-    oat::Pose pose(
-        Pose::DistanceUnit::Meters, Pose::DOF::Three, Pose::DOF::Three);
+    oat::Pose pose(frame.sample().seconds(),
+                   Pose::DistanceUnit::Meters,
+                   Pose::DOF::Three,
+                   Pose::DOF::Three);
 
     std::vector<int> marker_ids;
     Corners marker_corners;

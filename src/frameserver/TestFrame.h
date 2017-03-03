@@ -50,7 +50,7 @@ private:
     std::string file_name_;
 
     // Frame speed
-    double frames_per_second_;
+    double frames_per_second_{30.0};
     void calculateFramePeriod(void);
 
     // frame generation clock
@@ -61,8 +61,8 @@ private:
     // Sample count specification
     uint64_t num_samples_ {std::numeric_limits<int64_t>::max()};
 
-    // Color switch
-    oat::PixelColor color_ {oat::PIX_BGR};
+    // Pixel color
+    oat::PixelColor color_{oat::PIX_BGR};
 };
 
 }       /* namespace oat */

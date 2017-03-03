@@ -93,8 +93,9 @@ int PoseGenerator::process()
     }
 
     // Pure SINKs update pose and increment sample count
-    auto time_since_start = std::chrono::duration_cast<Sample::Microseconds>(
-        clock_.now() - start_);
+    auto time_since_start
+        = std::chrono::duration_cast<oat::Token::Microseconds>(clock_.now()
+                                                               - start_);
     shared_pose_->produce(pose, time_since_start);
 
     // Tell sources there is new data
@@ -114,7 +115,7 @@ int PoseGenerator::process()
 
 void PoseGenerator::generateSamplePeriod(const double samples_per_second)
 {
-    oat::Sample::Seconds period(1.0 / samples_per_second);
+    oat::Token::Seconds period(1.0 / samples_per_second);
     sample_period_in_sec_ = period; // Auto conversion
 }
 

@@ -60,7 +60,6 @@ protected:
     oat::Sink<oat::Frame> frame_sink_;
 
     // Currently acquired, shared frame
-    //bool frame_empty_ {true};
     oat::Frame shared_frame_;
 };
 

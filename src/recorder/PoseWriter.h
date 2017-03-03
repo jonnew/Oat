@@ -44,7 +44,7 @@ public:
     oat::SourceState connect() override { return source_.connect(); }
     double sample_period_sec() override
     {
-        return source_.retrieve()->sample_period_sec();
+        return source_.retrieve()->period<Token::Seconds>().count();
     }
 
     oat::NodeState wait() override { return source_.wait(); }

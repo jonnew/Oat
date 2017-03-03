@@ -21,12 +21,11 @@
 #define	OAT_UDPCLIENT_H
 
 #include "PositionSocket.h"
+#include "SocketWriteStream.h"
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
 #include <rapidjson/rapidjson.h>
-
-#include "SocketWriteStream.h"
 
 namespace oat {
 

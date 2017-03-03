@@ -20,11 +20,12 @@
 #ifndef OAT_NODE_H
 #define	OAT_NODE_H
 
-#include <iostream>
 #include <array>
 #include <atomic>
 #include <bitset>
+#include <iostream>
 #include <string>
+
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 #include "ForwardsDecl.h"
@@ -50,12 +51,12 @@ public:
     }
 
     // Nodes are movable
-    Node(Node&&) = default;
-    Node & operator=(Node&&) = default;
+    Node(Node &&) = default;
+    Node &operator=(Node &&) = default;
 
     // Nodes are not copyable
     Node(const Node &) = delete;
-    Node & operator=(const Node &) = delete;
+    Node &operator=(const Node &) = delete;
 
     // SINK state
     void set_sink_state(NodeState value) { sink_state_ = value; }

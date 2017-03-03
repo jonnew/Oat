@@ -89,8 +89,6 @@ private:
     std::string whoAmI();
 
     int control(const std::string &command);
-
-    //zmq::socket_t *getCtrlSocket(zmq::context_t &context, const char *endpoint);
 };
 }      /* namespace oat */
 #endif /* OAT_CONTROLLABLECOMPONENT_H */

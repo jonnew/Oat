@@ -76,7 +76,6 @@ int PositionDetector::process()
 
     // Propagate sample info and detect position
     auto pose = detectPose(frame);
-    pose.set_sample(frame.sample());
 
     // START CRITICAL SECTION //
     ////////////////////////////

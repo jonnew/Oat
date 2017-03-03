@@ -19,12 +19,6 @@
 
 #include "PositionSocket.h"
 
-#include <string>
-
-#include "../../lib/datatypes/Position2D.h"
-#include "../../lib/shmemdf/Sink.h"
-#include "../../lib/shmemdf/Source.h"
-
 namespace oat {
 
 PositionSocket::PositionSocket(const std::string &pose_source_addresss)

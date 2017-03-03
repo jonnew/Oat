@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
             "combined followed by the name of the SINK to which the combined "
             "position will be published.")
             ("type-args", po::value<std::vector<std::string> >(),
-             "type-specifuc arguments.")
+             "type-specific arguments.")
             ;
 
         // Required positional arguments and type-specific configuration

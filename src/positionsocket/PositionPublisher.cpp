@@ -19,13 +19,9 @@
 
 #include "PositionPublisher.h"
 
-#include <string>
-
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/stringbuffer.h>
-#include <zmq.hpp>
 
-#include "../../lib/datatypes/Position2D.h"
 #include "../../lib/utility/TOMLSanitize.h"
 
 namespace oat {

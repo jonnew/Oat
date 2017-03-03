@@ -19,12 +19,9 @@
 
 #include "PositionCombiner.h"
 
-#include <memory>
 #include <string>
 #include <vector>
 #include <utility>
-#include <thread>
-#include <future>
 
 #include "../../lib/datatypes/Position2D.h"
 #include "../../lib/shmemdf/Sink.h"
@@ -37,7 +34,7 @@ namespace oat {
 void PositionCombiner::resolvePositionSources(const po::variables_map &vm)
 {
     // Pull the sources and sink out as positional options
-    auto sources = vm["sources-and-sink"].as< std::vector<std::string> >();
+    auto sources = vm["sources-and-sink"].as<std::vector<std::string>>();
 
     if (sources.size() < 3)
         throw std::runtime_error("At least two SOURCES and a SINK must be specified.");

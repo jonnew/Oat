@@ -64,14 +64,12 @@ void TestFrame::applyConfiguration(const po::variables_map &vm,
 
     // Pixel color
     std::string col;
-    if (oat::config::getValue<std::string>(vm, config_table, "color", col)) {
+    if (oat::config::getValue<std::string>(vm, config_table, "color", col))
         color_ = oat::str_color(col);
-    }
 
     // Number of frames to serve
     oat::config::getNumericValue<uint64_t>(
-        vm, config_table, "num-frames", num_samples_, 1
-    );
+        vm, config_table, "num-frames", num_samples_, 1);
 
     // Frame rate
     if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0))
@@ -85,11 +83,10 @@ bool TestFrame::connectToNode() {
     if (mat.data == NULL)
         throw (std::runtime_error("File \"" + file_name_ + "\" could not be read."));
 
-    frame_sink_.bind(frame_sink_address_,
-            mat.total() * mat.elemSize());
+    frame_sink_.bind(frame_sink_address_, mat.total() * mat.elemSize());
 
-    shared_frame_ = frame_sink_.retrieve(
-            mat.rows, mat.cols, mat.type(), color_);
+    shared_frame_
+        = frame_sink_.retrieve(mat.rows, mat.cols, mat.type(), color_);
 
     // Static image, never changes
     mat.copyTo(shared_frame_);

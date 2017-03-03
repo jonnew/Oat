@@ -1,1 +1,1 @@
-add_library(oat-types Position2D.cpp Pose.cpp)
+add_library(oat-types Pose.cpp)

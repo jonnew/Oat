@@ -22,14 +22,14 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include <boost/program_options.hpp>
 
 #include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
-#include "../../lib/datatypes/Position2D.h"
+#include "../../lib/datatypes/Pose.h"
 #include "../../lib/shmemdf/Helpers.h"
 #include "../../lib/shmemdf/Sink.h"
 #include "../../lib/shmemdf/Source.h"
@@ -52,6 +52,9 @@ public:
     std::string name(void) const override { return name_; }
 
 protected:
+    // Combiner name
+    std::string name_;
+
     /**
      * @brief Makes a list of position sources from a parsed program options
      * variable map.
@@ -61,11 +64,11 @@ protected:
 
     /**
      * Perform position combination.
-     * @param sources SOURCE position servers
+     * @param sources SOURCE pose(s)
      * @return combined position
      */
-    virtual void combine(const std::vector<oat::Position2D> &source_positions,
-                         oat::Position2D &combined_position) = 0;
+    template <typename T>
+    virtual oat::Pose combine(const T &source_poses) = 0;
 
     /**
      * Get the number of SOURCE positions.
@@ -78,20 +81,17 @@ private:
     virtual bool connectToNode(void) override;
     int process(void) override;
 
-    // Combiner name
-    std::string name_;
 
-    // Position SOURCES object for un-combined positions
+    // Pose SOURCES
     std::vector<oat::Position2D> positions_;
     oat::NamedSourceList<oat::Position2D> position_sources_;
 
-    // Combined position
-    oat::Position2D internal_position_ {"internal"};
-
-    // Position SINK object for publishing combined position
-    oat::Position2D * shared_position_ {nullptr};
+    // Pose SINK
     std::string position_sink_address_;
     oat::Sink<oat::Position2D> position_sink_;
+
+    // Currently acquired, shared pose
+    oat::Pose *shared_pose_{nullptr};
 };
 
 }      /* namespace oat */

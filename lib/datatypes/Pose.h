@@ -22,7 +22,7 @@
 
 #include "OatConfig.h" // EIGEN3_FOUND
 
-#include "Sample.h"
+#include "Token.h"
 
 #include <vector>
 #include <cstring>
@@ -162,7 +162,7 @@ std::vector<char> packPose(const Pose &p);
 /**
  * @brief Detected object pose.
  */
-class Pose {
+class Pose : public Token {
 
     template <typename Writer, size_t Precision>
     friend void serializePose(const Pose &p, Writer &w, bool verbose);
@@ -171,8 +171,7 @@ class Pose {
 
 public:
     enum class DistanceUnit {
-        Pixels = 0, //!< Position measured in pixels. Origin is
-                    //! upper left.
+        Pixels = 0, //!< Position measured in pixels. Origin is upper left.
         Meters,     //!< Position measured in meters.
     };
 
@@ -185,10 +184,15 @@ public:
 
     static constexpr size_t region_max_char {10};
 
-    Pose(){};
+    Pose()
+    : Token()
+    {
+        // Nothing
+    }
 
-    Pose(const DistanceUnit u, const DOF p_dof, const DOF o_dof)
-    : unit_of_length(u)
+    Pose(Token::Seconds time, const DistanceUnit u, const DOF p_dof, const DOF o_dof)
+    : Token(time)
+    , unit_of_length(u)
     , position_dof(p_dof)
     , orientation_dof(o_dof)
     {
@@ -196,12 +200,12 @@ public:
     }
 
     Pose(const Pose &p)
-    : unit_of_length(p.unit_of_length)
+    : Token(p)
+    , unit_of_length(p.unit_of_length)
     , position_dof(p.position_dof)
     , orientation_dof(p.orientation_dof)
     , in_region(p.in_region)
     , found(p.found)
-    , sample_(p.sample_)
     , q_(p.q_)
     , p_(p.p_)
     {
@@ -212,13 +216,13 @@ public:
 
     Pose &operator=(const Pose &rhs)
     {
+        Token::operator=(rhs);
         unit_of_length = rhs.unit_of_length;
         position_dof= rhs.position_dof;
         orientation_dof= rhs.orientation_dof;
         in_region = rhs.in_region;
         std::strncpy(region, rhs.region, region_max_char);
         found = rhs.found;
-        sample_ = rhs.sample_;
         q_ = rhs.q_;
         p_ = rhs.p_;
         return *this;
@@ -227,16 +231,17 @@ public:
     Pose &operator=(Pose &&) = default;
 
     /**
-     * @brief Produce a pose from thin air. This is used by pure SINKs (e.g.
-     * posigen) that have no sample information to pass forward but instead are
-     * responsible for creating it.
+     * @brief Specialized assignment fuction with implicit sample update
+     * instead of copy. This is used by pure SINKs (e.g. posigen) that have no
+     * sample information to pass forward but instead are responsible for
+     * creating it.
      * @param p Pose sample to set this one too. Associated timing info is
      * ignored.
      * @param usec Usec since production has started. Used to increment
      * associated timing info. If set to zero or not supplied, defaults to just
      * updating sample count without a time.
      */
-    void produce(const Pose &p, Sample::Microseconds usec = Sample::Microseconds{0}) {
+    void produce(const Pose &p, Token::Microseconds usec = Token::Microseconds{0}) {
         unit_of_length = p.unit_of_length;
         position_dof = p.position_dof;
         orientation_dof = p.orientation_dof;
@@ -245,10 +250,12 @@ public:
         found = p.found;
         q_ = p.q_;
         p_ = p.p_;
-        if (usec == Sample::Microseconds{0})
-            sample_.incrementCount();
+
+        // Increment sample count
+        if (usec == Token::Microseconds{0})
+            incrementCount();
         else
-            sample_.incrementCount(usec);
+            incrementCount(usec);
     }
 
     /**
@@ -266,23 +273,13 @@ public:
      */
     DOF orientation_dof{DOF::Three};
 
-    bool in_region {false};      //!< Does pose fall in valid region
+    bool in_region {false};           //!< Does pose fall in valid categorical region
     char region[region_max_char] {0}; //!< Categorical position label (e.g. "North")
 
-    // Sample information
-    void set_sample(const Sample &val) { sample_ = val; }
-    void set_rate_hz(const double rate_hz) { sample_.set_rate_hz(rate_hz); }
-    double sample_period_sec() const { return sample_.period_sec().count(); }
-    uint64_t sample_count(void) const { return sample_.count(); }
-    uint64_t sample_usec(void) const { return sample_.microseconds().count(); }
-    void incrementSampleCount() { sample_.incrementCount(); }
-    void incrementSampleCount(Sample::Microseconds us) { sample_.incrementCount(us); }
-    void resample(const double resample_ratio) { sample_.resample(resample_ratio); }
+    bool found{false}; //!< Was pose estimation successful?
 
-    // Was pose estimation successful?
-    bool found{false};
-
-    // To understand the const ref type signatures of these function templates:
+    // NB: To understand the const ref type signatures of these function
+    // templates:
     // http://stackoverflow.com/questions/11703553/template-specialization-not-used
 
     // Orientation getter/setter
@@ -307,8 +304,8 @@ public:
      * @brief Convert orientation to Tait Bryan (Euler) angles.
      * @param deg If true, result is specified in degrees instead of radians.
      * @return Tait Bryan Angles (Yaw, Pitch, Roll)
-     * @note Cannot use a template specialization straightforwardly because has
-     * the same return type as rvec.
+     * @note Cannot use a template specialization of set_orientation()
+     * straightforwardly because has the same return type as rvec.
      */
     std::array<double, 3> toTaitBryan(const bool deg = false) const;
 
@@ -316,18 +313,13 @@ public:
      * @brief Set the current orientation using Tait Bryan (Euler) angles.
      * @param angles Tait Bryan angles to use to set the orientation (Yaw, Pitch,
      * Roll).
-     * @note Cannot use a template specialization straightforwardly because has
-     * the same input type as rvec.
+     * @note Cannot use a template specialization of orientation()
+     * straightforwardly because has the same input type as rvec.
      */
     void fromTaitBryan(const std::array<double, 3> &angles,
                        const bool deg = false);
 
 protected:
-    /**
-     * @brief Current time sample.
-     */
-    oat::Sample sample_;
-
     /**
      * @brief Orientation, represented as a Qauarterion, [x, y, z, w(real)].
      * Initialized to identity.
@@ -383,14 +375,13 @@ inline void Pose::set_orientation(const std::array<double, 4> &r)
 template <>
 inline void Pose::set_orientation(const cv::Matx33d &R)
 {
-    R2q // Macro
+    R2q // macro
 }
 
 template <>
 inline void Pose::set_orientation(const cv::Vec3d &r)
 {
-    // Probably some way to go directly to quaternion from rvec, but who cares
-    // I guess
+    // TODO: There is probably some way to go directly to quaternion from rvec
     cv::Matx33d R;
     cv::Rodrigues(r, R);
     R2q // macro
@@ -495,10 +486,10 @@ void serializePose(const Pose &p, Writer &writer, bool verbose)
 
     // Sample number
     writer.String("tick");
-    writer.Uint64(p.sample_.count());
+    writer.Uint64(p.count());
 
     writer.String("usec");
-    writer.Uint64(p.sample_.microseconds().count());
+    writer.Uint64(p.time<Token::Microseconds>().count());
 
     // Coordinate system
     writer.String("unit");
