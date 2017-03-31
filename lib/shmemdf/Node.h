@@ -30,17 +30,22 @@
 
 #include "ForwardsDecl.h"
 
-namespace oat {
+// Extra bytes are used to hold managed shared memory overhead
+// (name-object index, internal synchronization objects, internal
+// variables...)
+#define EXTRA 1024
 
-enum class NodeState {
-    END = -1,
-    UNDEFINED = 0,
-    SINK_BOUND = 1,
-    ERROR = 2
-};
+namespace oat {
 
 class Node {
 public:
+    enum class State {
+        undefined = 0,
+        sink_present,
+        sink_bound,
+        error,
+        end,
+    };
 
     using semaphore = bip::interprocess_semaphore;
 
@@ -59,12 +64,9 @@ public:
     Node &operator=(const Node &) = delete;
 
     // SINK state
-    void set_sink_state(NodeState value) { sink_state_ = value; }
-    NodeState sink_state(void) const { return sink_state_; }
+    std::atomic<State> sink_state{State::undefined}; //!< SINK state
 
     // SINK writes (~sample number)
-    // TODO: write_number_ being atomic is redundant because only one sink can
-    //       be bound to a node, right?
     uint64_t write_number() const { return write_number_; }
 
     void notifySinkWriteComplete()
@@ -170,18 +172,16 @@ public:
 
 private:
 
-    std::atomic<NodeState> sink_state_ {oat::NodeState::UNDEFINED}; //!< SINK state
-    //std::atomic<size_t> source_read_count_ {0}; //!< Number SOURCE reads that have occured since last sink reset
     std::bitset<NUM_SLOTS> source_slots_;
     std::bitset<NUM_SLOTS> source_read_required_;
 
-    size_t source_ref_count_ {0}; //!< Number of SOURCES sharing this node
-    uint64_t write_number_ {0}; //!< Number of writes to shmem that have been facilited by this node
+    size_t source_ref_count_{0}; //!< Number of SOURCES sharing this node
+    uint64_t write_number_{0}; //!< Number of writes to shmem that have been facilited by this node
 
     // Unfortunately, must manually maintain the number of rbx_'s to match NUM_SLOTS
-    semaphore mutex_ {1}; //!< mutex governing exclusive acces to the read_barrier_
-    semaphore rb0_ {0}, rb1_ {0}, rb2_ {0}, rb3_ {0}, rb4_ {0},
-              rb5_ {0}, rb6_ {0}, rb7_ {0}, rb8_ {0}, rb9_ {0};
+    semaphore mutex_{1}; //!< mutex governing exclusive acces to the read_barrier_
+    semaphore rb0_{0}, rb1_{0}, rb2_{0}, rb3_{0}, rb4_{0},
+              rb5_{0}, rb6_{0}, rb7_{0}, rb8_{0}, rb9_{0};
 };
 
 }       /* namespace oat */

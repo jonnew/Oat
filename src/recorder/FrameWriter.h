@@ -48,6 +48,7 @@ public:
     void post(void) override { source_.post(); }
 
     void initialize(const std::string &path) override;
+    void close(void) override;
     void write(void) override;
     void push(void) override;
     void deleteFile() override

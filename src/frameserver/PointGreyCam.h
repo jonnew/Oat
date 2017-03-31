@@ -69,6 +69,8 @@ private:
     bool ieee_1394_start_set_ {false};
     int last_ieee_1394_sec_ {0};
     bool first_frame_ {true};
+    bool acquisition_started_ {false};
+    bool use_trigger_ {false};
 
     // Pixel color mapping
     bool color_conversion_required_ {false};
@@ -79,8 +81,9 @@ private:
     // Used to mark times between acquisitions
     oat::Sample::Microseconds tick_, tock_;
 
-    bool acquisition_started_ {false};
-    bool use_trigger_ {false};
+    // PG camera can have a region of interest to crop incoming frames
+    bool use_roi_{false};
+    cv::Rect_<size_t> region_of_interest_;
 
     // Camera object
     T camera_;

@@ -32,7 +32,7 @@ namespace oat {
 
 PoseGenerator::PoseGenerator(const std::string &pose_sink_address)
 : name_("posigen[*->" + pose_sink_address + "]")
-, pose_sink_address_(pose_sink_address)
+, pose_sink_(pose_sink_address)
 {
     tick_ = clock_.now();
 }
@@ -66,48 +66,35 @@ po::options_description PoseGenerator::baseOptions(void) const
 bool PoseGenerator::connectToNode()
 {
     // Bind to sink sink node and create a shared position
-    pose_sink_.bind(pose_sink_address_);
-    shared_pose_ = pose_sink_.retrieve();
+    pose_sink_.bind();
+    //shared_pose_ = pose_sink_.retrieve();
 
     // Setup sample rate info on internal copy
-    shared_pose_->set_rate_hz(1.0 / sample_period_in_sec_.count());
+    //shared_pose_->set_rate_hz(1.0 / sample_period_in_sec_.count());
 
+    start_ = clock_.now();
     return true;
 }
 
 int PoseGenerator::process()
 {
-    // Generate a pose
-    oat::Pose pose;
-    bool eof = generatePosition(pose);
-
-    // START CRITICAL SECTION //
-    ////////////////////////////
-
-    // Wait for sources to read
-    pose_sink_.wait();
-
-    if (first_pos_) {
-        first_pos_ = false;
-        start_ = clock_.now();
-    }
-
-    // Pure SINKs update pose and increment sample count
     auto time_since_start
         = std::chrono::duration_cast<oat::Token::Microseconds>(clock_.now()
                                                                - start_);
-    shared_pose_->produce(pose, time_since_start);
+    // Generate a pose and increment the sample count
+    oat::Pose pose;
+    bool eof = generate(pose, time_since_start, it_++);
 
-    // Tell sources there is new data
-    pose_sink_.post();
+    // Synchronously push the position and enforce sample clock if needed
+    if (!eof) {
 
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
+        pose_sink_.push(std::move(pose));
 
-    if (enforce_sample_clock_) {
-        auto tock = clock_.now();
-        std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick_));
-        tick_ = clock_.now();
+        if (enforce_sample_clock_) {
+            auto tock = clock_.now();
+            std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick_));
+            tick_ = clock_.now();
+        }
     }
 
     return eof;

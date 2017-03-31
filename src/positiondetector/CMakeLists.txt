@@ -7,7 +7,7 @@ set (oat-posidet_SOURCE
      Tuner.cpp
      DetectorFunc.cpp
      DifferenceDetector.cpp
-     HSVDetector.cpp
+     #HSVDetector.cpp
      SimpleThreshold.cpp
      main.cpp)
 
@@ -18,19 +18,19 @@ set (oat-posidet_LIBS
      oat-types
      ${OatCommon_LIBS})
 
-# Aruco requires opencv contrib modules
-include (CheckIncludeFileCXX)
-check_include_file_cxx (opencv2/aruco.hpp ARUCO_FOUND)
-if (${ARUCO_FOUND})
-    set (oat-posidet_SOURCE ${oat-posidet_SOURCE} ArucoBoard.cpp)
-endif ()
-
-# RPG pose estimation requires Eigen3
-if (${EIGEN3_FOUND})
-    add_subdirectory (./rpgposeest)
-    set (oat-posidet_SOURCE ${oat-posidet_SOURCE} RPGPoseEst.cpp)
-    set (oat-posidet_LIBS ${oat-posidet_LIBS} rpg-pose-est)
-endif ()
+ ## Aruco requires opencv contrib modules
+ #include (CheckIncludeFileCXX)
+ #check_include_file_cxx (opencv2/aruco.hpp ARUCO_FOUND)
+ #if (${ARUCO_FOUND})
+ #    set (oat-posidet_SOURCE ${oat-posidet_SOURCE} ArucoBoard.cpp)
+ #endif ()
+ #
+ ## RPG pose estimation requires Eigen3
+ #if (${EIGEN3_FOUND})
+ #    add_subdirectory (./rpgposeest)
+ #    set (oat-posidet_SOURCE ${oat-posidet_SOURCE} RPGPoseEst.cpp)
+ #    set (oat-posidet_LIBS ${oat-posidet_LIBS} rpg-pose-est)
+ #endif ()
 
 # Target
 add_executable (oat-posidet ${oat-posidet_SOURCE})

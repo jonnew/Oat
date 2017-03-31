@@ -110,22 +110,26 @@ int main(int argc, char *argv[]) {
         }
 
         // Make sure we have an endpoint
-        if (!variable_map.count("endpoint"))
-            throw std::runtime_error("ENDPOINT is required.");
+        std::string endpoint;
+        if (!variable_map.count("endpoint")) {
+            // Try default endpoint
+            std::cerr << oat::Warn("No endpoint specified.\n");
+            std::cerr << oat::Warn("Using default endpoint: ipc:///tmp/oatcomms.pipe\n");
+            endpoint = "ipc:///tmp/oatcomms.pipe";
+        } else {
+            endpoint = variable_map["endpoint"].as<std::string>();
+        }
 
         if (!variable_map.count("list") 
             && !variable_map.count("id")
             && !variable_map.count("command")) {
 
-            auto endpoint = variable_map["endpoint"].as<std::string>();
             oat::InteractiveController ctrl(endpoint.c_str());
             ctrl.execute();
 
         } else if (variable_map.count("list") 
                    && !variable_map.count("id")
                    && !variable_map.count("command")) {
-
-            auto endpoint = variable_map["endpoint"].as<std::string>();
 
             oat::Controller ctrl(endpoint.c_str());
             std::this_thread::sleep_for( // Let heartbeats arrive
@@ -136,7 +140,6 @@ int main(int argc, char *argv[]) {
         } else if (variable_map.count("id") 
                    && variable_map.count("command")) {
 
-            auto endpoint = variable_map["endpoint"].as<std::string>();
             auto id = variable_map["id"].as<std::string>();
             auto command = variable_map["command"].as<std::string>();
 

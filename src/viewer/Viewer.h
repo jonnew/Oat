@@ -66,9 +66,9 @@ protected:
     // Source address
     const std::string source_address_;
 
-    // Mimumum display update period
+    // Minimum display update period
     using Milliseconds = std::chrono::milliseconds;
-    Milliseconds min_update_period_ms {33};
+    Milliseconds min_update_period_ms{33};
 
     /**
      * @brief Perform sample display. Override to implement display operation
@@ -79,15 +79,15 @@ protected:
 
 private:
     // Sample SOURCE
-    T sample_;
+    T *sample_{nullptr};
     oat::Source<T> source_;
 
     // Minimum viewer refresh period
     Clock::time_point tick_, tock_;
 
     // Display update thread
-    std::atomic<bool> running_ {true};
-    std::atomic<bool> display_complete_ {true};
+    std::atomic<bool> running_{true};
+    std::atomic<bool> display_complete_{true};
     std::mutex display_mutex_;
     std::condition_variable display_cv_;
     std::thread display_thread_;

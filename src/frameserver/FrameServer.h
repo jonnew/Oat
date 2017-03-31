@@ -27,8 +27,8 @@
 
 #include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
-#include "../../lib/datatypes/Frame.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/datatypes/Frame2.h"
+#include "../../lib/shmemdf/Sink2.h"
 
 namespace po = boost::program_options;
 
@@ -51,16 +51,14 @@ protected:
     // Component name
     std::string name_;
 
-    // Cameras can have a region of interest to crop incoming frames
-    bool use_roi_ {false};
-    cv::Rect_<size_t> region_of_interest_;
-
     // Frame sink
-    const std::string frame_sink_address_;
-    oat::Sink<oat::Frame> frame_sink_;
+    oat::Sink<oat::SharedFrame, oat::SharedFrameAllocator> frame_sink_;
 
     // Currently acquired, shared frame
-    oat::Frame shared_frame_;
+    oat::SharedFrame *shared_frame_{nullptr};
+
+    // Pixel color
+    oat::Pixel::Color color_{oat::Pixel::Color::bgr};
 };
 
 }       /* namespace oat */

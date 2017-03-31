@@ -51,14 +51,13 @@ Tuner::~Tuner()
         delete static_cast<CBBase *>(p);
 }
 
-void Tuner::tune(const oat::Frame &frame,
+void Tuner::tune(const cv::Mat &img,
                  const oat::Pose &pose,
                  const cv::Matx33d &K,
                  const std::vector<double> &D)
 {
-    // Make sure this is color image
-    oat::Frame img = frame;
-    oat::convertColor(frame, img, PIX_BGR);
+    // TODO: Make sure this is color image
+    //cv::cvtColor(img, img, cv::BGR);
 
     // Messages to be printed on screen
     std::vector<std::string> msgs;
@@ -120,9 +119,9 @@ void Tuner::tune(const oat::Frame &frame,
 
         int baseline = 0;
         cv::Size textSize = cv::getTextSize(msgs[i], 1, 1, 1, &baseline);
-        cv::Point text_origin(frame.cols - textSize.width - 10,
-                              frame.rows - (i * (textSize.height + 10)) - 10);
-        cv::putText(frame, msgs[i], text_origin, 1, 1, cv::Scalar(0, 255, 255));
+        cv::Point text_origin(img.cols - textSize.width - 10,
+                              img.rows - (i * (textSize.height + 10)) - 10);
+        cv::putText(img, msgs[i], text_origin, 1, 1, cv::Scalar(0, 255, 255));
     }
 
     cv::imshow(w_, img);

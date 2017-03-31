@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
         po::options_description config("CONFIGURATION");
         options.add_options()
             ("quiet,q", "Quiet mode. Prevent output text.")
-            ("legacy,l", "Legacy mode. Append  \"_sh_mem\" to input NAMES before removing.")
             ;
 
         po::options_description hidden("HIDDEN OPTIONS");
@@ -120,39 +119,24 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    for (auto &name : names) {
-
-        // All servers (MatServer and SMServer) append "_sh_mem" to user-provided
-        // stream names when created a named shmem block
+    for (const auto &name : names) {
 
         if (!quiet)
            std::cout << "Trying to removing \'" << name << "\' from shared memory...";
 
-        if (legacy) {
+        bool success{false};
 
-            if (bip::shared_memory_object::remove((name + "_sh_mem").c_str())
-                && !quiet)
-                std::cout << "success.\n";
-            else if (!quiet)
-                std::cout << "not found. Are you sure this block exists?.\n";
+        if (bip::shared_memory_object::remove((name + "_node").c_str()))
+            success = true;
 
-        } else {
+        if (bip::shared_memory_object::remove((name + "_obj").c_str()))
+            success = true;
 
-            bool success {false};
+        if (success && !quiet)
+            std::cout << "success.\n";
 
-            if (bip::shared_memory_object::remove((name + "_node").c_str())) {
-                success = true;
-            }
-
-            if (bip::shared_memory_object::remove((name + "_obj").c_str())) {
-                success = true;
-            }
-
-            if (success && !quiet)
-                std::cout << "success.\n";
-            if (!success && !quiet)
-                std::cout << "not found. Are you sure this block exists?.\n";
-        }
+        if (!success && !quiet)
+            std::cout << "not found. Are you sure this segment exists?.\n";
     }
 
     // Exit

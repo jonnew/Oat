@@ -25,7 +25,7 @@
 #include <iostream>
 #include <string>
 
-#include "../../lib/datatypes/Frame.h"
+#include "../../lib/datatypes/Frame2.h"
 #include "../../lib/datatypes/Pose.h"
 #include "../../lib/shmemdf/Source.h"
 #include "../../lib/utility/IOFormat.h"
@@ -36,6 +36,7 @@ template <typename T>
 Viewer<T>::Viewer(const std::string &source_address)
 : name_("viewer[" + source_address + "]")
 , source_address_(source_address)
+, source_(source_address)
 {
     // Initialize GUI update timer
     tock_ = Clock::now();
@@ -55,11 +56,8 @@ Viewer<T>::~Viewer()
 template <typename T>
 bool Viewer<T>::connectToNode()
 {
-    // Establish our a slot in the node
-    source_.touch(source_address_);
-
     // Wait for synchronous start with sink when it binds the node
-    if (source_.connect() != SourceState::CONNECTED)
+    if (source_.connect() != SourceState::connected)
         return false;
 
     return true;
@@ -72,7 +70,7 @@ int Viewer<T>::process()
     ////////////////////////////
 
     // Wait for sink to write to node
-    if (source_.wait() == oat::NodeState::END)
+    if (source_.wait() == Node::State::end)
         return 1;
 
     // Figure out the time since we last updated the viewer
@@ -82,7 +80,7 @@ int Viewer<T>::process()
 
     // Copy the shared sample if needed
     if (refresh_needed)
-        sample_ = *source_.retrieve();
+        sample_ = source_.retrieve();
 
     // Tell sink it can continue
     source_.post();
@@ -117,7 +115,7 @@ void Viewer<T>::processAsync()
                 break;
 
             display_complete_ = false;
-            display(sample_); // Implemented in concrete class
+            display(*sample_); // Implemented in concrete class
             display_complete_ = true;
         }
     } catch (const std::runtime_error &ex) {
@@ -125,8 +123,8 @@ void Viewer<T>::processAsync()
     }
 }
 
-// Explicit instantiations
-template class oat::Viewer<oat::Frame>;
+// Explicit class instances
+template class oat::Viewer<oat::SharedFrame>;
 template class oat::Viewer<oat::Pose>;
 
 } /* namespace oat */

@@ -37,8 +37,7 @@ SimpleThreshold::SimpleThreshold(const std::string &frame_source_address,
                                  const std::string &pose_sink_address)
 : PositionDetector(frame_source_address, pose_sink_address)
 {
-    // Set required frame type
-    required_color_ = PIX_GREY;
+    // Nothing
 }
 
 po::options_description SimpleThreshold::options() const
@@ -119,42 +118,48 @@ void SimpleThreshold::applyConfiguration(
     }
 }
 
+bool SimpleThreshold::checkPixelColor(oat::Pixel::Color c)
+{
+    return (c == oat::Pixel::Color::mono);
+}
+
 oat::Pose SimpleThreshold::detectPose(oat::Frame &frame)
 {
-    oat::Pose pose(frame.sample().seconds(),
+    oat::Pose pose(frame.period<Token::Seconds>(),
                    Pose::DistanceUnit::Pixels,
                    Pose::DOF::Two,
                    Pose::DOF::Zero);
 
-    cv::Mat thresh_frame;
-    cv::inRange(frame,
+    cv::Mat mat = frame.to();
+    cv::Mat thresh_mat;
+    cv::inRange(mat,
                 t_min_,
                 t_max_,
-                thresh_frame);
+                thresh_mat);
 
     // Filter the resulting threshold image
     if (makeEroder(erode_px_))
-        cv::erode(thresh_frame, thresh_frame, erode_element_);
+        cv::erode(thresh_mat, thresh_mat, erode_element_);
 
     if (makeDilater(dilate_px_))
-        cv::dilate(thresh_frame, thresh_frame, dilate_element_);
+        cv::dilate(thresh_mat, thresh_mat, dilate_element_);
 
-    // Threshold frame will be destroyed by the transform below, so we need to use
-    // it to form the frame that will be shown in the tuning window here
+    // Threshold mat will be destroyed by the transform below, so we need to use
+    // it to form the mat that will be shown in the tuning window here
     if (tuner_) {
-        frame.setTo(0, thresh_frame == 0);
+        mat.setTo(0, thresh_mat == 0);
         // HACK. setTo returns a cv::Mat with no color
-        frame.set_color(required_color_);
+        //mat.set_color(required_color_);
     }
 
-    siftContours(thresh_frame,
+    siftContours(thresh_mat,
                  pose,
                  object_area_,
                  min_object_area_,
                  max_object_area_);
 
     if (tuner_)
-        tuner_->tune(frame, pose);
+        tuner_->tune(mat, pose);
 
     return pose;
 }

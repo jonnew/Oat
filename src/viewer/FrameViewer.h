@@ -25,16 +25,16 @@
 #include <string>
 #include <vector>
 
-#include "../../lib/datatypes/Frame.h"
+#include "../../lib/datatypes/Frame2.h"
 
 namespace oat {
 
-class FrameViewer : public Viewer<oat::Frame> {
+class FrameViewer : public Viewer<oat::SharedFrame> {
 public:
     /**
      * @brief View a frame stream on the monitor.
      */
-    using Viewer<oat::Frame>::Viewer;
+    using Viewer<oat::SharedFrame>::Viewer;
 
 private:
     // Implement ControllableComponent Interface
@@ -47,15 +47,15 @@ private:
                             const config::OptionTable &config_table) override;
 
     // Viewer Interface
-    void display(const oat::Frame &frame) override;
+    void display(const oat::SharedFrame &frame) override;
 
     // Viewer initialized flag
-    bool gui_inititalized_ {false};
+    bool gui_inititalized_{false};
     cv::Matx<unsigned char, 256, 1> lut_;
-    bool min_max_defined_ {false};
+    bool min_max_defined_{false};
 
     // Used to request a snapshot of the current image which is saved to disk
-    std::atomic<bool> snapshot_requested_ {false};
+    std::atomic<bool> snapshot_requested_{false};
     std::string snapshot_folder_;
     std::string snapshot_base_file_;
     void set_snapshot_path(const std::string &snapshot_path);

@@ -20,11 +20,12 @@
 #include "PositionDetector.h"
 
 #include <string>
+#include <cassert>
 
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/datatypes/Position2D.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Sink2.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace oat {
@@ -32,67 +33,42 @@ namespace oat {
 PositionDetector::PositionDetector(const std::string &frame_source_address,
                                    const std::string &pose_sink_address)
 : name_("posidet[" + frame_source_address + "->" + pose_sink_address + "]")
-, frame_source_address_(frame_source_address)
-, pose_sink_address_(pose_sink_address)
+, frame_source_(frame_source_address)
+, pose_sink_(pose_sink_address)
 {
   // Nothing
 }
 
 bool PositionDetector::connectToNode()
 {
-    // Establish our a slot in the node
-    frame_source_.touch(frame_source_address_);
-
     // Wait for synchronous start with sink when it binds its node
-    if (frame_source_.connect(required_color_) != SourceState::CONNECTED)
+    if (frame_source_.connect() != SourceState::connected)
         return false;
+    
+    // Check the pixel color
+    if (!checkPixelColor(frame_source_.retrieve()->color())) {
+        throw std::runtime_error(
+            "Source provides frames with incompatible pixel type.");
+    }
 
     // Bind to sink node and create a shared position
-    pose_sink_.bind(pose_sink_address_);
-    shared_pose_ = pose_sink_.retrieve();
+    pose_sink_.bind();
 
     return true;
 }
 
 int PositionDetector::process()
 {
-    oat::Frame frame;
+    // Synchronous pull from source
+    oat::SharedFrame *sh_frame;
+    auto rc = frame_source_.pull(&sh_frame);
+    if (rc) { return rc; }
 
-    // START CRITICAL SECTION //
-    ////////////////////////////
+    // Process the newly acquired frame and push result to sink
+    auto frame = oat::frame::getLocal(*sh_frame);
+    pose_sink_.push(detectPose(frame));
 
-    // Wait for sink to write to node
-    if (frame_source_.wait() == oat::NodeState::END)
-        return 1;
-
-    // Clone the shared frame
-    frame_source_.copyTo(frame);
-
-    // Tell sink it can continue
-    frame_source_.post();
-
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
-
-    // Propagate sample info and detect position
-    auto pose = detectPose(frame);
-
-    // START CRITICAL SECTION //
-    ////////////////////////////
-
-    // Wait for sources to read
-    pose_sink_.wait();
-
-    *shared_pose_ = pose;
-
-    // Tell sources there is new data
-    pose_sink_.post();
-
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
-
-    // Sink was not at END state
-    return 0;
+    return rc;
 }
 
 } /* namespace oat */

@@ -33,7 +33,7 @@
 #include "PositionPublisher.h"
 #include "PositionReplier.h"
 #include "PositionSocket.h"
-#include "UDPPositionClient.h"
+//#include "UDPPositionClient.h"
 
 #define REQ_POSITIONAL_ARGS 2
 
@@ -158,11 +158,11 @@ int main(int argc, char *argv[])
                     socket = std::make_shared<oat::PositionReplier>(source);
                     break;
                 }
-                case 'c':
-                {
-                    socket = std::make_shared<oat::UDPPositionClient>(source);
-                    break;
-                }
+                //case 'c':
+                //{
+                //    socket = std::make_shared<oat::UDPPositionClient>(source);
+                //    break;
+                //}
                 case 'd':
                 {
                     socket = std::make_shared<oat::PositionCout>(source);

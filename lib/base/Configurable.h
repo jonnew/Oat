@@ -43,6 +43,10 @@ public:
      */
     void appendOptions(po::options_description &opts)
     {
+        // Get type-specific options
+        auto local_options = options();
+        opts.add(local_options);
+
         // Default program options
         opts.add_options()
             ("config,c", po::value<std::vector<std::string>>()->multitoken(),
@@ -57,10 +61,6 @@ public:
              "ZMQ REQ socket that that receives commands from oat-control. "
              "Defaults to ipc:///tmp/oatcomms.pipe.")
             ;
-
-        // Get type-specific options
-        auto local_options = options();
-        opts.add(local_options);
 
         // Create valid keys
         for (auto &o : local_options.options())

@@ -18,6 +18,7 @@ add_executable (oat-frameserve ${oat-frameserve_SOURCE})
 target_link_libraries (oat-frameserve
                        oat-utility
                        oat-base
+                       oat-types
                        ${OatCommon_LIBS}
                        ${FLYCAPTURE2})
 add_dependencies (oat-frameserve cpptoml)

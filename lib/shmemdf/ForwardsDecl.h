@@ -28,7 +28,8 @@ namespace oat {
 namespace bip = boost::interprocess;
 
 using shmem_t = bip::managed_shared_memory;
-using handle_t = bip::managed_shared_memory::handle_t;
+using shmem_manager_t = bip::managed_shared_memory::segment_manager;
+//using handle_t = bip::managed_shared_memory::handle_t;
 using msec_t = boost::posix_time::milliseconds;
 
 } // namespace oat

@@ -22,9 +22,9 @@
 
 #include <string>
 
-#include "../../lib/datatypes/Color.h"
-#include "../../lib/shmemdf/SharedFrameHeader.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/datatypes/Pixel.h"
+#include "../../lib/datatypes/Frame2.h"
+#include "../../lib/shmemdf/Sink2.h"
 
 const std::string node_addr = "test";
 
@@ -37,20 +37,13 @@ SCENARIO("Sinks can bind a single Node.", "[Sink]")
 {
     GIVEN("Two Sink<int>'s")
     {
-        oat::Sink<int> sink1;
-        oat::Sink<int> sink2;
-
-        // TODO: Define stream operators for Nodes, Sources, and Sinks
-        // CAPTURE(sink1);
-        // CAPTURE(sink2);
-
-        WHEN("sink1 binds a shmem segment")
+        WHEN("sink1 creates a named node.")
         {
-            sink1.bind(node_addr);
+            oat::Sink<int> sink1(node_addr);
 
-            THEN("An attempt to bind that segment by sink2 shall throw")
+            THEN("An attempt create a sink with the same named node shall throw.")
             {
-                REQUIRE_THROWS(sink2.bind(node_addr));
+                REQUIRE_THROWS([&]() { oat::Sink<int> sink2(node_addr); }());
             }
         }
     }
@@ -60,21 +53,23 @@ SCENARIO("Sinks must bind() before waiting or posting.", "[Sink]")
 {
     GIVEN("A single Sink<int>")
     {
-        oat::Sink<int> sink;
+        oat::Sink<int> sink(node_addr);
 
-        WHEN("When the sink calls wait() before binding a segment")
-        {
-            THEN("The the sink shall throw") { REQUIRE_THROWS(sink.wait()); }
-        }
+        // NB: Changed to assert
+        //WHEN("When the sink calls wait() before binding a segment")
+        //{
+        //    THEN("The the sink shall throw") { REQUIRE_THROWS(sink.wait()); }
+        //}
 
-        WHEN("When the sink calls post() before binding a segment")
-        {
-            THEN("The the sink shall throw") { REQUIRE_THROWS(sink.post()); }
-        }
+        // NB: Changed to assert
+        //WHEN("When the sink calls post() before binding a segment")
+        //{
+        //    THEN("The the sink shall throw") { REQUIRE_THROWS(sink.post()); }
+        //}
 
         WHEN("When the sink calls wait() after binding a segment")
         {
-            sink.bind(node_addr);
+            sink.bind();
 
             THEN("The the sink shall not throw")
             {
@@ -82,18 +77,19 @@ SCENARIO("Sinks must bind() before waiting or posting.", "[Sink]")
             }
         }
 
-        WHEN("When the sink calls post() after binding a segment "
-             "before calling wait()")
-        {
-            sink.bind(node_addr);
+        // NB: Changed to assert
+        //WHEN("When the sink calls post() after binding a segment "
+        //     "before calling wait()")
+        //{
+        //    sink.bind();
 
-            THEN("The the sink shall throw") { REQUIRE_THROWS(sink.post()); }
-        }
+        //    THEN("The the sink shall throw") { REQUIRE_THROWS(sink.post()); }
+        //}
 
         WHEN("When the sink calls post() after binding a segment "
              "after calling wait()")
         {
-            sink.bind(node_addr);
+            sink.bind();
             sink.wait();
 
             THEN("The the sink shall not throw")
@@ -104,38 +100,36 @@ SCENARIO("Sinks must bind() before waiting or posting.", "[Sink]")
     }
 }
 
-SCENARIO("Sinks cannot bind() to the same node more than once.", "[Source]")
+SCENARIO("Sinks cannot bind() to the same node more than once.", "[Sink]")
 {
-
-    oat::Sink<int> sink;
+    oat::Sink<int> sink(node_addr);
 
     INFO("The sink binds a node");
-    REQUIRE_NOTHROW(sink.bind(node_addr));
-    REQUIRE_THROWS(sink.bind(node_addr));
+    REQUIRE_NOTHROW(sink.bind());
+    REQUIRE_THROWS(sink.bind());
 }
 
 SCENARIO("Bound sinks can retrieve shared objects to mutate them.", "[Sink]")
 {
-
     GIVEN("A single Sink<int> and a shared *int=0")
     {
-
         int *shared = static_cast<int *>(0);
-        oat::Sink<int> sink;
+        oat::Sink<int> sink(node_addr);
 
-        WHEN("When the sink calls retrieve() before binding a segment")
-        {
+        // NB: Changed to assert
+        //WHEN("When the sink calls retrieve() before binding a segment")
+        //{
 
-            THEN("The the sink shall throw")
-            {
-                REQUIRE_THROWS(shared = sink.retrieve());
-            }
-        }
+        //    THEN("The the sink shall throw")
+        //    {
+        //        REQUIRE_THROWS(shared = sink.retrieve());
+        //    }
+        //}
 
         WHEN("When the sink calls retrieve() after binding a segment")
         {
 
-            sink.bind(node_addr);
+            sink.bind();
 
             THEN("The the sink returns a pointer to mutate the shared integer")
             {
@@ -161,28 +155,41 @@ SCENARIO("Sink<SharedFrameHeader> must bind() before waiting, posting, or "
 {
     GIVEN("A single Sink<SharedFrameHeader>")
     {
-        oat::Sink<oat::Frame> sink;
-        cv::Mat mat;
+        oat::Sink<oat::SharedFrame, oat::SharedFrameAllocator> sink(node_addr);
+        oat::SharedFrame * frame;
         size_t cols{100};
         size_t rows{100};
-        int type{1};
-        oat::PixelColor color{oat::PIX_BGR};
+        oat::Pixel::Color color{oat::Pixel::Color::bgr};
 
-        WHEN("When the sink calls wait() before binding a segment")
-        {
-            THEN("The the sink shall throw") { REQUIRE_THROWS(sink.wait()); }
-        }
+        // NB: Changed to assert
+        //WHEN("When the sink calls wait() before binding a segment")
+        //{
+        //    THEN("The the sink shall throw") { REQUIRE_THROWS(sink.wait()); }
+        //}
 
-        WHEN("When the sink calls post() before binding a segment")
-        {
-            THEN("The the sink shall throw") { REQUIRE_THROWS(sink.post()); }
-        }
+        // NB: Changed to assert
+        //WHEN("When the sink calls post() before binding a segment")
+        //{
+        //    THEN("The the sink shall throw") { REQUIRE_THROWS(sink.post()); }
+        //}
 
-        WHEN("When the sink calls retrieve() before binding a segment")
+        // NB: Changed to assert
+        //WHEN("When the sink calls retrieve() before binding a segment")
+        //{
+        //    THEN("The the sink shall throw")
+        //    {
+        //        REQUIRE_THROWS([&]() { frame = sink.retrieve(); }());
+        //    }
+        //}
+
+        WHEN("When the sink calls retrieve() after binding and reserving a segment")
         {
-            THEN("The the sink shall throw")
+            THEN("The the sink shall not throw")
             {
-                REQUIRE_THROWS(mat = sink.retrieve(cols, rows, type, color));
+                oat::Frame f(10, rows, cols, color);
+                sink.reserve(f.bytes());
+                sink.bind(10, rows, cols, color);
+                REQUIRE_NOTHROW([&]() { frame = sink.retrieve(); }());
             }
         }
     }

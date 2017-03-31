@@ -58,8 +58,8 @@ private:
                             const config::OptionTable &config_table) override;
 
     /**
-     * @brief Create and initialize recording file(s). Must be called
-     * before process().
+     * @brief Create and initialize recording file(s). Must be called before
+     * process().
      */
     void initializeRecording(void);
 
@@ -68,28 +68,28 @@ private:
 
     // Recorder in running state (i.e. all threads should remain responsive for
     // new data coming down the pipeline)
-    std::atomic<bool> running_ {true};
+    std::atomic<bool> running_{true};
 
     // Recording gate can be toggled on and off interactively from other
     // threads and processes
-    std::atomic<bool> record_on_ {true};
+    std::atomic<bool> record_on_{true};
 
     // Sample rate of this recorder
     // The true sample rate is enforced by the slowest SOURCE since all SOURCEs
     // are synchronized. User will be warned if SOURCE sample rates differ.
-    double sample_rate_hz_ {0.0};
+    double sample_rate_hz_{0.0};
 
     // Folder in which files will be saved
-    std::string save_path_ {"."};
+    std::string save_path_{"."};
 
     // Base file name
-    std::string file_name_ {""};
+    std::string file_name_{""};
 
     // Determines if should file_name be prepended with a timestamp
-    bool prepend_timestamp_ {false};
+    bool prepend_timestamp_{false};
 
     // True on first file write
-    bool files_have_data_ {false};
+    bool files_have_data_{false};
 
     // Executed by writer_thread_
     void writeLoop(void);

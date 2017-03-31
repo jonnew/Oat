@@ -35,11 +35,11 @@
 #include "TestFrame.h"
 #include "FileReader.h"
 #include "WebCam.h"
-#ifdef USE_FLYCAP
- #include "FlyCapture2.h"
- #include "PointGreyCam.h"
- namespace pg = FlyCapture2;
-#endif
+//#ifdef USE_FLYCAP
+// #include "FlyCapture2.h"
+// #include "PointGreyCam.h"
+// namespace pg = FlyCapture2;
+//#endif
 
 #define REQ_POSITIONAL_ARGS 2
 
@@ -158,20 +158,20 @@ int main(int argc, char *argv[])
                     server = std::make_shared<oat::WebCam>(sink);
                     break;
                 }
-                case 'b':
-                {
-
-#ifndef USE_FLYCAP
-                    std::cerr << oat::Error(
-                        "Oat was not compiled with Point-Grey "
-                        "flycapture support, so TYPE=gige is not available.\n");
-                    return -1;
-#else
-                    server =
-                        std::make_shared<oat::PointGreyCam<pg::GigECamera>>(sink);
-#endif
-                    break;
-                }
+//                case 'b':
+//                {
+//
+//#ifndef USE_FLYCAP
+//                    std::cerr << oat::Error(
+//                        "Oat was not compiled with Point-Grey "
+//                        "flycapture support, so TYPE=gige is not available.\n");
+//                    return -1;
+//#else
+//                    server =
+//                        std::make_shared<oat::PointGreyCam<pg::GigECamera>>(sink);
+//#endif
+//                    break;
+//                }
                 case 'c':
                 {
                     server = std::make_shared<oat::FileReader>(sink);
@@ -182,20 +182,20 @@ int main(int argc, char *argv[])
                     server = std::make_shared<oat::TestFrame>(sink);
                     break;
                 }
-                case 'e':
-                {
-
-#ifndef USE_FLYCAP
-                    std::cerr << oat::Error(
-                        "Oat was not compiled with Point-Grey "
-                        "flycapture support, so TYPE=usb is not available.\n");
-                    return -1;
-#else
-                    server
-                        = std::make_shared<oat::PointGreyCam<pg::Camera>>(sink);
-#endif
-                    break;
-                }
+//                case 'e':
+//                {
+//
+//#ifndef USE_FLYCAP
+//                    std::cerr << oat::Error(
+//                        "Oat was not compiled with Point-Grey "
+//                        "flycapture support, so TYPE=usb is not available.\n");
+//                    return -1;
+//#else
+//                    server
+//                        = std::make_shared<oat::PointGreyCam<pg::Camera>>(sink);
+//#endif
+//                    break;
+//                }
                 default:
                 {
                     printUsage(visible_options, "");
@@ -277,12 +277,12 @@ int main(int argc, char *argv[])
         printUsage(visible_options, type);
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (const cpptoml::parse_exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
-    } catch (const std::runtime_error &ex) {
-        std::cerr << oat::whoError(comp_name,ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + " (TOML)", ex.what()) << std::endl;
     } catch (const cv::Exception &ex) {
-        std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
+        std::cerr << oat::whoError(comp_name + " (OPENCV)", ex.what()) << std::endl;
     } catch (const boost::interprocess::interprocess_exception &ex) {
+        std::cerr << oat::whoError(comp_name + " (SHMEM)", ex.what()) << std::endl;
+    } catch (const std::runtime_error &ex) {
         std::cerr << oat::whoError(comp_name, ex.what()) << std::endl;
     } catch (...) {
         std::cerr << oat::whoError(comp_name, "Unknown exception.")

@@ -45,8 +45,8 @@ po::options_description TestFrame::options() const
         ("color,C", po::value<std::string>(),
          "Pixel color format. Defaults to BGR.\n"
          "Values:\n"
-         "  GREY: \t 8-bit Greyscale image.\n"
-         "  BGR: \t8-bit, 3-chanel, BGR Color image.\n")
+         "  mono: \t 8-bit Greyscale image.\n"
+         "  bgr: \t8-bit, 3-chanel, BGR Color image.\n")
         ("fps,r", po::value<double>(),
          "Frames to serve per second.")
         ("num-frames,n", po::value<uint64_t>(),
@@ -63,9 +63,9 @@ void TestFrame::applyConfiguration(const po::variables_map &vm,
     oat::config::getValue(vm, config_table, "test-image", file_name_, true);
 
     // Pixel color
-    std::string col;
-    if (oat::config::getValue<std::string>(vm, config_table, "color", col))
-        color_ = oat::str_color(col);
+    std::string col_str;
+    if (oat::config::getValue<std::string>(vm, config_table, "color", col_str))
+        color_ = oat::Pixel::color(col_str);
 
     // Number of frames to serve
     oat::config::getNumericValue<uint64_t>(
@@ -78,28 +78,27 @@ void TestFrame::applyConfiguration(const po::variables_map &vm,
 
 bool TestFrame::connectToNode() {
 
-    auto mat = cv::imread(file_name_, oat::imread_code(color_));
+    auto mat = cv::imread(file_name_, oat::Pixel::cvImreadCode(color_));
 
     if (mat.data == NULL)
         throw (std::runtime_error("File \"" + file_name_ + "\" could not be read."));
 
-    frame_sink_.bind(frame_sink_address_, mat.total() * mat.elemSize());
-
-    shared_frame_
-        = frame_sink_.retrieve(mat.rows, mat.cols, mat.type(), color_);
+    frame_sink_.reserve(mat.total() * mat.elemSize());
+    frame_sink_.bind(1 / frames_per_second_, mat.cols, mat.rows, color_);
 
     // Static image, never changes
-    mat.copyTo(shared_frame_);
+    shared_frame_ = frame_sink_.retrieve();
+    shared_frame_->copyFrom(mat);
 
-    // Put the sample rate in the shared frame
-    shared_frame_.set_rate_hz(1.0 / frame_period_in_sec_.count());
+    // Setup sample rate info on internal copy
+    shared_frame_->set_rate_hz(1.0 / frame_period_in_sec_.count());
 
     return true;
 }
 
 int TestFrame::process()
 {
-    if (shared_frame_.sample_count() < num_samples_) {
+    if (shared_frame_->count() < num_samples_) {
 
         // START CRITICAL SECTION //
         ////////////////////////////
@@ -108,7 +107,7 @@ int TestFrame::process()
         frame_sink_.wait();
 
         // Zero frame copy
-        shared_frame_.incrementSampleCount();
+        shared_frame_->incrementCount();
 
         // Tell sources there is new data
         frame_sink_.post();
@@ -121,6 +120,7 @@ int TestFrame::process()
 
         return 0;
     }
+
     return 1;
 }
 

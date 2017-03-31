@@ -31,7 +31,7 @@
 #include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Pose.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Sink2.h"
 
 namespace po = boost::program_options;
 
@@ -58,9 +58,9 @@ protected:
     /**
      * Generate test position.
      * @param position Generated position.
-     * @return true if EOF has been genereated, false otherwise.
+     * @return true if EOF has been reached, false otherwise.
      */
-    virtual bool generatePosition(oat::Pose &pose) = 0;
+    virtual bool generate(oat::Pose &pose, oat::Token::Seconds time, uint64_t it) = 0;
 
     // Test position sample clock
     bool enforce_sample_clock_ {false};
@@ -85,11 +85,10 @@ protected:
     Room room_{0, default_side_, 0, default_side_, 0, default_side_};
 
     // Unit of measure
-    oat::Pose::DistanceUnit dist_unit_ {oat::Pose::DistanceUnit::Pixels};
+    oat::Pose::DistanceUnit dist_unit_{oat::Pose::DistanceUnit::Pixels};
 
     // Sample count specification
     uint64_t num_samples_ {std::numeric_limits<uint64_t>::max()};
-    uint64_t it_ {0};
 
     /**
      * Configure the sample period
@@ -112,14 +111,10 @@ private:
     // Test position name
     std::string name_;
 
-    // Shared pose
-    oat::Pose *shared_pose_{nullptr};
-
-    // First position
-    bool first_pos_{true};
+    // Current pose index
+    uint64_t it_{0};
 
     // The test position SINK
-    std::string pose_sink_address_;
     oat::Sink<oat::Pose> pose_sink_;
 };
 

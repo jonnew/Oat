@@ -68,6 +68,12 @@ public:
      */
     virtual void initialize(const std::string &path) = 0;
 
+    /** 
+     * @brief Finish and close the recording file. Must be called 
+     * before or during destruction.
+     */
+    virtual void close() = 0;
+
     /**
      * Push a new sample onto the write queue
      */

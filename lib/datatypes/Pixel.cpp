@@ -1,5 +1,5 @@
 //******************************************************************************
-//* File:   in_place .h
+//* File:   Pixel.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -10,22 +10,21 @@
 //* the Free Software Foundation, either version 3 of the License, or
 //* (at your option) any later version.
 //* This software is distributed in the hope that it will be useful,
-//* but WITHOUcv::Scalar ANY WARRANTY; without even the implied warranty of
+//* but WITHOUT ANY WARRANTY; without even the implied warranty of
 //* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //* GNU General Public License for more details.
 //* You should have received a copy of the GNU General Public License
 //* along with this source code.  If not, see <http://www.gnu.org/licenses/>.
 //******************************************************************************
 
-#ifndef OAT_INPLACE_H
-#define OAT_INPLACE_H
+#include "Pixel.h"
 
 namespace oat {
 
-// C++11 in_place constructor argument substitute
-template <typename T>
-struct in_place {};
+constexpr size_t Pixel::to_depth[4];
+constexpr int Pixel::to_imread_code[4];
+constexpr size_t Pixel::to_bytes[4];
+constexpr int Pixel::to_cvtype[4];
+constexpr int Pixel::color_conv_table[4][4];
 
-}
-
-#endif /* OAT_INPLACE_H */
+} /* namespace oat */

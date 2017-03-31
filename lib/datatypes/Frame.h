@@ -26,6 +26,8 @@
 #include "Color.h"
 #include "Sample.h"
 
+#define OAT_FRAME_DEFAULT_FPS 123456789
+
 namespace oat {
 
 /**

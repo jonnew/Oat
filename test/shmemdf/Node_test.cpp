@@ -25,13 +25,13 @@
 // Global via extern in Globals.h
 namespace oat { volatile sig_atomic_t quit = 0; }
 
-SCENARIO ("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]") {
-
+SCENARIO("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]")
+{
     GIVEN("A fresh Node")
     {
         oat::Node node;
-        REQUIRE (node.source_ref_count() == 0);
-        REQUIRE (node.sink_state() == oat::NodeState::UNDEFINED);
+        REQUIRE(node.source_ref_count() == 0);
+        REQUIRE(node.sink_state == oat::Node::State::undefined);
 
         WHEN ("Node::NUM_SLOTS+1 sources are added") {
 

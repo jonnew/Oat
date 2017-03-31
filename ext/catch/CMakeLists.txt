@@ -8,7 +8,7 @@ ExternalProject_Add(
   PREFIX ${CMAKE_BINARY_DIR}/catch
   GIT_REPOSITORY https://github.com/philsquared/Catch.git
   TIMEOUT 10
-  UPDATE_COMMAND ${GIT_EXECUTABLE} pull
+  UPDATE_COMMAND "" #${GIT_EXECUTABLE} pull
   CONFIGURE_COMMAND ""
   INSTALL_COMMAND ""
   BUILD_COMMAND ""

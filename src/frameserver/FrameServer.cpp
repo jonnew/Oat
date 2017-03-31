@@ -23,10 +23,11 @@
 
 namespace oat {
 
-FrameServer::FrameServer(const std::string &frame_sink_address) :
-  name_("frameserve[" + frame_sink_address + "]")
-, frame_sink_address_(frame_sink_address)
+FrameServer::FrameServer(const std::string &sink_address)
+:  name_("frameserve[" + sink_address + "]")
+, frame_sink_(sink_address)
 {
     // Nothing
 }
+
 } /* namespace oat */

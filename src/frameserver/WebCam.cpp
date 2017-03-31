@@ -38,6 +38,11 @@ po::options_description WebCam::options() const
         ("index,i", po::value<int>(),
          "Camera index. Useful in multi-camera imaging "
          "configurations. Defaults to 0.")
+        ("color,C", po::value<std::string>(),
+         "Pixel color format. Defaults to BGR.\n"
+         "Values:\n"
+         "  mono: \t 8-bit Greyscale image.\n"
+         "  bgr: \t8-bit, 3-chanel, BGR Color image.\n")
         ("fps,r", po::value<double>(),
          "Frames to serve per second. Defaults to 20.")
         ("roi", po::value<std::string>(),
@@ -54,20 +59,29 @@ void WebCam::applyConfiguration(const po::variables_map &vm,
                                 const config::OptionTable &config_table)
 {
     // Camera index
-    oat::config::getNumericValue<int>(vm, config_table, "index", index_, 0);
+    int camera_idx = 0;
+    oat::config::getNumericValue<int>(vm, config_table, "index", camera_idx, 0);
+
+    // Pixel color
+    std::string col_str;
+    if (oat::config::getValue<std::string>(vm, config_table, "color", col_str))
+        color_ = oat::Pixel::color(col_str);
 
     // Create camera and set options
-    cv_camera_ = oat::make_unique<cv::VideoCapture>(index_);
-    if (!cv_camera_->isOpened())
+    camera_ = oat::make_unique<cv::VideoCapture>(camera_idx);
+
+    if (!camera_->isOpened())
         throw std::runtime_error("Could not open webcam "
-                                 + std::to_string(index_));
+                                 + std::to_string(camera_idx));
 
     // Frame rate
     double fps;
     if (oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0)) {
-        cv_camera_->set(cv::CAP_PROP_FPS, fps);
-        if (cv_camera_->get(cv::CAP_PROP_FPS) != fps)
+        camera_->set(cv::CAP_PROP_FPS, fps);
+        if (camera_->get(cv::CAP_PROP_FPS) != fps) {
+            variable_fps_ = true;
             std::cerr << oat::Warn("Webcam does not support configurable frame rate.\n");
+        }
     }
 
     // ROI
@@ -84,29 +98,33 @@ void WebCam::applyConfiguration(const po::variables_map &vm,
 bool WebCam::connectToNode()
 {
     cv::Mat example_frame;
-    *cv_camera_ >> example_frame;
+    *camera_ >> example_frame;
 
     if (use_roi_)
         example_frame = example_frame(region_of_interest_);
 
-    frame_sink_.bind(frame_sink_address_,
-                     example_frame.total() * oat::color_bytes(oat::PIX_BGR));
+    frame_sink_.reserve(example_frame.total() * example_frame.elemSize());
 
-    shared_frame_ = frame_sink_.retrieve(
-        example_frame.rows, example_frame.cols, example_frame.type(), oat::PIX_BGR);
+    // Bind
+    if (!variable_fps_) {
+        auto period = 1 / camera_->get(cv::CAP_PROP_FPS);
+        frame_sink_.bind(period, example_frame.cols, example_frame.rows, color_);
+    } else {
+        frame_sink_.bind(1.0 / OAT_DEFAULT_FPS, example_frame.cols, example_frame.rows, color_);
+    }
 
-    // Put the sample rate in the shared mat
-    shared_frame_.set_rate_hz(cv_camera_->get(cv::CAP_PROP_FPS));
+    // Link shared_frame_ to shmem storage
+    shared_frame_ = frame_sink_.retrieve();
 
     return true;
 }
 
 int WebCam::process()
 {
-    // Frame decoding (if compression was performed) can be
-    // computationally expensive. So do this outside the critical section
+    // NB: Frame decoding (if compression was performed) can be computationally
+    // expensive. So do this outside the critical section
     cv::Mat mat;
-    if (!cv_camera_->read(mat))
+    if (!camera_->read(mat))
         return 1;
 
     if (first_frame_)
@@ -115,6 +133,12 @@ int WebCam::process()
     if (use_roi_ )
         mat = mat(region_of_interest_);
 
+    // NB: OpenCV does not support direct color conversion from capture device.
+    // All frames are BGR.
+    auto code = oat::Pixel::cvConvCode(Pixel::Color::bgr, color_);
+    if (code >= 0)
+        cv::cvtColor(mat, mat, code);
+
     // START CRITICAL SECTION //
     ////////////////////////////
 
@@ -122,18 +146,18 @@ int WebCam::process()
     frame_sink_.wait();
 
     // Pure SINKs increment sample count
-    // NOTE: webcams have poorly controlled sample period, so it must be
-    // calculated. This operation is very inexpensive
+    // NB: webcams have poorly controlled sample period, so it must be
+    // calculated. This operation is cheap.
     if (first_frame_) {
         first_frame_ = false;
     } else {
         auto time_since_start
-            = std::chrono::duration_cast<Sample::Microseconds>(clock_.now()
+            = std::chrono::duration_cast<Token::Microseconds>(clock_.now()
                                                                - start_);
-        shared_frame_.incrementSampleCount(time_since_start);
+        shared_frame_->incrementCount(time_since_start);
     }
 
-    mat.copyTo(shared_frame_);
+    shared_frame_->copyFrom(mat);
 
     // Tell sources there is new data
     frame_sink_.post();

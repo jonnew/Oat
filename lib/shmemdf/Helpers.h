@@ -54,7 +54,7 @@ public:
 
     void touch(const std::string &addr) const { source->touch(addr); }
     void connect(void) const { source->connect(); }
-    NodeState wait(void) const { return source->wait(); }
+    Node::State wait(void) const { return source->wait(); }
     void post(void) const { source->post(); }
     uint64_t write_number(void) const { return source->write_number(); }
     void * retrieve(void) const { return source->retrieve(); }
@@ -66,7 +66,7 @@ private:
         virtual ~SourceConcept() { }
         virtual void touch(const std::string &addr) = 0;
         virtual void connect(void) = 0;
-        virtual NodeState wait(void) = 0;
+        virtual Node::State wait(void) = 0;
         virtual void post(void) = 0;
         virtual uint64_t write_number(void) const = 0;
         virtual void * retrieve(void) const = 0;
@@ -78,7 +78,7 @@ private:
         SourceModel() : source() { }
         void touch(const std::string &addr) override { source.touch(addr); }
         void connect(void) override { source.connect(); }
-        NodeState wait(void) override { return source.wait();}
+        Node::State wait(void) override { return source.wait();}
         void post(void) override { source.post(); }
         uint64_t write_number() const override { return source.write_number(); }
         void * retrieve() const override { return (void *)(source.retrieve()); }

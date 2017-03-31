@@ -38,8 +38,7 @@ DifferenceDetector::DifferenceDetector(const std::string &frame_source_address,
                                        const std::string &position_sink_address)
 : PositionDetector(frame_source_address, position_sink_address)
 {
-    // Set required frame type
-    required_color_ = PIX_GREY;
+    // Nothing
 }
 
 po::options_description DifferenceDetector::options() const
@@ -113,46 +112,53 @@ void DifferenceDetector::applyConfiguration(
     }
 }
 
+bool DifferenceDetector::checkPixelColor(oat::Pixel::Color c)
+{
+    return (c == oat::Pixel::Color::mono);
+}
+
 oat::Pose DifferenceDetector::detectPose(oat::Frame &frame)
 {
-    oat::Pose pose(frame.sample().seconds(),
+    // TODO: Where is sample informaiton transfered??
+    oat::Pose pose(frame.period<Token::Seconds>(),
                    Pose::DistanceUnit::Pixels,
                    Pose::DOF::Two,
                    Pose::DOF::Zero);
 
-    cv::Mat thresh_frame;
+    cv::Mat mat = frame.to();
+    cv::Mat thresh_mat;
     if (last_frame_set_) {
-        cv::absdiff(frame, last_frame_, thresh_frame);
-        cv::threshold(thresh_frame,
-                      thresh_frame,
+        cv::absdiff(mat, last_frame_, thresh_mat);
+        cv::threshold(thresh_mat,
+                      thresh_mat,
                       difference_intensity_threshold_,
                       255,
                       cv::THRESH_BINARY);
 
         if (makeBlur(blur_px_))
-            cv::blur(thresh_frame, thresh_frame, blur_size_);
+            cv::blur(thresh_mat, thresh_mat, blur_size_);
 
-        last_frame_ = frame.clone(); // Get a copy of the last image
+        last_frame_ = mat.clone(); // Get a copy of the last image
     } else {
-        thresh_frame = frame.clone();
-        last_frame_ = frame.clone();
+        thresh_mat = mat.clone();
+        last_frame_ = mat.clone();
         last_frame_set_ = true;
     }
 
     // Threshold frame will be destroyed by the transform below, so we need to
     // use it to form the frame that will be shown in the tuning window here
     if (tuner_) {
-        frame.setTo(0, thresh_frame == 0);
+        mat.setTo(0, thresh_mat == 0);
         // HACK. setTo returns a cv::Mat with no color
-        frame.set_color(required_color_);
+        //mat.set_color(required_color_);
     }
 
-    // NB: Mutates thresh_frame
+    // NB: Mutates thresh_mat
     siftContours(
-        thresh_frame, pose, object_area_, min_object_area_, max_object_area_);
+        thresh_mat, pose, object_area_, min_object_area_, max_object_area_);
 
     if (tuner_)
-        tuner_->tune(frame, pose);
+        tuner_->tune(mat, pose);
 
     return pose;
 }

@@ -64,6 +64,11 @@ oat::SourceState FrameWriter::connect()
     return rc;
 }
 
+void FrameWriter::close()
+{
+    video_writer_.release();
+}
+
 void FrameWriter::initialize(const std::string &path)
 {
     path_ = path + ".avi";

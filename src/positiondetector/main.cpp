@@ -32,15 +32,15 @@
 #include "../../lib/utility/ProgramOptions.h"
 
 #ifdef ARUCO_FOUND
-#include "ArucoBoard.h"
+//#include "ArucoBoard.h"
 #endif
 #include "DifferenceDetector.h"
-#include "HSVDetector.h"
-#include "PositionDetector.h"
+//#include "HSVDetector.h"
+//#include "PositionDetector.h"
 #include "SimpleThreshold.h"
-#ifdef EIGEN3_FOUND
-#include "RPGPoseEst.h"
-#endif
+//#ifdef EIGEN3_FOUND
+//#include "RPGPoseEst.h"
+//#endif
 
 #define REQ_POSITIONAL_ARGS 3
 
@@ -51,7 +51,7 @@ const char usage_type[] =
     "  aruco: Aruco board pose estimation (color: any)\n"
     "  diff: Motion detector (color: mono)\n"
     "  hsv: HSV color thresholds (color: hsv)\n"
-    "  rpg: RPG pose estimator (color: mono)"
+    "  rpg: RPG pose estimator (color: mono)\n"
     "  thresh: Simple amplitude threshold (color: mono)\n";
 
 const char usage_io[] =
@@ -167,40 +167,40 @@ int main(int argc, char *argv[])
                     detector = std::make_shared<oat::DifferenceDetector>(source, sink);
                     break;
                 }
-                case 'b':
-                {
-                    detector = std::make_shared<oat::HSVDetector>(source, sink);
-                    break;
-                }
+//                case 'b':
+//                {
+//                    detector = std::make_shared<oat::HSVDetector>(source, sink);
+//                    break;
+//                }
                 case 'c':
                 {
                     detector = std::make_shared<oat::SimpleThreshold>(source, sink);
                     break;
                 }
-                case 'd':
-                {
-#ifndef ARUCO_FOUND
-                    std::cerr << oat::Error(
-                        "OpenCV was not compiled with contrib modules "
-                        "support, so TYPE=aruco is not available.\n");
-                    return -1;
-#else
-                    detector = std::make_shared<oat::ArucoBoard>(source, sink);
-#endif
-                    break;
-                }
-                case 'e':
-                {
-#ifndef EIGEN3_FOUND
-                    std::cerr << oat::Error(
-                        "Oat was not compiled with Eigen "
-                        "support, so TYPE=rpg is not available.\n");
-                    return -1;
-#else
-                    detector = std::make_shared<oat::RPGPoseEst>(source, sink);
-#endif
-                    break;
-                }
+//                case 'd':
+//                {
+//#ifndef ARUCO_FOUND
+//                    std::cerr << oat::Error(
+//                        "OpenCV was not compiled with contrib modules "
+//                        "support, so TYPE=aruco is not available.\n");
+//                    return -1;
+//#else
+//                    detector = std::make_shared<oat::ArucoBoard>(source, sink);
+//#endif
+//                    break;
+//                }
+//                case 'e':
+//                {
+//#ifndef EIGEN3_FOUND
+//                    std::cerr << oat::Error(
+//                        "Oat was not compiled with Eigen "
+//                        "support, so TYPE=rpg is not available.\n");
+//                    return -1;
+//#else
+//                    detector = std::make_shared<oat::RPGPoseEst>(source, sink);
+//#endif
+//                    break;
+//                }
                 default:
                 {
                     printUsage(visible_options, "");

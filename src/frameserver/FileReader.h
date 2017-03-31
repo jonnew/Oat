@@ -48,16 +48,13 @@ private:
     // Video file
     cv::VideoCapture file_reader_;
 
-    // Playback speed
-    double frames_per_second_;
-    void calculateFramePeriod(void);
-
     // Region of interest
+    bool use_roi_{false};
     cv::Rect_<size_t> region_of_interest_;
 
     // Frame generation clock
+    oat::Token::Seconds period_;
     std::chrono::high_resolution_clock clock_;
-    std::chrono::duration<double> frame_period_in_sec_;
     std::chrono::high_resolution_clock::time_point tick_;
 };
 

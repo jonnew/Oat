@@ -29,7 +29,7 @@ namespace oat {
 
 class PositionReplier : public PositionSocket {
 public:
-    PositionReplier(const std::string &pose_source_address);
+    explicit PositionReplier(const std::string &pose_source_address);
 
 private:
     // Configurable Interface

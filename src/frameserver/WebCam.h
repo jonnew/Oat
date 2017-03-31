@@ -23,6 +23,7 @@
 #include "FrameServer.h"
 
 #include <chrono>
+#include <memory>
 #include <string>
 
 #include <opencv2/videoio.hpp>
@@ -47,13 +48,21 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    int index_ {0};
-    std::unique_ptr<cv::VideoCapture> cv_camera_;
+    // OpenCV video capture wrapper for v4l2
+    std::unique_ptr<cv::VideoCapture> camera_;
 
     // frame generation clock
-    bool first_frame_ {true};
+    bool first_frame_{true};
     std::chrono::steady_clock clock_;
     std::chrono::steady_clock::time_point start_;
+
+    // WebCam can have a region of interest to crop incoming frames
+    bool use_roi_{false};
+    cv::Rect_<size_t> region_of_interest_;
+
+    // In the case that we are using camera for frame rate, detect if the FPS
+    // is bogus
+    bool variable_fps_{false};
 };
 
 }      /* namespace oat */

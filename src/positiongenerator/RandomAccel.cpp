@@ -115,35 +115,35 @@ void RandomAccel::applyConfiguration(const po::variables_map &vm,
     createStaticMatracies();
 }
 
-bool RandomAccel::generatePosition(oat::Pose &pose)
+bool RandomAccel::generate(oat::Pose &pose,
+                           oat::Token::Seconds time,
+                           uint64_t it)
 {
-    if (it_ < num_samples_) {
+    // Simulate one step of random, but smooth, motion
+    simulateMotion();
 
-        // Simulate one step of random, but smooth, motion
-        simulateMotion();
+    // Simulated pose info
+    pose.found = true;
+    pose.unit_of_length = dist_unit_;
 
-        // Simulated pose info
-        pose.found = true;
-        pose.unit_of_length = dist_unit_;
+    pose.orientation_dof = Pose::DOF::Three;
+    std::array<double, 3> p{{state_(0), state_(2), state_(4)}};
+    pose.set_position(p);
 
-        pose.orientation_dof = Pose::DOF::Three;
-        std::array<double, 3> p{{state_(0), state_(2), state_(4)}};
-        pose.set_position(p);
-
-        if (produce_orientation_) {
-            pose.position_dof = Pose::DOF::Three;
-            std::array<double, 3> o{{state_(6), state_(8), state_(10)}};
-            pose.fromTaitBryan(o, true);
-        } else {
-            pose.orientation_dof = Pose::DOF::Zero;
-        }
-
-        it_++;
-
-        return false;
+    if (produce_orientation_) {
+        pose.position_dof = Pose::DOF::Three;
+        std::array<double, 3> o{{state_(6), state_(8), state_(10)}};
+        pose.fromTaitBryan(o, true);
+    } else {
+        pose.orientation_dof = Pose::DOF::Zero;
     }
 
-    return true;
+    // Set the time
+    pose.setTime(it, time);
+
+    // Are we at the end yet?
+    bool rc = it < num_samples_ ? false : true;
+    return rc;
 }
 
 void RandomAccel::simulateMotion()

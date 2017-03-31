@@ -78,8 +78,7 @@ void Component::runComponent()
 {
     try {
 
-        // TODO: throw "could not connect to node"?
-        if (!connectToNode())
+        if (!connectToNode()) // shemdf will throw if this fails
             return;
 
         bool end_of_stream = false;

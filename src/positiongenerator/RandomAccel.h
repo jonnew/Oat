@@ -73,7 +73,7 @@ private:
 
     bool produce_orientation_{false};
 
-    bool generatePosition(oat::Pose &position) override;
+    bool generate(oat::Pose &pose, oat::Token::Seconds time, uint64_t it) override;
     void createStaticMatracies(void);
     void simulateMotion(void);
 };

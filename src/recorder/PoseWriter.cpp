@@ -28,15 +28,7 @@ namespace oat {
 
 PoseWriter::~PoseWriter()
 {
-    if (use_binary_ && fd_ != nullptr) {
-        auto n = std::to_string(completed_writes_);
-        emplaceNumpyShape(fd_, completed_writes_);
-        fclose(fd_);
-    } else if (fd_ != nullptr) {
-        json_writer_.EndArray();
-        json_writer_.EndObject();
-        file_stream_->Flush();
-    }
+    close();
 }
 
 void PoseWriter::configure(const oat::config::OptionTable &t,
@@ -50,6 +42,19 @@ void PoseWriter::configure(const oat::config::OptionTable &t,
 
     // Consise JSON file
     oat::config::getValue(vm, t, "concise-file", concise_file_);
+}
+
+void PoseWriter::close() 
+{
+    if (use_binary_ && fd_ != nullptr) {
+        auto n = std::to_string(completed_writes_);
+        emplaceNumpyShape(fd_, completed_writes_);
+        fclose(fd_);
+    } else if (fd_ != nullptr) {
+        json_writer_.EndArray();
+        json_writer_.EndObject();
+        file_stream_->Flush();
+    }
 }
 
 void PoseWriter::initialize(const std::string &path)

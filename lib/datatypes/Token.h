@@ -49,7 +49,7 @@ public:
     explicit Token(const double period_sec)
     : period_(period_sec)
     {
-        assert(period_.count() > 0.0);
+        assert(period_.count() > 0.0 && "Sample period is 0 or negative.");
     }
 
     /**
@@ -59,7 +59,7 @@ public:
     explicit Token(const Seconds period_sec)
     : period_(period_sec)
     {
-        assert(period_.count() > 0.0);
+        assert(period_.count() > 0.0 && "Sample period is 0 or negative.");
     }
 
     /**
@@ -72,6 +72,13 @@ public:
     {
         time_ += period_;
         return ++count_;
+    }
+
+    template <typename DurationT>
+    void setTime(uint64_t count, const DurationT time)
+    {
+        count_ = count;
+        time_ = std::chrono::duration_cast<Seconds>(time);
     }
 
     /**

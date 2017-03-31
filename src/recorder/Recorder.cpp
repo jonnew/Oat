@@ -207,8 +207,8 @@ oat::CommandDescription Recorder::commands()
                   "already exists. It will create a new one if it doesn't." },
         {"pause", "Pause recording. This will pause the recording "
                   "without creating a new file." },
-        {"new", "Start a new file using folder location and file name "
-                "options as provided in command line arguements."},
+        {"new",   "Start a new file using folder location and file name "
+                  "options as provided in command line arguements."},
     };
 
     return commands;
@@ -223,8 +223,9 @@ void Recorder::applyCommand(const std::string &command)
     } else if (command == "pause") {
         record_on_ = false;
     } else if (command == "new") {
-        // TODO: makeNewFile()
-        std::cout << "did not implement 'new' yet...\n";
+        for (auto &w : writers_)
+            w->close();
+        initializeRecording();
     }
 }
 

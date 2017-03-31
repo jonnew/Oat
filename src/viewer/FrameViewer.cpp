@@ -117,7 +117,7 @@ void FrameViewer::applyCommand(const std::string &command)
     }
 }
 
-void FrameViewer::display(const oat::Frame &frame)
+void FrameViewer::display(const oat::SharedFrame &frame)
 {
     // NOTE: This initialization is done here to ensure it is done by the same
     // thread that actually calls imshow(). If done in in the constructor, it
@@ -137,13 +137,15 @@ void FrameViewer::display(const oat::Frame &frame)
         gui_inititalized_ = true;
     }
 
-    if (frame.rows == 0 || frame.cols == 0)
+    if (frame.rows() == 0 || frame.cols() == 0)
         return;
 
-    if (min_max_defined_)
-        cv::LUT(frame, lut_, frame);
+    cv::Mat matRef = frame.to();
 
-    cv::imshow(name_, frame);
+    if (min_max_defined_)
+        cv::LUT(matRef, lut_, matRef);
+
+    cv::imshow(name_, matRef);
     char gui_input = cv::waitKey(1);
 
     if (snapshot_requested_ || gui_input == 's') {
@@ -162,7 +164,7 @@ void FrameViewer::display(const oat::Frame &frame)
                 true);
 
         if (!err) {
-            cv::imwrite(fid, frame);
+            cv::imwrite(fid, matRef);
             std::cout << "Snapshot saved to " << fid << "\n";
         } else {
             std::cerr << oat::Error("Snapshot file creation exited "

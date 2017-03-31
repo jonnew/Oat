@@ -31,6 +31,9 @@ namespace oat {
 FileReader::FileReader(const std::string &sink_address)
 : FrameServer(sink_address)
 {
+    // Initalize frame period
+    period_ = Token::Seconds( 1.0 / OAT_DEFAULT_FPS);
+
     // Initialize time
     tick_ = clock_.now();
 }
@@ -63,8 +66,9 @@ void FileReader::applyConfiguration(const po::variables_map &vm,
     file_reader_.open(file_name);
 
     // Frame rate
-    if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0))
-        calculateFramePeriod();
+    double fps;
+    if (oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0))
+        period_ = Token::Seconds(1.0 / fps);
 
     // ROI
     std::vector<size_t> roi;
@@ -86,29 +90,23 @@ bool FileReader::connectToNode()
     if (use_roi_)
         example_frame = example_frame(region_of_interest_);
 
-    frame_sink_.bind(frame_sink_address_,
-            example_frame.total() * example_frame.elemSize());
+    frame_sink_.reserve(example_frame.total() * example_frame.elemSize());
+    frame_sink_.bind(period_, example_frame.cols, example_frame.rows, color_);
 
-    shared_frame_ = frame_sink_.retrieve(
-            example_frame.rows, example_frame.cols, example_frame.type(), PIX_BGR);
-
-    // Reset the video to the start
-    file_reader_.set(cv::CAP_PROP_POS_AVI_RATIO, 0);
-
-    // Put the sample rate in the shared frame
-    shared_frame_.set_rate_hz(1.0 / frame_period_in_sec_.count());
+    // Link shared_frame_ to shmem storage
+    shared_frame_ = frame_sink_.retrieve();
 
     return true;
 }
 
 int FileReader::process()
 {
-    cv::Mat frame;
-    if (!file_reader_.read(frame))
+    cv::Mat mat;
+    if (!file_reader_.read(mat))
         return 1;
 
     if (use_roi_ )
-        frame = frame(region_of_interest_);
+        mat = mat(region_of_interest_);
 
     // START CRITICAL SECTION //
     ////////////////////////////
@@ -116,8 +114,8 @@ int FileReader::process()
     // Wait for sources to read
     frame_sink_.wait();
 
-    frame.copyTo(shared_frame_);
-    shared_frame_.incrementSampleCount();
+    shared_frame_->incrementCount();
+    shared_frame_->copyFrom(mat);
 
     // Tell sources there is new data
     frame_sink_.post();
@@ -125,17 +123,11 @@ int FileReader::process()
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
+    std::this_thread::sleep_for(shared_frame_->period<Token::Seconds>() - (clock_.now() - tick_));
     tick_ = clock_.now();
 
     return 0;
 }
 
-void FileReader::calculateFramePeriod()
-{
-    // Copy assignment provides automatic unit conversion
-    std::chrono::duration<double> frame_period {1.0 / frames_per_second_};
-    frame_period_in_sec_ = frame_period;
-}
 
 } /* namespace oat */

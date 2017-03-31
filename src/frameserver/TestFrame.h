@@ -59,10 +59,7 @@ private:
     std::chrono::high_resolution_clock::time_point tick_;
 
     // Sample count specification
-    uint64_t num_samples_ {std::numeric_limits<int64_t>::max()};
-
-    // Pixel color
-    oat::PixelColor color_{oat::PIX_BGR};
+    uint64_t num_samples_{std::numeric_limits<int64_t>::max()};
 };
 
 }       /* namespace oat */

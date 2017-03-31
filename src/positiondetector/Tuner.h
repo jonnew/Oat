@@ -72,7 +72,7 @@ struct Tuner {
         T min, max, scale;
     };
 
-    Tuner(const std::string &window_name);
+    explicit Tuner(const std::string &window_name);
     ~Tuner();
 
     template <typename T>
@@ -91,7 +91,7 @@ struct Tuner {
         cv::createTrackbar(name, w_, &tmp, scale * max, cb, cb_params_.back());
     }
 
-    void tune(const oat::Frame &frame,
+    void tune(const cv::Mat &mat,
               const oat::Pose &pose,
               const cv::Matx33d &K = cv::Matx33d::eye(),
               const std::vector<double> &D = {0, 0, 0, 0, 0, 0, 0, 0});

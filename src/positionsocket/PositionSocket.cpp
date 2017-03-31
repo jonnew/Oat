@@ -23,45 +23,30 @@ namespace oat {
 
 PositionSocket::PositionSocket(const std::string &pose_source_addresss)
 : name_("posisock[" + pose_source_addresss + "->*]")
-, pose_source_address_(pose_source_addresss)
+, pose_source_(pose_source_addresss)
 {
     // Nothing
 }
 
 bool PositionSocket::connectToNode()
 {
-    // Establish our a slot in the node
-    pose_source_.touch(pose_source_address_);
-
     // Wait for synchronous start with sink when it binds its node
-    if (pose_source_.connect() != SourceState::CONNECTED)
-        return false;
-
-    return true;
+    auto rc = (pose_source_.connect() == SourceState::connected);
+    return rc;
 }
 
 int PositionSocket::process()
 {
-    // START CRITICAL SECTION //
-    ////////////////////////////
-    node_state_ = pose_source_.wait();
-    if (node_state_ == oat::NodeState::END)
-        return 1;
+    // Synchronous pull from source
+    oat::Pose pose;
+    auto rc = pose_source_.pull(pose);
+    if (rc) { return rc; }
 
-    // Clone the shared pose
-    internal_pose_ = pose_source_.clone();
+    // Process the newly acquired pose
+    sendPosition(pose);
 
-    // Tell sink it can continue
-    pose_source_.post();
-
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
-
-    // Send the newly acquired pose
-    sendPosition(internal_pose_);
-
-    // Sink was not at END state
-    return 0;
+    // Return sink state
+    return rc;
 }
 
 } /* namespace oat */

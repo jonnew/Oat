@@ -182,7 +182,7 @@ public:
         Three,    //!< Three degrees of freedom (XYZ)
     };
 
-    static constexpr size_t region_max_char {10};
+    static constexpr size_t region_max_char{10};
 
     Pose()
     : Token()
@@ -241,22 +241,22 @@ public:
      * associated timing info. If set to zero or not supplied, defaults to just
      * updating sample count without a time.
      */
-    void produce(const Pose &p, Token::Microseconds usec = Token::Microseconds{0}) {
-        unit_of_length = p.unit_of_length;
-        position_dof = p.position_dof;
-        orientation_dof = p.orientation_dof;
-        in_region = p.in_region;
-        std::strncpy(region, p.region, region_max_char);
-        found = p.found;
-        q_ = p.q_;
-        p_ = p.p_;
+    //void produce(const Pose &p, Token::Microseconds usec = Token::Microseconds{0}) {
+    //    unit_of_length = p.unit_of_length;
+    //    position_dof = p.position_dof;
+    //    orientation_dof = p.orientation_dof;
+    //    in_region = p.in_region;
+    //    std::strncpy(region, p.region, region_max_char);
+    //    found = p.found;
+    //    q_ = p.q_;
+    //    p_ = p.p_;
 
-        // Increment sample count
-        if (usec == Token::Microseconds{0})
-            incrementCount();
-        else
-            incrementCount(usec);
-    }
+    //    // Increment sample count
+    //    if (usec == Token::Microseconds{0})
+    //        incrementCount();
+    //    else
+    //        incrementCount(usec);
+    //}
 
     /**
      * @brief Unit of length used to specify rotation and translation vectors.

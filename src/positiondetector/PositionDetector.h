@@ -28,9 +28,9 @@
 
 #include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
-#include "../../lib/datatypes/Frame.h"
+#include "../../lib/datatypes/Frame2.h"
 #include "../../lib/datatypes/Pose.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Sink2.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace po = boost::program_options;
@@ -64,32 +64,27 @@ protected:
     // Detector name
     const std::string name_;
 
-    // Explicit frame data type
-    oat::PixelColor required_color_ {PIX_ANY};
-
-    // Tuning frame (shown in tuning window when tuning_on_ is true);
-    //bool tuning_on_ {false};
-    //oat::Frame tuning_frame_;
-    //Tuner tuner_;
+    // Check frame pixel color type
+    // Default to not caring about color
+    virtual bool checkPixelColor(oat::Pixel::Color c)
+    {
+        (void)c; // Override unused variable warning
+        return true;
+    }
 
     // Intrinsic parameters
-    //cv::Matx33d camera_matrix_ {cv::Matx33d::eye()};
-    //std::vector<double> dist_coeff_  {0, 0, 0, 0, 0, 0, 0, 0};
+    // cv::Matx33d camera_matrix_{cv::Matx33d::eye()};
+    // std::vector<double> dist_coeff_{0, 0, 0, 0, 0, 0, 0, 0};
 
 private:
     // Component Interface
-    virtual bool connectToNode(void) override;
+    bool connectToNode(void) override;
     int process(void) override;
 
-    // Current pose
-    oat::Pose * shared_pose_;
-
     // Frame source
-    const std::string frame_source_address_;
-    oat::Source<oat::Frame> frame_source_;
+    oat::Source<oat::SharedFrame> frame_source_;
 
     // Pose sink
-    const std::string pose_sink_address_;
     oat::Sink<oat::Pose> pose_sink_;
 };
 

@@ -36,8 +36,8 @@ public:
      * @param frame_source_address Frame SOURCE node address
      * @param pose_sink_address Position SINK node address
      */
-SimpleThreshold(const std::string &frame_source_address,
-                const std::string &pose_sink_address);
+    SimpleThreshold(const std::string &frame_source_address,
+                    const std::string &pose_sink_address);
 
 private:
     // Configurable Interface
@@ -45,23 +45,24 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    //PositionDetector Interface
+    // PositionDetector Interface
+    bool checkPixelColor(oat::Pixel::Color c) override;
     oat::Pose detectPose(oat::Frame &frame) override;
 
     // Intermediate variables
     cv::Mat threshold_frame_;
 
     // Object detection
-    double object_area_ {0.0};
+    double object_area_{0.0};
 
     // Internal matricies
     cv::Mat erode_element_, dilate_element_;
 
     // Detector parameters
-    int t_min_ {0};
-    int t_max_ {256};
-    double min_object_area_ {0.0};
-    double max_object_area_ {std::numeric_limits<double>::max()};
+    int t_min_{0};
+    int t_max_{256};
+    double min_object_area_{0.0};
+    double max_object_area_{std::numeric_limits<double>::max()};
 
     // Erode and dilate kernels
     int erode_px_{0}, dilate_px_{0};
@@ -69,7 +70,7 @@ private:
     bool makeDilater(int dilate_px);
 
     // Tuner
-    std::unique_ptr<Tuner> tuner_ {nullptr};
+    std::unique_ptr<Tuner> tuner_{nullptr};
 };
 
 }       /* namespace oat */

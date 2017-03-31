@@ -37,7 +37,7 @@ class PositionCout : public PositionSocket {
                             const config::OptionTable &config_table) override;
 
     // Format std out stream
-    bool pretty_ {false};
+    bool pretty_{false};
 
     void sendPosition(const oat::Pose &pose) override;
 };

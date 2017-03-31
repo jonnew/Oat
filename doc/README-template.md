@@ -1405,11 +1405,11 @@ RJ45 ------------
       stateless detection. However, it would make the concept of position
       combining hard to define (although that is even true now is just a design
       choice, really).~~
-    - EDIT: Additionally, there should certainly not be `Position2D` vs
+    - ~~EDIT: Additionally, there should certainly not be `Position2D` vs
       `Position3D`. Only `Position` which provides 3d specificaiton with Z axis
-      defaulting to 0.
-    - EDIT: In fact, positions should simply be generalize two a 3D pose. I've
-      started a branch to do this.
+      defaulting to 0.~~
+    - ~~EDIT: In fact, positions should simply be generalize two a 3D pose. I've
+      started a branch to do this.~~
 - [ ] `oat-framefilt undistort`
     - Very slow. Needs an OpenGL or CUDA implementation
     - User supplied frame rotation occurs in a separate step from
@@ -1421,11 +1421,11 @@ RJ45 ------------
     - Sources should have a static method for checking the token type of a
       given address.
 - [ ] Sample datatype is used oddly.
-    - Token specializations (e.g. Pose and Frame) hold internal references to
+    - ~~Token specializations (e.g. Pose and Frame) hold internal references to
       sample object but they end up exposing the whole underlying interface
       through delegation. This indicates Sample should likely be a base class
       to all Tokens. It can even be renamed Token. Will cause Frames to be
-      mutiple inherited, so I need to think about that.
+      mutiple inherited, so I need to think about that.~~
 - [ ] Frames should not be derived from cv::Mats
    - This would solve the multiple inheritance issue above
    - Frames should be easily, and zero-copily, _convertible_ to cv::Mats. They

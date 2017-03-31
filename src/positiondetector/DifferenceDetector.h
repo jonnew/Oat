@@ -44,28 +44,29 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    //PositionDetector Interface
+    // PositionDetector Interface
+    bool checkPixelColor(oat::Pixel::Color c) override;
     oat::Pose detectPose(oat::Frame &frame) override;
 
     // Intermediate variables
-    oat::Frame last_frame_;
-    bool last_frame_set_ {false};
+    cv::Mat last_frame_;
+    bool last_frame_set_{false};
 
     // Object detection
-    double object_area_ {0.0};
+    double object_area_{0.0};
 
     // Set blur kernel
     cv::Size blur_size_;
-    int blur_px_ {0};
+    int blur_px_{0};
     bool makeBlur(int value);
 
     // Detector parameters
-    int difference_intensity_threshold_ {10};
-    double min_object_area_ {0.0};
-    double max_object_area_ {std::numeric_limits<double>::max()};
+    int difference_intensity_threshold_{10};
+    double min_object_area_{0.0};
+    double max_object_area_{std::numeric_limits<double>::max()};
 
     // Tuner
-    std::unique_ptr<Tuner> tuner_ {nullptr};
+    std::unique_ptr<Tuner> tuner_{nullptr};
 };
 
 }       /* namespace oat */

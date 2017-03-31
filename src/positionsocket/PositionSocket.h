@@ -28,7 +28,7 @@
 #include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Pose.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Sink2.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace po = boost::program_options;
@@ -65,12 +65,7 @@ private:
     const std::string name_;
 
     // The position SOURCE
-    std::string pose_source_address_;
-    oat::NodeState node_state_ {oat::NodeState::UNDEFINED};
     oat::Source<oat::Pose> pose_source_;
-
-    // The current, internally allocated position
-    oat::Pose internal_pose_;
 };
 
 }      /* namespace oat */
