@@ -1394,7 +1394,7 @@ can be built using `make [component-name]`, e.g. `make oat-view`. Available
 cmake options and their default values are:
 
 ```
--DUSE_FLYCAP=Off // Compile with support for Point Grey Cameras
+-DUSE_FLYCAP=On // Compile with support for Point Grey Cameras
 -DBUILD_DOCS=Off     // Generate Doxygen documentation
 ```
 
