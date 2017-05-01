@@ -142,6 +142,7 @@ using NamedSourceList = std::vector<NamedSource<T>>;
  * @return True if maximum difference between periods is within epsilon. False
  * otherwise.
  */
+//inline bool checkSamplePeriods(const std::vector<double> &periods_sec,
 inline bool checkSamplePeriods(const std::vector<double> &periods_sec,
                                double &min_rate,
                                double const epsilon = 1e-6)

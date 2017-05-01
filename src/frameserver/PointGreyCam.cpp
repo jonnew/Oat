@@ -55,8 +55,8 @@ PointGreyCam<T>::PointGreyCam(const std::string &sink_address)
 : FrameServer(sink_address)
 {
     // Initialize frame timing
-    tick_ = oat::Sample::Microseconds(0);
-    tock_ = oat::Sample::Microseconds(0);
+    tick_ = oat::Token::Microseconds(0);
+    tock_ = oat::Token::Microseconds(0);
 }
 
 template <typename T>
@@ -658,8 +658,8 @@ int PointGreyCam<T>::grabImage(pg::Image *raw_image)
 
     // Convert to chrono::time_point
     tock_ = tick_;
-    tick_ = std::chrono::duration_cast<oat::Sample::Microseconds> (
-                oat::Sample::IEEE1394Tick(total_ieee_1394_cycles)
+    tick_ = std::chrono::duration_cast<oat::Token::Microseconds> (
+                oat::Token::IEEE1394Tick(total_ieee_1394_cycles)
             );
 
     // Calculate the delay since the last frame was acquired.
@@ -730,7 +730,7 @@ int PointGreyCam<T>::process()
         else
             shmem_image_->DeepCopy(&raw_image);
 
-        shared_frame_.incrementSampleCount(tick_);
+        shared_frame_->incrementCount(1, tick_);
 
         // Tell sources there is new data
         frame_sink_.post();
@@ -1041,11 +1041,9 @@ bool PointGreyCam<pg::GigECamera>::connectToNode()
     const size_t cols = temp.GetCols();
     const size_t stride = temp.GetStride();
 
-    frame_sink_.bind(frame_sink_address_, bytes);
-
-    shared_frame_ = frame_sink_.retrieve(
-        rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)), pix_col_);
-    shared_frame_.set_rate_hz(frames_per_second_);
+    frame_sink_.reserve(bytes);
+    frame_sink_.bind(Token::Seconds(1.0 / frames_per_second_), rows, cols, color_);
+    shared_frame_ = frame_sink_.retrieve();
 
     // Use the shared_frame_.data, which points to a block of shared memory as
     // rbg_image's data buffer. When changes are made to shmem_image_, this is
@@ -1056,7 +1054,7 @@ bool PointGreyCam<pg::GigECamera>::connectToNode()
         = oat::make_unique<pg::Image>(rows,
                                       cols,
                                       stride,
-                                      shared_frame_.data,
+                                      shared_frame_->storage.data(),
                                       bytes,
                                       std::get<PG_TO>(pix_map_.at(pix_col_)));
     return true;
@@ -1226,18 +1224,23 @@ bool PointGreyCam<pg::Camera>::connectToNode()
     const size_t cols = temp.GetCols();
     const size_t stride = temp.GetStride();
 
-    frame_sink_.bind(frame_sink_address_, bytes);
-
-    shared_frame_ = frame_sink_.retrieve(rows, cols, std::get<CV_TYPE>(pix_map_.at(pix_col_)), pix_col_);
-    shared_frame_.set_rate_hz(frames_per_second_);
+    frame_sink_.reserve(bytes);
+    frame_sink_.bind(
+        Token::Seconds(1 / frames_per_second_), rows, cols, color_);
+    shared_frame_ = frame_sink_.retrieve();
 
     // Use the shared_frame_.data, which points to a block of shared memory as
     // rbg_image's data buffer. When changes are made to shmem_image_, this is
     // automatically propagated into shmem and 'converted' into a cv::Mat
     // (although this 'conversion' is simply filling in appropriate header info,
     // which was accomplished in the call to frame_sink_.retrieve())
-    shmem_image_ = oat::make_unique<pg::Image>
-            (rows, cols, stride, shared_frame_.data, bytes, std::get<PG_TO>(pix_map_.at(pix_col_)));
+    shmem_image_
+        = oat::make_unique<pg::Image>(rows,
+                                      cols,
+                                      stride,
+                                      shared_frame_->storage.data(),
+                                      bytes,
+                                      std::get<PG_TO>(pix_map_.at(pix_col_)));
 
     return true;
 }

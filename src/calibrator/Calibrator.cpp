@@ -30,19 +30,17 @@ namespace bfs = boost::filesystem;
 namespace oat {
 
 Calibrator::Calibrator(const std::string &source_address) :
-  name_("calibrate[" + source_address + "]")
-, source_address_(source_address)
+: Component()
+, frame_source_(source_address)
 {
-    // Nothing
+    // Set the component name for this instance
+    set_name(source_address, "*");
 }
 
 bool Calibrator::connectToNode()
 {
-    // Establish our a slot in the node
-    frame_source_.touch(source_address_);
-
-    // Wait for sychronous start with sink when it binds the node
-    if (frame_source_.connect() != SourceState::CONNECTED)
+    // Wait for synchronous start with sink when it binds its node
+    if (frame_source_.connect() != SourceState::connected)
         return false;
 
     return true;
@@ -50,26 +48,18 @@ bool Calibrator::connectToNode()
 
 int Calibrator::process(void)
 {
-    // START CRITICAL SECTION //
-    ////////////////////////////
+    // Synchronous pull from source
+    oat::Frame frame;
+    auto rc = frame_source_.pull(frame);
+    if (rc) { return rc; }
 
-    // Wait for sink to write to node
-    if (frame_source_.wait() == oat::NodeState::END)
-        return 1;
+    // Filter the frame and push
+    calibrate(frame);
 
-    // Clone the shared frame
-    frame_source_.copyTo(internal_frame_);
+    // Move to  shared frame
+    frame_sink_.push(std::move(frame));
 
-    // Tell sink it can continue
-    frame_source_.post();
-
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
-
-    calibrate(internal_frame_);
-
-    // Sink was not at END state
-    return 0;
+    return rc;
 }
 
 // TODO: Replace with common utility?

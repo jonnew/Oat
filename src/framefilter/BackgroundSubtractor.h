@@ -43,26 +43,25 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-
     // Is the background frame set?
-    bool background_set_ {false};
+    bool background_set_{false};
 
-    // The background frame(s)
-    cv::Mat background_frame_;
-    cv::Mat background_frame_f_;
+    // The background frames as cv::Mats
+    cv::Mat background_mat_;
+    cv::Mat background_mat_f_;
 
     // Background update rate
-    double alpha_ {0.0};
+    double alpha_{0.0};
 
     /**
      * Apply background subtraction.
      * @param frame unfiltered frame
      * @return filtered frame
      */
-    void filter(cv::Mat &frame) override;
+    void filter(oat::Frame &frame) override;
 
     // Set the background frame
-    void setBackgroundImage(const cv::Mat&);
+    void setBackgroundImage(const cv::Mat &mat);
 };
 
 }      /* namespace oat */

@@ -33,7 +33,7 @@ namespace oat {
 class FileReader : public FrameServer {
 public:
 
-    FileReader(const std::string &sink_name);
+    explicit FileReader(const std::string &sink_name);
 
 private:
     // Component Interface
@@ -46,16 +46,24 @@ private:
                             const config::OptionTable &config_table) override;
 
     // Video file
+    // TODO: This thing kinda sucks. Should use ffmpeg directly, e.g. to read
+    // mono frames without having to convert
     cv::VideoCapture file_reader_;
+
+    // Frame read clock
+    oat::Token::Seconds read_period_;
+    std::chrono::high_resolution_clock clock_;
+    std::chrono::high_resolution_clock::time_point tick_;
+
+    // Frames to skip between reads
+    int skip_{0};
+
+    // Video boundaries
+    std::vector<int> bounds_{{0, -1}};
 
     // Region of interest
     bool use_roi_{false};
     cv::Rect_<size_t> region_of_interest_;
-
-    // Frame generation clock
-    oat::Token::Seconds period_;
-    std::chrono::high_resolution_clock clock_;
-    std::chrono::high_resolution_clock::time_point tick_;
 };
 
 }       /* namespace oat */

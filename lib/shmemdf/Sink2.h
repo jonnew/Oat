@@ -31,7 +31,7 @@
 
 #include "../base/Globals.h"
 #include "../datatypes/Color.h"
-#include "../datatypes/Frame.h"
+#include "../datatypes/Frame2.h"
 #include "../datatypes/Token.h"
 #include "../utility/make_unique.h"
 
@@ -40,10 +40,10 @@
 
 namespace oat {
 
-template <typename T, typename Allocator = int>
-class Sink {
+template <typename T, typename PushT, typename Allocator>
+class SinkBase {
 public:
-    explicit Sink(const std::string &address)
+    explicit SinkBase(const std::string &address)
     : address_(address)
     , node_address_(address + "_node")
     , obj_address_(address + "_obj")
@@ -59,7 +59,6 @@ public:
             typeid(Node).name())();
 
         if (node_->sink_state != Node::State::undefined) {
-
             throw std::runtime_error("Requested Sink address, '" + address_
                                      + "', is not available.");
         }
@@ -67,7 +66,7 @@ public:
         node_->sink_state = Node::State::sink_present;
     }
 
-    ~Sink()
+    ~SinkBase()
     {
         node_->sink_state = Node::State::end;
 
@@ -83,8 +82,8 @@ public:
     }
 
     // Sinks cannot be copied
-    Sink&operator=(const Sink &) = delete;
-    Sink(const Sink& orig) = delete;
+    SinkBase&operator=(const SinkBase &) = delete;
+    SinkBase(const SinkBase& orig) = delete;
 
     // TODO: remove enable_if from return type and put in template parameters.
     // It is ugly as return type
@@ -106,6 +105,29 @@ public:
                                                     obj_address_.c_str(),
                                                     EXTRA + sizeof(T) + bytes);
             alloc_ = oat::make_unique<Allocator>(obj_shmem_.get_segment_manager());
+        }
+
+        return 0; // TODO: correct return type
+    }
+
+    template <typename... Targs, typename A = Allocator>
+    typename std::enable_if<!std::is_integral<A>::value, A>::type
+    reserve(size_t bytes, void **data)
+    {
+        // Make sure there is not another Sink using this shmem
+        if (node_->sink_state != Node::State::sink_present) {
+            throw std::runtime_error("Requested Sink address, '" + address_
+                                     + "', is not available.");
+        } else {
+
+            // Node is in undefined state, OK to destroy object memory and
+            // resize
+            bip::shared_memory_object::remove(obj_address_.c_str());
+            obj_shmem_ = bip::managed_shared_memory(bip::create_only,
+                                                    obj_address_.c_str(),
+                                                    EXTRA + sizeof(T) + bytes);
+            *data = obj_shmem_.allocate(bytes); 
+            data_handle_ = obj_shmem_.get_handle_from_address(*data); 
         }
 
         return 0; // TODO: correct return type
@@ -196,7 +218,7 @@ public:
 #endif
     }
 
-    void push(T &&t) 
+    void push(PushT &&t) 
     {
         assert (node_->sink_state == Node::State::sink_bound
                && "Sink must be bound before calling push()");
@@ -213,9 +235,32 @@ private:
     T *sh_object_{nullptr};
     std::string node_address_, obj_address_;
     bool wait_complete_{false};
+    bip::managed_shared_memory::handle_t data_handle_;
     std::unique_ptr<Allocator> alloc_{nullptr};
 };
 
-} // namespace oat
+// Tokens without heap usage
+template <typename T>
+using Sink = SinkBase<T, T, int>;
 
-#endif	/* OAT_Sink_H */
+// Frames
+using FrameSink
+    = SinkBase<oat::SharedFrame, oat::Frame, oat::SharedFrameAllocator>;
+
+// push() specializations
+template <>
+inline void FrameSink::push(oat::Frame &&t)
+{
+    assert(node_->sink_state == Node::State::sink_bound
+           && "Sink must be bound before calling push()");
+
+    wait();
+    sh_object_->setTime(t.tick(), t.template time<Token::Seconds>());
+    std::move(t.storage.begin(),
+              t.storage.end(),
+              std::back_inserter(sh_object_->storage));
+    post();
+}
+
+}      /* namespace oat */
+#endif /* OAT_Sink_H */

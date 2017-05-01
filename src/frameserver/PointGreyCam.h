@@ -41,7 +41,6 @@ class PointGreyCam : public FrameServer {
     using PixelMap
         = std::map<oat::PixelColor,
                    std::tuple<pg::PixelFormat, pg::PixelFormat, int>>;
-
 public:
     /**
      * @brief Serve frames from a Point Grey GigE camera.
@@ -61,25 +60,30 @@ private:
                             const config::OptionTable &config_table) override;
 
     // Timing stuff
-    bool enforce_fps_ {false};
-    double frames_per_second_ {30.0};
-    static constexpr uint64_t IEEE_1394_HZ = {8000};
-    uint64_t ieee_1394_cycle_index_ {0};
-    uint64_t ieee_1394_start_cycle_ {0};
-    bool ieee_1394_start_set_ {false};
-    int last_ieee_1394_sec_ {0};
-    bool first_frame_ {true};
-    bool acquisition_started_ {false};
-    bool use_trigger_ {false};
+    bool enforce_fps_{false};
+    double frames_per_second_{30.0};
+    static constexpr uint64_t IEEE_1394_HZ{8000};
+    uint64_t ieee_1394_cycle_index_{0};
+    uint64_t ieee_1394_start_cycle_{0};
+    bool ieee_1394_start_set_{false};
+    int last_ieee_1394_sec_{0};
+    bool first_frame_{true};
+    bool acquisition_started_{false};
+    bool use_trigger_{false};
 
     // Pixel color mapping
-    bool color_conversion_required_ {false};
-    oat::PixelColor pix_col_ {PIX_BGR};
-    enum Color { PG_FROM = 0, PG_TO, CV_TYPE }; // For readable pix_map_ indexing
+    bool color_conversion_required_{false};
+    oat::PixelColor pix_col_{PIX_BGR};
+    enum Color {
+        PG_FROM = 0,
+        PG_TO,
+        CV_TYPE
+    }; // For readable pix_map_ indexing
+
     static const PixelMap pix_map_;
 
     // Used to mark times between acquisitions
-    oat::Sample::Microseconds tick_, tock_;
+    oat::Token::Microseconds tick_, tock_;
 
     // PG camera can have a region of interest to crop incoming frames
     bool use_roi_{false};

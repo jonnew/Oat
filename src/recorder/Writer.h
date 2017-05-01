@@ -40,14 +40,6 @@ namespace po = boost::program_options;
 class Writer {
 
 public:
-    /**
-     * Abstract file writer for a single data source
-     */
-    Writer(const std::string &addr)
-    : addr_(addr)
-    {
-        // Nothing
-    }
 
     virtual ~Writer() { }
 
@@ -56,11 +48,16 @@ public:
                            const po::variables_map &vm) = 0;
 
     // Stuff for manipulating held source
-    virtual void touch(void) = 0;
     virtual oat::SourceState connect(void) = 0;
-    virtual oat::NodeState wait(void) = 0;
-    virtual void post(void) = 0;
+
+    /**
+     * @brief Get the sample period of the underlying source
+     * @return Sample period in seconds
+     */
     virtual double sample_period_sec(void) = 0;
+
+    //virtual oat::NodeState wait(void) = 0;
+    //virtual void post(void) = 0;
 
     /**
      * @brief Create and initialize recording file. Must be called
@@ -68,16 +65,16 @@ public:
      */
     virtual void initialize(const std::string &path) = 0;
 
-    /** 
-     * @brief Finish and close the recording file. Must be called 
+    /**
+     * @brief Finish and close the recording file. Must be called
      * before or during destruction.
      */
     virtual void close() = 0;
 
     /**
-     * Push a new sample onto the write queue
+     * Pull a new sample from the source and put into the write queue
      */
-    virtual void push(void) = 0;
+    virtual int pullToken(void) = 0;
 
     /**
      * @brief Flush internal sample buffer to file.
@@ -89,16 +86,15 @@ public:
      */
     virtual void deleteFile(void) = 0;
 
-    std::string addr(void) const { return addr_; }
+    /**
+     * @brief Address of held source.
+     * @return Human-readable shmem address of token source
+     */
+    virtual std::string addr(void) const = 0;
 
 protected:
-    static constexpr int BUFFER_SIZE {1000};
-    static const char OVERRUN_MSG[];
-
-    /**
-     * @breif Address of shmem for held source
-     */
-    std::string addr_;
+    static constexpr int buffer_size{1000};
+    static const char overrun_msg[];
 
     /**
      * @brief Allow file overwrite if true. If false append numerical index to

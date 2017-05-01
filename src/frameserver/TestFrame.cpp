@@ -72,8 +72,9 @@ void TestFrame::applyConfiguration(const po::variables_map &vm,
         vm, config_table, "num-frames", num_samples_, 1);
 
     // Frame rate
-    if (oat::config::getNumericValue(vm, config_table, "fps", frames_per_second_, 0.0))
-        calculateFramePeriod();
+    double fps;
+    if (oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0))
+        frame_period_ = Token::Seconds(1.0 / fps);
 }
 
 bool TestFrame::connectToNode() {
@@ -84,21 +85,21 @@ bool TestFrame::connectToNode() {
         throw (std::runtime_error("File \"" + file_name_ + "\" could not be read."));
 
     frame_sink_.reserve(mat.total() * mat.elemSize());
-    frame_sink_.bind(1 / frames_per_second_, mat.cols, mat.rows, color_);
+    frame_sink_.bind(frame_period_, mat.rows, mat.cols, color_);
 
     // Static image, never changes
     shared_frame_ = frame_sink_.retrieve();
     shared_frame_->copyFrom(mat);
 
     // Setup sample rate info on internal copy
-    shared_frame_->set_rate_hz(1.0 / frame_period_in_sec_.count());
+    shared_frame_->set_period(frame_period_);
 
     return true;
 }
 
 int TestFrame::process()
 {
-    if (shared_frame_->count() < num_samples_) {
+    if (shared_frame_->tick() < num_samples_) {
 
         // START CRITICAL SECTION //
         ////////////////////////////
@@ -115,20 +116,13 @@ int TestFrame::process()
         ////////////////////////////
         //  END CRITICAL SECTION  //
 
-        std::this_thread::sleep_for(frame_period_in_sec_ - (clock_.now() - tick_));
+        std::this_thread::sleep_for(frame_period_ - (clock_.now() - tick_));
         tick_ = clock_.now();
 
         return 0;
     }
 
     return 1;
-}
-
-void TestFrame::calculateFramePeriod()
-{
-    // Copy assignment provides automatic unit conversion
-    std::chrono::duration<double> frame_period {1.0 / frames_per_second_};
-    frame_period_in_sec_ = frame_period;
 }
 
 } /* namespace oat */

@@ -31,19 +31,17 @@
 #include <thread>
 
 #include "../../lib/base/Component.h"
-#include "../../lib/base/Configurable.h"
 
 namespace oat {
 namespace po = boost::program_options;
 
-class Recorder : public Component, public Configurable {
+class Recorder : public Component {
 
 public:
-    ~Recorder();
+    virtual ~Recorder();
 
     // Implement ControllableComponent interface
     oat::ComponentType type(void) const override { return oat::recorder; };
-    std::string name(void) const override { return name_; }
 
 private:
     // Implement ControllableComponent interface

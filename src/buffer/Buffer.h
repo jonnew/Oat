@@ -30,7 +30,7 @@
 
 #include "../../lib/base/Component.h"
 #include "../../lib/base/Configurable.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/shmemdf/Sink2.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace oat {
@@ -43,7 +43,8 @@ public:
      * @param source_address SOURCE node address
      * @param sink_address SINK node address
      */
-    Buffer(const std::string &source_address, const std::string &sink_address);
+    Buffer(const std::vector<std::string> &source_address,
+           const std::string &sink_address);
     virtual ~Buffer();
 
     // Component Interface
@@ -67,9 +68,6 @@ protected:
     // Sample rate ratio
     size_t down_sample_factor_{1};
 
-    // Source
-    const std::string source_address_;
-
     // Sink
     std::atomic<bool> sink_running_{true};
     std::thread sink_thread_;
@@ -86,7 +84,7 @@ private:
 
 #ifndef NDEBUG
 
-static constexpr size_t PROGRESS_BAR_WIDTH{80};
+static constexpr size_t prog_bar_width{80};
 
 template <typename T>
 void showBufferState(const T &buffer, size_t buffer_size)
@@ -94,8 +92,8 @@ void showBufferState(const T &buffer, size_t buffer_size)
 
     std::cout << "[";
 
-    int progress = (PROGRESS_BAR_WIDTH * buffer.read_available()) / buffer_size;
-    int remaining = PROGRESS_BAR_WIDTH - progress;
+    int progress = (prog_bar_width * buffer.read_available()) / buffer_size;
+    int remaining = prog_bar_width - progress;
 
     for (int i = 0; i < progress; ++i)
         std::cout << "=";

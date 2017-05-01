@@ -39,7 +39,6 @@ namespace oat {
 class CameraCalibrator : public Calibrator {
 
 public:
-
     using Clock = std::chrono::high_resolution_clock;
     using Milliseconds = std::chrono::milliseconds;
 
@@ -52,7 +51,7 @@ public:
      * @param frame_source_name imaging setup frame source name
      * @param model Camera model used to generate camera matrix and distortion coefficients.
      */
-    CameraCalibrator(const std::string &source_name);
+    explicit CameraCalibrator(const std::string &source_name);
 
     // Accept visitors
     void accept(CalibratorVisitor *visitor) override;
@@ -73,7 +72,6 @@ public:
     cv::Mat distortion_coefficients() const { return distortion_coefficients_; }
 
 protected:
-
     /**
      * Perform camera calibration routine.
      * @param frame current frame to use for running calibration
@@ -81,7 +79,6 @@ protected:
     void calibrate(cv::Mat& frame) override;
 
 private:
-
     // Configurable Interface
     po::options_description options() const override;
     void applyConfiguration(const po::variables_map &vm,

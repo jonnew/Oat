@@ -122,5 +122,6 @@ void TokenBuffer<T>::pop()
 
 // Explicit instantiations
 template class oat::TokenBuffer<oat::Pose>;
+template class oat::TokenBuffer<oat::Frame>;
 
 } /* namespace oat */

@@ -32,11 +32,11 @@ namespace oat {
 
 PositionDetector::PositionDetector(const std::string &frame_source_address,
                                    const std::string &pose_sink_address)
-: name_("posidet[" + frame_source_address + "->" + pose_sink_address + "]")
-, frame_source_(frame_source_address)
+: frame_source_(frame_source_address)
 , pose_sink_(pose_sink_address)
 {
-  // Nothing
+    // Set the component name for this instance
+    set_name(frame_source_address, pose_sink_address);
 }
 
 bool PositionDetector::connectToNode()
@@ -52,7 +52,7 @@ bool PositionDetector::connectToNode()
     }
 
     // Bind to sink node and create a shared position
-    pose_sink_.bind();
+    pose_sink_.bind(frame_source_.retrieve()->period());
 
     return true;
 }
@@ -60,13 +60,14 @@ bool PositionDetector::connectToNode()
 int PositionDetector::process()
 {
     // Synchronous pull from source
-    oat::SharedFrame *sh_frame;
-    auto rc = frame_source_.pull(&sh_frame);
+    oat::Frame frame;
+    auto rc = frame_source_.pull(frame);
     if (rc) { return rc; }
 
-    // Process the newly acquired frame and push result to sink
-    auto frame = oat::frame::getLocal(*sh_frame);
-    pose_sink_.push(detectPose(frame));
+    // Process the frame and push result to sink
+    auto pose =  detectPose(frame);
+    pose.setTime(frame.tick(), frame.time<Token::Seconds>());
+    pose_sink_.push(std::move(pose));
 
     return rc;
 }

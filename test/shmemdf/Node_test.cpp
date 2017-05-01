@@ -25,7 +25,7 @@
 // Global via extern in Globals.h
 namespace oat { volatile sig_atomic_t quit = 0; }
 
-SCENARIO("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]")
+SCENARIO("Nodes can accept up to Node::num_slots sources.", "[Node]")
 {
     GIVEN("A fresh Node")
     {
@@ -33,12 +33,12 @@ SCENARIO("Nodes can accept up to Node::NUM_SLOTS sources.", "[Node]")
         REQUIRE(node.source_ref_count() == 0);
         REQUIRE(node.sink_state == oat::Node::State::undefined);
 
-        WHEN ("Node::NUM_SLOTS+1 sources are added") {
+        WHEN ("Node::num_slots+1 sources are added") {
 
             THEN("The Node shall return normal exit codes until the 11th")
             {
-                for (size_t i = 0; i <= oat::Node::NUM_SLOTS; i++) {
-                    if (i < oat::Node::NUM_SLOTS)
+                for (size_t i = 0; i <= oat::Node::num_slots; i++) {
+                    if (i < oat::Node::num_slots)
                         REQUIRE (node.acquireSlot(i) == 0);
                     else
                         REQUIRE (node.acquireSlot(i) < 0);

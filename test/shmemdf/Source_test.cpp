@@ -36,7 +36,7 @@ const std::string node_addr = "test";
 
 SCENARIO("Up to 10 sources can connect a single Node.", "[Source]")
 {
-    GIVEN("Oat::Node:NUM_SLOTS sources and a bound sink with common node address")
+    GIVEN("Oat::Node:num_slots sources and a bound sink with common node address")
     {
         oat::Sink<int> sink(node_addr);
 
@@ -44,13 +44,13 @@ SCENARIO("Up to 10 sources can connect a single Node.", "[Source]")
         sink.bind();
         std::vector<std::unique_ptr<oat::Source<int>>> sources;
 
-        WHEN("Sources 0 to Oat::Node:NUM_SLOTS+1 connect a node")
+        WHEN("Sources 0 to Oat::Node:num_slots+1 connect a node")
         {
 
-            THEN("The first NUM_SLOTS connections will succeed and the "
-                 "NUM_SLOTS+1 connection will fail.")
+            THEN("The first num_slots connections will succeed and the "
+                 "num_slots+1 connection will fail.")
             {
-                for (size_t i = 0; i < oat::Node::NUM_SLOTS; i++) {
+                for (size_t i = 0; i < oat::Node::num_slots; i++) {
                     sources.emplace_back(oat::make_unique <oat::Source<int>>(node_addr));
                     REQUIRE_NOTHROW(sources.back()->connect());
                 }

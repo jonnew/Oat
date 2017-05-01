@@ -62,7 +62,7 @@ void RandomAccel::applyConfiguration(const po::variables_map &vm,
     else
         tick_ = clock_.now();
 
-    generateSamplePeriod(fs);
+    sample_period_ = samplePeriod(fs);
 
     // Number of samples
     oat::config::getNumericValue<uint64_t>(
@@ -185,7 +185,7 @@ void RandomAccel::simulateMotion()
 
 void RandomAccel::createStaticMatracies()
 {
-    double Ts = sample_period_in_sec_.count();
+    double Ts = sample_period_.count();
 
     // Zero out the the STM and input matricies
     std::fill(std::begin(state_transition_mat_.val),

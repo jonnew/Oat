@@ -59,6 +59,26 @@ struct Pixel {
         }
     }
 
+
+    /** 
+     * @brief Is the pixel color non-monochromatic?
+     * @param col Color to test
+     * @return True if non-monochromatic. False otherwise.
+     */
+    static inline bool multichomatic(const Color col)
+    {
+        switch (col) {
+            case Color::binary:
+            case Color::mono:
+                return false;
+            case Color::bgr:
+            case Color::hsv:
+                return true;
+            default:
+                throw std::runtime_error("Invalid color.");
+        }
+    }
+
     /** 
      * @brief Get byte-depth of a pixel color
      */

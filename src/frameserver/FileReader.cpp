@@ -31,9 +31,6 @@ namespace oat {
 FileReader::FileReader(const std::string &sink_address)
 : FrameServer(sink_address)
 {
-    // Initalize frame period
-    period_ = Token::Seconds( 1.0 / OAT_DEFAULT_FPS);
-
     // Initialize time
     tick_ = clock_.now();
 }
@@ -45,12 +42,18 @@ po::options_description FileReader::options() const
     local_opts.add_options()
         ("video-file,f", po::value<std::string>(),
          "Path to video file to serve frames from.")
-        ("fps,r", po::value<double>(),
-         "Frames to serve per second.")
+        ("rate,r", po::value<double>(),
+         "Rate, in FPS, to read the video. Defaults to as fast as possible.")
+        ("bounds,b", po::value<std::string>(),
+         "Two element array of ints, [first,last] which specify the "
+         "first and last frame to read in the file. last = -1 incates the file "
+         "should be read to the end. Defaults to the complete file. ")
+        ("skip,s", po::value<int>(),
+         "Number of frames to skip between reads. Defaults to 0.")
         ("roi", po::value<std::string>(),
          "Four element array of unsigned ints, [x0,y0,width,height],"
-         "defining a rectangular region of interest. Origin"
-         "is upper left corner. ROI must fit within acquired"
+         "defining a rectangular region of interest. Origin "
+         "is upper left corner. ROI must fit within acquired "
          "frame size. Defaults to full video size.")
         ;
 
@@ -65,10 +68,16 @@ void FileReader::applyConfiguration(const po::variables_map &vm,
     oat::config::getValue(vm, config_table, "video-file", file_name, true);
     file_reader_.open(file_name);
 
-    // Frame rate
-    double fps;
-    if (oat::config::getNumericValue(vm, config_table, "fps", fps, 0.0))
-        period_ = Token::Seconds(1.0 / fps);
+    // Read rate
+    double r;
+    if (oat::config::getNumericValue(vm, config_table, "rate", r, 0.0))
+        read_period_ = Token::Seconds(1.0 / r);
+
+    // Bounds
+    oat::config::getArray<int, 2>(vm, config_table, "bounds", bounds_);
+
+    // Skip number
+    oat::config::getNumericValue(vm, config_table, "skip", skip_, 0);
 
     // ROI
     std::vector<size_t> roi;
@@ -84,14 +93,24 @@ void FileReader::applyConfiguration(const po::variables_map &vm,
 
 bool FileReader::connectToNode()
 {
+    // Get sample frame
     cv::Mat example_frame;
     file_reader_ >> example_frame;
+
+    // (Re)set the start position
+    file_reader_.set(CV_CAP_PROP_POS_FRAMES, bounds_[0]);
 
     if (use_roi_)
         example_frame = example_frame(region_of_interest_);
 
+    // Get the native video frame rate
+    auto fps = file_reader_.get(CV_CAP_PROP_FPS);
+
     frame_sink_.reserve(example_frame.total() * example_frame.elemSize());
-    frame_sink_.bind(period_, example_frame.cols, example_frame.rows, color_);
+    frame_sink_.bind(Token::Seconds(static_cast<double>(skip_ + 1) / fps),
+                     example_frame.rows,
+                     example_frame.cols,
+                     color_);
 
     // Link shared_frame_ to shmem storage
     shared_frame_ = frame_sink_.retrieve();
@@ -102,10 +121,18 @@ bool FileReader::connectToNode()
 int FileReader::process()
 {
     cv::Mat mat;
-    if (!file_reader_.read(mat))
+    if (!file_reader_.read(mat)
+        || (bounds_[1] != -1
+            && file_reader_.get(CV_CAP_PROP_POS_FRAMES) > bounds_[1]))
         return 1;
 
-    if (use_roi_ )
+    // Skip frames if needed
+    if (skip_ > 0) {
+        auto pos = file_reader_.get(CV_CAP_PROP_POS_FRAMES);
+        file_reader_.set(CV_CAP_PROP_POS_FRAMES, pos + skip_);
+    }
+
+    if (use_roi_)
         mat = mat(region_of_interest_);
 
     // START CRITICAL SECTION //
@@ -114,7 +141,7 @@ int FileReader::process()
     // Wait for sources to read
     frame_sink_.wait();
 
-    shared_frame_->incrementCount();
+    shared_frame_->incrementCount(skip_);
     shared_frame_->copyFrom(mat);
 
     // Tell sources there is new data
@@ -123,11 +150,10 @@ int FileReader::process()
     ////////////////////////////
     //  END CRITICAL SECTION  //
 
-    std::this_thread::sleep_for(shared_frame_->period<Token::Seconds>() - (clock_.now() - tick_));
+    std::this_thread::sleep_for(read_period_ - (clock_.now() - tick_));
     tick_ = clock_.now();
 
     return 0;
 }
-
 
 } /* namespace oat */

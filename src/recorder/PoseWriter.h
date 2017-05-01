@@ -34,35 +34,38 @@ namespace blf = boost::lockfree;
 
 class PoseWriter : public Writer{
 public:
-    using Writer::Writer;
+
+    explicit PoseWriter(const std::string &addr)
+    : source_(addr)
+    {
+        // Nothing
+    }
 
     ~PoseWriter();
 
     void configure(const oat::config::OptionTable &t,
                    const po::variables_map &vm) override;
-    void touch() override { source_.touch(addr_); }
     oat::SourceState connect() override { return source_.connect(); }
     double sample_period_sec() override
     {
         return source_.retrieve()->period<Token::Seconds>().count();
     }
 
-    oat::NodeState wait() override { return source_.wait(); }
-    void post(void) override { source_.post(); }
+    int pullToken(void) override;
 
     void initialize(const std::string &path) override;
     void close(void) override;
     void write(void) override;
-    void push(void) override;
     void deleteFile() override
     {
         if (!path_.empty())
             std::remove(path_.c_str());
     }
+    std::string addr(void) const override { return source_.address; }
 
 private:
     using SPSCBuffer
-        = boost::lockfree::spsc_queue<oat::Pose, blf::capacity<BUFFER_SIZE>>;
+        = boost::lockfree::spsc_queue<oat::Pose, blf::capacity<buffer_size>>;
     /**
      * @brief Determines if indeterminate position data fields should be
      * written in spite of being indeterminate for sample parsing ease? e.g.
@@ -79,15 +82,15 @@ private:
 
     // JSON-specific
     void initializeJSON(const std::string &path);
-    char position_write_buffer[65536];
+    char pose_write_buffer_[65536] = {0};
     std::unique_ptr<rapidjson::FileWriteStream> file_stream_;
     rapidjson::PrettyWriter<rapidjson::FileWriteStream> json_writer_ {*file_stream_};
 
     // Binary-specific
     void initializeBinary(const std::string &path);
-    bool use_binary_ {false};
-    static constexpr int header_prefix_size_ {10};
-    static constexpr int shape_end_byte_ {10};
+    bool use_binary_{false};
+    static constexpr int header_prefix_size_{10};
+    static constexpr int shape_end_byte_{10};
 
     oat::Source<Pose> source_;
 };

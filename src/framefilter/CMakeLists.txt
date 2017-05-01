@@ -5,11 +5,11 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 set (oat-framefilt_SOURCE
      FrameFilter.cpp
      BackgroundSubtractor.cpp
-     BackgroundSubtractorMOG.cpp
-     ColorConvert.cpp
-     FrameMasker.cpp
-     Undistorter.cpp
-     Threshold.cpp
+     #BackgroundSubtractorMOG.cpp
+     #ColorConvert.cpp
+     #FrameMasker.cpp
+     #Undistorter.cpp
+     #Threshold.cpp
      main.cpp)
 
 # Target
@@ -17,6 +17,7 @@ add_executable (oat-framefilt ${oat-framefilt_SOURCE})
 target_link_libraries (oat-framefilt
                        oat-base
                        oat-utility
+                       oat-types
                        ${OatCommon_LIBS})
 add_dependencies (oat-framefilt cpptoml)
 

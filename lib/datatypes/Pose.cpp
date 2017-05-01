@@ -48,7 +48,7 @@ std::vector<char> packPose(const Pose &p)
     std::vector<char> pack;
     pack.reserve(oat::POSE_NPY_DTYPE_BYTES);
 
-    auto sc = p.count();
+    auto sc = p.tick();
     auto val = reinterpret_cast<char *>(&sc);
     pack.insert(pack.end(), val, val + sizeof(sc));
 
@@ -144,9 +144,9 @@ std::array<double, 3> Pose::toTaitBryan(const bool deg) const
 
 cv::Matx33d randRotation(std::array<double, 3> x)
 {
-    float theta = x[0] * M_PI * 2; // Rotation about the pole (Z).
-    float phi = x[1] * M_PI * 2;   // For direction of pole deflection.
-    float z = x[2] * 2.0;          // For magnitude of pole deflection.
+    const float theta = x[0] * M_PI * 2; // Rotation about the pole (Z).
+    const float phi = x[1] * M_PI * 2;   // For direction of pole deflection.
+    const float z = x[2] * 2.0;          // For magnitude of pole deflection.
 
     // Compute a vector V used for distributing points over the sphere via the
     // reflection I - V Transpose(V).  This formulation of V will guarantee
@@ -154,23 +154,22 @@ cv::Matx33d randRotation(std::array<double, 3> x)
     // will be uniform on the sphere.  Note that V has length sqrt(2) to
     // eliminate the 2 in the Householder matrix.
 
-    float r = std::sqrt(z);
-    float Vx = std::sin(phi) * r;
-    float Vy = std::cos(phi) * r;
-    float Vz = std::sqrt(2.0 - z);
+    const float r = std::sqrt(z);
+    const float Vx = std::sin(phi) * r;
+    const float Vy = std::cos(phi) * r;
+    const float Vz = std::sqrt(2.0 - z);
 
     // Compute the row vector S = Transpose(V) * R, where R is a simple
     // rotation by theta about the z-axis.  No need to compute Sz since it's
     // just Vz.
 
-    float st = std::sin(theta);
-    float ct = std::cos(theta);
-    float Sx = Vx * ct - Vy * st;
-    float Sy = Vx * st + Vy * ct;
+    const float st = std::sin(theta);
+    const float ct = std::cos(theta);
+    const float Sx = Vx * ct - Vy * st;
+    const float Sy = Vx * st + Vy * ct;
 
     // Construct the rotation matrix  ( V Transpose(V) - I ) R, which is
     // equivalent to V S - R.
-
     cv::Matx33d R;
     R(0, 0) = Vx * Sx - ct;
     R(0, 1) = Vx * Sy - st;

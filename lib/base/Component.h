@@ -29,13 +29,16 @@
 #include <boost/program_options.hpp>
 #include <zmq.hpp>
 
+#include "../utility/TOMLSanitize.h"
+
 #include "Globals.h"
 
 #define COMPONENT_HEARTBEAT_MS 300
 
 namespace oat {
 
-typedef std::map<std::string, std::string> CommandDescription;
+namespace po = boost::program_options;
+using CommandDescription =  std::map<std::string, std::string>;
 
 enum ComponentType : uint16_t {
     mock = 0,
@@ -55,11 +58,29 @@ enum ComponentType : uint16_t {
     COMP_N // Number of components
 };
 
+const std::map<ComponentType, std::string> ComponentString = {
+    {mock ,                "mock"},
+    {buffer,               "buffer"},
+    {calibrator,           "calibrate"},
+    {frameserver,          "frameserve"},
+    {framefilter,          "framefilt"},
+    {framedecorator,       "decorate"},
+    {positioncombiner,     "posecom"},
+    {positiondetector,     "posedet"},
+    {positionfilter,       "posefilt"},
+    {positiongenerator,    "posegen"},
+    {positionsocket,       "posesock"},
+    {recorder,             "recorder"},
+    {viewer,               "view"}
+};
+
 class Component {
 
 public:
 
     Component();
+    Component(const std::string &source_addr, const std::string &sink_addr);
+    Component(const std::vector<std::string> &source_addr, const std::string &sink_addr);
     virtual ~Component() { };
 
     /**
@@ -72,7 +93,7 @@ public:
      * component type and IO.
      * @return Name of component
      */
-    virtual std::string name(void) const = 0;
+    std::string name(void) const { return name_; }
 
     /**
      * @brief Get an enumerated type of component.
@@ -80,8 +101,19 @@ public:
      */
     virtual oat::ComponentType type(void) const = 0;
 
-protected:
+    /**
+     * @brief Append command line program options.
+     * @param opts Program option description to be specialized.
+     */
+    void appendOptions(po::options_description &opts);
 
+    /**
+     * @brief Configure program runtime parameters.
+     * @param vm Previously parsed program option value map.
+     */
+    void configure(const po::variables_map &vm);
+
+protected:
     /**
      * @brief Get unique, controllable ID for this component
      * @param n Number of characters to copy to id
@@ -128,6 +160,26 @@ protected:
      */
     virtual int process(void) = 0;
 
+    /**
+     * @brief Return the component's program options.
+     * @return Program options specilized for a particular concrete component
+     * type.
+     */
+    virtual po::options_description options(void) const = 0;
+
+    /**
+     * @brief Apply type-specific component configurations using a pre-parsed program option map.
+     * @param vm Pre-parse program option map.
+     * @param config_table Parsed TOML options table.
+     */
+    virtual void applyConfiguration(const po::variables_map &vm,
+                                    const config::OptionTable &config_table) = 0;
+
+    void set_name(const std::string &source_addr, const std::string &sink_addr);
+
+    void set_name(const std::vector<std::string> &source_addrs,
+                  const std::string &sink_addr);
+
 private:
     /**
      * @brief Start component controller on a separate thread.
@@ -136,9 +188,31 @@ private:
      */
     void runController(const char *endpoint = "ipc:///tmp/oatcomms.pipe");
 
+    /**
+     * @brief Produce complete component description.
+     * @return JSON string with with component name, type, unique ID, and
+     * command hash.
+     */
     std::string whoAmI();
 
+    /**
+     * @brief Preprocess received control action (e.g. figure out if we need to
+     * quit) and then forward the command to component(s) if appropriate.
+     * @param command Command to send.
+     * @return 1 if quit command received, 0 otherwise.
+     */
     int control(const std::string &command);
+
+    /**
+     * @brief Allowable program option keys
+     */
+    std::vector<std::string> config_keys_;
+
+    /** 
+     * @brief Human readable component name
+     */
+    std::string name_{""};
 };
+
 }      /* namespace oat */
 #endif /* OAT_COMPONENT_H */

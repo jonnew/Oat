@@ -8,7 +8,7 @@ ExternalProject_Add(
   PREFIX ${CMAKE_BINARY_DIR}/cpptoml
   GIT_REPOSITORY https://github.com/skystrife/cpptoml.git
   TIMEOUT 10
-  UPDATE_COMMAND "" #${GIT_EXECUTABLE} pull
+  UPDATE_COMMAND ${GIT_EXECUTABLE} pull
   CONFIGURE_COMMAND ""
   INSTALL_COMMAND ""
   CONFIGURE_COMMAND ""

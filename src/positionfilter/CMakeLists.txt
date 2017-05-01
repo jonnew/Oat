@@ -4,8 +4,8 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 # Create a SOURCES variable containing all required .cpp files:
 set (oat-posifilt_SOURCE
      PositionFilter.cpp
-     KalmanFilter2D.cpp
-     HomographyTransform2D.cpp
+     #KalmanFilter2D.cpp
+     #HomographyTransform2D.cpp
      RegionFilter2D.cpp main.cpp)
 
 # Target

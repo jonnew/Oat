@@ -104,6 +104,8 @@ void Recorder::applyConfiguration(const po::variables_map &vm,
                                   const config::OptionTable &config_table)
 {
     // Sources
+    std::vector<std::string> all_addrs;
+
     if (vm.count("frame-sources")) {
 
         auto addrs = vm["frame-sources"].as<
@@ -113,6 +115,8 @@ void Recorder::applyConfiguration(const po::variables_map &vm,
 
         for (auto &a : addrs)
             writers_.emplace_back(oat::make_unique<FrameWriter>(a));
+
+        all_addrs.insert(all_addrs.end(), addrs.begin(), addrs.end());
     }
 
     if (vm.count("position-sources")) {
@@ -124,14 +128,12 @@ void Recorder::applyConfiguration(const po::variables_map &vm,
 
         for (auto &a : addrs)
             writers_.emplace_back(oat::make_unique<PoseWriter>(a));
+
+        all_addrs.insert(all_addrs.end(), addrs.begin(), addrs.end());
     }
 
-    if (writers_.size() == 0)
-        throw std::runtime_error("At least one SOURCE must be provided.");
-    else if (writers_.size() > 1)
-        name_ = "recorder[" + writers_[0]->addr() + "..]";
-    else
-        name_ = "recorder[" + writers_[0]->addr()  + "]";
+    // Set component name
+    set_name(all_addrs, "*"); 
 
     // Base file name
     oat::config::getValue(vm, config_table, "filename", file_name_);
@@ -152,13 +154,9 @@ void Recorder::applyConfiguration(const po::variables_map &vm,
 
 bool Recorder::connectToNode()
 {
-    // Touch frame and position source nodes
-    for (auto &w : writers_)
-        w->touch();
-
     std::vector<double> all_ts;
     for (auto &w : writers_) {
-        if (w->connect() != SourceState::CONNECTED)
+        if (w->connect() != SourceState::connected)
             return false;
         all_ts.push_back(w->sample_period_sec());
     }
@@ -177,25 +175,13 @@ int Recorder::process()
 {
     bool source_eof = false;
 
-    // Read sources, push samples to write buffers
-    for (auto &w : writers_) {
-
-        // START CRITICAL SECTION //
-        ////////////////////////////
-        source_eof |= w->wait() == oat::NodeState::END;
-
-        if (record_on_ && !source_eof) {
-           w->push();
-           files_have_data_ = true;
-        }
-
-        w->post();
-        ////////////////////////////
-        //  END CRITICAL SECTION  //
-    }
+    // Pull token from upstream source and enqueue for writing
+    for (auto &w : writers_)
+        source_eof |= w->pullToken();
 
     // Notify the writer thread that there are new queued samples
     writer_condition_variable_.notify_one();
+    files_have_data_ = true; 
 
     return source_eof;
 }

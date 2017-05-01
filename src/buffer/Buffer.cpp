@@ -27,8 +27,8 @@ Buffer::Buffer(const std::string &source_address,
                const std::string &sink_address)
 : Component()
 , name_("buffer[" + source_address + "->" + sink_address + "]")
-, source_address_(source_address)
-, sink_address_(sink_address)
+, source_(source_address)
+, sink_(sink_address)
 {
     // Nothing
 }

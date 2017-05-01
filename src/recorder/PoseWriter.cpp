@@ -104,8 +104,8 @@ void PoseWriter::initializeJSON(const std::string &path)
 
     file_stream_.reset(new rapidjson::FileWriteStream(
             fd_,
-            position_write_buffer,
-            sizeof(position_write_buffer)));
+            pose_write_buffer_,
+            sizeof(pose_write_buffer_)));
     json_writer_.Reset(*file_stream_);
 
     // Main object, end this object before write flush in destructor
@@ -143,25 +143,29 @@ void PoseWriter::initializeJSON(const std::string &path)
 
 void PoseWriter::write() {
 
-    oat::Pose p;
-
-    while (buffer_.pop(p)) {
-
+    buffer_.consume_all([this](oat::Pose &p) { 
         if (use_binary_) {
             auto pack = oat::packPose(p);
             fwrite(pack.data(), 1, pack.size(), fd_);
         } else {
             oat::serializePose(p, json_writer_, !concise_file_);
         }
-
         completed_writes_++;
-    }
+    });
 }
 
-void PoseWriter::push() {
+int PoseWriter::pullToken()
+{
+    // Synchronous pull from source
+    std::unique_ptr<oat::Pose> pose;
+    auto rc = source_.pull(pose);
+    if (rc) { return rc; }
+    
+    // Move pose to buffer
+    if (!buffer_.push(std::move(*pose)))
+        throw std::runtime_error(overrun_msg);
 
-    if (!buffer_.push(source_.clone()))
-        throw std::runtime_error(OVERRUN_MSG);
+    return rc;
 }
 
 } /* namespace oat */

@@ -104,6 +104,75 @@ void Component::applyCommand(const std::string &)
     // Nothing
 }
 
+void Component::appendOptions(po::options_description &opts)
+{
+    // Get type-specific options
+    auto local_options = options();
+    opts.add(local_options);
+
+    // Default program options
+    opts.add_options()
+        ("config,c", po::value<std::vector<std::string>>()->multitoken(),
+        "Configuration file/key pair.\n e.g. 'config.toml mykey'")(
+        "control-endpoint", po::value<std::string>(),
+        "ZMQ style endpoint specifier designating runtime control port:"
+        "'<transport>://<host>:<port>'. For instance, 'tcp://*:5555' to "
+        "specify TCP communication on port 5555. Or, for interprocess "
+        "communication: '<transport>://<user-named-pipe>. For instance "
+        "'ipc:///tmp/test.pipe'. Internally, this is used to construct a "
+        "ZMQ REQ socket that that receives commands from oat-control. "
+        "Defaults to ipc:///tmp/oatcomms.pipe.");
+
+    // Create valid keys
+    for (auto &o : local_options.options())
+        config_keys_.push_back(o->long_name());
+}
+
+void Component::configure(const po::variables_map &vm)
+{
+    // Check for config file and entry correctness
+    auto config_table = oat::config::getConfigTable(vm);
+    oat::config::checkKeys(config_keys_, config_table);
+
+    // Concrete component uses configuration map to configure itself
+    applyConfiguration(vm, config_table);
+}
+
+void Component::set_name(const std::string &source_addr,
+                         const std::string &sink_addr)
+{
+    // Generate name using the io list 
+    assert(ComponentString.count(type()) && "Invalid component type.");
+    name_ = ComponentString.at(type()) + "["  + source_addr + "->" + sink_addr + "]";
+}
+
+void Component::set_name(const std::vector<std::string> &source_addrs,
+                         const std::string &sink_addr)
+{
+    // Generate name using the io list 
+    assert(ComponentString.count(type()) && "Invalid component type.");
+    assert(!source_addrs.empty() && "Source addresses should not be empty.");
+   
+    switch (source_addrs.size()) {
+        case 1:
+            name_ = ComponentString.at(type())
+                    + "[" + source_addrs[0] + "->"
+                    + sink_addr + "]";
+            break;
+        case 2:
+            name_ = ComponentString.at(type()) 
+                    + "[" + source_addrs[0]
+                    + "," + source_addrs[1] + "->" 
+                    + sink_addr + "]";
+            break;
+        default:
+            name_ = ComponentString.at(type()) 
+                    + "[" + source_addrs[0] + "...->"
+                    + sink_addr + "]";
+            break;
+    }
+}
+
 void Component::runController(const char *endpoint)
 {
     zmq::context_t ctx(1);

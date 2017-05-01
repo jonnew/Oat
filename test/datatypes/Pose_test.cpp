@@ -35,7 +35,7 @@ SCENARIO("Various representations of the identity pose orientation must be corre
 {
     GIVEN("Pose that is the identity quaternion.")
     {
-        oat::Pose p;
+        oat::Pose p(oat::Token::Seconds(1));
         p.set_orientation<std::array<double, 4>>({{0,0,0,1}});
 
         WHEN("Pose is converted to opencv Rodrigues axis.")
@@ -132,7 +132,7 @@ SCENARIO("Using opencv implementations as standard, various representations of a
 {
     GIVEN("A random opencv rotation matrix, R, and a pose p.")
     {
-        oat::Pose p;
+        oat::Pose p(oat::Token::Seconds(1));
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<> dis0(0, 1);
@@ -208,7 +208,7 @@ SCENARIO("Using Eigen implementations as standard, various representations of a 
 {
     GIVEN("The Pose, p, and Eigen Qauarterion, q, set to the same random value.")
     {
-        oat::Pose p;
+        oat::Pose p(oat::Token::Seconds(1));
         const auto rq = Eigen::Quaterniond::UnitRandom();
         p.set_orientation<Eigen::Quaterniond>(rq);
 
@@ -282,10 +282,9 @@ SCENARIO("Using Eigen implementations as standard, various representations of a 
     GIVEN("A Eigen rotation matrix, R, generated from Eigen quaternion, q, and "
           "a pose, p.")
     {
-        oat::Pose p;
+        oat::Pose p(oat::Token::Seconds(1));
         const auto u = Eigen::Quaterniond::UnitRandom();
         auto q = Eigen::Quaterniond::UnitRandom();
-        q = Eigen::Quaterniond::UnitRandom();
         const auto R = q.toRotationMatrix();
 
         WHEN("When R is used to set p and p is then converted to "

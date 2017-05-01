@@ -22,10 +22,9 @@
 namespace oat {
 
 PositionSocket::PositionSocket(const std::string &pose_source_addresss)
-: name_("posisock[" + pose_source_addresss + "->*]")
-, pose_source_(pose_source_addresss)
+: pose_source_(pose_source_addresss)
 {
-    // Nothing
+    set_name(pose_source_addresss, "*");
 }
 
 bool PositionSocket::connectToNode()
@@ -38,12 +37,12 @@ bool PositionSocket::connectToNode()
 int PositionSocket::process()
 {
     // Synchronous pull from source
-    oat::Pose pose;
+    std::unique_ptr<oat::Pose> pose;
     auto rc = pose_source_.pull(pose);
     if (rc) { return rc; }
 
     // Process the newly acquired pose
-    sendPosition(pose);
+    sendPosition(*pose);
 
     // Return sink state
     return rc;

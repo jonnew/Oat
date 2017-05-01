@@ -26,7 +26,6 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/base/Component.h"
-#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Pose.h"
 #include "../../lib/shmemdf/Sink2.h"
 #include "../../lib/shmemdf/Source.h"
@@ -35,7 +34,7 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class PositionSocket : public Component, public Configurable {
+class PositionSocket : public Component {
 
 public:
     /**
@@ -47,7 +46,6 @@ public:
 
     // Component Interface
     oat::ComponentType type(void) const override { return oat::positionsocket; };
-    std::string name(void) const override { return name_; }
 
 protected:
     /**
@@ -60,9 +58,6 @@ private:
     // Component Interface
     bool connectToNode(void) override;
     int process(void) override;
-
-    // Position Socket name
-    const std::string name_;
 
     // The position SOURCE
     oat::Source<oat::Pose> pose_source_;

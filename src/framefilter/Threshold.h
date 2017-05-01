@@ -29,7 +29,6 @@ namespace oat {
  */
 class Threshold : public FrameFilter {
 public:
-
     /**
      * A basic intensity thresholder.
      * @param frame_source_address raw frame source address
@@ -44,11 +43,15 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    void filter(cv::Mat &frame) override;
+    void filter(oat::SharedFrame &frame) override;
+    bool checkPixelColor(oat::Pixel::Color c) override
+    {
+        return (c == oat::Pixel::Color::mono);
+    }
 
     // Intensity threshold boundaries
-    int i_min_ {0};
-    int i_max_ {256};
+    int i_min_{0};
+    int i_max_{256};
 };
 
 }      /* namespace oat */

@@ -63,50 +63,45 @@ public:
     }
 
     /**
-     * @brief Increment sample count. 
-     * @note Only pure SINKs should increment the count, set the sample rates,
-     * periods, etc.
-     * @return Current sample count
-     */
-    uint64_t incrementCount()
-    {
-        time_ += period_;
-        return ++count_;
-    }
-
-    template <typename DurationT>
-    void setTime(uint64_t count, const DurationT time)
-    {
-        count_ = count;
-        time_ = std::chrono::duration_cast<Seconds>(time);
-    }
-
-    /**
      * @brief Increment sample count with time override. 
      * @note Only pure SINKs should increment the count, set the sample rates,
      * periods, etc.
+     * @param step Number of ticks to increment count
      * @param time Manual override of current sample time, e.g. from an
      * external clock reading.
      * @return Current sample count
      */
-    template <typename DurationT>
-    uint64_t incrementCount(const DurationT time)
+    template <typename DurationT = Token::Seconds>
+    uint64_t incrementCount(uint64_t step = 1, DurationT time = Token::Seconds(0))
     {
+        if (time == Token::Seconds(0))
+            time_ += period_;
+        else
+            time_ = std::chrono::duration_cast<Seconds>(time);
+
+        tick_ += step;
+        return tick_;
+    }
+
+    template <typename DurationT = Token::Seconds>
+    void setTime(uint64_t tick, const DurationT time)
+    {
+        tick_ = tick;
         time_ = std::chrono::duration_cast<Seconds>(time);
-        return ++count_;
     }
 
-    /**
-     * @brief Set the sample rate.
-     * @param value Token rate in Hz.
-     */
-    void set_rate_hz(const double value)
-    {
-        assert(value > 0.0);
-        period_ = Seconds(1.0 / value);
-    }
+    ///**
+    // * @brief Set the sample rate.
+    // * @param value Token rate in Hz.
+    // */
+    //void set_rate_hz(const double value)
+    //{
+    //    assert(value > 0.0);
+    //    period_ = Seconds(1.0 / value);
+    //}
 
-    uint64_t count() const { return count_; }
+
+    uint64_t tick() const { return tick_; }
 
     template <typename DurationT>
     DurationT time() const
@@ -114,21 +109,30 @@ public:
         return std::chrono::duration_cast<DurationT>(time_);
     }
 
-    template <typename DurationT>
+    template <typename DurationT = Token::Seconds>
     DurationT period() const
     {
         return std::chrono::duration_cast<DurationT>(period_);
     }
 
-    double rate_hz() const { return 1.0 / period_.count(); }
+    template <typename DurationT = Token::Seconds>
+    void set_period(const DurationT value) { period_ = value; }
 
-    void resample(const double resample_ratio) {
-        period_ /= resample_ratio;
-        count_ *= resample_ratio;
+    //double rate_hz() const { return 1.0 / period_.count(); }
+
+    void resample(const unsigned int l,
+                  const unsigned int m,
+                  const unsigned int o = 0)
+    {
+        period_ /= l;
+        period_ *= m;
+        tick_ *= l;
+        tick_ /= m;
+        tick_ += o;
     }
 
 private:
-    uint64_t count_{0};
+    uint64_t tick_{0};
     Seconds time_{0};
     Seconds period_{0.0};
 };

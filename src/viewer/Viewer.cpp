@@ -34,8 +34,7 @@ namespace oat {
 
 template <typename T>
 Viewer<T>::Viewer(const std::string &source_address)
-: name_("viewer[" + source_address + "]")
-, source_address_(source_address)
+: source_address_(source_address)
 , source_(source_address)
 {
     // Initialize GUI update timer
@@ -43,6 +42,9 @@ Viewer<T>::Viewer(const std::string &source_address)
 
     // Start display thread
     display_thread_ = std::thread( [this] {processAsync();} );
+
+    // Set component name  
+    set_name(source_address, "");
 }
 
 template <typename T>

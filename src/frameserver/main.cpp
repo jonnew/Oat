@@ -35,11 +35,11 @@
 #include "TestFrame.h"
 #include "FileReader.h"
 #include "WebCam.h"
-//#ifdef USE_FLYCAP
-// #include "FlyCapture2.h"
-// #include "PointGreyCam.h"
-// namespace pg = FlyCapture2;
-//#endif
+#ifdef USE_FLYCAP
+#include "FlyCapture2.h"
+#include "PointGreyCam.h"
+namespace pg = FlyCapture2;
+#endif
 
 #define REQ_POSITIONAL_ARGS 2
 
@@ -111,13 +111,13 @@ int main(int argc, char *argv[])
         // Required positional options
         po::options_description positional_opt_desc("POSITIONAL");
         positional_opt_desc.add_options()
-                ("type", po::value<std::string>(&type),
-                 "Type of frame filter to use.")
-                ("sink", po::value<std::string>(&sink),
-                 "User-supplied name of the memory segment to publish frames.")
-                ("type-args", po::value<std::vector<std::string> >(),
-                 "type-specifuc arguments.")
-                ;
+            ("type", po::value<std::string>(&type),
+             "Type of frame filter to use.")
+            ("sink", po::value<std::string>(&sink),
+             "User-supplied name of the memory segment to publish frames.")
+            ("type-args", po::value<std::vector<std::string> >(),
+             "type-specifuc arguments.")
+            ;
 
         // Required positional arguments and type-specific configuration
         po::positional_options_description positional_options;
@@ -153,56 +153,51 @@ int main(int argc, char *argv[])
 
             // Refine component type
             switch (type_hash[type]) {
-                case 'a':
-                {
+                case 'a': {
                     server = std::make_shared<oat::WebCam>(sink);
                     break;
                 }
-//                case 'b':
-//                {
-//
-//#ifndef USE_FLYCAP
-//                    std::cerr << oat::Error(
-//                        "Oat was not compiled with Point-Grey "
-//                        "flycapture support, so TYPE=gige is not available.\n");
-//                    return -1;
-//#else
-//                    server =
-//                        std::make_shared<oat::PointGreyCam<pg::GigECamera>>(sink);
-//#endif
-//                    break;
-//                }
-                case 'c':
-                {
+                case 'b': {
+
+#ifndef USE_FLYCAP
+                    std::cerr << oat::Error(
+                        "Oat was not compiled with Point-Grey "
+                        "flycapture support, so TYPE=gige is not available.\n");
+                    return -1;
+#else
+                    server
+                        = std::make_shared<oat::PointGreyCam<pg::GigECamera>>(
+                            sink);
+#endif
+                    break;
+                }
+                case 'c': {
                     server = std::make_shared<oat::FileReader>(sink);
                     break;
                 }
-                case 'd':
-                {
+                case 'd': {
                     server = std::make_shared<oat::TestFrame>(sink);
                     break;
                 }
-//                case 'e':
-//                {
-//
-//#ifndef USE_FLYCAP
-//                    std::cerr << oat::Error(
-//                        "Oat was not compiled with Point-Grey "
-//                        "flycapture support, so TYPE=usb is not available.\n");
-//                    return -1;
-//#else
-//                    server
-//                        = std::make_shared<oat::PointGreyCam<pg::Camera>>(sink);
-//#endif
-//                    break;
-//                }
-                default:
-                {
+                case 'e': {
+
+#ifndef USE_FLYCAP
+                    std::cerr << oat::Error(
+                        "Oat was not compiled with Point-Grey "
+                        "flycapture support, so TYPE=usb is not available.\n");
+                    return -1;
+#else
+                    server
+                        = std::make_shared<oat::PointGreyCam<pg::Camera>>(sink);
+#endif
+                    break;
+                }
+                default: {
                     printUsage(visible_options, "");
-                    std::cout << oat::Error("Invalid TYPE specified. Exiting.\n");
+                    std::cout
+                        << oat::Error("Invalid TYPE specified. Exiting.\n");
                     return -1;
                 }
-
             }
 
             // Specialize program options for the selected TYPE

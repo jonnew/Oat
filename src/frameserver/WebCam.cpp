@@ -107,10 +107,10 @@ bool WebCam::connectToNode()
 
     // Bind
     if (!variable_fps_) {
-        auto period = 1 / camera_->get(cv::CAP_PROP_FPS);
-        frame_sink_.bind(period, example_frame.cols, example_frame.rows, color_);
+        auto period = Token::Seconds(1 / camera_->get(cv::CAP_PROP_FPS));
+        frame_sink_.bind(period, example_frame.rows, example_frame.cols, color_);
     } else {
-        frame_sink_.bind(1.0 / OAT_DEFAULT_FPS, example_frame.cols, example_frame.rows, color_);
+        frame_sink_.bind(OAT_DEFAULT_FPS, example_frame.rows, example_frame.cols, color_);
     }
 
     // Link shared_frame_ to shmem storage
@@ -154,7 +154,7 @@ int WebCam::process()
         auto time_since_start
             = std::chrono::duration_cast<Token::Microseconds>(clock_.now()
                                                                - start_);
-        shared_frame_->incrementCount(time_since_start);
+        shared_frame_->incrementCount(1, time_since_start);
     }
 
     shared_frame_->copyFrom(mat);

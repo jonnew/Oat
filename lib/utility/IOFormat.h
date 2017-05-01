@@ -141,46 +141,46 @@ static int terminalStreamIsVT100(FILE * stream, int default_vt100=1, int default
     return isatty(fileno(stream)) ? 1 : 0;
 }
 
-#define HAZ_COLOR terminalStreamIsVT100(stdout)
+#define HAS_COLOR terminalStreamIsVT100(stdout)
 
 inline std::string bold(const std::string &message) {
 
-    return HAZ_COLOR ? BOLD(message) : message;
+    return HAS_COLOR ? BOLD(message) : message;
 }
 
 inline std::string sourceText(const std::string &source_name) {
 
-    return HAZ_COLOR ? FGRN(source_name) : source_name;
+    return HAS_COLOR ? FGRN(source_name) : source_name;
 }
 
 inline std::string sinkText(const std::string& sink_name) {
 
-    return HAZ_COLOR ? FRED(sink_name) : sink_name;
+    return HAS_COLOR ? FRED(sink_name) : sink_name;
 }
 
 inline std::string whoMessage(const std::string& source, const std::string& message) {
 
-    return (HAZ_COLOR ? BOLD(source) : source) + ": " + message;
+    return (HAS_COLOR ? BOLD(source) : source) + ": " + message;
 }
 
 inline std::string Warn(const std::string& message) {
 
-    return HAZ_COLOR ? FYEL(message) : message;
+    return HAS_COLOR ? FYEL(message) : message;
 }
 
 inline std::string Error(const std::string& message) {
 
-    return HAZ_COLOR ? FRED(message) : message;
+    return HAS_COLOR ? FRED(message) : message;
 }
 
 inline std::string dbgMessage(const std::string& message) {
 
-    return HAZ_COLOR ? FMAG(message) : message;
+    return HAS_COLOR ? FMAG(message) : message;
 }
 
 inline std::string whoWarn(const std::string& source, const std::string& message) {
 
-    return HAZ_COLOR ?
+    return HAS_COLOR ?
         BOLD(source) + ": " + FYEL(message)
         :
         source +  ": " + message;
@@ -188,7 +188,7 @@ inline std::string whoWarn(const std::string& source, const std::string& message
 
 inline std::string whoError(const std::string& source, const std::string& message) {
 
-    return HAZ_COLOR ?
+    return HAS_COLOR ?
         BOLD(source) + ": " + FRED(message)
         :
         source +  ": " + message;

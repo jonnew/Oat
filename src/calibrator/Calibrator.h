@@ -27,8 +27,7 @@
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/base/Component.h"
-#include "../../lib/base/Configurable.h"
-#include "../../lib/datatypes/Frame.h"
+#include "../../lib/datatypes/Frame2.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace po = boost::program_options;
@@ -39,7 +38,7 @@ namespace oat {
 class CalibratorVisitor;
 class OutputVisitor;
 
-class Calibrator : public Component, public Configurable {
+class Calibrator : public Component {
 
 public:
     /**
@@ -47,11 +46,10 @@ public:
      * All concrete calibrator types implement this ABC.
      * @param source_address Frame SOURCE address
      */
-    Calibrator(const std::string &source_address);
+    explicit Calibrator(const std::string &source_address);
     virtual ~Calibrator(){};
 
     // Component Interface
-    std::string name() const override { return name_; }
     ComponentType type() const override { return ComponentType::calibrator; }
 
     /**
@@ -78,28 +76,22 @@ public:
     }
 
 protected:
-    // List of allowed configuration options, including those
-    // specified only via config file
-    std::vector<std::string> config_keys_;
-
     /** Perform calibration routine.
      * @param frame frame to use for generating calibration parameters
      */
     virtual void calibrate(cv::Mat& frame) = 0;
 
-    std::string calibration_key_ {"calibration"};  //!< Key name of calibration table entry
-    std::string calibration_save_path_ {"."};      //!< Calibration parameter save path
+    std::string calibration_key_{"calibration"};  //!< Key name of calibration table entry
+    std::string calibration_save_path_{"."};      //!< Calibration parameter save path
 
 private:
     // Component Interface
     virtual bool connectToNode(void) override;
     int process(void) override;
 
-    std::string name_;                  //!< Calibrator name
-    oat::Frame internal_frame_;         //!< Current frame provided by SOURCE
-    std::string source_address_;        //!< Frame source address
-    oat::Source<Frame> frame_source_;   //!< The calibrator frame SOURCE
-
+    //oat::Frame internal_frame_;       //!< Current frame provided by source
+    std::string source_address_;      //!< Frame source address
+    oat::FrameSource frame_source_;   //!< The calibrator frame source
 };
 
 }      /* namespace oat */

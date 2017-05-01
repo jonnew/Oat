@@ -29,7 +29,6 @@
 #include <opencv2/core/mat.hpp>
 
 #include "../../lib/base/Component.h"
-#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Pose.h"
 #include "../../lib/shmemdf/Sink2.h"
 
@@ -37,7 +36,7 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class PoseGenerator : public Component, public Configurable {
+class PoseGenerator : public Component {
 
 public:
     /**
@@ -52,7 +51,6 @@ public:
 
     // Component Interface
     oat::ComponentType type(void) const override { return oat::positiongenerator; };
-    std::string name(void) const override { return name_; }
 
 protected:
     /**
@@ -63,9 +61,9 @@ protected:
     virtual bool generate(oat::Pose &pose, oat::Token::Seconds time, uint64_t it) = 0;
 
     // Test position sample clock
-    bool enforce_sample_clock_ {false};
+    bool enforce_sample_clock_{false};
     std::chrono::high_resolution_clock clock_;
-    std::chrono::duration<double> sample_period_in_sec_;
+    oat::Token::Seconds sample_period_;
     std::chrono::high_resolution_clock::time_point start_, tick_;
 
     // Periodic boundaries in which simulated particle resides.
@@ -92,9 +90,13 @@ protected:
 
     /**
      * Configure the sample period
-     * @param samples_per_second Sample period in seconds.
+     * @param samples_per_second Sample rate in Hz.
+     * @return Sample period
      */
-    virtual void generateSamplePeriod(const double samples_per_second);
+    inline Token::Seconds samplePeriod(const double samples_per_second)
+    {
+        return oat::Token::Seconds(1.0 / samples_per_second);
+    }
 
     /**
      * @brief Provide a copy of the base program options for derived

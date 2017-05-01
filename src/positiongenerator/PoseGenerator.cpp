@@ -31,10 +31,10 @@
 namespace oat {
 
 PoseGenerator::PoseGenerator(const std::string &pose_sink_address)
-: name_("posigen[*->" + pose_sink_address + "]")
-, pose_sink_(pose_sink_address)
+: pose_sink_(pose_sink_address)
 {
     tick_ = clock_.now();
+    set_name("*",pose_sink_address);
 }
 
 po::options_description PoseGenerator::baseOptions(void) const
@@ -66,11 +66,7 @@ po::options_description PoseGenerator::baseOptions(void) const
 bool PoseGenerator::connectToNode()
 {
     // Bind to sink sink node and create a shared position
-    pose_sink_.bind();
-    //shared_pose_ = pose_sink_.retrieve();
-
-    // Setup sample rate info on internal copy
-    //shared_pose_->set_rate_hz(1.0 / sample_period_in_sec_.count());
+    pose_sink_.bind(sample_period_);
 
     start_ = clock_.now();
     return true;
@@ -82,7 +78,7 @@ int PoseGenerator::process()
         = std::chrono::duration_cast<oat::Token::Microseconds>(clock_.now()
                                                                - start_);
     // Generate a pose and increment the sample count
-    oat::Pose pose;
+    oat::Pose pose(sample_period_);
     bool eof = generate(pose, time_since_start, it_++);
 
     // Synchronously push the position and enforce sample clock if needed
@@ -92,7 +88,7 @@ int PoseGenerator::process()
 
         if (enforce_sample_clock_) {
             auto tock = clock_.now();
-            std::this_thread::sleep_for(sample_period_in_sec_ - (tock - tick_));
+            std::this_thread::sleep_for(sample_period_ - (tock - tick_));
             tick_ = clock_.now();
         }
     }
@@ -100,10 +96,5 @@ int PoseGenerator::process()
     return eof;
 }
 
-void PoseGenerator::generateSamplePeriod(const double samples_per_second)
-{
-    oat::Token::Seconds period(1.0 / samples_per_second);
-    sample_period_in_sec_ = period; // Auto conversion
-}
 
 } /* namespace oat */

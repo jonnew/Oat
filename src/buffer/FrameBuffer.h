@@ -38,7 +38,7 @@ public:
      * @param source_address SOURCE node address
      * @param sink_address SINK node address
      */
-    FrameBuffer(const std::string &source_address,
+    FrameBuffer(const std::vector<std::string> &source_address,
                 const std::string &sink_address);
 
 protected:
@@ -50,13 +50,13 @@ private:
     void pop(void) override;
 
     // Source
-    oat::Source<oat::Frame> source_;
+    oat::Source<oat::SharedFrame> source_;
 
     // Buffer
     SPSCBuffer buffer_;
 
     // Sink
-    oat::Frame shared_frame_;
+    oat::SharedFrame shared_frame_;
     oat::Sink<oat::Frame> sink_;
 };
 

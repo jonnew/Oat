@@ -25,7 +25,7 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <opencv2/videoio.hpp>
 
-#include "../../lib/datatypes/Frame.h"
+#include "../../lib/datatypes/Frame2.h"
 #include "../../lib/utility/FileFormat.h"
 
 namespace oat {
@@ -34,43 +34,49 @@ namespace blf = boost::lockfree;
 class FrameWriter : public Writer {
 
 public:
-    using Writer::Writer;
+    explicit FrameWriter(const std::string &addr)
+    : source_(addr)
+    {
+        // Nothing
+    }
 
     void configure(const oat::config::OptionTable &t,
                    const po::variables_map &vm) override;
-    void touch() override { source_.touch(addr_); }
-    oat::SourceState connect() override;
+
+    oat::SourceState connect() override { return source_.connect(); };
+
     double sample_period_sec() override
     {
-        return source_.retrieve()->sample_period_sec();
+        return source_.retrieve()->period<Token::Seconds>().count();
     }
-    oat::NodeState wait() override { return source_.wait(); }
-    void post(void) override { source_.post(); }
+
+    //oat::NodeState wait() override { return source_.wait(); }
+    //void post(void) override { source_.post(); }
 
     void initialize(const std::string &path) override;
     void close(void) override;
     void write(void) override;
-    void push(void) override;
+    int pullToken(void) override;
     void deleteFile() override
     {
         if (!path_.empty())
             std::remove(path_.c_str());
     }
+    std::string addr(void) const override { return source_.address; }
 
 private:
     using SPSCBuffer
-        = boost::lockfree::spsc_queue<oat::Frame, blf::capacity<BUFFER_SIZE>>;
+        = boost::lockfree::spsc_queue<oat::Frame, blf::capacity<buffer_size>>;
     SPSCBuffer buffer_;
 
     // Video writer and required parameters
-    std::string path_ {""};
-    int fourcc_ {0}; // Default to uncompressed
-    double fps_;
-    oat::FrameParams frame_params_;
+    std::string path_{""};
+    int fourcc_{0}; // Default to uncompressed
+    // double fps_ {OAT_DEFAULT_FPS.count()};
     cv::VideoWriter video_writer_;
 
     // The held frame source
-    oat::Source<oat::Frame> source_;
+    oat::FrameSource source_;
 };
 
 }      /* namespace oat */

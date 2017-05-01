@@ -27,12 +27,13 @@
 #include <exception>
 #include <iostream>
 #include <memory>
-#include <sstream>
 #include <string>
-#include <thread>
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/thread/thread_time.hpp>
+
+#include "../datatypes/Frame2.h"
+#include "../utility/make_unique.h"
 
 #include "../base/Globals.h"
 
@@ -47,13 +48,13 @@ enum class SourceState {
     connected = 2,
 };
 
-template <typename T>
-class Source {
+template <typename T, typename ReturnT = T>
+class SourceBase {
 public:
-    explicit Source(const std::string &address)
-    : address_(address)
-    , node_address_(address + "_node")
-    , obj_address_(address + "_obj")
+    explicit SourceBase(const std::string &addr)
+    : address(addr)
+    , node_address_(addr + "_node")
+    , obj_address_(addr + "_obj")
     {
         // Make sure we did not connect already
         if (state_ != SourceState::virgin) {
@@ -73,7 +74,7 @@ public:
         if (node_->acquireSlot(slot_index_) < 0) {
             state_ = SourceState::err_nodefull;
             throw std::runtime_error(
-                "Node at " + address_
+                "Node at " + address
                 + "has reached capacity and this component cannot connect.");
         }
 
@@ -81,7 +82,7 @@ public:
         state_ = SourceState::touched;
     }
 
-    ~Source()
+    ~SourceBase()
     {
         // If we have touched the node, or there was a node type mismatch, we
         // must
@@ -192,7 +193,7 @@ public:
         return *sh_object_;
     }
 
-    int pull(T **t)
+    int pull(ReturnT **t)
     {
         assert(state_ == SourceState::connected
                && "Source must be connected before shared object is pulled.");
@@ -200,13 +201,13 @@ public:
         auto rc = wait();
         if (rc == oat::Node::State::end)
             return 1;
-        *t = sh_object_;
+        *t = sh_object_; // No copy; dereferencing (**t) _is_ *sh_object
         post();
 
         return 0;
     }
 
-    int pull(T &clone) 
+    int pull(std::unique_ptr<ReturnT> &clone)
     {
         assert(state_ == SourceState::connected
                && "Source must be connected before shared object is pulled.");
@@ -214,7 +215,21 @@ public:
         auto rc = wait();
         if (rc == oat::Node::State::end)
             return 1;
-        clone = *sh_object_;
+        clone = oat::make_unique<T>(*sh_object_); // Copy construct.
+        post();
+
+        return 0;
+    }
+
+    int pull(ReturnT &clone)
+    {
+        assert(state_ == SourceState::connected
+               && "Source must be connected before shared object is pulled.");
+
+        auto rc = wait();
+        if (rc == oat::Node::State::end)
+            return 1;
+        clone = *sh_object_; // Copy assign
         post();
 
         return 0;
@@ -225,16 +240,40 @@ public:
         return (node_ == nullptr ? 0 : node_->write_number());
     }
 
+    const std::string address;
 protected:
 
     shmem_t node_shmem_, obj_shmem_;
     T *sh_object_{nullptr};
     Node *node_{nullptr};
-    std::string address_, node_address_, obj_address_;
+    const std::string node_address_, obj_address_;
     size_t slot_index_{0};
     std::atomic<SourceState> state_{SourceState::virgin};
     bool wait_complete_{false};
 };
+
+// For types that do not use heap allocation
+template<typename T>
+using Source = SourceBase<T, T>;
+
+// For Frame
+using FrameSource = SourceBase<oat::SharedFrame, oat::Frame>;
+
+// FrameSource pull specilizations
+template <>
+inline int FrameSource::pull(oat::Frame &clone)
+{
+    assert(state_ == SourceState::connected
+           && "Source must be connected before shared object is pulled.");
+
+    auto rc = wait();
+    if (rc == oat::Node::State::end)
+        return 1;
+    clone = oat::copyFrame<oat::SharedFrame, oat::Frame>(*sh_object_); // Copy assign
+    post();
+
+    return 0;
+}
 
 }      /* namespace oat */
 #endif /* OAT_SOURCE_H */

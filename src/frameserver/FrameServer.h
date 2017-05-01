@@ -34,7 +34,7 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class FrameServer : public Component, public Configurable {
+class FrameServer : public Component {
 public:
     /**
      * @brief Abstract frame server
@@ -45,14 +45,13 @@ public:
 
     // Component Interface
     oat::ComponentType type(void) const override { return oat::frameserver; };
-    std::string name(void) const override { return name_; }
 
 protected:
     // Component name
     std::string name_;
 
     // Frame sink
-    oat::Sink<oat::SharedFrame, oat::SharedFrameAllocator> frame_sink_;
+    oat::FrameSink frame_sink_;
 
     // Currently acquired, shared frame
     oat::SharedFrame *shared_frame_{nullptr};

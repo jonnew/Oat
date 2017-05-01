@@ -32,12 +32,12 @@
 #include "../../lib/utility/ProgramOptions.h"
 
 #include "BackgroundSubtractor.h"
-#include "BackgroundSubtractorMOG.h"
-#include "ColorConvert.h"
-#include "FrameFilter.h"
-#include "FrameMasker.h"
-#include "Undistorter.h"
-#include "Threshold.h"
+//#include "BackgroundSubtractorMOG.h"
+//#include "ColorConvert.h"
+//#include "FrameFilter.h"
+//#include "FrameMasker.h"
+//#include "Undistorter.h"
+//#include "Threshold.h"
 
 #define REQ_POSITIONAL_ARGS 3
 
@@ -165,31 +165,31 @@ int main(int argc, char *argv[]) {
                     filter = std::make_shared<oat::BackgroundSubtractor>(source, sink);
                     break;
                 }
-                case 'b':
-                {
-                    filter = std::make_shared<oat::FrameMasker>(source, sink);
-                    break;
-                }
-                case 'c':
-                {
-                    filter = std::make_shared<oat::BackgroundSubtractorMOG>(source, sink);
-                    break;
-                }
-                case 'd':
-                {
-                    filter = std::make_shared<oat::Undistorter>(source, sink);
-                    break;
-                }
-                case 'e':
-                {
-                    filter = std::make_shared<oat::ColorConvert>(source, sink);
-                    break;
-                }
-                case 'f':
-                {
-                    filter = std::make_shared<oat::Threshold>(source, sink);
-                    break;
-                }
+                //case 'b':
+                //{
+                //    filter = std::make_shared<oat::FrameMasker>(source, sink);
+                //    break;
+                //}
+                //case 'c':
+                //{
+                //    filter = std::make_shared<oat::BackgroundSubtractorMOG>(source, sink);
+                //    break;
+                //}
+                //case 'd':
+                //{
+                //    filter = std::make_shared<oat::Undistorter>(source, sink);
+                //    break;
+                //}
+                //case 'e':
+                //{
+                //    filter = std::make_shared<oat::ColorConvert>(source, sink);
+                //    break;
+                //}
+                //case 'f':
+                //{
+                //    filter = std::make_shared<oat::Threshold>(source, sink);
+                //    break;
+                //}
                 default:
                 {
                     printUsage(visible_options, "");

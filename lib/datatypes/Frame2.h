@@ -22,6 +22,9 @@
 
 #include "OatConfig.h" // EIGEN3_FOUND
 
+#include <algorithm>
+#include <iterator>
+
 #include "Pixel.h"
 #include "Token.h"
 
@@ -33,7 +36,7 @@
 //#include <Eigen/Core>
 //#endif
 
-#define OAT_DEFAULT_FPS 1000000
+#define OAT_DEFAULT_FPS Token::Seconds(1000000)
 
 namespace oat {
 
@@ -44,87 +47,68 @@ template <typename DataContainer,
           typename Allocator = std::allocator<Pixel::ValueT>>
 class FrameBase : public Token {
 
+    // This class's frame type
+    using FrameBaseT = FrameBase<DataContainer, Allocator>;
+
+    // Friends with other versions of this class template's move and copy functions
+    template <typename From, typename To>
+    friend To moveFrame(From &from);
+
+    template <typename From, typename To>
+    friend To copyFrame(const From &from);
+
+    friend bool compare(const FrameBaseT &f0, const FrameBaseT &f1);
+
 public:
-    FrameBase(const double ts_sec,
-              const size_t cols,
-              const size_t rows,
-              const Pixel::Color color,
-              const Allocator &alloc = Allocator())
-    : Token(ts_sec)
-    , storage(cols * rows * Pixel::depth(color), 0, alloc)
-    , rows_(rows)
-    , cols_(cols)
-    , color_(color)
+    FrameBase()
     {
-        // Nothing
+        // Default
     }
 
     FrameBase(const Seconds ts,
-              const size_t cols,
               const size_t rows,
+              const size_t cols,
               const Pixel::Color color,
               const Allocator &alloc = Allocator())
     : Token(ts)
-    , storage(cols * rows * Pixel::depth(color), 0, alloc)
+    , storage(alloc)
     , rows_(rows)
     , cols_(cols)
     , color_(color)
     {
-        // Nothing
+        // No initialization, no cost
+        storage.reserve(cols * rows * Pixel::depth(color));
     }
-
-    FrameBase(const FrameBase &f) = default;
-    FrameBase &operator=(const FrameBase &f) = default;
-
-    // TODO: Moves do not work through shmem because allocator is stateful.
-    // get_allocator assumes stateless allocator, I think. This is why boost ipc
-    // has its own vector implementation
-    FrameBase(FrameBase &&f) //= default;
-    : Token(std::move(f.period<Token::Seconds>()))
-    , storage(std::move(f.storage)) //f.storage.get_allocator())
-    , rows_(std::move(f.rows_))
-    , cols_(std::move(f.cols_))
-    , color_(std::move(f.color_))
-    {
-        // Nothing
-        std::cout << "Use frame move ctor." << std::endl;
-    }
-    
-    FrameBase &operator=(FrameBase &&rhs) = default;
-    //{
-    //    Token::operator=(rhs);
-    //    cols_ = std::move(rhs.cols_);
-    //    rows_ = std::move(f.rows_);
-    //    //storage = std::move(f.storage), f.storage.get_allocator())
-    //    return *this;
-    //}
 
     // Data getter/setters
     // TODO: Eigen::Matrix return type overloads
 
-    cv::Mat to() const
+    cv::Mat mat() const
     {
         return cv::Mat(
             rows_, cols_, Pixel::cvType(color_), (void *)storage.data());
     }
 
-    cv::Mat clone() const
+    cv::Mat cloneMat() const
     {
         return cv::Mat(rows_, cols_, Pixel::cvType(color_), (void *)storage.data())
             .clone();
     }
 
-    void copyFrom(const cv::Mat &m)
+    void copyFrom(const cv::Mat &mat)
     {
         // Check size
-        assert(m.rows == static_cast<int>(rows_) && m.cols == static_cast<int>(cols_)
+        assert(mat.rows == static_cast<int>(rows_) && mat.cols == static_cast<int>(cols_)
                && "cv::Mat and frame must be the same size.");
 
-        // TODO: Check pixel type
-        assert(m.elemSize() == Pixel::bytes(color_)
+        assert(mat.elemSize() == Pixel::bytes(color_)
                && "cv::Mat and frame must have same element size.");
 
-        memcpy(storage.data(), m.data, bytes());
+        // TODO: Check pixel type
+
+        // Copy data, make sure that storage is correct size
+        storage.resize(cols_ * rows_ * Pixel::depth(color_));
+        memcpy((void *)storage.data(), (void *)mat.data, bytes());
     }
 
     /**
@@ -155,21 +139,30 @@ public:
         return rows_ * cols_ * Pixel::bytes(color_);
     }
 
+
+    static bool compare(const FrameBaseT &f0, const FrameBaseT &f1)
+    {
+        return (f0.cols_ == f1.cols_ 
+                && f0.rows_ == f1.rows_
+                && f0.color_ == f1.color_);
+    }
+
+
     /**
      * @brief Potentially shmem-allocated vector containing frame data.
-     * @warning User can mess with underlying data and make it conflict with
-     * the cols-, rows-, depth-determined storage requirements of the Frame.
+     * @warning This class can mess with underlying data and make it conflict
+     * with the cols-, rows-, depth-determined storage requirements of the
+     * Frame. 
      */
     DataContainer storage;
 
 private:
     // Frame size
-    const size_t rows_{0};
-    const size_t cols_{0};
+    size_t rows_{0};
+    size_t cols_{0};
 
     // Pixel element color
-    const Pixel::Color color_;
-
+    Pixel::Color color_;
 
 //#ifdef EIGEN3_FOUND
 //    Eigen::Map<Matrix4f, RowMajor, Stride<3, 1>> red(cvT.data);
@@ -178,27 +171,46 @@ private:
 //#endif
 };
 
+// TODO: Ensure that the copy returned by these functions is eleted
+template <typename From, typename To>
+static To moveFrame(From &from)
+{
+    To to(from.template period<Token::Seconds>(),
+          from.rows(),
+          from.cols(),
+          from.color());
+    to.setTime(from.tick(), from.template time<Token::Seconds>());
+    std::move(from.storage.begin(),
+              from.storage.end(),
+              std::back_inserter(to.storage));
+    return to;
+}
+
+template <typename From, typename To>
+static To copyFrame(const From &from)
+{
+    To to(from.template period<Token::Seconds>(),
+          from.rows(),
+          from.cols(),
+          from.color());
+    to.setTime(from.tick(), from.template time<Token::Seconds>());
+    std::copy(from.storage.begin(),
+              from.storage.end(),
+              std::back_inserter(to.storage));
+    return to;
+}
+
+// Frame - local use
 using StorageT = std::vector<Pixel::ValueT>;
 using Frame = FrameBase<StorageT>;
 
+// SharedFrame - shmem use
 namespace bip = boost::interprocess;
 using SharedFrameAllocator
     = bip::allocator<oat::Pixel::ValueT,
                      bip::managed_shared_memory::segment_manager>;
-
 using SharedStorageT = bip::vector<Pixel::ValueT, SharedFrameAllocator>;
 using SharedFrame = FrameBase<SharedStorageT, SharedFrameAllocator>;
 
-// TODO: This has an extra copy on the return since std::vectors are copy by
-// value
-namespace frame {
-
-    inline Frame getLocal(const SharedFrame &from)
-    {
-        Frame to(from.period<Token::Seconds>(), from.cols(), from.rows(), from.color());
-        memcpy((void *)to.storage.data(), (void *)from.storage.data(), to.bytes());
-        return to;
-    }
-}      /* namespace frame */
 }      /* namespace oat */
 #endif /* OAT_FRAME_H */

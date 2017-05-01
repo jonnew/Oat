@@ -184,14 +184,14 @@ public:
 
     static constexpr size_t region_max_char{10};
 
-    Pose()
-    : Token()
+    explicit Pose(Token::Seconds period)
+    : Token(period)
     {
         // Nothing
     }
 
-    Pose(Token::Seconds time, const DistanceUnit u, const DOF p_dof, const DOF o_dof)
-    : Token(time)
+    Pose(Token::Seconds period, const DistanceUnit u, const DOF p_dof, const DOF o_dof)
+    : Token(period)
     , unit_of_length(u)
     , position_dof(p_dof)
     , orientation_dof(o_dof)
@@ -486,7 +486,7 @@ void serializePose(const Pose &p, Writer &writer, bool verbose)
 
     // Sample number
     writer.String("tick");
-    writer.Uint64(p.count());
+    writer.Uint64(p.tick());
 
     writer.String("usec");
     writer.Uint64(p.time<Token::Microseconds>().count());

@@ -49,21 +49,6 @@ void FrameWriter::configure(const oat::config::OptionTable &t,
     }
 }
 
-oat::SourceState FrameWriter::connect()
-{
-    auto rc = source_.connect();
-
-    // Get frame meta data to format video writer
-    frame_params_ = source_.parameters();
-    fps_ = source_.retrieve()->sample().rate_hz();
-    if (fps_ == 0) {
-        std::cerr << oat::Warn("Unknown sample rate for source " + addr());
-        fps_ = 20;
-    }
-
-    return rc;
-}
-
 void FrameWriter::close()
 {
     video_writer_.release();
@@ -79,23 +64,36 @@ void FrameWriter::initialize(const std::string &path)
     if (!oat::checkWritePermission(path_))
         throw std::runtime_error("Write permission denied for " + path_);
 
-    auto sz = cv::Size(frame_params_.cols, frame_params_.rows);
+    auto frame = source_.retrieve();
+    auto sz = cv::Size(frame->cols(), frame->rows());
 
-    if (!video_writer_.open(path_, fourcc_, fps_, sz))
+    if (!video_writer_.open(path_,
+                            fourcc_,
+                            1.0 / frame->period<Token::Seconds>().count(),
+                            sz,
+                            Pixel::multichomatic(frame->color()))) {
         throw std::runtime_error("Could open video writer.");
+    }
 }
 
 void FrameWriter::write(void)
 {
-    cv::Mat mat;
-    while (buffer_.pop(mat))
-        video_writer_.write(mat);
+    buffer_.consume_all(
+        [this](oat::Frame &f) { video_writer_.write(f.mat()); });
 }
 
-void FrameWriter::push(void )
+int FrameWriter::pullToken(void )
 {
-    if (!buffer_.push(source_.clone()))
-        throw std::runtime_error(OVERRUN_MSG);
+    // Synchronous pull from source
+    oat::Frame frame;
+    auto rc = source_.pull(frame);
+    if (rc) { return rc; }
+
+    // Move frame to buffer
+    if (!buffer_.push(std::move(frame))) 
+        throw std::runtime_error(overrun_msg);
+
+    return rc; 
 }
 
 } /* namespace oat */

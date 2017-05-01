@@ -38,6 +38,9 @@
 namespace oat {
 
 class Node {
+
+    using Semaphore = bip::interprocess_semaphore;
+
 public:
     enum class State {
         undefined = 0,
@@ -47,7 +50,10 @@ public:
         end,
     };
 
-    using semaphore = bip::interprocess_semaphore;
+    /** 
+     * @brief Number of sources that can attach 
+     */
+    static constexpr size_t num_slots{10};
 
     Node()
     {
@@ -55,13 +61,14 @@ public:
         source_read_required_.reset();
     }
 
-    // Nodes are movable
-    Node(Node &&) = default;
-    Node &operator=(Node &&) = default;
-
     // Nodes are not copyable
     Node(const Node &) = delete;
     Node &operator=(const Node &) = delete;
+
+    // Nodes are movable
+    // TODO: These are default deleted since the copy ctor is deleted!
+    Node(Node &&node) = default;
+    Node &operator=(Node &&) = default;
 
     // SINK state
     std::atomic<State> sink_state{State::undefined}; //!< SINK state
@@ -99,8 +106,6 @@ public:
         return reads_finished;
     }
 
-    // SOURCE slots
-    static constexpr size_t NUM_SLOTS {10};
 
     int acquireSlot(size_t &index)
     {
@@ -142,13 +147,13 @@ public:
     // write _always_ occurs before read. By starting at 1, the writer is not
     // blocked by an initial wait. Readers to do not post to the write_barrier
     // until a write occurs.
-    semaphore write_barrier {1};
+    Semaphore write_barrier{1};
 
     // This method is required because an std::array of semaphores requires
-    // each semaphore to be copy-constructed to initialized the array.
+    // each Semaphore to be copy-constructed to initialized the array.
     // Because of their nature, semaphores are NOT copy constructable, so
     // this approach does not work.
-    semaphore &read_barrier(size_t index)
+    Semaphore &read_barrier(size_t index)
     {
         if (!source_slots_[index])
             throw std::runtime_error("Requested index refers to a SOURCE "
@@ -172,15 +177,15 @@ public:
 
 private:
 
-    std::bitset<NUM_SLOTS> source_slots_;
-    std::bitset<NUM_SLOTS> source_read_required_;
+    std::bitset<num_slots> source_slots_;
+    std::bitset<num_slots> source_read_required_;
 
     size_t source_ref_count_{0}; //!< Number of SOURCES sharing this node
     uint64_t write_number_{0}; //!< Number of writes to shmem that have been facilited by this node
 
-    // Unfortunately, must manually maintain the number of rbx_'s to match NUM_SLOTS
-    semaphore mutex_{1}; //!< mutex governing exclusive acces to the read_barrier_
-    semaphore rb0_{0}, rb1_{0}, rb2_{0}, rb3_{0}, rb4_{0},
+    // Unfortunately, must manually maintain the number of rbx_'s to match num_slots
+    Semaphore mutex_{1}; //!< mutex governing exclusive acces to the read_barrier_
+    Semaphore rb0_{0}, rb1_{0}, rb2_{0}, rb3_{0}, rb4_{0},
               rb5_{0}, rb6_{0}, rb7_{0}, rb8_{0}, rb9_{0};
 };
 

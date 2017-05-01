@@ -29,11 +29,12 @@
 #include <opencv2/core.hpp>
 #include <zmq.hpp>
 
+#include "../../lib/datatypes/Pose.h"
+#include "../../lib/datatypes/Frame2.h"
+#include "../../lib/utility/make_unique.h"
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "Buffer.h"
-#include "FrameBuffer.h"
 #include "TokenBuffer.h"
 
 #define REQ_POSITIONAL_ARGS 3
@@ -41,6 +42,7 @@
 namespace po = boost::program_options;
 
 using PoseBuffer = oat::TokenBuffer<oat::Pose>;
+using FrameBuffer = oat::TokenBuffer<oat::SharedFrame, oat::SharedFrameAllocator>;
 
 const char usage_type[] =
     "TYPE\n"
@@ -48,15 +50,15 @@ const char usage_type[] =
     "  pose: Pose buffer";
 
 const char usage_io[] =
-    "SOURCE:\n"
-    "  User-supplied name of the memory segment to receive tokens "
-    "from (e.g. input).\n\n"
+    "SOURCES:\n"
+    "  User-supplied name of the memory segment(s) to receive tokens "
+    "from (e.g. input1, input2).\n\n"
     "SINK:\n"
     "  User-supplied name of the memory segment to publish tokens "
-    "to (e.g. output)."                                           ;
+    "to (e.g. output).";
 
 const char purpose[] =
-    "Place tokens from SOURCE into a FIFO. Publish tokens in "
+    "Fold tokens from SOURCES into a FIFO and resample. Publish tokens in "
     "FIFO to SINK.";
 
 void printUsage(const po::options_description &options, const std::string &type)
@@ -64,7 +66,7 @@ void printUsage(const po::options_description &options, const std::string &type)
     if (type.empty()) {
         std::cout <<
         "Usage: buffer [INFO]\n"
-        "   or: buffer TYPE SOURCE SINK [CONFIGURATION]\n";
+        "   or: buffer TYPE SOURCES SINK [CONFIGURATION]\n";
 
         std::cout << purpose << "\n";
         std::cout << options << "\n";
@@ -74,7 +76,7 @@ void printUsage(const po::options_description &options, const std::string &type)
     } else {
         std::cout <<
         "Usage: buffer " << type << " [INFO]\n"
-        "   or: buffer " << type << " SOURCE SINK [CONFIGURATION]\n";
+        "   or: buffer " << type << " SOURCES SINK [CONFIGURATION]\n";
 
         std::cout << purpose << "\n\n";
         std::cout << usage_io << "\n";
@@ -86,8 +88,7 @@ int main(int argc, char *argv[])
 {
     // Results of command line input
     std::string type;
-    std::string source;
-    std::string sink;
+    std::vector<std::string> addrs;
 
     // Component specializations
     std::unordered_map<std::string, char> type_hash;
@@ -96,7 +97,7 @@ int main(int argc, char *argv[])
 
     // The component itself
     std::string comp_name = "buffer";
-    std::shared_ptr<oat::Buffer> buffer;
+    std::unique_ptr<oat::Component> buffer;
 
     // Program options
     po::options_description visible_options;
@@ -106,21 +107,19 @@ int main(int argc, char *argv[])
         // Required positional options
         po::options_description positional_opt_desc("POSITIONAL");
         positional_opt_desc.add_options()
-                ("type", po::value<std::string>(&type),
-                 "Type of token stored by the buffer.")
-                ("source", po::value<std::string>(&source),
-                 "The name of the SOURCE that supplies tokens to buffer.")
-                ("sink", po::value<std::string>(&sink),
-                 "The name of the SINK to which buffered tokens are published.")
-                ("type-args", po::value<std::vector<std::string> >(),
-                 "type-specifuc arguments.")
-                ;
+            ("type", po::value<std::string>(&type),
+             "Type of token stored by the buffer.")
+            ("sources-and-sink", po::value< std::vector<std::string> >(&addrs),
+            "The names the SOURCES supplying the token streams to be "
+            "buffered and interleaved followed by the name of the SINK to which "
+            "the combined token stream will be published.")
+            ("type-args", po::value<std::vector<std::string> >(),
+             "type-specifuc arguments.")
+            ;
 
         // Required positional arguments and type-specific configuration
         po::positional_options_description positional_options;
         positional_options.add("type", 1);
-        positional_options.add("source", 1);
-        positional_options.add("sink", 1);
         positional_options.add("type-args", -1);
 
         // Visible options for help message
@@ -145,20 +144,49 @@ int main(int argc, char *argv[])
         // Check options for errors and bind options to local variables
         po::notify(option_map);
 
+        // Collect unrecognized options. If the first positional option was
+        // specific (type), delete it.
+        auto special_opt =
+            po::collect_unrecognized(parsed_opt.options, po::include_positional);
+
+        if (option_map.count("type"))
+            special_opt.erase(special_opt.begin(), special_opt.begin() + 1);
+
+        // Reparse special_opt to get souces and sink.
+        po::positional_options_description detail_pos_opts;
+        detail_pos_opts.add("sources-and-sink", -1);
+
+        po::store(po::command_line_parser(special_opt)
+                 .options(options)
+                 .positional(detail_pos_opts)
+                 .run(), option_map);
+
+        // Check options for errors and bind options to local variables
+        po::notify(option_map);
+
+        // Check IO arguments
+        bool io_error {false};
+        std::string io_error_msg;
+        io_error = addrs.size() < (REQ_POSITIONAL_ARGS - 1);
+
         // If a TYPE was provided, then specialize the filter and corresponding
         // program options
-        if (option_map.count("type")) {
+        if (option_map.count("type") && !io_error) {
+
+            // Pull out sources and sink
+            std::vector<std::string> sources(addrs.begin(), addrs.end() - 1);
+            auto sink = addrs.back();
 
             // Refine component type
             switch (type_hash[type]) {
                 case 'a':
                 {
-                    buffer = std::make_shared<oat::FrameBuffer>(source, sink);
+                    buffer = oat::make_unique<FrameBuffer>(sources, addrs.back());
                     break;
                 }
                 case 'b':
                 {
-                    buffer = std::make_shared<PoseBuffer>(source, sink);
+                    buffer = oat::make_unique<PoseBuffer>(sources, addrs.back());
                     break;
                 }
                 default:
@@ -188,21 +216,13 @@ int main(int argc, char *argv[])
         }
 
         // Check IO arguments
-        bool io_error {false};
-        std::string io_error_msg;
-
         if (!option_map.count("type")) {
             io_error_msg += "A TYPE must be specified.\n";
             io_error = true;
         }
 
-        if (!option_map.count("source")) {
-            io_error_msg += "A SOURCE must be specified.\n";
-            io_error = true;
-        }
-
-        if (!option_map.count("sink")) {
-            io_error_msg += "A SINK must be specified.\n";
+        if (!option_map.count("sources-and-sink") || addrs.size() < 2) {
+            io_error_msg += "At least one SOURCE and a single SINK must be specified.\n";
             io_error = true;
         }
 
@@ -215,8 +235,9 @@ int main(int argc, char *argv[])
         // Get specialized component name
         comp_name = buffer->name();
 
+        // TODO: This segfaults when one source and no sink is given!!!
         // Reparse specialized component options
-        auto special_opt =
+        special_opt =
             po::collect_unrecognized(parsed_opt.options, po::include_positional);
         special_opt.erase(special_opt.begin(),special_opt.begin() + REQ_POSITIONAL_ARGS);
 
@@ -227,13 +248,14 @@ int main(int argc, char *argv[])
 
         buffer->configure(option_map);
 
-        // Tell user
-        std::cout << oat::whoMessage(comp_name,
-                "Listening to source " + oat::sourceText(source) + ".\n")
-                << oat::whoMessage(comp_name,
-                "Steaming to sink " + oat::sinkText(sink) + ".\n")
-                << oat::whoMessage(comp_name,
-                "Press CTRL+C to exit.\n");
+        std::cout << oat::whoMessage(buffer->name(), "Listening to sources ");
+        for (auto s : addrs)
+            std::cout << oat::sourceText(s) << " ";
+        std::cout << ".\n"
+                  << oat::whoMessage(buffer->name(),
+                     "Steaming to sink " + oat::sinkText(addrs.back()) + ".\n")
+                  << oat::whoMessage(buffer->name(),
+                     "Press CTRL+C to exit.\n");
 
         // Infinite loop until ctrl-c or end of stream signal
         buffer->run();

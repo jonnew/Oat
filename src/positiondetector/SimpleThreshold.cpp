@@ -130,7 +130,7 @@ oat::Pose SimpleThreshold::detectPose(oat::Frame &frame)
                    Pose::DOF::Two,
                    Pose::DOF::Zero);
 
-    cv::Mat mat = frame.to();
+    cv::Mat mat = frame.mat();
     cv::Mat thresh_mat;
     cv::inRange(mat,
                 t_min_,

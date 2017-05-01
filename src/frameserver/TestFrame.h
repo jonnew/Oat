@@ -46,17 +46,13 @@ private:
     void applyConfiguration(const po::variables_map &vm,
                             const config::OptionTable &config_table) override;
 
-    // Image file
+    // Path to image to use as test frame
     std::string file_name_;
 
-    // Frame speed
-    double frames_per_second_{30.0};
-    void calculateFramePeriod(void);
-
-    // frame generation clock
+    // Frame generation clock
     std::chrono::high_resolution_clock clock_;
-    std::chrono::duration<double> frame_period_in_sec_;
     std::chrono::high_resolution_clock::time_point tick_;
+    Token::Seconds frame_period_{1.0 / 30.0};
 
     // Sample count specification
     uint64_t num_samples_{std::numeric_limits<int64_t>::max()};

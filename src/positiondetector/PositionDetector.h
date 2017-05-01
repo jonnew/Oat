@@ -27,7 +27,6 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/base/Component.h"
-#include "../../lib/base/Configurable.h"
 #include "../../lib/datatypes/Frame2.h"
 #include "../../lib/datatypes/Pose.h"
 #include "../../lib/shmemdf/Sink2.h"
@@ -37,7 +36,7 @@ namespace po = boost::program_options;
 
 namespace oat {
 
-class PositionDetector : public Component, public Configurable {
+class PositionDetector : public Component {
 public:
     /**
      * Abstract object pose detector.
@@ -51,7 +50,6 @@ public:
 
     // Component Interface
     oat::ComponentType type(void) const override { return oat::positiondetector; };
-    std::string name(void) const override { return name_; }
 
 protected:
     /**
@@ -82,7 +80,7 @@ private:
     int process(void) override;
 
     // Frame source
-    oat::Source<oat::SharedFrame> frame_source_;
+    oat::FrameSource frame_source_;
 
     // Pose sink
     oat::Sink<oat::Pose> pose_sink_;

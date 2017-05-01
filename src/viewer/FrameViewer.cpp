@@ -140,7 +140,7 @@ void FrameViewer::display(const oat::SharedFrame &frame)
     if (frame.rows() == 0 || frame.cols() == 0)
         return;
 
-    cv::Mat matRef = frame.to();
+    cv::Mat matRef = frame.mat();
 
     if (min_max_defined_)
         cv::LUT(matRef, lut_, matRef);

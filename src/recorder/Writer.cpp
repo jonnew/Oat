@@ -21,7 +21,7 @@
 
 namespace oat {
 
-const char Writer::OVERRUN_MSG[]
+constexpr char Writer::overrun_msg[]
     = "Record buffer overrun. You can:\n"
       " - decrease the sample rate\n"
       " - use multiple recorders on multiple disks\n"

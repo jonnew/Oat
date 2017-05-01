@@ -22,20 +22,16 @@
 
 #include <string>
 
-#include "../../lib/base/Configurable.h"
 #include "../../lib/base/Component.h"
-#include "../../lib/datatypes/Frame.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/datatypes/Frame2.h"
+#include "../../lib/shmemdf/Sink2.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace oat {
 
-class ColorConvert; // Forward decl.
 namespace po = boost::program_options;
 
-class FrameFilter : public Component, public Configurable {
-
-friend ColorConvert;
+class FrameFilter : public Component {
 
 public:
     /**
@@ -44,24 +40,28 @@ public:
      * @param frame_source_address Frame SOURCE node address
      * @param frame_sink_address Frame SINK node address
      */
-    explicit FrameFilter(const std::string &frame_source_address,
-                         const std::string &frame_sink_address);
+    FrameFilter(const std::string &frame_source_address,
+                const std::string &frame_sink_address);
     virtual ~FrameFilter() { };
 
     // Component Interface
     oat::ComponentType type(void) const override { return oat::framefilter; };
-    std::string name(void) const override { return name_; }
 
 protected:
-    // Filter name
-    const std::string name_;
-
     /**
      * Perform frame filtering. Override to implement filtering operation in
      * derived classes.
      * @param frame to be filtered
      */
-    virtual void filter(cv::Mat &frame) = 0;
+    virtual void filter(oat::Frame &frame) = 0;
+
+    // Check frame pixel color type
+    // Default to not caring about color
+    virtual bool checkPixelColor(oat::Pixel::Color c)
+    {
+        (void)c; // Override unused variable warning
+        return true;
+    }
 
 private:
     // Component Interface
@@ -69,15 +69,11 @@ private:
     int process(void) override;
 
     // Frame source
-    const std::string frame_source_address_;
-    oat::Source<oat::Frame> frame_source_;
+    std::unique_ptr<oat::SharedFrame> sh_frame_;
+    oat::FrameSource frame_source_;
 
     // Frame sink
-    const std::string frame_sink_address_;
-    oat::Sink<oat::Frame> frame_sink_;
-
-    // Currently acquired, shared frame
-    oat::Frame shared_frame_;
+    oat::FrameSink frame_sink_;
 };
 
 }      /* namespace oat */

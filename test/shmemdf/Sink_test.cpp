@@ -155,8 +155,7 @@ SCENARIO("Sink<SharedFrameHeader> must bind() before waiting, posting, or "
 {
     GIVEN("A single Sink<SharedFrameHeader>")
     {
-        oat::Sink<oat::SharedFrame, oat::SharedFrameAllocator> sink(node_addr);
-        oat::SharedFrame * frame;
+        oat::FrameSink sink(node_addr);
         size_t cols{100};
         size_t rows{100};
         oat::Pixel::Color color{oat::Pixel::Color::bgr};
@@ -186,10 +185,9 @@ SCENARIO("Sink<SharedFrameHeader> must bind() before waiting, posting, or "
         {
             THEN("The the sink shall not throw")
             {
-                oat::Frame f(10, rows, cols, color);
-                sink.reserve(f.bytes());
-                sink.bind(10, rows, cols, color);
-                REQUIRE_NOTHROW([&]() { frame = sink.retrieve(); }());
+                sink.reserve(cols * rows * oat::Pixel::bytes(color));
+                sink.bind(oat::Token::Seconds(10), rows, cols, color);
+                REQUIRE_NOTHROW([&]() { auto frame = sink.retrieve(); }());
             }
         }
     }

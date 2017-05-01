@@ -97,6 +97,7 @@ protected:
     virtual void applyConfiguration(const po::variables_map &vm,
                                     const config::OptionTable &config_table) = 0;
 
+private:
     // Allowable configuration keys
     std::vector<std::string> config_keys_;
 };

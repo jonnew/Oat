@@ -65,7 +65,7 @@ void Threshold::applyConfiguration(const po::variables_map &vm,
     }
 }
 
-void Threshold::filter(cv::Mat &frame)
+void Threshold::filter(oat::SharedFrame &frame) 
 {
     cv::Mat grey_frame, thresh_frame;
 

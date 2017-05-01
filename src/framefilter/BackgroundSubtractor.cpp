@@ -65,10 +65,10 @@ void BackgroundSubtractor::applyConfiguration(const po::variables_map &vm,
     std::string img_path;
     if (oat::config::getValue(vm, config_table, "background", img_path)) {
 
-        // TODO: Color image only?
-        background_frame_ = cv::imread(img_path, CV_LOAD_IMAGE_COLOR);
+        // TODO: Pixel color type check?
+        background_mat_ = cv::imread(img_path, CV_LOAD_IMAGE_COLOR);
 
-        if (background_frame_.data == nullptr)
+        if (background_mat_.data == nullptr)
             throw (std::runtime_error("File \"" + img_path + "\" could not be read."));
 
         background_set_ = true;
@@ -78,26 +78,29 @@ void BackgroundSubtractor::applyConfiguration(const po::variables_map &vm,
     oat::config::getNumericValue<double>(vm, config_table, "adaptation-coeff", alpha_, 0.0, 1.0);
 }
 
-void BackgroundSubtractor::setBackgroundImage(const cv::Mat &frame)
+void BackgroundSubtractor::setBackgroundImage(const cv::Mat &mat)
 {
-    background_frame_ = frame.clone();
-    frame.clone().convertTo(background_frame_f_, CV_32F);
+    background_mat_ = mat.clone();
+    mat.clone().convertTo(background_mat_f_, CV_32F);
     background_set_ = true;
 }
 
-void BackgroundSubtractor::filter(cv::Mat &frame)
+void BackgroundSubtractor::filter(oat::Frame &frame)
 {
+    // This contains frame's data
+    cv::Mat mat = frame.mat();
+
     // First image is always used as the default background image if one is
     // not provided in a configuration file
     if (!background_set_)
-        setBackgroundImage(frame);
+        setBackgroundImage(mat);
 
     if (alpha_ > 0.0) {
-       cv::accumulateWeighted(frame, background_frame_f_, alpha_);
-       background_frame_f_.convertTo(background_frame_, CV_8U);
+       cv::accumulateWeighted(mat, background_mat_f_, alpha_);
+       background_mat_f_.convertTo(background_mat_, CV_8U);
     }
 
-    frame = frame - background_frame_;
+    mat -= background_mat_;
 }
 
 } /* namespace oat */

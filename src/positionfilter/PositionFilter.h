@@ -25,16 +25,15 @@
 #include <boost/program_options.hpp>
 
 #include "../../lib/base/Component.h"
-#include "../../lib/base/Configurable.h"
-#include "../../lib/datatypes/Position2D.h"
-#include "../../lib/shmemdf/Sink.h"
+#include "../../lib/datatypes/Pose.h"
+#include "../../lib/shmemdf/Sink2.h"
 #include "../../lib/shmemdf/Source.h"
 
 namespace po = boost::program_options;
 
 namespace oat {
 
-class PositionFilter : public Component, public Configurable {
+class PositionFilter : public Component {
 
 public:
     /**
@@ -49,7 +48,6 @@ public:
 
     // Component Interface
     oat::ComponentType type(void) const override { return oat::positionfilter; };
-    std::string name(void) const override { return name_; }
 
 protected:
     /**
@@ -60,25 +58,21 @@ protected:
 
 private:
     // Component Interface
-    virtual bool connectToNode(void) override;
+    bool connectToNode(void) override;
     int process(void) override;
 
-    // Filter name
-    const std::string name_;
-
-    // Un-filtered position SOURCE
-    const std::string position_source_address_;
-    oat::Source<oat::Position2D> position_source_;
+    // Un-filtered pose SOURCE and filter pose sink
+    oat::Source<oat::Pose> position_source_;
+    oat::Sink<oat::Pose> position_sink_;
 
     // Internal, mutable position
-    oat::Position2D internal_position_ {"internal"};
+    //oat::Position2D internal_position_ {"internal"};
 
     // Shared position
-    oat::Position2D * shared_position_;
+    //oat::Position2D * shared_position_;
 
     // Position SINK
-    const std::string position_sink_address_;
-    oat::Sink<oat::Position2D> position_sink_;
+    //const std::string position_sink_address_;
 };
 
 }      /* namespace oat */

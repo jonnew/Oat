@@ -30,8 +30,8 @@
 #include "../../lib/utility/IOFormat.h"
 #include "../../lib/utility/ProgramOptions.h"
 
-#include "HomographyTransform2D.h"
-#include "KalmanFilter2D.h"
+//#include "HomographyTransform2D.h"
+//#include "KalmanFilter2D.h"
 #include "RegionFilter2D.h"
 
 #define REQ_POSITIONAL_ARGS 3
@@ -149,16 +149,16 @@ int main(int argc, char *argv[])
 
             // Refine component type
             switch (type_hash[type]) {
-                case 'a':
-                {
-                    filter = std::make_shared<oat::KalmanFilter2D>(source, sink);
-                    break;
-                }
-                case 'b':
-                {
-                    filter = std::make_shared<oat::HomographyTransform2D>(source, sink);
-                    break;
-                }
+                //case 'a':
+                //{
+                //    filter = std::make_shared<oat::KalmanFilter2D>(source, sink);
+                //    break;
+                //}
+                //case 'b':
+                //{
+                //    filter = std::make_shared<oat::HomographyTransform2D>(source, sink);
+                //    break;
+                //}
                 case 'c':
                 {
                     filter = std::make_shared<oat::RegionFilter2D>(source, sink);
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
             }
 
             // Specialize program options for the selected TYPE
-            po::options_description detail_opts {"CONFIGURATION"};
+            po::options_description detail_opts{"CONFIGURATION"};
             filter->appendOptions(detail_opts);
             visible_options.add(detail_opts);
             options.add(detail_opts);

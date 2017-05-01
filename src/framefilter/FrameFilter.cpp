@@ -1,5 +1,3 @@
-//******************************************************************************
-//* File:   FrameFilter.cpp
 //* Author: Jon Newman <jpnewman snail mit dot edu>
 //*
 //* Copyright (c) Jon Newman (jpnewman snail mit dot edu)
@@ -26,75 +24,49 @@ namespace oat {
 FrameFilter::FrameFilter(const std::string &frame_source_address,
                          const std::string &frame_sink_address)
 : Component()
-, Configurable()
-, name_("framefilt[" + frame_source_address + "->" + frame_sink_address + "]")
-, frame_source_address_(frame_source_address)
-, frame_sink_address_(frame_sink_address)
+, frame_source_(frame_source_address)
+, frame_sink_(frame_sink_address)
 {
-    // Nothing
+    // Set the component name for this instance
+    set_name(frame_source_address, frame_sink_address);
 }
 
 bool FrameFilter::connectToNode()
 {
-    // Establish our a slot in the source node
-    frame_source_.touch(frame_source_address_);
-
     // Wait for synchronous start with sink when it binds its node
-    if (frame_source_.connect() != SourceState::CONNECTED)
+    if (frame_source_.connect() != SourceState::connected)
         return false;
 
-    // Get frame meta data to format sink
-    auto frame_parameters = frame_source_.parameters();
+    // Get temp frame
+    auto tmp = frame_source_.retrieve();
+
+    // Check the pixel color
+    if (!checkPixelColor(tmp->color())) {
+        throw std::runtime_error(
+            "Source provides frames with incompatible pixel type.");
+    }
 
     // Bind to sink node and create a shared frame
-    frame_sink_.bind(frame_sink_address_, frame_parameters.bytes);
-    shared_frame_ = frame_sink_.retrieve(frame_parameters.rows,
-                                         frame_parameters.cols,
-                                         frame_parameters.type,
-                                         frame_parameters.color);
+    frame_sink_.reserve(tmp->bytes());
+    frame_sink_.bind(tmp->period(), tmp->rows(), tmp->cols(), tmp->color());
 
     return true;
 }
 
 int FrameFilter::process()
 {
-    oat::Frame internal_frame;
+    // Synchronous pull from source
+    oat::Frame frame;
+    auto rc = frame_source_.pull(frame);
+    if (rc) { return rc; }
 
-    // START CRITICAL SECTION //
-    ////////////////////////////
+    // Filter the frame and push
+    filter(frame);
 
-    // Wait for sink to write to node
-    if (frame_source_.wait() == oat::NodeState::END)
-        return 1;
+    // Move to  shared frame
+    frame_sink_.push(std::move(frame));
 
-    // Clone the shared frame
-    frame_source_.copyTo(internal_frame);
-
-    // Tell sink it can continue
-    frame_source_.post();
-
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
-
-    // Filter internal frame
-    filter(internal_frame);
-
-    // START CRITICAL SECTION //
-    ////////////////////////////
-
-    // Wait for sources to read
-    frame_sink_.wait();
-
-    internal_frame.copyTo(shared_frame_);
-
-    // Tell sources there is new data
-    frame_sink_.post();
-
-    ////////////////////////////
-    //  END CRITICAL SECTION  //
-
-    // Sink was not at END state
-    return 0;
+    return rc;
 }
 
 } /* namespace oat */
