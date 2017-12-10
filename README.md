@@ -9,6 +9,7 @@ in the context of experimental neuroscience, but can be used in any
 circumstance that requires real-time object tracking.
 
 [![Build Status](https://travis-ci.org/jonnew/Oat.png?branch=master)](https://travis-ci.org/jonnew/Oat)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1098579.svg)](https://doi.org/10.5281/zenodo.1098579)
 
 __Contributors__
 
