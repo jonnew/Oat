@@ -1,5 +1,8 @@
 language: cpp
 
+dist: trusty
+sudo: true
+
 compiler:
   - clang
   - gcc
@@ -15,10 +18,10 @@ addons:
       - g++-4.8
 
 before_install:
-  - sudo add-apt-repository ppa:amarburg/opencv3 --yes
-  - sudo apt-get update -qq
-  - if [ "$CXX" = "g++" ]; then sudo apt-get install -y g++-4.8; fi
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+#  - sudo add-apt-repository ppa:amarburg/opencv3 --yes
+#  - sudo apt-get update -qq
+ - if [ "$CXX" = "g++" ]; then sudo apt-get install -y g++-4.8; fi
+ - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 
 install:
   - sudo apt-get install -y libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev libv4l-dev
@@ -61,4 +64,4 @@ before_script:
   - boost_dir=`ls /opt/ | grep boost`
   - cmake -DCMAKE_BUILD_TYPE=Debug -DBOOST_ROOT=/opt/$boost_dir ..
 
-script: make && make test
+script: make 

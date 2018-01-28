@@ -165,24 +165,24 @@ add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/src/buffer)
 set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../oat/libexec" CACHE PATH "Default install path" FORCE)
 
 # Testin
-if (${BUILD_TESTS})
-    # Catch (and enables unit testing)
-    add_subdirectory(${EXT_PROJECTS_DIR}/catch)
-    enable_testing(true)
-
-    set(TESTING_INCLUDES ${CATCH_INCLUDE_DIR} )
-    function(add_oat_test name libs)
-        include_directories(${TESTING_INCLUDES})
-        add_executable(${name}_test ${name}_test.cpp)
-        target_link_libraries (${name}_test ${libs})
-        add_dependencies (${name}_test ${TESTING_INCLUDES})
-        add_test(${name}_test ${name}_test)
-    endfunction()
-
-    # Tests
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
-
-endif()
+#if (${BUILD_TESTS})
+#    # Catch (and enables unit testing)
+#    add_subdirectory(${EXT_PROJECTS_DIR}/catch)
+#    enable_testing(true)
+#
+#    set(TESTING_INCLUDES ${CATCH_INCLUDE_DIR} )
+#    function(add_oat_test name libs)
+#        include_directories(${TESTING_INCLUDES})
+#        add_executable(${name}_test ${name}_test.cpp)
+#        target_link_libraries (${name}_test ${libs})
+#        add_dependencies (${name}_test ${TESTING_INCLUDES})
+#        add_test(${name}_test ${name}_test)
+#    endfunction()
+#
+#    # Tests
+#    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
+#
+#endif()
 
 # API documentation
 if (${BUILD_DOCS})
